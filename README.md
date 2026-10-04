@@ -1,7 +1,7 @@
 # Agent Harness Anatomy
 
 Rigorous, source-grounded architecture teardowns of AI agent harnesses —
-starting with pi. Every behavioral claim is pinned to verifiable source
+starting with pi, then aider. Every behavioral claim is pinned to verifiable source
 code; no product-review prose.
 
 Companion repo to the Substack series.
@@ -11,6 +11,7 @@ Companion repo to the Substack series.
 | # | Harness | Article | Substack |
 |---|---|---|---|
 | 1 | pi (v1.0.2) | [pi/article.md](pi/article.md) | forthcoming |
+| 2 | aider (v0.86.2) | [aider/article.md](aider/article.md) | forthcoming |
 
 ## What's here
 
