@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 946" width="1600" font-family="system-ui, -apple-system, sans-serif">
+<defs><marker id="arrc" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 1 L 9 5 L 0 9 z" fill="#58a6ff"/></marker><marker id="arrr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 1 L 9 5 L 0 9 z" fill="#6e7681"/></marker></defs>
+<text x="90.78014184397163" y="44" font-size="26" font-weight="700" fill="#e6edf3">Approval: tool call -&gt; policy gate -&gt; webview -&gt; feedback</text>
+<text x="90.78014184397163" y="74" font-size="15" fill="#8b949e">VS Code forces autoApprove: false on every governed tool; reads/edits auto-approve, commands always prompt</text>
+<line x1="233" y1="110" x2="233" y2="878" stroke="#30363d" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="113" y="82" width="238" height="56" rx="10" fill="#161b22" stroke="#30363d" stroke-width="1.5"/>
+<text x="233" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#e6edf3">AgentRuntime</text>
+<line x1="516" y1="110" x2="516" y2="878" stroke="#30363d" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="397" y="82" width="238" height="56" rx="10" fill="#161b22" stroke="#30363d" stroke-width="1.5"/>
+<text x="516" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#e6edf3">Policy gate</text>
+<line x1="800" y1="110" x2="800" y2="878" stroke="#30363d" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="681" y="82" width="238" height="56" rx="10" fill="#161b22" stroke="#30363d" stroke-width="1.5"/>
+<text x="800" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#e6edf3">Approval callback</text>
+<line x1="1084" y1="110" x2="1084" y2="878" stroke="#30363d" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="965" y="82" width="238" height="56" rx="10" fill="#161b22" stroke="#30363d" stroke-width="1.5"/>
+<text x="1084" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#e6edf3">Webview</text>
+<line x1="1367" y1="110" x2="1367" y2="878" stroke="#30363d" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="1248" y="82" width="238" height="56" rx="10" fill="#161b22" stroke="#30363d" stroke-width="1.5"/>
+<text x="1367" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#e6edf3">Model</text>
+<line x1="233" y1="191" x2="506" y2="191" stroke="#58a6ff" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="296" cy="177" r="11" fill="#161b22" stroke="#58a6ff" stroke-width="1.5"/>
+<text x="296" y="182" text-anchor="middle" font-size="12" font-weight="700" fill="#e6edf3">1</text>
+<text x="314" y="182" font-size="14" fill="#e6edf3">prepareToolExecution(toolCall)</text>
+<rect x="516" y="229" width="68" height="39" rx="6" fill="none" stroke="#58a6ff" stroke-width="2"/>
+<text x="600" y="252" font-size="14" fill="#8b949e">resolveToolPolicy(): &#x27;*&#x27; then per-name merge</text>
+<line x1="516" y1="313" x2="790" y2="313" stroke="#58a6ff" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="580" cy="299" r="11" fill="#161b22" stroke="#58a6ff" stroke-width="1.5"/>
+<text x="580" y="304" text-anchor="middle" font-size="12" font-weight="700" fill="#e6edf3">3</text>
+<text x="598" y="304" font-size="14" fill="#e6edf3">autoApprove === false -&gt; requestToolApproval()</text>
+<rect x="397" y="347" width="522" height="44" rx="8" fill="#1f6feb22" stroke="#1f6feb" stroke-width="1"/>
+<text x="658" y="379" text-anchor="middle" font-size="14" fill="#e6edf3">No approval callback configured -&gt; the call is auto-denied</text>
+<rect x="800" y="424" width="68" height="39" rx="6" fill="none" stroke="#58a6ff" stroke-width="2"/>
+<text x="884" y="447" font-size="14" fill="#8b949e">live-settings short-circuit</text>
+<line x1="800" y1="508" x2="1074" y2="508" stroke="#58a6ff" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="864" cy="494" r="11" fill="#161b22" stroke="#58a6ff" stroke-width="1.5"/>
+<text x="864" y="499" text-anchor="middle" font-size="12" font-weight="700" fill="#e6edf3">5</text>
+<text x="882" y="499" font-size="14" fill="#e6edf3">ask webview (diff preview for editor/apply_patch)</text>
+<rect x="681" y="542" width="522" height="44" rx="8" fill="#1f6feb22" stroke="#1f6feb" stroke-width="1"/>
+<text x="942" y="574" text-anchor="middle" font-size="14" fill="#e6edf3">Preview renders from a virtual document — the real file is never touched</text>
+<line x1="1084" y1="642" x2="810" y2="642" stroke="#6e7681" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrr)"/>
+<circle cx="864" cy="628" r="11" fill="#161b22" stroke="#6e7681" stroke-width="1.5"/>
+<text x="864" y="633" text-anchor="middle" font-size="12" font-weight="700" fill="#e6edf3">6</text>
+<text x="882" y="633" font-size="14" fill="#e6edf3">yes / denied</text>
+<line x1="800" y1="704" x2="243" y2="704" stroke="#6e7681" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrr)"/>
+<circle cx="438" cy="690" r="11" fill="#161b22" stroke="#6e7681" stroke-width="1.5"/>
+<text x="438" y="695" text-anchor="middle" font-size="12" font-weight="700" fill="#e6edf3">7</text>
+<text x="456" y="695" font-size="14" fill="#e6edf3">resolvePendingToolApproval</text>
+<line x1="233" y1="765" x2="1357" y2="765" stroke="#58a6ff" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="722" cy="751" r="11" fill="#161b22" stroke="#58a6ff" stroke-width="1.5"/>
+<text x="722" y="756" text-anchor="middle" font-size="12" font-weight="700" fill="#e6edf3">8</text>
+<text x="740" y="756" font-size="14" fill="#e6edf3">denial + TOOL_REJECTION_SUFFIX as tool error</text>
+<rect x="113" y="799" width="1373" height="44" rx="8" fill="#1f6feb22" stroke="#1f6feb" stroke-width="1"/>
+<text x="800" y="831" text-anchor="middle" font-size="14" fill="#e6edf3">Denial text reads like iteration on an applied change would be wrong — the model stays in sync with reality</text>
+</svg>

@@ -1,0 +1,216 @@
+{
+ "title": "Cline — one turn, end to end",
+ "repo": "https://github.com/cline/cline",
+ "sha": "f58bc118bdeef1bd2813cd08e00d98bdcda96475",
+ "example_input": "add a retry helper to src/utils.ts and run the tests",
+ "note": "Act mode, default auto-approvals. Pinned at v4.1.22.",
+ "steps": [
+  {
+   "step": 1,
+   "node": "input",
+   "title": "Input (webview)",
+   "narrative": "The user types 'add a retry helper to src/utils.ts and run the tests' in the VS Code sidebar, act mode. handleSendMessage calls TaskServiceClient.newTask() — a generated ProtoBusClient subclass. The webview postMessages {type: 'grpc_request', ...} to the host; the model-facing loop never sees this wire, it only ever sees SDK events.",
+   "representation": "user text\n  → handleSendMessage()\n  → TaskServiceClient.newTask({text})\n  → postMessage({type: 'grpc_request', service, method, payload})",
+   "modules": [
+    {
+     "file": "apps/vscode/webview-ui/src/components/chat/chat-view/hooks/useMessageHandlers.ts",
+     "label": "useMessageHandlers:282",
+     "line": "282",
+     "url": "https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/apps/vscode/webview-ui/src/components/chat/chat-view/hooks/useMessageHandlers.ts#L282"
+    },
+    {
+     "file": "apps/vscode/webview-ui/src/services/grpc-client-base.ts",
+     "label": "grpc-client-base:47",
+     "line": "47",
+     "url": "https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/apps/vscode/webview-ui/src/services/grpc-client-base.ts#L47"
+    }
+   ]
+  },
+  {
+   "step": 2,
+   "node": "dispatch",
+   "title": "Host dispatch",
+   "narrative": "handleGrpcRequest routes to the generated serviceHandlers[service][method] table, landing in SdkController.handleTaskCreation → initTask, which coordinates the task-start sequence.",
+   "representation": "grpc_request\n  → serviceHandlers['cline.TaskService']['newTask']\n  → SdkController.handleTaskCreation(prompt)\n  → initTask(prompt)",
+   "modules": [
+    {
+     "file": "apps/vscode/src/core/controller/grpc-handler.ts",
+     "label": "grpc-handler:52",
+     "line": "52",
+     "url": "https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/apps/vscode/src/core/controller/grpc-handler.ts#L52"
+    },
+    {
+     "file": "apps/vscode/src/sdk/SdkController.ts",
+     "label": "SdkController:1498",
+     "line": "1498",
+     "url": "https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/apps/vscode/src/sdk/SdkController.ts#L1498"
+    }
+   ]
+  },
+  {
+   "step": 3,
+   "node": "session",
+   "title": "Session build",
+   "narrative": "cline-session-factory builds the session config: mode act selects ToolPresets.act, maxIterations: undefined, per-mode model keys. VscodeSessionHost.start → ClineCore.start → a SessionRuntime → createAgentRuntime with the 9 default tools plus MCP server__tool natives. One quiet substitution: VS Code suppresses the SDK shell tool (toolExecutors.bash = undefined) and registers its own terminal-backed run_commands under the identical name — same policy key, different execution semantics.",
+   "representation": "{mode: 'act', maxIterations: undefined, model: actMode*}\n  → VscodeSessionHost.start()\n  → ClineCore.start() → SessionRuntime\n  → createAgentRuntime({tools: 9 builtins + server__tool natives})\n  → toolExecutors.bash = undefined  // VS Code re-skins run_commands",
+   "modules": [
+    {
+     "file": "apps/vscode/src/sdk/cline-session-factory.ts",
+     "label": "cline-session-factory:1108",
+     "line": "1108",
+     "url": "https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/apps/vscode/src/sdk/cline-session-factory.ts#L1108"
+    },
+    {
+     "file": "apps/vscode/src/sdk/vscode-session-host.ts",
+     "label": "vscode-session-host:198",
+     "line": "198",
+     "url": "https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/apps/vscode/src/sdk/vscode-session-host.ts#L198"
+    },
+    {
+     "file": "apps/vscode/src/sdk/vscode-session-host.ts",
+     "label": "vscode-session-host:118",
+     "line": "118",
+     "url": "https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/apps/vscode/src/sdk/vscode-session-host.ts#L118"
+    }
+   ]
+  },
+  {
+   "step": 4,
+   "node": "prompt",
+   "title": "Prompt assembly",
+   "narrative": "buildClineSystemPrompt renders the ACT base template, replacing {{PLATFORM_NAME}}, {{CURRENT_DATE}}, {{IDE_NAME}}, {{CWD}}, {{CLINE_RULES}}, {{CLINE_METADATA}}. Then MessageBuilder normalizes the message list for the API: truncation budgets, missing-tool-result repair, sticky outdated-rewrite decisions.",
+   "representation": "ACT template\n  → replace {{IDE_NAME}}='Visual Studio Code', {{CWD}}, {{CLINE_RULES}}…\n  → MessageBuilder.normalize()\n    → truncation budgets, missing-tool-result repair\n  → messages[] ready for the gateway",
+   "modules": [
+    {
+     "file": "sdk/packages/shared/src/prompt/cline.ts",
+     "label": "cline:152",
+     "line": "152",
+     "url": "https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/shared/src/prompt/cline.ts#L152"
+    },
+    {
+     "file": "sdk/packages/core/src/session/services/message-builder.ts",
+     "label": "message-builder:108",
+     "line": "108",
+     "url": "https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/core/src/session/services/message-builder.ts#L108"
+    }
+   ]
+  },
+  {
+   "step": 5,
+   "node": "checkpoint",
+   "title": "Checkpoint",
+   "narrative": "The beforeModel hook fires — iteration 1 only — and snapshots the worktree: git stash create, plus a synthesized third-parent commit for untracked files, pinned under the private ref refs/cline/checkpoints/{session}/{runCount} in the user's own repository, via a persistent per-session GIT_INDEX_FILE so the user's index is never disturbed.",
+   "representation": "beforeModel({snapshot})  // iteration === 1 only\n  → git stash create  (+ 3rd-parent commit for untracked)\n  → update-ref refs/cline/checkpoints/{session}/{runCount} <sha>\n  // in the USER's repo — no shadow repo, despite the docs",
+   "modules": [
+    {
+     "file": "sdk/packages/core/src/hooks/checkpoint-hooks.ts",
+     "label": "checkpoint-hooks:658",
+     "line": "658",
+     "url": "https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/core/src/hooks/checkpoint-hooks.ts#L658"
+    },
+    {
+     "file": "sdk/packages/core/src/hooks/checkpoint-hooks.ts",
+     "label": "checkpoint-hooks:630",
+     "line": "630",
+     "url": "https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/core/src/hooks/checkpoint-hooks.ts#L630"
+    }
+   ]
+  },
+  {
+   "step": 6,
+   "node": "model",
+   "title": "Model call",
+   "narrative": "DefaultGateway.stream() → registry.resolveModel() does an exact-ID match against the provider catalog (unknown IDs fall back to an unregistered-model path, not an error) → capability gates → the family factory builds a Vercel AI SDK provider → streamText. Tokens stream back as runtime events.",
+   "representation": "messages[]\n  → DefaultGateway.stream()\n  → registry.resolveModel(modelId)  // exact-ID match\n  → createAiSdkProvider(...) → streamText()\n  → token events → runtime",
+   "modules": [
+    {
+     "file": "sdk/packages/llms/src/providers/gateway.ts",
+     "label": "gateway:273",
+     "line": "273",
+     "url": "https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/llms/src/providers/gateway.ts#L273"
+    },
+    {
+     "file": "sdk/packages/llms/src/registry.ts",
+     "label": "registry:251",
+     "line": "251",
+     "url": "https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/llms/src/registry.ts#L251"
+    }
+   ]
+  },
+  {
+   "step": 7,
+   "node": "tools",
+   "title": "Tool dispatch",
+   "narrative": "The model emits read_files and editor calls. prepareToolExecution resolves the policy: VS Code forces autoApprove: false on every governed tool so the SDK always consults the live UI; the approval callback applies the live settings — reads, edits, browser, MCP auto-approved by default; commands always prompt. read_files and editor run; each result is appended.",
+   "representation": "tool calls: read_files, editor\n  → prepareToolExecution()\n    → resolveToolPolicy()  // '*' then per-name; VS Code forces autoApprove:false\n    → approval callback: reads/edits auto-approved, commands prompt\n  → execute (sequential) → results appended",
+   "modules": [
+    {
+     "file": "sdk/packages/agents/src/agent-runtime.ts",
+     "label": "agent-runtime:2347",
+     "line": "2347",
+     "url": "https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/agents/src/agent-runtime.ts#L2347"
+    },
+    {
+     "file": "apps/vscode/src/sdk/sdk-tool-policies.ts",
+     "label": "sdk-tool-policies:13",
+     "line": "13",
+     "url": "https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/apps/vscode/src/sdk/sdk-tool-policies.ts#L13"
+    },
+    {
+     "file": "apps/vscode/src/sdk/sdk-interaction-coordinator.ts",
+     "label": "sdk-interaction-coordinator:94",
+     "line": "94",
+     "url": "https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/apps/vscode/src/sdk/sdk-interaction-coordinator.ts#L94"
+    }
+   ]
+  },
+  {
+   "step": 8,
+   "node": "feedback",
+   "title": "Feedback & loop",
+   "narrative": "Tool results feed the next iteration. When the model calls run_commands for the tests, the approval callback prompts in the webview — edits get a diff preview rendered from a virtual document ('the real file is never opened or modified by the preview'); command asks get buttons. A denial comes back with 'The user denied this edit. The file was NOT modified…' plus TOOL_REJECTION_SUFFIX, fed to the model as a tool error.",
+   "representation": "results → next iteration\n  run_commands('npm test')\n    → approval callback → webview prompt (buttons)\n    → yes: run unsandboxed in user shell\n    → no:  'The user denied this edit. The file was NOT modified…'\n           + TOOL_REJECTION_SUFFIX → tool error → model",
+   "modules": [
+    {
+     "file": "sdk/packages/agents/src/agent-runtime.ts",
+     "label": "agent-runtime:2284",
+     "line": "2284",
+     "url": "https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/agents/src/agent-runtime.ts#L2284"
+    },
+    {
+     "file": "apps/vscode/src/sdk/sdk-diff-edit-coordinator.ts",
+     "label": "sdk-diff-edit-coordinator:97",
+     "line": "97",
+     "url": "https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/apps/vscode/src/sdk/sdk-diff-edit-coordinator.ts#L97"
+    },
+    {
+     "file": "sdk/packages/core/src/runtime/safety/tool-approval-denial.ts",
+     "label": "tool-approval-denial:6",
+     "line": "6",
+     "url": "https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/core/src/runtime/safety/tool-approval-denial.ts#L6"
+    }
+   ]
+  },
+  {
+   "step": 9,
+   "node": "terminate",
+   "title": "Termination & render",
+   "narrative": "No more tool calls, no completion reminders → finishRun('completed') → run-finished. WebviewGrpcBridge translates SDK events into ClineMessages → proto → the webview's subscribeToPartialMessage / subscribeToState streams → the convergent-replica reducer renders the transcript. /undo calls SdkController.restoreCheckpoint: refuse if HEAD moved past the checkpoint, else update-ref HEAD + reset --hard + conditional clean -fd + stash apply, guarded by a pre-restore transaction snapshot.",
+   "representation": "finishRun('completed') → run-finished\n  → WebviewGrpcBridge: SDK events → ClineMessage[]\n  → proto → subscribeToPartialMessage / subscribeToState\n  → convergent-replica reducer → React transcript\n  /undo → restoreCheckpoint: update-ref HEAD + reset --hard (+ tx snapshot)",
+   "modules": [
+    {
+     "file": "sdk/packages/agents/src/agent-runtime.ts",
+     "label": "agent-runtime:950",
+     "line": "950",
+     "url": "https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/agents/src/agent-runtime.ts#L950"
+    },
+    {
+     "file": "apps/vscode/src/sdk/webview-grpc-bridge.ts",
+     "label": "webview-grpc-bridge:55",
+     "line": "55",
+     "url": "https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/apps/vscode/src/sdk/webview-grpc-bridge.ts#L55"
+    }
+   ]
+  }
+ ]
+}
