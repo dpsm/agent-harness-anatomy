@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 974" width="1600" font-family="system-ui, -apple-system, sans-serif">
+<defs><marker id="arrc" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 1 L 9 5 L 0 9 z" fill="#58a6ff"/></marker><marker id="arrr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 1 L 9 5 L 0 9 z" fill="#6e7681"/></marker></defs>
+<text x="110.3448275862069" y="44" font-size="26" font-weight="700" fill="#e6edf3">Skills: two injection paths</text>
+<text x="110.3448275862069" y="74" font-size="15" fill="#8b949e">/skill:name expansion + system-prompt skills section</text>
+<line x1="283" y1="110" x2="283" y2="891" stroke="#30363d" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="138" y="82" width="290" height="56" rx="10" fill="#161b22" stroke="#30363d" stroke-width="1.5"/>
+<text x="283" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#e6edf3">User</text>
+<line x1="628" y1="110" x2="628" y2="891" stroke="#30363d" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="483" y="82" width="290" height="56" rx="10" fill="#161b22" stroke="#30363d" stroke-width="1.5"/>
+<text x="628" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#e6edf3">AgentSession</text>
+<line x1="972" y1="110" x2="972" y2="891" stroke="#30363d" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="828" y="82" width="290" height="56" rx="10" fill="#161b22" stroke="#30363d" stroke-width="1.5"/>
+<text x="972" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#e6edf3">ResourceLoader</text>
+<line x1="1317" y1="110" x2="1317" y2="891" stroke="#30363d" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="1172" y="82" width="290" height="56" rx="10" fill="#161b22" stroke="#30363d" stroke-width="1.5"/>
+<text x="1317" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#e6edf3">Model</text>
+<line x1="283" y1="232" x2="618" y2="232" stroke="#58a6ff" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="377" cy="218" r="11" fill="#161b22" stroke="#58a6ff" stroke-width="1.5"/>
+<text x="377" y="223" text-anchor="middle" font-size="12" font-weight="700" fill="#e6edf3">1</text>
+<text x="395" y="223" font-size="14" fill="#e6edf3">prompt(&quot;/skill:review 42&quot;)</text>
+<rect x="628" y="279" width="83" height="47" rx="6" fill="none" stroke="#58a6ff" stroke-width="2"/>
+<text x="730" y="306" font-size="14" fill="#8b949e">_expandSkillCommand</text>
+<line x1="628" y1="381" x2="962" y2="381" stroke="#58a6ff" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="722" cy="367" r="11" fill="#161b22" stroke="#58a6ff" stroke-width="1.5"/>
+<text x="722" y="372" text-anchor="middle" font-size="12" font-weight="700" fill="#e6edf3">3</text>
+<text x="740" y="372" font-size="14" fill="#e6edf3">getSkills().find(&quot;review&quot;)</text>
+<line x1="972" y1="455" x2="638" y2="455" stroke="#6e7681" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrr)"/>
+<circle cx="722" cy="441" r="11" fill="#161b22" stroke="#6e7681" stroke-width="1.5"/>
+<text x="722" y="446" text-anchor="middle" font-size="12" font-weight="700" fill="#e6edf3">4</text>
+<text x="740" y="446" font-size="14" fill="#e6edf3">Skill {filePath}</text>
+<rect x="628" y="502" width="83" height="47" rx="6" fill="none" stroke="#58a6ff" stroke-width="2"/>
+<text x="730" y="530" font-size="14" fill="#8b949e">read file, strip frontmatter → &lt;skill&gt; block</text>
+<rect x="138" y="571" width="1324" height="44" rx="8" fill="#1f6feb22" stroke="#1f6feb" stroke-width="1"/>
+<text x="800" y="610" text-anchor="middle" font-size="14" fill="#e6edf3">Second path: loaded skills also ride the system prompt every turn</text>
+<line x1="628" y1="692" x2="962" y2="692" stroke="#58a6ff" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="722" cy="678" r="11" fill="#161b22" stroke="#58a6ff" stroke-width="1.5"/>
+<text x="722" y="683" text-anchor="middle" font-size="12" font-weight="700" fill="#e6edf3">6</text>
+<text x="740" y="683" font-size="14" fill="#e6edf3">loadSkills({cwd, agentDir})</text>
+<line x1="972" y1="767" x2="638" y2="767" stroke="#6e7681" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrr)"/>
+<circle cx="722" cy="753" r="11" fill="#161b22" stroke="#6e7681" stroke-width="1.5"/>
+<text x="722" y="758" text-anchor="middle" font-size="12" font-weight="700" fill="#e6edf3">7</text>
+<text x="740" y="758" font-size="14" fill="#e6edf3">skills[] (deduped by path)</text>
+<line x1="628" y1="841" x2="1307" y2="841" stroke="#58a6ff" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="894" cy="827" r="11" fill="#161b22" stroke="#58a6ff" stroke-width="1.5"/>
+<text x="894" y="832" text-anchor="middle" font-size="12" font-weight="700" fill="#e6edf3">8</text>
+<text x="912" y="832" font-size="14" fill="#e6edf3">system &lt;skills&gt; section via formatSkillsForPrompt</text>
+</svg>
