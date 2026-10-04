@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>One turn through pi — step by step · Agent Harness Anatomy</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body {
+    background: #0d1117; color: #e6edf3;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    line-height: 1.7; padding: 48px 24px; margin: 0;
+  }
+  main { max-width: 960px; margin: 0 auto; }
+  a { color: #58a6ff; }
+  .topnav { font-size: 0.9rem; margin-bottom: 32px; }
+  .topnav a { color: #8b949e; text-decoration: none; }
+  .topnav a:hover { color: #e6edf3; }
+  h1 { font-size: 1.8rem; letter-spacing: -0.02em; margin-bottom: 8px; }
+  .sub { color: #8b949e; margin-bottom: 28px; max-width: 640px; }
+  .input-row { display: flex; gap: 12px; align-items: center; margin-bottom: 20px; flex-wrap: wrap; }
+  .input-row label { color: #8b949e; font-size: 0.95rem; }
+  .input-row input {
+    flex: 1; min-width: 240px; background: #161b22; border: 1px solid #30363d;
+    border-radius: 8px; color: #e6edf3; padding: 10px 14px; font-size: 0.95rem;
+    font-family: inherit;
+  }
+  .input-row input:focus { outline: none; border-color: #3fb950; }
+  .controls { display: flex; gap: 10px; align-items: center; margin-bottom: 24px; }
+  .controls button {
+    background: #161b22; border: 1px solid #30363d; color: #e6edf3;
+    border-radius: 8px; padding: 8px 16px; font-size: 0.9rem; cursor: pointer;
+    font-family: inherit; font-weight: 600;
+  }
+  .controls button:hover { border-color: #8b949e; }
+  .controls button.primary { background: #238636; border-color: #238636; color: #fff; }
+  .controls button.primary:hover { background: #2ea043; }
+  .counter { color: #8b949e; font-size: 0.9rem; margin-left: 4px; font-variant-numeric: tabular-nums; }
+  .trace { display: grid; grid-template-columns: 240px 1fr; gap: 24px; align-items: start; }
+  .rail { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 6px; }
+  .rail li {
+    border: 1px solid #21262d; border-radius: 8px; padding: 10px 12px;
+    cursor: pointer; display: flex; gap: 10px; align-items: baseline;
+    background: transparent;
+  }
+  .rail li:hover { border-color: #8b949e; }
+  .rail li.current { border-color: #3fb950; background: #161b22; }
+  .rail .num {
+    color: #6e7681; font-size: 0.8rem; font-variant-numeric: tabular-nums;
+    min-width: 16px;
+  }
+  .rail li.current .num { color: #3fb950; font-weight: 700; }
+  .rail .t { font-size: 0.92rem; }
+  .detail {
+    border: 1px solid #30363d; border-radius: 12px; padding: 28px;
+    background: #161b22; min-height: 420px;
+  }
+  .step-head { display: flex; gap: 14px; align-items: baseline; margin-bottom: 12px; }
+  .step-head .n {
+    color: #3fb950; font-weight: 700; font-size: 0.85rem;
+    border: 1px solid #3fb950; border-radius: 6px; padding: 2px 8px;
+    white-space: nowrap;
+  }
+  .step-head h2 { font-size: 1.3rem; margin: 0; }
+  .node-tag {
+    display: inline-block; margin-top: 6px; font-size: 0.8rem; color: #8b949e;
+    border: 1px solid #30363d; border-radius: 20px; padding: 2px 10px;
+  }
+  .node-tag b { color: #e6edf3; font-weight: 600; }
+  #dInputLine {
+    margin: 14px 0 4px; padding: 10px 14px; background: #0d1117;
+    border: 1px solid #30363d; border-radius: 8px; font-size: 0.92rem;
+  }
+  #dInputLine .k { color: #8b949e; }
+  .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 20px; }
+  .cols h3 {
+    font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.06em;
+    color: #8b949e; margin: 0 0 10px; font-weight: 600;
+  }
+  pre {
+    background: #0d1117; border: 1px solid #30363d; border-radius: 8px;
+    padding: 14px; overflow-x: auto; margin: 0; font-size: 0.82rem; line-height: 1.55;
+  }
+  pre code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    color: #e6edf3; background: none; padding: 0;
+  }
+  #dModules { list-style: none; padding: 0; margin: 0; }
+  #dModules li { margin-bottom: 8px; font-size: 0.9rem; }
+  #dModules .file { display: block; color: #6e7681; font-size: 0.78rem;
+    font-family: ui-monospace, Menlo, Consolas, monospace; }
+  .loopnote {
+    margin-top: 20px; padding: 12px 16px; border-left: 3px solid #3fb950;
+    background: #0d1117; border-radius: 0 8px 8px 0; font-size: 0.92rem;
+    color: #8b949e;
+  }
+  .loopnote:empty { display: none; }
+  .loopnote b { color: #e6edf3; }
+  .loopmap { margin-top: 36px; border: 1px solid #21262d; border-radius: 12px; padding: 24px; }
+  .loopmap h3 { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.06em;
+    color: #8b949e; margin: 0 0 16px; }
+  .flow { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 6px; }
+  .chip {
+    border: 1px solid #30363d; border-radius: 20px; padding: 4px 12px;
+    font-size: 0.82rem; background: #161b22; white-space: nowrap;
+  }
+  .chip.hot { border-color: #3fb950; color: #3fb950; }
+  .arrow { color: #6e7681; }
+  .ret {
+    margin: 2px 0 14px 8px; padding-left: 16px; border-left: 2px solid #3fb950;
+    font-size: 0.88rem; color: #8b949e;
+  }
+  .ret b { color: #e6edf3; }
+  footer { margin-top: 48px; color: #6e7681; font-size: 0.85rem; }
+  @media (max-width: 760px) {
+    .trace { grid-template-columns: 1fr; }
+    .rail { flex-direction: row; overflow-x: auto; padding-bottom: 8px; }
+    .rail li { flex: 0 0 auto; }
+    .cols { grid-template-columns: 1fr; }
+    .detail { padding: 20px; }
+  }
+</style>
+</head>
+<body>
+<main>
+  <nav class="topnav"><a href="./">&larr; pi: the minimalist terminal harness</a></nav>
+  <h1 id="pageTitle">One turn through pi</h1>
+  <p class="sub" id="pageSub"></p>
+
+  <div class="input-row">
+    <label for="userInput">Trace it with your own input:</label>
+    <input id="userInput" type="text" value="" autocomplete="off" spellcheck="false">
+  </div>
+
+  <div class="controls">
+    <button id="prevBtn" aria-label="Previous step">&larr; Prev</button>
+    <button id="playBtn" class="primary" aria-label="Play or pause">&#9654; Play</button>
+    <button id="nextBtn" aria-label="Next step">Next &rarr;</button>
+    <span class="counter" id="counter"></span>
+  </div>
+
+  <div class="trace">
+    <ol class="rail" id="rail"></ol>
+    <section class="detail" aria-live="polite">
+      <div class="step-head">
+        <span class="n" id="dNum"></span>
+        <div>
+          <h2 id="dTitle"></h2>
+          <span class="node-tag">architecture node: <b id="dNode"></b></span>
+        </div>
+      </div>
+      <div id="dInputLine" hidden><span class="k">User input:</span> <span id="dInputVal"></span></div>
+      <p id="dNarrative"></p>
+      <div class="cols">
+        <div>
+          <h3>Representation at this boundary</h3>
+          <pre><code id="dRepr"></code></pre>
+        </div>
+        <div>
+          <h3>Source modules</h3>
+          <ul id="dModules"></ul>
+        </div>
+      </div>
+      <div class="loopnote" id="dLoop"></div>
+    </section>
+  </div>
+
+  <section class="loopmap">
+    <h3>Loop map</h3>
+    <div class="flow" id="flowMain"></div>
+    <div class="ret"><b>Inner loop</b> &mdash; steps 3&ndash;6 repeat until the model stops emitting tool calls. Each tool result re-enters the model call at step 3.</div>
+    <div class="flow" id="flowBranch"></div>
+    <div class="ret"><b>Branch</b> &mdash; when step 4 finds no tool calls, the turn settles: termination decision, then rendering.</div>
+    <div class="ret" style="border-color:#58a6ff"><b>Outer loop</b> &mdash; a follow-up message or steering command re-enters at step 1; in-turn steering re-enters at step 3.</div>
+  </section>
+
+  <footer>Simplified shapes of real pi types, not verbatim runtime dumps. All module links pin <span id="sha"></span>.</footer>
+</main>
+
+<script>
+(function () {
+  var LOOP_NOTES = {
+    1: "<b>Outer loop entry.</b> Every new user message starts here; follow-ups after a settled turn come back to this step.",
+    3: "<b>Inner loop driver.</b> Steps 3&ndash;6 repeat until the model stops emitting tool calls. There is no fixed iteration cap.",
+    4: "<b>Branch point.</b> Tool calls found &rarr; step 5. None &rarr; step 7, the turn settles.",
+    6: "<b>Inner loop edge.</b> The tool result message re-enters the loop at step 3 (model call).",
+    7: "<b>Settle or steer.</b> Finish, or steering input re-enters the loop at step 3.",
+    8: "<b>Terminal.</b> The turn's events are rendered; the loop idles until new input arrives."
+  };
+  var FLOW_MAIN = [1,2,3,4,5,6], FLOW_BRANCH = [4,7,8];
+
+  var data, idx = 0, timer = null;
+  var $ = function (id) { return document.getElementById(id); };
+  var rail = $("rail"), userInput = $("userInput");
+
+  function esc(s) {
+    return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
+
+  function renderFlow(el, steps, hot) {
+    el.innerHTML = steps.map(function (n, i) {
+      var s = data.steps[n - 1];
+      var chip = '<span class="chip' + (n === hot ? ' hot' : '') + '">' + n + ' &middot; ' + esc(s.title) + '</span>';
+      return i < steps.length - 1 ? chip + '<span class="arrow">&rarr;</span>' : chip;
+    }).join("");
+  }
+
+  function buildRail() {
+    rail.innerHTML = "";
+    data.steps.forEach(function (s, i) {
+      var li = document.createElement("li");
+      li.innerHTML = '<span class="num">' + s.step + '</span><span class="t"></span>';
+      li.querySelector(".t").textContent = s.title;
+      li.addEventListener("click", function () { stop(); go(i); });
+      rail.appendChild(li);
+    });
+  }
+
+  function go(i) {
+    idx = Math.max(0, Math.min(data.steps.length - 1, i));
+    var s = data.steps[idx];
+    Array.prototype.forEach.call(rail.children, function (li, j) {
+      li.classList.toggle("current", j === idx);
+    });
+    var cur = rail.children[idx];
+    if (cur) cur.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    $("dNum").textContent = "Step " + s.step;
+    $("dTitle").textContent = s.title;
+    $("dNode").textContent = s.node;
+    if (idx === 0) {
+      $("dInputLine").hidden = false;
+      $("dInputVal").textContent = "\u201c" + userInput.value + "\u201d";
+    } else {
+      $("dInputLine").hidden = true;
+    }
+    $("dNarrative").textContent = s.narrative;
+    $("dRepr").textContent = s.representation;
+    var ul = $("dModules");
+    ul.innerHTML = "";
+    s.modules.forEach(function (m) {
+      var li = document.createElement("li");
+      var a = document.createElement("a");
+      a.href = m.url; a.target = "_blank"; a.rel = "noopener";
+      a.textContent = m.label;
+      li.appendChild(a);
+      var f = document.createElement("span");
+      f.className = "file"; f.textContent = m.file;
+      li.appendChild(f);
+      ul.appendChild(li);
+    });
+    $("dLoop").innerHTML = LOOP_NOTES[s.step] || "";
+    $("counter").textContent = (idx + 1) + " / " + data.steps.length;
+    renderFlow($("flowMain"), FLOW_MAIN, s.step <= 6 ? s.step : -1);
+    renderFlow($("flowBranch"), FLOW_BRANCH, s.step >= 4 ? s.step : -1);
+  }
+
+  function stop() {
+    if (timer) { clearInterval(timer); timer = null; }
+    $("playBtn").innerHTML = "&#9654; Play";
+  }
+  function play() {
+    if (timer) { stop(); return; }
+    if (idx >= data.steps.length - 1) go(0);
+    $("playBtn").innerHTML = "&#10074;&#10074; Pause";
+    timer = setInterval(function () {
+      if (idx >= data.steps.length - 1) { stop(); return; }
+      go(idx + 1);
+    }, 4500);
+  }
+
+  $("prevBtn").addEventListener("click", function () { stop(); go(idx - 1); });
+  $("nextBtn").addEventListener("click", function () { stop(); go(idx + 1); });
+  $("playBtn").addEventListener("click", play);
+  userInput.addEventListener("input", function () { if (idx === 0) go(0); });
+  document.addEventListener("keydown", function (e) {
+    if (document.activeElement === userInput) return;
+    if (e.key === "ArrowRight") { stop(); go(idx + 1); }
+    if (e.key === "ArrowLeft") { stop(); go(idx - 1); }
+    if (e.key === " ") { e.preventDefault(); play(); }
+  });
+
+  fetch("diagrams/pi-trace-steps.json")
+    .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
+    .then(function (d) {
+      data = d;
+      document.title = d.title + " \u00b7 Agent Harness Anatomy";
+      $("pageTitle").textContent = d.title;
+      $("pageSub").textContent = "Follow one concrete user input through pi's agent loop. " +
+        "Each step shows the representation pi selects at that boundary and the source modules involved. " + d.note;
+      $("sha").textContent = "v1.0.2 (" + d.sha.slice(0, 12) + "\u2026)";
+      if (!userInput.value) userInput.value = d.example_input;
+      buildRail();
+      go(0);
+    })
+    .catch(function () {
+      $("pageSub").textContent = "Could not load the trace data (diagrams/pi-trace-steps.json).";
+    });
+})();
+</script>
+</body>
+</html>
