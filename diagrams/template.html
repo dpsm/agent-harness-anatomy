@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Agent Harness Anatomy — Interactive Diagram</title>
+<style>
+  :root {
+    --bg: #0d1117; --panel: #161b22; --border: #30363d;
+    --text: #e6edf3; --muted: #8b949e; --accent: #58a6ff;
+    --verified: #3fb950; --docs: #d29922; --inferred: #f85149;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+         background: var(--bg); color: var(--text); height: 100vh; display: flex; flex-direction: column; }
+  header { padding: 12px 20px; border-bottom: 1px solid var(--border); display: flex;
+           align-items: baseline; gap: 16px; flex-wrap: wrap; }
+  header h1 { font-size: 18px; font-weight: 600; }
+  header .meta { color: var(--muted); font-size: 13px; font-family: ui-monospace, monospace; }
+  header .meta a { color: var(--accent); text-decoration: none; }
+  #wrap { flex: 1; display: flex; min-height: 0; }
+  #canvas { flex: 1; cursor: grab; }
+  #canvas:active { cursor: grabbing; }
+  aside { width: 340px; border-left: 1px solid var(--border); background: var(--panel);
+          padding: 16px; overflow-y: auto; display: none; }
+  aside.open { display: block; }
+  aside h2 { font-size: 15px; margin-bottom: 4px; }
+  aside .file { color: var(--muted); font-size: 12px; font-family: ui-monospace, monospace; margin-bottom: 10px; }
+  aside pre { background: var(--bg); border: 1px solid var(--border); border-radius: 6px;
+              padding: 10px; font-size: 12px; overflow-x: auto; margin-bottom: 12px; white-space: pre-wrap; }
+  aside ul { list-style: none; }
+  aside li { margin-bottom: 6px; font-size: 13px; }
+  aside a { color: var(--accent); text-decoration: none; font-family: ui-monospace, monospace; font-size: 12px; }
+  aside a:hover { text-decoration: underline; }
+  aside .close { float: right; background: none; border: none; color: var(--muted);
+                 font-size: 18px; cursor: pointer; }
+  .grade { display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 10px;
+           text-transform: uppercase; letter-spacing: .5px; margin-bottom: 10px; }
+  .grade.verified { background: rgba(63,185,80,.15); color: var(--verified); border: 1px solid var(--verified); }
+  .grade.docs { background: rgba(210,153,34,.15); color: var(--docs); border: 1px solid var(--docs); }
+  .grade.inferred { background: rgba(248,81,73,.15); color: var(--inferred); border: 1px solid var(--inferred); }
+  #legend { position: absolute; bottom: 16px; left: 16px; background: var(--panel);
+            border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; font-size: 12px; }
+  #legend div { margin: 3px 0; color: var(--muted); }
+  #legend .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; }
+  #hint { position: absolute; top: 70px; left: 50%; transform: translateX(-50%);
+          color: var(--muted); font-size: 12px; background: var(--panel);
+          border: 1px solid var(--border); border-radius: 20px; padding: 6px 16px; }
+  .node { cursor: pointer; }
+  .node rect.body { fill: var(--panel); stroke: var(--border); stroke-width: 1.5; rx: 10; }
+  .node:hover rect.body { stroke: var(--accent); }
+  .node.selected rect.body { stroke: var(--accent); stroke-width: 2.5; }
+  .node text { fill: var(--text); font-size: 13px; font-weight: 600; }
+  .node .sub { fill: var(--muted); font-size: 10.5px; font-weight: 400; font-family: ui-monospace, monospace; }
+  .node .badge { fill: var(--accent); }
+  .node .badge-text { fill: #fff; font-size: 12px; font-weight: 700; }
+  .edge { stroke: #6e7681; stroke-width: 1.5; fill: none; }
+  .edge-label { fill: var(--muted); font-size: 11px; }
+  #tooltip { position: absolute; pointer-events: none; background: var(--panel);
+             border: 1px solid var(--border); border-radius: 6px; padding: 8px 10px;
+             font-size: 12px; max-width: 300px; display: none; z-index: 10; }
+  #tooltip code { font-family: ui-monospace, monospace; color: var(--muted); }
+</style>
+</head>
+<body>
+<header>
+  <h1 id="title">Agent Harness Anatomy</h1>
+  <span class="meta" id="meta"></span>
+</header>
+<div id="wrap">
+  <svg id="canvas" width="100%" height="100%"></svg>
+  <aside id="panel">
+    <button class="close" id="closePanel">&times;</button>
+    <div id="panelBody"></div>
+  </aside>
+</div>
+<div id="legend">
+  <div><span class="dot" style="background:var(--verified)"></span>verified in source</div>
+  <div><span class="dot" style="background:var(--docs)"></span>from docs, unconfirmed</div>
+  <div><span class="dot" style="background:var(--inferred)"></span>inferred</div>
+</div>
+<div id="hint">drag to pan &middot; scroll to zoom &middot; click a node for source links</div>
+<div id="tooltip"></div>
+
+<script>
+/* ============================================================
+   DATA: replace this object per harness, or load via ?data=X.json
+   Schema: see diagrams/schema.md
+   ============================================================ */
+window.DIAGRAM_DATA = {
+  "title": "EXAMPLE — replace with harness diagram data",
+  "repo": "https://github.com/example/repo",
+  "sha": "0000000",
+  "nodes": [
+    { "id": "input", "step": 1, "label": "User input", "sub": "src/main.ts",
+      "x": 60, "y": 120, "w": 200, "h": 84, "grade": "verified",
+      "links": [ { "label": "main.ts:42", "url": "https://github.com/example/repo/blob/0000000/src/main.ts#L42" } ],
+      "excerpt": "// example excerpt — replace with verbatim code" }
+  ],
+  "edges": []
+};
+
+const GRADE_COLORS = { verified: "#3fb950", docs: "#d29922", inferred: "#f85149" };
+const svg = document.getElementById("canvas");
+const tooltip = document.getElementById("tooltip");
+let vb = { x: 0, y: 0, w: 1200, h: 800 };
+
+function setViewBox() { svg.setAttribute("viewBox", `${vb.x} ${vb.y} ${vb.w} ${vb.h}`); }
+
+function edgePath(a, b) {
+  const x1 = a.x + a.w / 2, y1 = a.y + a.h;
+  const x2 = b.x + b.w / 2, y2 = b.y;
+  const my = (y1 + y2) / 2;
+  return `M ${x1} ${y1} C ${x1} ${my}, ${x2} ${my}, ${x2} ${y2}`;
+}
+
+function render(data) {
+  document.getElementById("title").textContent = data.title;
+  document.getElementById("meta").innerHTML =
+    `<a href="${data.repo}" target="_blank" rel="noopener">${data.repo.replace("https://github.com/", "")}</a> @ ${data.sha.slice(0, 7)}`;
+  const NS = "http://www.w3.org/2000/svg";
+  const byId = Object.fromEntries(data.nodes.map(n => [n.id, n]));
+
+  const defs = document.createElementNS(NS, "defs");
+  defs.innerHTML = `<marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5"
+      markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 1 L 9 5 L 0 9 z" fill="#6e7681"/></marker>`;
+  svg.appendChild(defs);
+
+  const gE = document.createElementNS(NS, "g");
+  const gN = document.createElementNS(NS, "g");
+  svg.appendChild(gE); svg.appendChild(gN);
+
+  for (const e of data.edges) {
+    const a = byId[e.from], b = byId[e.to];
+    if (!a || !b) continue;
+    const p = document.createElementNS(NS, "path");
+    p.setAttribute("d", edgePath(a, b));
+    p.setAttribute("class", "edge");
+    p.setAttribute("marker-end", "url(#arrow)");
+    gE.appendChild(p);
+    if (e.label) {
+      const t = document.createElementNS(NS, "text");
+      const mx = (a.x + a.w / 2 + b.x + b.w / 2) / 2 + 8;
+      const my = (a.y + a.h + b.y) / 2;
+      t.setAttribute("x", mx); t.setAttribute("y", my);
+      t.setAttribute("class", "edge-label"); t.textContent = e.label;
+      gE.appendChild(t);
+    }
+  }
+
+  for (const n of data.nodes) {
+    const g = document.createElementNS(NS, "g");
+    g.setAttribute("class", "node"); g.dataset.id = n.id;
+    const color = GRADE_COLORS[n.grade] || GRADE_COLORS.inferred;
+
+    const body = document.createElementNS(NS, "rect");
+    body.setAttribute("x", n.x); body.setAttribute("y", n.y);
+    body.setAttribute("width", n.w); body.setAttribute("height", n.h);
+    body.setAttribute("rx", 10); body.setAttribute("class", "body");
+    g.appendChild(body);
+
+    const stripe = document.createElementNS(NS, "rect");
+    stripe.setAttribute("x", n.x); stripe.setAttribute("y", n.y);
+    stripe.setAttribute("width", 5); stripe.setAttribute("height", n.h);
+    stripe.setAttribute("rx", 2); stripe.setAttribute("fill", color);
+    g.appendChild(stripe);
+
+    if (n.step) {
+      const c = document.createElementNS(NS, "circle");
+      c.setAttribute("cx", n.x + 22); c.setAttribute("cy", n.y + 22); c.setAttribute("r", 13);
+      c.setAttribute("class", "badge"); g.appendChild(c);
+      const t = document.createElementNS(NS, "text");
+      t.setAttribute("x", n.x + 22); t.setAttribute("y", n.y + 27);
+      t.setAttribute("text-anchor", "middle"); t.setAttribute("class", "badge-text");
+      t.textContent = n.step; g.appendChild(t);
+    }
+
+    const label = document.createElementNS(NS, "text");
+    label.setAttribute("x", n.x + 44); label.setAttribute("y", n.y + 28);
+    label.textContent = n.label; g.appendChild(label);
+
+    const sub = document.createElementNS(NS, "text");
+    sub.setAttribute("x", n.x + 44); sub.setAttribute("y", n.y + 46);
+    sub.setAttribute("class", "sub");
+    sub.textContent = (n.sub || "").slice(0, 34); g.appendChild(sub);
+
+    const nLinks = document.createElementNS(NS, "text");
+    nLinks.setAttribute("x", n.x + 14); nLinks.setAttribute("y", n.y + n.h - 12);
+    nLinks.setAttribute("class", "sub");
+    nLinks.textContent = `${(n.links || []).length} source link${(n.links || []).length === 1 ? "" : "s"} — click`;
+    g.appendChild(nLinks);
+
+    g.addEventListener("click", ev => { ev.stopPropagation(); selectNode(n.id, data); });
+    g.addEventListener("mousemove", ev => {
+      tooltip.style.display = "block";
+      tooltip.style.left = (ev.clientX + 14) + "px";
+      tooltip.style.top = (ev.clientY + 14) + "px";
+      tooltip.innerHTML = `<strong>${n.label}</strong><br><code>${n.sub || ""}</code>`;
+    });
+    g.addEventListener("mouseleave", () => tooltip.style.display = "none");
+    gN.appendChild(g);
+  }
+
+  // fit viewBox to content
+  const pad = 80;
+  const xs = data.nodes.flatMap(n => [n.x, n.x + n.w]);
+  const ys = data.nodes.flatMap(n => [n.y, n.y + n.h]);
+  if (xs.length) vb = { x: Math.min(...xs) - pad, y: Math.min(...ys) - pad,
+    w: Math.max(...xs) - Math.min(...xs) + pad * 2, h: Math.max(...ys) - Math.min(...ys) + pad * 2 };
+  setViewBox();
+  setTimeout(() => document.getElementById("hint").style.display = "none", 6000);
+}
+
+function selectNode(id, data) {
+  document.querySelectorAll(".node").forEach(el =>
+    el.classList.toggle("selected", el.dataset.id === id));
+  const n = data.nodes.find(n => n.id === id);
+  const panel = document.getElementById("panel");
+  const body = document.getElementById("panelBody");
+  body.innerHTML = `
+    <span class="grade ${n.grade}">${n.grade}</span>
+    <h2>${n.step ? n.step + ". " : ""}${n.label}</h2>
+    <div class="file">${n.sub || ""}</div>
+    ${n.excerpt ? `<pre>${n.excerpt.replace(/</g, "&lt;")}</pre>` : ""}
+    <ul>${(n.links || []).map(l =>
+      `<li><a href="${l.url}" target="_blank" rel="noopener">${l.label} ↗</a></li>`).join("")}</ul>`;
+  panel.classList.add("open");
+}
+document.getElementById("closePanel").addEventListener("click", () => {
+  document.getElementById("panel").classList.remove("open");
+  document.querySelectorAll(".node").forEach(el => el.classList.remove("selected"));
+});
+
+// pan & zoom
+let panning = false, sx = 0, sy = 0;
+svg.addEventListener("mousedown", e => { panning = true; sx = e.clientX; sy = e.clientY; });
+window.addEventListener("mouseup", () => panning = false);
+window.addEventListener("mousemove", e => {
+  if (!panning) return;
+  const r = svg.getBoundingClientRect();
+  vb.x -= (e.clientX - sx) * vb.w / r.width;
+  vb.y -= (e.clientY - sy) * vb.h / r.height;
+  sx = e.clientX; sy = e.clientY; setViewBox();
+});
+svg.addEventListener("wheel", e => {
+  e.preventDefault();
+  const f = e.deltaY > 0 ? 1.15 : 1 / 1.15;
+  const r = svg.getBoundingClientRect();
+  const mx = vb.x + (e.clientX - r.left) * vb.w / r.width;
+  const my = vb.y + (e.clientY - r.top) * vb.h / r.height;
+  vb = { x: mx - (mx - vb.x) * f, y: my - (my - vb.y) * f, w: vb.w * f, h: vb.h * f };
+  setViewBox();
+}, { passive: false });
+
+// boot: ?data=pi.json loads external JSON, else embedded
+(function boot() {
+  const q = new URLSearchParams(location.search).get("data");
+  if (q) fetch(q).then(r => r.json()).then(render)
+    .catch(() => render(window.DIAGRAM_DATA));
+  else render(window.DIAGRAM_DATA);
+})();
+</script>
+</body>
+</html>

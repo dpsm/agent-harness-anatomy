@@ -1,0 +1,229 @@
+{
+  "edges": [
+    {
+      "from": "input",
+      "label": "user text",
+      "to": "prompt"
+    },
+    {
+      "from": "prompt",
+      "label": "messages + tool deltas",
+      "to": "model"
+    },
+    {
+      "from": "model",
+      "label": "token stream",
+      "to": "parse"
+    },
+    {
+      "from": "parse",
+      "label": "toolCall blocks",
+      "to": "dispatch"
+    },
+    {
+      "from": "parse",
+      "label": "final answer",
+      "to": "terminate"
+    },
+    {
+      "from": "terminate",
+      "label": "agent_end",
+      "to": "render"
+    },
+    {
+      "from": "dispatch",
+      "label": "tool_execution events",
+      "to": "render"
+    },
+    {
+      "from": "dispatch",
+      "to": "feedback"
+    },
+    {
+      "from": "feedback",
+      "label": "next provider request",
+      "to": "model"
+    }
+  ],
+  "nodes": [
+    {
+      "excerpt": "async prompt(text: string, options?: PromptOptions): Promise<void> {\n\tif (this._isEmittingAgentSettled) {\n\t\tthis._deferredSettledActions.push(async () => await this.prompt(text, options));\n\t\treturn;\n\t}",
+      "grade": "verified",
+      "h": 96,
+      "id": "input",
+      "label": "User input",
+      "links": [
+        {
+          "label": "agent-session.ts:1921-1926",
+          "url": "https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/src/core/agent-session.ts#L1921-L1926"
+        }
+      ],
+      "step": 1,
+      "sub": "agent-session.ts",
+      "w": 220,
+      "x": 190,
+      "y": 20
+    },
+    {
+      "excerpt": "private _preparePromptAndToolLoadout(\n\toptions: NormalizedBuildSystemPromptOptions,\n\tmessages: AgentMessage[] = this.agent.state.messages,\n): SystemMessage | undefined {\n\toptions.selectedTools = this._applyToolLoadout(options.selectedTools).map((tool) => tool.name);",
+      "grade": "verified",
+      "h": 96,
+      "id": "prompt",
+      "label": "Prompt assembly + tool loadout",
+      "links": [
+        {
+          "label": "agent-session.ts:1689-1701",
+          "url": "https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/src/core/agent-session.ts#L1689-L1701"
+        },
+        {
+          "label": "system-prompt.ts:121-130",
+          "url": "https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/src/core/system-prompt.ts#L121-L130"
+        },
+        {
+          "label": "system-prompt.ts:204-218",
+          "url": "https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/src/core/system-prompt.ts#L204-L218"
+        }
+      ],
+      "step": 2,
+      "sub": "agent-session.ts / system-prompt.ts",
+      "w": 220,
+      "x": 190,
+      "y": 150
+    },
+    {
+      "excerpt": "export async function runAgentLoop(\n\tprompts: AgentMessage[],\n\tcontext: AgentContext,\n\tconfig: AgentLoopConfig,\n\temit: AgentEventSink,\n\tsignal: AbortSignal | undefined,\n\tstreamFn: StreamFn,\n): Promise<AgentMessage[]> {",
+      "grade": "verified",
+      "h": 96,
+      "id": "model",
+      "label": "Model call",
+      "links": [
+        {
+          "label": "agent.ts:373-380",
+          "url": "https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/agent/src/agent.ts#L373-L380"
+        },
+        {
+          "label": "agent-loop.ts:102-110",
+          "url": "https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/agent/src/agent-loop.ts#L102-L110"
+        },
+        {
+          "label": "sdk.ts:387-395",
+          "url": "https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/src/core/sdk.ts#L387-L395"
+        }
+      ],
+      "step": 3,
+      "sub": "agent.ts \u2192 agent-loop.ts \u2192 sdk.ts",
+      "w": 220,
+      "x": 190,
+      "y": 280
+    },
+    {
+      "excerpt": "async function runLoop(\n\tcurrentContext: AgentContext,\n\tnewMessages: AgentMessage[],\n\tconfig: AgentLoopConfig,\n\tsignal: AbortSignal | undefined,\n\temit: AgentEventSink,\n\tstreamFn: StreamFn,\n): Promise<void> {",
+      "grade": "verified",
+      "h": 96,
+      "id": "parse",
+      "label": "Stream parse \u2192 message / toolCall",
+      "links": [
+        {
+          "label": "agent-loop.ts:163-176",
+          "url": "https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/agent/src/agent-loop.ts#L163-L176"
+        }
+      ],
+      "step": 4,
+      "sub": "agent-loop.ts (runLoop)",
+      "w": 220,
+      "x": 190,
+      "y": 410
+    },
+    {
+      "excerpt": "if (config.beforeToolCall) {\n\t\t\tconst beforeResult = await config.beforeToolCall(",
+      "grade": "verified",
+      "h": 96,
+      "id": "dispatch",
+      "label": "Tool dispatch",
+      "links": [
+        {
+          "label": "agent-loop.ts:727-728",
+          "url": "https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/agent/src/agent-loop.ts#L727-L728"
+        },
+        {
+          "label": "agent-session.ts:625-632",
+          "url": "https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/src/core/agent-session.ts#L625-L632"
+        }
+      ],
+      "step": 5,
+      "sub": "lookup \u2192 validate \u2192 beforeToolCall \u2192 exec \u2192 afterToolCall",
+      "w": 220,
+      "x": -140,
+      "y": 540
+    },
+    {
+      "excerpt": "function shouldTerminateToolBatch(finalizedCalls: FinalizedToolCallOutcome[]): boolean {\n\treturn finalizedCalls.length > 0 && finalizedCalls.every((finalized) => finalized.result.terminate === true);\n}",
+      "grade": "verified",
+      "h": 96,
+      "id": "terminate",
+      "label": "Termination decision",
+      "links": [
+        {
+          "label": "agent-loop.ts:286-296",
+          "url": "https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/agent/src/agent-loop.ts#L286-L296"
+        },
+        {
+          "label": "agent-loop.ts:689-691",
+          "url": "https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/agent/src/agent-loop.ts#L689-L691"
+        }
+      ],
+      "step": 7,
+      "sub": "no max-iteration limit; finishTurn / terminate / abort",
+      "w": 220,
+      "x": 350,
+      "y": 540
+    },
+    {
+      "excerpt": "this.unsubscribe = this.session.subscribe(async (event) => {",
+      "grade": "verified",
+      "h": 96,
+      "id": "render",
+      "label": "Rendering",
+      "links": [
+        {
+          "label": "interactive-mode.ts:3354",
+          "url": "https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/src/modes/interactive/interactive-mode.ts#L3354"
+        },
+        {
+          "label": "rpc-mode.ts:355",
+          "url": "https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/src/modes/rpc/rpc-mode.ts#L355"
+        },
+        {
+          "label": "print-mode.ts:108",
+          "url": "https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/src/modes/print-mode.ts#L108"
+        }
+      ],
+      "step": 8,
+      "sub": "session.subscribe \u2192 TUI / RPC / print",
+      "w": 220,
+      "x": 190,
+      "y": 680
+    },
+    {
+      "id": "feedback",
+      "step": 6,
+      "label": "Tool-result feedback",
+      "sub": "toolResult \u2192 transcript \u2192 next turn",
+      "x": -140,
+      "y": 410,
+      "w": 220,
+      "h": 96,
+      "grade": "verified",
+      "links": [
+        {
+          "label": "agent-loop.ts:922-936",
+          "url": "https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/agent/src/agent-loop.ts#L922-L936"
+        }
+      ],
+      "excerpt": "function createToolResultMessage(finalized: FinalizedToolCallOutcome): ToolResultMessage {\n\treturn {\n\t\trole: \"toolResult\",\n\t\ttoolCallId: finalized.toolCall.id,\n\t\ttoolName: finalized.toolCall.name,"
+    }
+  ],
+  "repo": "https://github.com/earendil-works/pi",
+  "sha": "cd32f7725fdbddbaecdff5b1e68491563394e0ca",
+  "title": "pi \u2014 one turn through the harness"
+}
