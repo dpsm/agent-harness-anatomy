@@ -1,22 +1,18 @@
-# Comparison matrix
-
-Running ten-dimension comparison across every harness in the series.
-Each column is grounded in that article's pinned source tree and endnotes.
-
-| # | Dimension | pi (v1.0.2) | aider (v0.86.2) |
-|---|---|---|---|
-| 1 | Agent loop | Event-sourced; inner (tool/steer) + outer (follow-up) loops; no iteration cap [^5][^6][^10] | No tool-call loop; parse→apply→reflect over text edit formats; REPL + reflection (≤3) + retry; no REPL iteration cap [^4][^6][^8] |
-| 2 | Tool system | 4 built-ins + registry; TypeBox validation; sequential/parallel; nested calls [^22][^27][^28] | None — model emits SEARCH/REPLACE blocks parsed by edit-format coders; shell suggestions run only with per-command confirmation [^14][^18] |
-| 3 | Model providers | ~35 behind one `StreamFn`; per-request key resolution [^18][^29] | litellm behind a `Model` wrapper; 313-entry YAML + substring heuristics (model-aware, load-bearing); weak model for commits/summaries [^25][^26] |
-| 4 | Prompt construction | Structured sections, diffed per turn, XML-tagged [^15][^16] | Fixed wire order with synthetic user/assistant pairs; prompt-cache breakpoints on stable prefixes; repo map re-injected per turn [^10][^11] |
-| 5 | Memory/session | JSONL sessions; compaction with branch summarization [^30] | In-memory cur/done messages; background-thread summarization; markdown log in repo; git auto-commit per turn [^16][^27] |
-| 6 | Reasoning/planning | Thinking levels forwarded; no planner/sub-agents (omitted) [^29][^32] | Architect = sequential 2-model delegation with user gate; no autonomous sub-agents [^24] |
-| 7 | Extensibility | TS extensions, hooks at every seam, MCP, skills [^31] | 42 closed slash commands; model-settings YAML; no plugin API, MCP, or skills — configuration, not code [^32][^33][^34] |
-| 8 | Interfaces | TUI / print / RPC / SDK — all event subscribers [^9] | prompt_toolkit CLI; `--message` one-shot; streamlit GUI; imperative rendering, no event stream [^20] |
-| 9 | Failure handling | Auto-retry, truncation guards, abort; no iteration cap [^21][^26][^10] | Exp-backoff retry (60s cap); no retry on context exhaustion; malformed edits reflected (≤3); lint/test confirm loops [^7][^18] |
-| 10 | Security model | Project trust + extension hooks; no built-in approval UX [^24][^33] | Chat-file edits auto-apply; prompts only at boundaries; git auto-commit + `/undo`; no sandbox [^30] |
+| # | Dimension | pi (v1.0.2) | aider (v0.86.2) | Cline (v4.1.22) |
+| --- | --- | --- | --- | --- |
+| 1 | Agent loop | Event-sourced; inner (tool/steer) + outer (follow-up) loops; no iteration cap [^5][^6][^10] | No tool-call loop; parse→apply→reflect over text edit formats; REPL + reflection (≤3) + retry; no REPL iteration cap [^4][^6][^8] | Host-independent SDK `AgentRuntime.execute`; turn loop + tool execution; `maxIterations: undefined` in VS Code host — bound is 5 identical tool calls [^7][^13][^14] |
+| 2 | Tool system | 4 built-ins + registry; TypeBox validation; sequential/parallel; nested calls [^22][^27][^28] | None — model emits SEARCH/REPLACE blocks parsed by edit-format coders; shell suggestions run only with per-command confirmation [^14][^18] | 9 built-ins + MCP natives + team tools; sequential default, adjacent-parallel batching; 30s default timeout [^12][^28][^29] |
+| 3 | Model providers | ~35 behind one `StreamFn`; per-request key resolution [^18][^29] | litellm behind a `Model` wrapper; 313-entry YAML + substring heuristics (model-aware, load-bearing); weak model for commits/summaries [^25][^26] | 228 providers, one generic Vercel AI SDK adapter; exact-ID resolution; data-driven per-model behavior; ~200k-line generated catalog [^6][^23] |
+| 4 | Prompt construction | Structured sections, diffed per turn, XML-tagged [^15][^16] | Fixed wire order with synthetic user/assistant pairs; prompt-cache breakpoints on stable prefixes; repo map re-injected per turn [^10][^11] | Template + placeholder replacement; `MessageBuilder` normalization; rules as `# Rules` sections [^21] |
+| 5 | Memory/session | JSONL sessions; compaction with branch summarization [^30] | In-memory cur/done messages; background-thread summarization; markdown log in repo; git auto-commit per turn [^16][^27] | SQLite + file-backend; versioned whole-file JSON envelopes; manual `/compact` (was fake pre-CLINE-2503) [^37] |
+| 6 | Reasoning/planning | Thinking levels forwarded; no planner/sub-agents (omitted) [^29][^32] | Architect = sequential 2-model delegation with user gate; no autonomous sub-agents [^24] | plan/act modes (differ by one tool); sub-agents + teams present [^35][^38] |
+| 7 | Extensibility | TS extensions, hooks at every seam, MCP, skills [^31] | 42 closed slash commands; model-settings YAML; no plugin API, MCP, or skills — configuration, not code [^32][^33][^34] | Richest so far: `AgentRuntimePlugin`, 7-callback hooks, file hooks, skills, MCP, sub-agents [^4][^36] |
+| 8 | Interfaces | TUI / print / RPC / SDK — all event subscribers [^9] | prompt_toolkit CLI; `--message` one-shot; streamlit GUI; imperative rendering, no event stream [^20] | VS Code webview over proto-bus gRPC (22 svcs/224 RPCs) + CLI host + npm SDK re-export [^26][^39] |
+| 9 | Failure handling | Auto-retry, truncation guards, abort; no iteration cap [^21][^26][^10] | Exp-backoff retry (60s cap); no retry on context exhaustion; malformed edits reflected (≤3); lint/test confirm loops [^7][^18] | Provider retry 3×; output-limit recovery 3×; loop detection 3×/5× (reactive); mistake tracker 6; no host iteration cap [^9][^14][^15] |
+| 10 | Security model | Project trust + extension hooks; no built-in approval UX [^24][^33] | Chat-file edits auto-apply; prompts only at boundaries; git auto-commit + `/undo`; no sandbox [^30] | Finest-grained: per-tool policies + webview UI + diff previews; commands always prompt; no sandbox; per-turn stash checkpoints [^3][^22][^40] |
 
 ## Columns
 
 - **pi (v1.0.2)** — [article](pi/article.md) · source: [earendil-works/pi](https://github.com/earendil-works/pi)
 - **aider (v0.86.2)** — [article](aider/article.md) · source: [Aider-AI/aider](https://github.com/Aider-AI/aider)
+- **Cline (v4.1.22)** — [article](cline/article.md) · source: [cline/cline](https://github.com/cline/cline)

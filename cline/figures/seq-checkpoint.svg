@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 628" width="1600" font-family="system-ui, -apple-system, sans-serif">
+<defs><marker id="arrc" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 1 L 9 5 L 0 9 z" fill="#58a6ff"/></marker><marker id="arrr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 1 L 9 5 L 0 9 z" fill="#6e7681"/></marker></defs>
+<text x="77.10843373493975" y="44" font-size="26" font-weight="700" fill="#e6edf3">Checkpoints: snapshot on beforeModel, transaction-guarded restore</text>
+<text x="77.10843373493975" y="74" font-size="15" fill="#8b949e">Per-turn worktree snapshots; the docs still describe the old shadow-repo system</text>
+<line x1="198" y1="110" x2="198" y2="571" stroke="#30363d" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="96" y="82" width="202" height="56" rx="10" fill="#161b22" stroke="#30363d" stroke-width="1.5"/>
+<text x="198" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#e6edf3">AgentRuntime</text>
+<line x1="439" y1="110" x2="439" y2="571" stroke="#30363d" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="337" y="82" width="202" height="56" rx="10" fill="#161b22" stroke="#30363d" stroke-width="1.5"/>
+<text x="439" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#e6edf3">Checkpoint hook</text>
+<line x1="680" y1="110" x2="680" y2="571" stroke="#30363d" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="578" y="82" width="202" height="56" rx="10" fill="#161b22" stroke="#30363d" stroke-width="1.5"/>
+<text x="680" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#e6edf3">Git (worktree)</text>
+<line x1="920" y1="110" x2="920" y2="571" stroke="#30363d" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="819" y="82" width="202" height="56" rx="10" fill="#161b22" stroke="#30363d" stroke-width="1.5"/>
+<text x="920" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#e6edf3">Private refs</text>
+<line x1="1161" y1="110" x2="1161" y2="571" stroke="#30363d" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="1060" y="82" width="202" height="56" rx="10" fill="#161b22" stroke="#30363d" stroke-width="1.5"/>
+<text x="1161" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#e6edf3">SdkController</text>
+<line x1="1402" y1="110" x2="1402" y2="571" stroke="#30363d" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="1301" y="82" width="202" height="56" rx="10" fill="#161b22" stroke="#30363d" stroke-width="1.5"/>
+<text x="1402" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#e6edf3">User</text>
+<line x1="198" y1="162" x2="429" y2="162" stroke="#58a6ff" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="240" cy="148" r="11" fill="#161b22" stroke="#58a6ff" stroke-width="1.5"/>
+<text x="240" y="153" text-anchor="middle" font-size="12" font-weight="700" fill="#e6edf3">1</text>
+<text x="258" y="153" font-size="14" fill="#e6edf3">beforeModel({snapshot}) -- iteration 1 only</text>
+<line x1="439" y1="214" x2="670" y2="214" stroke="#58a6ff" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="481" cy="200" r="11" fill="#161b22" stroke="#58a6ff" stroke-width="1.5"/>
+<text x="481" y="205" text-anchor="middle" font-size="12" font-weight="700" fill="#e6edf3">2</text>
+<text x="499" y="205" font-size="14" fill="#e6edf3">git stash create (+ 3rd-parent commit for untracked)</text>
+<line x1="680" y1="266" x2="910" y2="266" stroke="#6e7681" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrr)"/>
+<circle cx="722" cy="252" r="11" fill="#161b22" stroke="#6e7681" stroke-width="1.5"/>
+<text x="722" y="257" text-anchor="middle" font-size="12" font-weight="700" fill="#e6edf3">3</text>
+<text x="740" y="257" font-size="14" fill="#e6edf3">update-ref refs/cline/checkpoints/{session}/{run}</text>
+<rect x="96" y="295" width="925" height="44" rx="8" fill="#1f6feb22" stroke="#1f6feb" stroke-width="1"/>
+<text x="559" y="322" text-anchor="middle" font-size="14" fill="#e6edf3">User&#x27;s own repo -- no shadow repo; per-session GIT_INDEX_FILE leaves the user index alone</text>
+<line x1="1402" y1="380" x2="1171" y2="380" stroke="#58a6ff" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="1204" cy="366" r="11" fill="#161b22" stroke="#58a6ff" stroke-width="1.5"/>
+<text x="1204" y="371" text-anchor="middle" font-size="12" font-weight="700" fill="#e6edf3">4</text>
+<text x="1222" y="371" font-size="14" fill="#e6edf3">/undo</text>
+<rect x="1161" y="413" width="58" height="33" rx="6" fill="none" stroke="#58a6ff" stroke-width="2"/>
+<text x="1233" y="432" font-size="14" fill="#8b949e">refuse if HEAD moved past the checkpoint</text>
+<line x1="1161" y1="484" x2="690" y2="484" stroke="#58a6ff" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="842" cy="470" r="11" fill="#161b22" stroke="#58a6ff" stroke-width="1.5"/>
+<text x="842" y="475" text-anchor="middle" font-size="12" font-weight="700" fill="#e6edf3">6</text>
+<text x="860" y="475" font-size="14" fill="#e6edf3">update-ref HEAD + reset --hard + clean -fd + stash apply</text>
+<line x1="1161" y1="536" x2="930" y2="536" stroke="#58a6ff" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="963" cy="522" r="11" fill="#161b22" stroke="#58a6ff" stroke-width="1.5"/>
+<text x="963" y="527" text-anchor="middle" font-size="12" font-weight="700" fill="#e6edf3">7</text>
+<text x="981" y="527" font-size="14" fill="#e6edf3">pre-restore tx snapshot -&gt; refs/cline/restore-transactions/{uuid}</text>
+</svg>

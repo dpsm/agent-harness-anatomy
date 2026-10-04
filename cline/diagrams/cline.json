@@ -1,0 +1,531 @@
+{
+ "title": "Cline \u2014 one turn through the harness",
+ "repo": "https://github.com/cline/cline",
+ "sha": "f58bc118bdeef1bd2813cd08e00d98bdcda96475",
+ "nodes": [
+  {
+   "id": "input",
+   "label": "Webview input",
+   "sub": "useMessageHandlers.ts:282",
+   "x": 190,
+   "y": 20,
+   "w": 220,
+   "h": 96,
+   "grade": "verified",
+   "links": [
+    {
+     "label": "useMessageHandlers.ts:280-284",
+     "url": "https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/apps/vscode/webview-ui/src/components/chat/chat-view/hooks/useMessageHandlers.ts#L280-L284"
+    },
+    {
+     "label": "grpc-client-base.ts:47-49",
+     "url": "https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/apps/vscode/webview-ui/src/services/grpc-client-base.ts#L47-L49"
+    }
+   ],
+   "excerpt": "\t\t\t\t\ttry {\n\t\t\t\t\t\tawait TaskServiceClient.newTask(request)\n\t\t\t\t\t} catch (error) {",
+   "step": 1
+  },
+  {
+   "id": "dispatch",
+   "label": "Host dispatch",
+   "sub": "grpc-handler.ts:52",
+   "x": 190,
+   "y": 150,
+   "w": 220,
+   "h": 96,
+   "grade": "verified",
+   "links": [
+    {
+     "label": "grpc-handler.ts:52-56",
+     "url": "https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/apps/vscode/src/core/controller/grpc-handler.ts#L52-L56"
+    },
+    {
+     "label": "SdkController.ts:1498",
+     "url": "https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/apps/vscode/src/sdk/SdkController.ts#L1498"
+    }
+   ],
+   "excerpt": "\tasync handleTaskCreation(prompt: string): Promise<void> {\n\t\tawait this.initTask(prompt)\n\t}",
+   "step": 2
+  },
+  {
+   "id": "session",
+   "label": "Session build",
+   "sub": "vscode-session-host.ts:197",
+   "x": 190,
+   "y": 280,
+   "w": 220,
+   "h": 96,
+   "grade": "verified",
+   "links": [
+    {
+     "label": "vscode-session-host.ts:196-200",
+     "url": "https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/apps/vscode/src/sdk/vscode-session-host.ts#L196-L200"
+    },
+    {
+     "label": "vscode-session-host.ts:118-126",
+     "url": "https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/apps/vscode/src/sdk/vscode-session-host.ts#L118-L126"
+    }
+   ],
+   "excerpt": "\t\tLogger.log(\"[VscodeSessionHost] Initialized with ClineCore + VSCode extra tools\")",
+   "step": 3
+  },
+  {
+   "id": "prompt",
+   "label": "Prompt assembly",
+   "sub": "prompt/cline.ts:152",
+   "x": 190,
+   "y": 410,
+   "w": 220,
+   "h": 96,
+   "grade": "verified",
+   "links": [
+    {
+     "label": "cline.ts:152-157",
+     "url": "https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/shared/src/prompt/cline.ts#L152-L157"
+    },
+    {
+     "label": "message-builder.ts:108",
+     "url": "https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/core/src/session/services/message-builder.ts#L108"
+    }
+   ],
+   "excerpt": "export function buildClineSystemPrompt(\n\toptions: ClineSystemPromptOptions,\n): string {",
+   "step": 4
+  },
+  {
+   "id": "checkpoint",
+   "label": "Checkpoint",
+   "sub": "checkpoint-hooks.ts:658",
+   "x": 190,
+   "y": 540,
+   "w": 220,
+   "h": 96,
+   "grade": "verified",
+   "links": [
+    {
+     "label": "checkpoint-hooks.ts:658-664",
+     "url": "https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/core/src/hooks/checkpoint-hooks.ts#L658-L664"
+    },
+    {
+     "label": "checkpoint-hooks.ts:630-632",
+     "url": "https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/core/src/hooks/checkpoint-hooks.ts#L630-L632"
+    }
+   ],
+   "excerpt": "\t\tbeforeModel: async ({ snapshot }) => {\n\t\t\tif (snapshot.parentAgentId != null || snapshot.iteration !== 1) {\n\t\t\t\treturn undefined;\n\t\t\t}",
+   "step": 5
+  },
+  {
+   "id": "model",
+   "label": "Model call",
+   "sub": "providers/gateway.ts:273",
+   "x": 190,
+   "y": 670,
+   "w": 220,
+   "h": 96,
+   "grade": "verified",
+   "links": [
+    {
+     "label": "gateway.ts:271-276",
+     "url": "https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/llms/src/providers/gateway.ts#L271-L276"
+    },
+    {
+     "label": "registry.ts:251",
+     "url": "https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/llms/src/registry.ts#L251"
+    }
+   ],
+   "excerpt": "export class DefaultGateway implements Gateway {\n\tprivate readonly registry: GatewayRegistry;",
+   "step": 6
+  },
+  {
+   "id": "tools",
+   "label": "Tool dispatch",
+   "sub": "agent-runtime.ts:2347",
+   "x": 190,
+   "y": 800,
+   "w": 220,
+   "h": 96,
+   "grade": "verified",
+   "links": [
+    {
+     "label": "agent-runtime.ts:2347-2352",
+     "url": "https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/agents/src/agent-runtime.ts#L2347-L2352"
+    },
+    {
+     "label": "agent-runtime.ts:2445",
+     "url": "https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/agents/src/agent-runtime.ts#L2445"
+    }
+   ],
+   "excerpt": "\tprivate async prepareToolExecution(\n\t\ttoolCall: AgentToolCallPart,\n\t): Promise<PreparedToolExecution> {\n\t\tconst tool = this.tools.get(toolCall.toolName);",
+   "step": 7
+  },
+  {
+   "id": "feedback",
+   "label": "Feedback & loop",
+   "sub": "agent-runtime.ts:2284",
+   "x": 190,
+   "y": 930,
+   "w": 220,
+   "h": 96,
+   "grade": "verified",
+   "links": [
+    {
+     "label": "agent-runtime.ts:2284-2290",
+     "url": "https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/agents/src/agent-runtime.ts#L2284-L2290"
+    },
+    {
+     "label": "agent-runtime.ts:2304-2317",
+     "url": "https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/agents/src/agent-runtime.ts#L2304-L2317"
+    }
+   ],
+   "excerpt": "\tprivate async executeToolCalls(\n\t\ttoolCalls: AgentToolCallPart[],\n\t): Promise<AgentMessage[]> {",
+   "step": 8
+  },
+  {
+   "id": "terminate",
+   "label": "Termination & render",
+   "sub": "agent-runtime.ts:950",
+   "x": 190,
+   "y": 1060,
+   "w": 220,
+   "h": 96,
+   "grade": "verified",
+   "links": [
+    {
+     "label": "agent-runtime.ts:950",
+     "url": "https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/agents/src/agent-runtime.ts#L950"
+    },
+    {
+     "label": "webview-grpc-bridge.ts:55-60",
+     "url": "https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/apps/vscode/src/sdk/webview-grpc-bridge.ts#L55-L60"
+    }
+   ],
+   "excerpt": "\t\t\t\t\tconst result = this.finishRun(\"completed\", finalAssistantMessage);",
+   "step": 9
+  },
+  {
+   "id": "execute",
+   "label": "AgentRuntime.execute()",
+   "sub": "agent-runtime.ts:830",
+   "x": -140,
+   "y": 20,
+   "w": 220,
+   "h": 96,
+   "grade": "verified",
+   "links": [
+    {
+     "label": "agent-runtime.ts:830-833",
+     "url": "https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/agents/src/agent-runtime.ts#L830-L833"
+    },
+    {
+     "label": "agent-runtime.ts:783-830",
+     "url": "https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/agents/src/agent-runtime.ts#L783-L830"
+    }
+   ],
+   "excerpt": "\t\t\twhile (\n\t\t\t\tthis.config.maxIterations === undefined ||\n\t\t\t\tthis.state.iteration < this.config.maxIterations\n\t\t\t) {"
+  },
+  {
+   "id": "turnloop",
+   "label": "Turn loop",
+   "sub": "agent-runtime.ts:1172",
+   "x": -140,
+   "y": 150,
+   "w": 220,
+   "h": 96,
+   "grade": "verified",
+   "links": [
+    {
+     "label": "agent-runtime.ts:1172-1177",
+     "url": "https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/agents/src/agent-runtime.ts#L1172-L1177"
+    },
+    {
+     "label": "agent-runtime.ts:76-86",
+     "url": "https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/agents/src/agent-runtime.ts#L76-L86"
+    }
+   ],
+   "excerpt": "\tprivate async generateAssistantMessageWithProviderRetry(): Promise<{"
+  },
+  {
+   "id": "toolexec",
+   "label": "Tool execution",
+   "sub": "agent-runtime.ts:2304",
+   "x": -140,
+   "y": 410,
+   "w": 220,
+   "h": 96,
+   "grade": "verified",
+   "links": [
+    {
+     "label": "agent-runtime.ts:2304-2317",
+     "url": "https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/agents/src/agent-runtime.ts#L2304-L2317"
+    }
+   ],
+   "excerpt": "\t\t\t// Only adjacent parallel calls overlap. An ordinary sequential tool\n\t\t\t// must wait for the group before it, and finish before the next group."
+  },
+  {
+   "id": "tripwires",
+   "label": "Safety tripwires",
+   "sub": "safety/loop-detection.ts:114",
+   "x": -140,
+   "y": 280,
+   "w": 220,
+   "h": 96,
+   "grade": "verified",
+   "links": [
+    {
+     "label": "loop-detection.ts:114-117",
+     "url": "https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/core/src/runtime/safety/loop-detection.ts#L114-L117"
+    },
+    {
+     "label": "session-runtime-orchestrator.ts:449",
+     "url": "https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/core/src/runtime/safety/session-runtime-orchestrator.ts#L449"
+    }
+   ],
+   "excerpt": "const DEFAULT_CONFIG: LoopDetectionConfig = {\n\tsoftThreshold: 3,\n\thardThreshold: 5,\n};"
+  },
+  {
+   "id": "bridge",
+   "label": "Proto-bus bridge",
+   "sub": "webview-grpc-bridge.ts:55",
+   "x": 520,
+   "y": 20,
+   "w": 220,
+   "h": 96,
+   "grade": "verified",
+   "links": [
+    {
+     "label": "webview-grpc-bridge.ts:55-60",
+     "url": "https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/apps/vscode/src/sdk/webview-grpc-bridge.ts#L55-L60"
+    }
+   ],
+   "excerpt": "\tcreateListener(): SessionEventListener {\n\t\treturn (messages: ClineMessage[], event: CoreSessionEvent) => {\n\t\t\tthis.handleSessionEvent(messages, event)"
+  },
+  {
+   "id": "approval",
+   "label": "3-layer approval",
+   "sub": "sdk-tool-policies.ts:13",
+   "x": 520,
+   "y": 670,
+   "w": 220,
+   "h": 96,
+   "grade": "verified",
+   "links": [
+    {
+     "label": "sdk-tool-policies.ts:13-16",
+     "url": "https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/apps/vscode/src/sdk/sdk-tool-policies.ts#L13-L16"
+    },
+    {
+     "label": "sdk-interaction-coordinator.ts:94-137",
+     "url": "https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/apps/vscode/src/sdk/sdk-interaction-coordinator.ts#L94-L137"
+    }
+   ],
+   "excerpt": "\tset([\"read_files\", \"read_file\", \"list_files\", \"list_code_definition_names\", \"search_codebase\", \"search_files\"])"
+  },
+  {
+   "id": "providers",
+   "label": "228 providers, 1 adapter",
+   "sub": "providers/ai-sdk.ts:2127",
+   "x": 520,
+   "y": 540,
+   "w": 220,
+   "h": 96,
+   "grade": "verified",
+   "links": [
+    {
+     "label": "ai-sdk.ts:2127-2133",
+     "url": "https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/llms/src/providers/ai-sdk.ts#L2127-L2133"
+    },
+    {
+     "label": "builtins.ts:356",
+     "url": "https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/llms/src/providers/builtins.ts#L356"
+    }
+   ],
+   "excerpt": "function createAiSdkProvider(\n\tdefaultKind: ProviderModuleKind,\n): GatewayProviderFactory {"
+  },
+  {
+   "id": "mcp",
+   "label": "MCP natives",
+   "sub": "McpHub.ts:76",
+   "x": 520,
+   "y": 280,
+   "w": 220,
+   "h": 96,
+   "grade": "verified",
+   "links": [
+    {
+     "label": "McpHub.ts:76-81",
+     "url": "https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/apps/vscode/src/services/mcp/McpHub.ts#L76-L81"
+    },
+    {
+     "label": "tools.ts:16",
+     "url": "https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/core/src/extensions/mcp/tools.ts#L16"
+    }
+   ],
+   "excerpt": "export class McpHub {\n\tgetMcpServersPath: () => Promise<string>"
+  },
+  {
+   "id": "modes",
+   "label": "plan/act modes",
+   "sub": "tools/presets.ts:47",
+   "x": 520,
+   "y": 150,
+   "w": 220,
+   "h": 96,
+   "grade": "verified",
+   "links": [
+    {
+     "label": "presets.ts:47-53",
+     "url": "https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/core/src/extensions/tools/presets.ts#L47-L53"
+    },
+    {
+     "label": "types.ts:14",
+     "url": "https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/shared/src/storage/types.ts#L14"
+    }
+   ],
+   "excerpt": "\t\tenableApplyPatch: false,\n\t\tenableEditor: false,"
+  },
+  {
+   "id": "subagents",
+   "label": "Sub-agents & teams",
+   "sub": "spawn-agent-tool.ts:117",
+   "x": 520,
+   "y": 800,
+   "w": 220,
+   "h": 96,
+   "grade": "verified",
+   "links": [
+    {
+     "label": "spawn-agent-tool.ts:117-126",
+     "url": "https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/core/src/extensions/tools/team/spawn-agent-tool.ts#L117-L126"
+    }
+   ],
+   "excerpt": "\t\tname: \"spawn_agent\",\n\t\texecutionMode: \"parallel\","
+  },
+  {
+   "id": "plugins",
+   "label": "Plugins & hooks",
+   "sub": "shared/src/agent.ts:467",
+   "x": 520,
+   "y": 410,
+   "w": 220,
+   "h": 96,
+   "grade": "verified",
+   "links": [
+    {
+     "label": "agent.ts:467-476",
+     "url": "https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/shared/src/agent.ts#L467-L476"
+    },
+    {
+     "label": "agent.ts:493-499",
+     "url": "https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/shared/src/agent.ts#L493-L499"
+    }
+   ],
+   "excerpt": "export interface AgentRuntimeHooks {\n\tbeforeRun?: ("
+  }
+ ],
+ "edges": [
+  {
+   "from": "input",
+   "to": "bridge",
+   "label": "post"
+  },
+  {
+   "from": "bridge",
+   "to": "dispatch",
+   "label": "rpc"
+  },
+  {
+   "from": "dispatch",
+   "to": "session",
+   "label": "initTask"
+  },
+  {
+   "from": "session",
+   "to": "prompt",
+   "label": "sys prompt"
+  },
+  {
+   "from": "prompt",
+   "to": "checkpoint",
+   "label": "beforeModel"
+  },
+  {
+   "from": "checkpoint",
+   "to": "model",
+   "label": "iter 1 only"
+  },
+  {
+   "from": "model",
+   "to": "tools",
+   "label": "tool calls"
+  },
+  {
+   "from": "tools",
+   "to": "feedback",
+   "label": "results"
+  },
+  {
+   "from": "feedback",
+   "to": "turnloop",
+   "label": "next"
+  },
+  {
+   "from": "feedback",
+   "to": "terminate",
+   "label": "done"
+  },
+  {
+   "from": "execute",
+   "to": "session",
+   "label": "build"
+  },
+  {
+   "from": "turnloop",
+   "to": "model",
+   "label": "retry"
+  },
+  {
+   "from": "toolexec",
+   "to": "tools",
+   "label": "group"
+  },
+  {
+   "from": "tripwires",
+   "to": "toolexec",
+   "label": "5x"
+  },
+  {
+   "from": "approval",
+   "to": "tools",
+   "label": "gate"
+  },
+  {
+   "from": "providers",
+   "to": "model",
+   "label": "stream"
+  },
+  {
+   "from": "mcp",
+   "to": "session",
+   "label": "native"
+  },
+  {
+   "from": "modes",
+   "to": "session",
+   "label": "preset"
+  },
+  {
+   "from": "plugins",
+   "to": "checkpoint",
+   "label": "hooks"
+  },
+  {
+   "from": "subagents",
+   "to": "tools",
+   "label": "spawn"
+  },
+  {
+   "from": "terminate",
+   "to": "bridge",
+   "label": "msgs"
+  }
+ ]
+}

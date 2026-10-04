@@ -12,6 +12,7 @@ Companion repo to the Substack series.
 |---|---|---|---|
 | 1 | pi (v1.0.2) | [pi/article.md](pi/article.md) | forthcoming |
 | 2 | aider (v0.86.2) | [aider/article.md](aider/article.md) | forthcoming |
+| 3 | Cline (v4.1.22) | [cline/article.md](cline/article.md) | forthcoming |
 
 ## What's here
 
