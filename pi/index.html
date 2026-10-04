@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Agent Harness Anatomy #1: pi — the minimalist terminal harness</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body {
+    background: #0d1117; color: #e6edf3;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    line-height: 1.7; padding: 48px 24px; margin: 0;
+  }
+  main { max-width: 760px; margin: 0 auto; }
+  a { color: #58a6ff; }
+  h1 { font-size: 1.9rem; letter-spacing: -0.02em; line-height: 1.25; margin-bottom: 16px; }
+  h2 { font-size: 1.4rem; margin: 40px 0 12px; padding-top: 8px; border-top: 1px solid #21262d; }
+  h3 { font-size: 1.1rem; margin: 28px 0 8px; }
+  p, li { margin-bottom: 12px; }
+  blockquote {
+    border-left: 3px solid #3fb950; padding: 4px 16px; margin: 20px 0;
+    color: #8b949e; background: #161b22; border-radius: 0 8px 8px 0;
+  }
+  blockquote p { margin-bottom: 6px; }
+  code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.88em; background: #161b22; padding: 2px 6px; border-radius: 6px;
+  }
+  pre { background: #161b22; border: 1px solid #30363d; border-radius: 8px;
+        padding: 16px; overflow-x: auto; }
+  pre code { background: none; padding: 0; }
+  img { max-width: 100%; height: auto; border: 1px solid #30363d;
+        border-radius: 12px; margin: 20px 0; background: #161b22; }
+  table { border-collapse: collapse; width: 100%; margin: 20px 0; font-size: 0.92rem;
+          display: block; overflow-x: auto; }
+  th, td { border: 1px solid #30363d; padding: 10px 12px; text-align: left;
+           vertical-align: top; }
+  th { background: #161b22; }
+  ul, ol { padding-left: 24px; }
+  hr { border: none; border-top: 1px solid #21262d; margin: 32px 0; }
+  .footnote { font-size: 0.88rem; color: #8b949e; }
+  .footnote hr { margin: 40px 0 16px; }
+  sup a { text-decoration: none; }
+  .topnav { max-width: 760px; margin: 0 auto 32px; font-size: 0.9rem; }
+  .topnav a { color: #8b949e; text-decoration: none; }
+  .topnav a:hover { color: #e6edf3; }
+  .diagram-cta {
+    display: block; text-align: center; margin: 28px 0; padding: 16px;
+    background: #161b22; border: 1px solid #30363d; border-radius: 12px;
+    color: #e6edf3; text-decoration: none; font-weight: 600;
+  }
+  .diagram-cta:hover { border-color: #3fb950; }
+  .diagram-cta span { display: block; font-weight: 400; font-size: 0.88rem;
+                      color: #8b949e; margin-top: 4px; }
+</style>
+</head>
+<body>
+<main>
+  <nav class="topnav"><a href="../">&larr; Agent Harness Anatomy</a></nav>
+<h1 id="agent-harness-anatomy-1-pi-the-minimalist-terminal-harness">Agent Harness Anatomy #1: pi — the minimalist terminal harness</h1>
+<blockquote>
+<p><strong>Series:</strong> Agent Harness Anatomy — top-down dissections of real agent
+harnesses, grounded in verifiable source code. Every behavioral claim
+below carries a footnote to a pinned GitHub permalink; the full evidence
+lives in the endnotes. </p>
+</blockquote>
+<h2 id="version-block">Version block</h2>
+<ul>
+<li><strong>Repo:</strong> <a href="https://github.com/earendil-works/pi">earendil-works/pi</a></li>
+<li><strong>Pinned:</strong> tag <code>v1.0.2</code> → <code>cd32f7725fdbddbaecdff5b1e68491563394e0ca</code> (2026-10-04)</li>
+<li><strong>Language:</strong> TypeScript (Bun/Node)</li>
+<li><strong>Claim under test:</strong> "a hardened, minimal, extensible agent harness"</li>
+</ul>
+<p><img alt="pi architecture" src="figures/pi.svg" /></p>
+<h2 id="the-mental-model">The mental model</h2>
+<p>pi is two things with a clean seam between them: a <strong>model-agnostic agent
+loop library</strong> (<code>@earendil-works/pi-agent-core</code>) that knows nothing about
+terminals, and a <strong>terminal coding application</strong> that configures one <code>Agent</code>
+instance per session and renders its event stream.<sup id="fnref:1"><a class="footnote-ref" href="#fn:1">1</a></sup> The loop doesn't know
+what a tool <em>does</em> — it only knows the protocol: look up, validate,
+<code>beforeToolCall</code>, execute, <code>afterToolCall</code>, append the result.<sup id="fnref:2"><a class="footnote-ref" href="#fn:2">2</a></sup> Everything
+pi-specific (system prompt sections, the 4 default tools, the TUI) lives
+above that seam.<sup id="fnref:3"><a class="footnote-ref" href="#fn:3">3</a></sup></p>
+<p>The governing tradeoff: pi keeps the core tiny and pushes <em>policy</em> to the
+edges. Anything opinionated — approvals, planning, memory, iteration caps —
+is an extension's job or doesn't exist at all. You get a small, stable core
+with a large extension surface; you pay by assembling your own policy layer.
+If you're building a harness, that's pi's thesis in one sentence: mechanism
+in the core, policy in extensions.</p>
+<h2 id="package-map">Package map</h2>
+<p>The repo is a monorepo. For this article only three packages matter:<sup id="fnref:4"><a class="footnote-ref" href="#fn:4">4</a></sup></p>
+<table>
+<thead>
+<tr>
+<th>Package</th>
+<th>Role</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>packages/agent</code></td>
+<td>The loop: <code>Agent</code> class + <code>runAgentLoop</code>/<code>runAgentLoopContinue</code> + event types</td>
+</tr>
+<tr>
+<td><code>packages/ai</code></td>
+<td>Model providers (~35) behind one <code>StreamFn</code> signature</td>
+</tr>
+<tr>
+<td><code>packages/coding-agent</code></td>
+<td>The app: <code>AgentSession</code>, system prompt, tools, TUI/RPC/print modes</td>
+</tr>
+</tbody>
+</table>
+<p>Everything else (<code>mcp</code>, <code>server</code>, <code>tui</code>, <code>durable</code>, <code>evals</code>, …) is out of
+scope for the core trace.</p>
+<h2 id="the-core-loop">The core loop</h2>
+<p><code>runAgentLoop()</code> and <code>runAgentLoopContinue()</code> both delegate to a shared
+<code>runLoop()</code>.<sup id="fnref:5"><a class="footnote-ref" href="#fn:5">5</a></sup> Two nested loops:</p>
+<ul>
+<li><strong>Inner loop</strong> — runs while tool calls or steering messages remain. Each
+  iteration: append pending messages → <code>prepareRequest</code> (may swap
+  context/model/reasoning) → <code>transformContext</code> (extension hooks) →
+  <code>convertToLlm</code> → provider streaming call → parse response → execute tool
+  calls → append results.<sup id="fnref:6"><a class="footnote-ref" href="#fn:6">6</a></sup></li>
+<li><strong>Outer loop</strong> — after the agent would otherwise stop, drains follow-up
+  messages.<sup id="fnref2:6"><a class="footnote-ref" href="#fn:6">6</a></sup></li>
+</ul>
+<p>The loop is <strong>event-sourced</strong>: every state change emits a typed <code>AgentEvent</code>
+(<code>agent_start/end</code>, <code>turn_start/end</code>, <code>message_start/update/end</code>,
+<code>tool_execution_start/update/end</code>).<sup id="fnref:7"><a class="footnote-ref" href="#fn:7">7</a></sup> The <code>Agent</code> class reduces these into
+its state and forwards them to subscribers.<sup id="fnref:8"><a class="footnote-ref" href="#fn:8">8</a></sup> The TUI, the RPC server, and
+print mode are all just subscribers — there is no privileged renderer.<sup id="fnref:9"><a class="footnote-ref" href="#fn:9">9</a></sup></p>
+<p><strong>The most interesting negative finding:</strong> there is no max-iteration,
+max-step, or max-turn limit anywhere in the loop or the session layer.<sup id="fnref:10"><a class="footnote-ref" href="#fn:10">10</a></sup>
+A runaway loop is stopped by the model ceasing to emit tool calls, a
+tool-result setting <code>terminate: true</code>, a <code>finishTurn</code> hook, or the user
+hitting Ctrl+C (<code>AbortController</code>).<sup id="fnref:11"><a class="footnote-ref" href="#fn:11">11</a></sup> pi trusts the model's stop behavior
+the way a REPL trusts EOF.</p>
+<p>That's a deliberate trust model, not an oversight — and it's the kind of
+decision to steal or reject consciously. Anyone who wants a cap can add one
+in a <code>finishTurn</code> hook without forking the loop, so the core never has to
+know what "too many iterations" means for your deployment.<sup id="fnref2:11"><a class="footnote-ref" href="#fn:11">11</a></sup> The price is
+real: a misbehaving model burns tokens until the user aborts. pi's bet is
+that a policy-free core stays small and stable while the ecosystem sorts out
+policy — the same bet as the approval story below.</p>
+<h2 id="one-turn-end-to-end">One turn, end to end</h2>
+<p>Trace: the user types <code>help me refactor foo.ts</code> in interactive mode.</p>
+<p><strong>① Input.</strong> <code>AgentSession.prompt()</code> validates the model and auth
+(OAuth/API key), expands skill commands and prompt templates, and lets
+extensions intercept via <code>input</code> handlers.<sup id="fnref:12"><a class="footnote-ref" href="#fn:12">12</a></sup> If the agent is already
+streaming, the message is queued through <code>steer()</code> (interrupt) or
+<code>followUp()</code> (wait) instead of starting a new run.<sup id="fnref:13"><a class="footnote-ref" href="#fn:13">13</a></sup></p>
+<p><strong>② Prompt assembly.</strong> Before every agent start, extensions may edit the
+system-prompt options.<sup id="fnref:14"><a class="footnote-ref" href="#fn:14">14</a></sup> <code>_preparePromptAndToolLoadout</code> then diffs the
+<em>structured</em> system prompt — sections named <code>preamble</code>, <code>tools</code>, <code>rules</code>,
+<code>docs</code>, <code>skills</code>, <code>cwd</code>, plus project context — against the transcript's
+current sections, and emits only the changed ones (a <code>null</code> removes a
+section).<sup id="fnref:15"><a class="footnote-ref" href="#fn:15">15</a></sup><sup id="fnref:16"><a class="footnote-ref" href="#fn:16">16</a></sup> Non-preamble sections are wrapped in XML tags of the
+same name so the model can match later updates to them.<sup id="fnref2:16"><a class="footnote-ref" href="#fn:16">16</a></sup> Tool
+declarations ride along as <code>toolsAdded</code>/<code>toolsRemoved</code> deltas on the system
+message, keeping the provider-visible tool list reconciled with the runtime
+registry.<sup id="fnref:17"><a class="footnote-ref" href="#fn:17">17</a></sup></p>
+<p>The tradeoff here is token economics versus protocol complexity. Resending
+only changed sections keeps long sessions cheap — the model never re-reads
+a prompt it already has — but it means the system message is a small
+versioned protocol (sections, <code>null</code> removals, tool deltas) that every
+provider adapter must replay faithfully.<sup id="fnref2:15"><a class="footnote-ref" href="#fn:15">15</a></sup><sup id="fnref3:16"><a class="footnote-ref" href="#fn:16">16</a></sup> Most harnesses resend the
+whole prompt and eat the tokens; pi chose the complex, cheap path.</p>
+<p><strong>③ Model call.</strong> <code>Agent.prompt()</code> → <code>runAgentLoop()</code> → the app's <code>streamFn</code>,
+which delegates to <code>modelRuntime.streamSimple()</code> — token streaming from
+whichever of ~35 providers is selected.<sup id="fnref:18"><a class="footnote-ref" href="#fn:18">18</a></sup> Per-request hooks (<code>onPayload</code>,
+<code>onResponse</code>) feed extension observers and a prompt-cache warmer.<sup id="fnref:19"><a class="footnote-ref" href="#fn:19">19</a></sup></p>
+<p><strong>④ Response parsing.</strong> Streaming events assemble the partial assistant
+message in context. Tool calls are extracted from assistant content blocks.<sup id="fnref:20"><a class="footnote-ref" href="#fn:20">20</a></sup>
+Edge case worth noting: if the model stops because of output length, tool
+calls are <strong>not</strong> executed — each receives an error result, because the
+arguments may have been truncated.<sup id="fnref:21"><a class="footnote-ref" href="#fn:21">21</a></sup></p>
+<p><strong>⑤ Tool dispatch.</strong> Sequential or parallel.<sup id="fnref:22"><a class="footnote-ref" href="#fn:22">22</a></sup> Per call: tool lookup →
+argument preparation → schema validation (TypeBox) → <code>beforeToolCall</code> →
+execute → <code>afterToolCall</code>.<sup id="fnref2:22"><a class="footnote-ref" href="#fn:22">22</a></sup> <code>beforeToolCall</code> can block the call and mark
+the turn for termination.<sup id="fnref:23"><a class="footnote-ref" href="#fn:23">23</a></sup> In the coding app this hook is wired to
+extension <code>tool_call</code> handlers — there is no built-in per-command approval
+prompt.<sup id="fnref:24"><a class="footnote-ref" href="#fn:24">24</a></sup></p>
+<p>Same mechanism/policy split as the iteration cap. The core never blocks on
+a human, so scripted and headless runs can never hang on a prompt — but
+every deployment that wants gating must build it as an extension. If your
+threat model needs approvals, pi gives you the hook, not the feature; budget
+accordingly.</p>
+<p><strong>⑥ Feedback.</strong> Each result becomes a <code>toolResult</code> message appended to the
+transcript; the inner loop issues the next provider request.<sup id="fnref:25"><a class="footnote-ref" href="#fn:25">25</a></sup></p>
+<p><strong>⑦ Termination.</strong> The turn ends when no tool calls, steering, or follow-ups
+remain, <code>finishTurn</code> says stop, every result in a batch set <code>terminate</code>, or
+an error/abort occurs.<sup id="fnref3:11"><a class="footnote-ref" href="#fn:11">11</a></sup> Post-loop, the session runs auto-retry for
+retryable errors, a compaction check, and the <code>agent_before_settle</code>
+extension boundary before finally settling.<sup id="fnref:26"><a class="footnote-ref" href="#fn:26">26</a></sup></p>
+<p><strong>⑧ Rendering.</strong> The interactive TUI subscribes to the session's event
+stream and renders tokens, tool executions, and results purely from events.
+Same stream feeds RPC and print/JSON modes.<sup id="fnref2:9"><a class="footnote-ref" href="#fn:9">9</a></sup></p>
+<p>The tradeoff of event-sourcing the UI: any interface can render the same
+run without the loop knowing it exists — but the event schema becomes the
+de-facto API contract. Adding a new event type is a versioning decision,
+not an implementation detail.</p>
+<h2 id="subsystem-inventory">Subsystem inventory</h2>
+<ul>
+<li><strong>Tools.</strong> 4 built-ins: <code>read</code>, <code>bash</code>, <code>edit</code>, <code>write</code>.<sup id="fnref:27"><a class="footnote-ref" href="#fn:27">27</a></sup> Schema-validated,
+  with per-tool system-prompt contributions (a one-line snippet + guideline
+  bullets that flow into the prompt's <code>tools</code> and <code>rules</code> sections).<sup id="fnref2:27"><a class="footnote-ref" href="#fn:27">27</a></sup>
+  Extensions register more through the same registry; tools can invoke
+  other tools via <code>ctx.executeTool()</code> (nested tool calls re-enter the
+  pipeline with the session's hooks).<sup id="fnref:28"><a class="footnote-ref" href="#fn:28">28</a></sup></li>
+<li><strong>Providers.</strong> ~35 files under <code>packages/ai/src/providers/</code> (Anthropic,
+  OpenAI, Google, Bedrock, OpenRouter, xAI, …). The loop sees exactly one
+  function signature; API keys resolve per request (supports expiring
+  credentials); thinking levels/budgets are forwarded opaquely.<sup id="fnref:29"><a class="footnote-ref" href="#fn:29">29</a></sup></li>
+<li><strong>Sessions.</strong> JSONL files under <code>~/.pi/agent/sessions/</code>. Compaction lives
+  in <code>core/compaction/</code> with branch summarization; a compaction check runs
+  before and after each prompt.<sup id="fnref:30"><a class="footnote-ref" href="#fn:30">30</a></sup></li>
+<li><strong>Extensibility.</strong> TypeScript extensions with hooks at every seam (see
+  <a href="#extension-points">Extension points</a> below).<sup id="fnref2:31"><a class="footnote-ref" href="#fn:31">31</a></sup></li>
+</ul>
+<h2 id="extension-points">Extension points</h2>
+<p>pi's minimalism is load-bearing: the core stays small because nearly
+everything plugs in somewhere.</p>
+<ul>
+<li><strong>Extensions</strong> (stable API). TypeScript modules with hooks at every seam
+  of the loop and session — <code>input</code>, <code>before_agent_start</code>, <code>tool_call</code>,
+  <code>tool_result</code>, <code>context</code>, <code>agent_before_settle</code> — plus slash commands,
+  themes, and prompt templates.<sup id="fnref3:31"><a class="footnote-ref" href="#fn:31">31</a></sup> They run in-process and can veto tool
+  calls through <code>beforeToolCall</code>.<sup id="fnref3:24"><a class="footnote-ref" href="#fn:24">24</a></sup></li>
+<li><strong>Custom tools.</strong> Extensions and the SDK register tools through the same
+  registry as the four built-ins; a tool can call other tools via
+  <code>ctx.executeTool()</code>, re-entering the pipeline with the session's
+  hooks.<sup id="fnref2:28"><a class="footnote-ref" href="#fn:28">28</a></sup></li>
+<li><strong>Skills.</strong> Markdown files with frontmatter (<code>name</code>, <code>description</code>),
+  loaded from the project directory, the global agent dir, or explicit
+  paths — deduplicated by canonical path — and rendered into the system
+  prompt's <code>skills</code> section.<sup id="fnref2:34"><a class="footnote-ref" href="#fn:34">34</a></sup> Invoked as <code>/skill:name</code>, expanded before
+  the prompt reaches the loop.<sup id="fnref3:12"><a class="footnote-ref" href="#fn:12">12</a></sup></li>
+<li><strong>MCP servers.</strong> Each server tool is wrapped as a pi <code>ToolDefinition</code>
+  (namespaced <code>server/tool</code>, parameters converted from its input schema)
+  and enters the same registry and pipeline as built-ins.<sup id="fnref2:40"><a class="footnote-ref" href="#fn:40">40</a></sup> The MCP
+  client itself speaks stdio, streamable HTTP, or in-memory
+  transports.<sup id="fnref2:41"><a class="footnote-ref" href="#fn:41">41</a></sup></li>
+<li><strong>Plugins</strong> (experimental). Facet-bundled packages — <code>session</code> and <code>tui</code>
+  facets — built with the chord bundler and attached per durable server via
+  plugin package profiles.<sup id="fnref2:35"><a class="footnote-ref" href="#fn:35">35</a></sup></li>
+<li><strong>Provider transports.</strong> The <code>StreamFn</code> abstraction streams from model APIs
+  over SSE, WebSocket, or cached WebSocket
+  (<code>Transport = "sse" | "websocket" | "websocket-cached" | "auto"</code>).<sup id="fnref2:36"><a class="footnote-ref" href="#fn:36">36</a></sup></li>
+<li><strong>Remote session protocol.</strong> <code>@earendil-works/pi-protocol</code>: a
+  transport-neutral CBOR RPC protocol (version 8) with request/cancel
+  envelopes addressed to server/session/attachment targets.<sup id="fnref2:37"><a class="footnote-ref" href="#fn:37">37</a></sup> The
+  experimental server carries it over Unix domain sockets;<sup id="fnref2:38"><a class="footnote-ref" href="#fn:38">38</a></sup> a radius
+  relay extends it over WebSocket beyond the local machine.<sup id="fnref2:39"><a class="footnote-ref" href="#fn:39">39</a></sup></li>
+</ul>
+<h2 id="extension-points-in-depth">Extension points in depth</h2>
+<p>Each axis below is a complete starting kit: what the harness does, the
+exact interaction sequence, and the first file to open when you implement.
+Diagrams use the same numbering as the prose steps.</p>
+<h3 id="1-lifecycle-hooks">1. Lifecycle hooks</h3>
+<p>Every prompt passes through the same hook pipeline, in a fixed order:
+<code>input</code> handlers can rewrite or swallow the text before anything else
+happens; <code>before_agent_start</code> can edit the system-prompt options and tool
+selection; then the loop runs, consulting <code>tool_call</code>/<code>tool_result</code> hooks
+around every tool execution; finally <code>agent_before_settle</code> gets a last word
+— its handlers can force another turn — before <code>agent_end</code>.</p>
+<p><img alt="Hook lifecycle" src="figures/seq-hooks.svg" /></p>
+<p>Handlers run in-process and receive <code>(event, ctx)</code>. Several events support
+cancellation (<code>return { cancel: true }</code>) — the session-switch confirmation
+in the bundled examples is the canonical pattern.<sup id="fnref:44"><a class="footnote-ref" href="#fn:44">44</a></sup></p>
+<p><strong>Start here:</strong> copy <code>examples/extensions/confirm-destructive.ts</code>. An
+extension is a default-exported function taking <code>pi: ExtensionAPI</code>, dropped
+in <code>~/.pi/agent/extensions/</code> or your project's <code>.pi/extensions/</code>.<sup id="fnref:42"><a class="footnote-ref" href="#fn:42">42</a></sup>
+Subscribe with <code>pi.on("tool_call", handler)</code>; return <code>{ block: true }</code> from
+a <code>tool_call</code> handler and the call never executes (<code>ToolCallEventResult</code>
+also carries an optional <code>reason</code> and a <code>terminate</code> hint).<sup id="fnref:31"><a class="footnote-ref" href="#fn:31">31</a></sup><sup id="fnref:49"><a class="footnote-ref" href="#fn:49">49</a></sup></p>
+<h3 id="2-custom-tools">2. Custom tools</h3>
+<p>Tools are the richest axis. Registration is one call —
+<code>pi.registerTool({ name, description, parameters, execute })</code> — but what
+happens next crosses four subsystems: the registry checks the tool's
+<em>exposure</em> (<code>direct</code> | <code>model-only</code> | <code>codemode</code> | <code>deferred</code> | <code>hidden</code>),
+which decides whether the model sees it, whether it activates on
+registration, and who else may call it.<sup id="fnref:45"><a class="footnote-ref" href="#fn:45">45</a></sup> Active tools are declared to
+the model as <code>toolsAdded</code> deltas; when the model emits a <code>toolCall</code>, the
+loop looks the tool up, validates arguments against its TypeBox schema,
+runs <code>beforeToolCall</code>, executes, runs <code>afterToolCall</code>, and appends the
+result.</p>
+<p><img alt="Custom tool lifecycle" src="figures/seq-tools.svg" /></p>
+<p><strong>Start here:</strong> <code>ExtensionAPI.registerTool</code> in
+<code>core/extensions/types.ts</code>.<sup id="fnref:43"><a class="footnote-ref" href="#fn:43">43</a></sup> Model the <code>parameters</code> schema on
+<code>bash.ts</code>'s TypeBox definition and the <code>execute(id, args, signal,
+onUpdate)</code> signature on any built-in; set <code>exposure: "model-only"</code> if the
+tool should never be directly invokable.</p>
+<h3 id="3-slash-commands">3. Slash commands</h3>
+<p>Commands bypass the model entirely: text starting with <code>/</code> is intercepted
+before prompt expansion, matched against the command registry, and its
+handler runs immediately — even mid-stream.<sup id="fnref2:12"><a class="footnote-ref" href="#fn:12">12</a></sup> The handler receives the
+raw argument string and a command context with UI primitives
+(<code>ctx.ui.confirm/select/notify</code>) and messaging (<code>ctx.sendMessage</code>,
+<code>ctx.sendUserMessage</code>, which can trigger a fresh turn).<sup id="fnref2:44"><a class="footnote-ref" href="#fn:44">44</a></sup><sup id="fnref:46"><a class="footnote-ref" href="#fn:46">46</a></sup></p>
+<p><img alt="Slash command dispatch" src="figures/seq-commands.svg" /></p>
+<p><strong>Start here:</strong> <code>pi.registerCommand("deploy", { description, handler:
+async (args, ctx) =&gt; { … } })</code> — see <code>examples/extensions/commands.ts</code> for
+the full shape including argument completions.<sup id="fnref2:42"><a class="footnote-ref" href="#fn:42">42</a></sup><sup id="fnref2:43"><a class="footnote-ref" href="#fn:43">43</a></sup></p>
+<h3 id="4-skills">4. Skills</h3>
+<p>Skills have two injection paths, and the diagram shows both. Invoked as
+<code>/skill:name</code>, the skill's markdown body (frontmatter stripped) is inlined
+as a <code>&lt;skill&gt;</code> block ahead of the user's text. Independently, every prompt
+carries all loaded skills in the system prompt's <code>skills</code> section, so the
+model knows they exist before anyone invokes one.<sup id="fnref:34"><a class="footnote-ref" href="#fn:34">34</a></sup></p>
+<p><img alt="Skill injection paths" src="figures/seq-skills.svg" /></p>
+<p><strong>Start here:</strong> a markdown file with <code>name:</code>/<code>description:</code> frontmatter in
+<code>&lt;project&gt;/.pi/skills/</code> or <code>~/.pi/agent/skills/</code>.<sup id="fnref:48"><a class="footnote-ref" href="#fn:48">48</a></sup> Keep the body
+task-shaped — skills are procedures, not documentation.</p>
+<h3 id="5-mcp-servers">5. MCP servers</h3>
+<p>MCP is an adapter, not a parallel tool system. Each configured server
+(<code>command</code> for stdio, <code>url</code> for streamable HTTP)<sup id="fnref:47"><a class="footnote-ref" href="#fn:47">47</a></sup> is spawned at session
+start; its tools are listed once and each is wrapped by
+<code>createMcpToolDefinition</code> into a native pi <code>ToolDefinition</code> — namespaced as
+<code>server/tool</code>, parameters converted from the MCP input schema. From there,
+an MCP tool is indistinguishable from a built-in: declared, dispatched,
+hooked, rendered.</p>
+<p><img alt="MCP server lifecycle" src="figures/seq-mcp.svg" /></p>
+<p><strong>Start here:</strong> the server config in settings, then
+<code>extensions/mcp/tools.ts</code> if you need custom result conversion.<sup id="fnref:40"><a class="footnote-ref" href="#fn:40">40</a></sup> The
+MCP client itself speaks stdio, streamable HTTP, or in-memory
+transports.<sup id="fnref:41"><a class="footnote-ref" href="#fn:41">41</a></sup></p>
+<h3 id="6-plugins-experimental">6. Plugins (experimental)</h3>
+<p>Plugins are the heavyweight axis: whole <em>facets</em> of pi — a <code>session</code> facet
+and a <code>tui</code> facet — bundled with the chord bundler and attached to a
+durable server via a persisted plugin-package profile.<sup id="fnref:35"><a class="footnote-ref" href="#fn:35">35</a></sup> Where an
+extension customizes behavior inside a running session, a plugin ships a
+custom session and interface. The API is explicitly not stable; pin your pi
+version.</p>
+<p><img alt="Plugin packaging" src="figures/seq-plugins.svg" /></p>
+<p><strong>Start here:</strong> <code>experimental/plugins/package.ts</code> — but treat this axis as
+incubating, not as a contract.</p>
+<h3 id="7-provider-transports">7. Provider transports</h3>
+<p>Below the <code>StreamFn</code> abstraction, the model runtime picks a wire transport
+per request: SSE, WebSocket, cached WebSocket, or <code>auto</code>.<sup id="fnref:36"><a class="footnote-ref" href="#fn:36">36</a></sup> Extension
+hooks (<code>onPayload</code>, <code>onResponse</code>, <code>provider_stream_event</code>) observe the
+traffic at this layer, which is also where the prompt-cache warmer
+operates.<sup id="fnref2:19"><a class="footnote-ref" href="#fn:19">19</a></sup></p>
+<p><img alt="Provider transport" src="figures/seq-transport.svg" /></p>
+<p><strong>Start here:</strong> the <code>transport</code> setting and <code>ModelRuntime.streamSimple</code>.
+If you're adding a provider, this is the seam — implement the transport,
+the loop never changes.</p>
+<h3 id="8-remote-session-protocol">8. Remote session protocol</h3>
+<p><code>@earendil-works/pi-protocol</code> is a transport-neutral CBOR RPC protocol
+(version 8): <code>hello</code>, <code>request</code>, and <code>cancel</code> envelopes addressed to
+server/session/attachment targets.<sup id="fnref:37"><a class="footnote-ref" href="#fn:37">37</a></sup> The experimental server carries
+those frames over Unix domain sockets;<sup id="fnref:38"><a class="footnote-ref" href="#fn:38">38</a></sup> the radius relay extends them
+over WebSocket past the local machine.<sup id="fnref:39"><a class="footnote-ref" href="#fn:39">39</a></sup> Because the protocol streams
+<code>AgentEvent</code>s, a remote client renders exactly what the local TUI renders —
+there is still no privileged renderer, just a longer wire.<sup id="fnref3:9"><a class="footnote-ref" href="#fn:9">9</a></sup></p>
+<p><img alt="Remote session protocol" src="figures/seq-protocol.svg" /></p>
+<p><strong>Start here:</strong> <code>packages/protocol/src/protocol.ts</code> for the envelopes,
+<code>framing.ts</code> for the byte framing.</p>
+<h2 id="deliberate-omissions">Deliberate omissions</h2>
+<p>pi ships no sub-agents, no plan mode, and no per-tool approval prompts.<sup id="fnref:32"><a class="footnote-ref" href="#fn:32">32</a></sup>
+The first two are documented philosophy ("adapt pi to your workflows"); the
+third is architectural: approval is an extension's job, implemented through
+<code>beforeToolCall</code>, not a core feature.<sup id="fnref2:24"><a class="footnote-ref" href="#fn:24">24</a></sup> The security model is project trust
+(<code>--approve</code> trusts project-local files) plus extension hooks — not
+per-command gating.<sup id="fnref:33"><a class="footnote-ref" href="#fn:33">33</a></sup></p>
+<p>Read the omissions as the other half of the thesis: every "missing" feature
+is a decision to keep the core's surface area small and let the extension
+layer — or the model itself — carry the weight. Steal the pattern when your
+harness needs to stay hackable; reject it when your users need guardrails
+out of the box.</p>
+<h2 id="comparison-matrix-row">Comparison matrix row</h2>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Dimension</th>
+<th>pi (v1.0.2)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>Agent loop</td>
+<td>Event-sourced; inner (tool/steer) + outer (follow-up) loops; no iteration cap <sup id="fnref2:5"><a class="footnote-ref" href="#fn:5">5</a></sup><sup id="fnref3:6"><a class="footnote-ref" href="#fn:6">6</a></sup><sup id="fnref2:10"><a class="footnote-ref" href="#fn:10">10</a></sup></td>
+</tr>
+<tr>
+<td>2</td>
+<td>Tool system</td>
+<td>4 built-ins + registry; TypeBox validation; sequential/parallel; nested calls <sup id="fnref3:22"><a class="footnote-ref" href="#fn:22">22</a></sup><sup id="fnref3:27"><a class="footnote-ref" href="#fn:27">27</a></sup><sup id="fnref3:28"><a class="footnote-ref" href="#fn:28">28</a></sup></td>
+</tr>
+<tr>
+<td>3</td>
+<td>Model providers</td>
+<td>~35 behind one <code>StreamFn</code>; per-request key resolution <sup id="fnref2:18"><a class="footnote-ref" href="#fn:18">18</a></sup><sup id="fnref2:29"><a class="footnote-ref" href="#fn:29">29</a></sup></td>
+</tr>
+<tr>
+<td>4</td>
+<td>Prompt construction</td>
+<td>Structured sections, diffed per turn, XML-tagged <sup id="fnref3:15"><a class="footnote-ref" href="#fn:15">15</a></sup><sup id="fnref4:16"><a class="footnote-ref" href="#fn:16">16</a></sup></td>
+</tr>
+<tr>
+<td>5</td>
+<td>Memory/session</td>
+<td>JSONL sessions; compaction with branch summarization <sup id="fnref2:30"><a class="footnote-ref" href="#fn:30">30</a></sup></td>
+</tr>
+<tr>
+<td>6</td>
+<td>Reasoning/planning</td>
+<td>Thinking levels forwarded; no planner/sub-agents (omitted) <sup id="fnref3:29"><a class="footnote-ref" href="#fn:29">29</a></sup><sup id="fnref2:32"><a class="footnote-ref" href="#fn:32">32</a></sup></td>
+</tr>
+<tr>
+<td>7</td>
+<td>Extensibility</td>
+<td>TS extensions, hooks at every seam, MCP, skills <sup id="fnref4:31"><a class="footnote-ref" href="#fn:31">31</a></sup></td>
+</tr>
+<tr>
+<td>8</td>
+<td>Interfaces</td>
+<td>TUI / print / RPC / SDK — all event subscribers <sup id="fnref4:9"><a class="footnote-ref" href="#fn:9">9</a></sup></td>
+</tr>
+<tr>
+<td>9</td>
+<td>Failure handling</td>
+<td>Auto-retry, truncation guards, abort; no iteration cap <sup id="fnref2:21"><a class="footnote-ref" href="#fn:21">21</a></sup><sup id="fnref2:26"><a class="footnote-ref" href="#fn:26">26</a></sup><sup id="fnref3:10"><a class="footnote-ref" href="#fn:10">10</a></sup></td>
+</tr>
+<tr>
+<td>10</td>
+<td>Security model</td>
+<td>Project trust + extension hooks; no built-in approval UX <sup id="fnref4:24"><a class="footnote-ref" href="#fn:24">24</a></sup><sup id="fnref2:33"><a class="footnote-ref" href="#fn:33">33</a></sup></td>
+</tr>
+</tbody>
+</table>
+<h2 id="endnotes">Endnotes</h2>
+<p>All notes are VERIFIED against <code>v1.0.2</code>
+(<code>cd32f7725fdbddbaecdff5b1e68491563394e0ca</code>) unless marked DOCS.
+<code>GH</code> = <code>https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/</code>.</p>
+<hr />
+<p><em>Next in the series: Hermes — where the same ten dimensions meet scheduled
+jobs, persistent memory, and sub-agents.</em></p>
+<div class="footnote">
+<hr />
+<ol>
+<li id="fn:1">
+<p>The <code>Agent</code> class is constructed once per session in
+<code>packages/coding-agent/src/core/sdk.ts</code> (<a href="https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/src/core/sdk.ts#L387-L395">GH…/sdk.ts#L387-L395</a>);
+the loop package exports only the loop, types, and streaming
+primitives (<a href="https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/agent/src/index.ts">GH…/agent/src/index.ts</a>).&#160;<a class="footnote-backref" href="#fnref:1" title="Jump back to footnote 1 in the text">&#8617;</a></p>
+</li>
+<li id="fn:2">
+<p>Tool pipeline stages — lookup, argument preparation, and validation in
+<code>prepareToolCall</code> (<a href="https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/agent/src/agent-loop.ts#L707-L725">GH…/agent-loop.ts#L707-L725</a>),
+<code>beforeToolCall</code> gating (<a href="https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/agent/src/agent-loop.ts#L727-L746">GH…/agent-loop.ts#L727-L746</a>),
+execution (<a href="https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/agent/src/agent-loop.ts#L820-L848">GH…/agent-loop.ts#L820-L848</a>),
+<code>afterToolCall</code> and result finalization (<a href="https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/agent/src/agent-loop.ts#L850-L900">GH…/agent-loop.ts#L850-L900</a>).&#160;<a class="footnote-backref" href="#fnref:2" title="Jump back to footnote 2 in the text">&#8617;</a></p>
+</li>
+<li id="fn:3">
+<p>Prompt sections in
+<a href="https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/src/core/system-prompt.ts#L121">GH…/system-prompt.ts#L121</a>;
+built-in tool names in
+<a href="https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/src/core/tools/index.ts#L95-L97">GH…/core/tools/index.ts#L95-L97</a>;
+TUI event subscription in
+<a href="https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/src/modes/interactive/interactive-mode.ts#L3354">GH…/interactive-mode.ts#L3354</a>.&#160;<a class="footnote-backref" href="#fnref:3" title="Jump back to footnote 3 in the text">&#8617;</a></p>
+</li>
+<li id="fn:4">
+<p><code>packages/agent/src/index.ts</code> exports <code>agent.ts</code>, <code>agent-loop.ts</code>,
+<code>proxy.ts</code>, <code>stream-fn.ts</code>, <code>types.ts</code>
+(<a href="https://github.com/earendil-works/pi/tree/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/agent/src">GH…/agent/src</a>);
+<code>packages/ai/src/providers/</code> holds ~35 provider files
+(<a href="https://github.com/earendil-works/pi/tree/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/ai/src/providers">GH…/ai/src/providers</a>);
+<code>packages/coding-agent/src/core/</code> holds <code>agent-session.ts</code>, <code>sdk.ts</code>,
+<code>system-prompt.ts</code>, <code>tools/</code>, <code>modes/</code>
+(<a href="https://github.com/earendil-works/pi/tree/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/src/core">GH…/coding-agent/src/core</a>).&#160;<a class="footnote-backref" href="#fnref:4" title="Jump back to footnote 4 in the text">&#8617;</a></p>
+</li>
+<li id="fn:5">
+<p><a href="https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/agent/src/agent-loop.ts#L102-L128">GH…/agent-loop.ts#L102-L128</a>
+(<code>runAgentLoop</code>, <code>runAgentLoopContinue</code>);
+<a href="https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/agent/src/agent-loop.ts#L163">GH…/agent-loop.ts#L163</a>
+(<code>runLoop</code>).&#160;<a class="footnote-backref" href="#fnref:5" title="Jump back to footnote 5 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:5" title="Jump back to footnote 5 in the text">&#8617;</a></p>
+</li>
+<li id="fn:6">
+<p>Inner loop drains steering messages at
+<a href="https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/agent/src/agent-loop.ts#L176">GH…/agent-loop.ts#L176</a>
+and re-polls at
+<a href="https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/agent/src/agent-loop.ts#L205">L205</a>;
+per-turn pipeline — <code>prepareRequest</code>
+(<a href="https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/agent/src/agent-loop.ts#L219">L219</a>),
+<code>transformContext</code>
+(<a href="https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/agent/src/agent-loop.ts#L390-L391">L390-L391</a>),
+<code>convertToLlm</code> + <code>normalizeContext</code>
+(<a href="https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/agent/src/agent-loop.ts#L395-L397">L395-L397</a>);
+outer loop drains follow-ups at
+<a href="https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/agent/src/agent-loop.ts#L302-L310">L302-L310</a>.&#160;<a class="footnote-backref" href="#fnref:6" title="Jump back to footnote 6 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:6" title="Jump back to footnote 6 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:6" title="Jump back to footnote 6 in the text">&#8617;</a></p>
+</li>
+<li id="fn:7">
+<p><code>AgentEvent</code> union in
+<a href="https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/agent/src/types.ts#L516-L540">GH…/agent/src/types.ts#L516-L540</a>.&#160;<a class="footnote-backref" href="#fnref:7" title="Jump back to footnote 7 in the text">&#8617;</a></p>
+</li>
+<li id="fn:8">
+<p><code>Agent.processEvents</code> reduces each event into state, then awaits
+listeners, in
+<a href="https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/agent/src/agent.ts#L565-L613">GH…/agent/src/agent.ts#L565-L613</a>.&#160;<a class="footnote-backref" href="#fnref:8" title="Jump back to footnote 8 in the text">&#8617;</a></p>
+</li>
+<li id="fn:9">
+<p>Interactive TUI
+(<a href="https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/src/modes/interactive/interactive-mode.ts#L3354">GH…/interactive-mode.ts#L3354</a>),
+RPC mode
+(<a href="https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/src/modes/rpc/rpc-mode.ts#L355">GH…/rpc-mode.ts#L355</a>),
+print mode
+(<a href="https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/src/modes/print-mode.ts#L108">GH…/print-mode.ts#L108</a>)
+all subscribe to the same event stream; no renderer calls the loop
+directly.&#160;<a class="footnote-backref" href="#fnref:9" title="Jump back to footnote 9 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:9" title="Jump back to footnote 9 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:9" title="Jump back to footnote 9 in the text">&#8617;</a><a class="footnote-backref" href="#fnref4:9" title="Jump back to footnote 9 in the text">&#8617;</a></p>
+</li>
+<li id="fn:10">
+<p>Negative finding: case-insensitive grep for
+<code>maxIterations|maxTurns|maxToolCalls|maxSteps|iterationLimit|turnLimit|loopLimit</code>
+over <code>packages/agent/src</code> and <code>packages/coding-agent/src</code> at the pinned
+SHA returns zero hits.&#160;<a class="footnote-backref" href="#fnref:10" title="Jump back to footnote 10 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:10" title="Jump back to footnote 10 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:10" title="Jump back to footnote 10 in the text">&#8617;</a></p>
+</li>
+<li id="fn:11">
+<p>Termination paths in
+<a href="https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/agent/src/agent-loop.ts#L286-L310">GH…/agent-loop.ts#L286-L310</a>
+(<code>finishTurn</code> decision, steering/follow-up exhaustion) and the batch
+termination rule
+(<a href="https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/agent/src/agent-loop.ts#L689-L691">L689-L691</a>);
+abort via the per-run <code>AbortController</code> in
+<a href="https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/agent/src/agent.ts#L507-L540">GH…/agent.ts#L507-L540</a>
+(<code>runWithLifecycle</code>; public <code>abort()</code> at L341).&#160;<a class="footnote-backref" href="#fnref:11" title="Jump back to footnote 11 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:11" title="Jump back to footnote 11 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:11" title="Jump back to footnote 11 in the text">&#8617;</a></p>
+</li>
+<li id="fn:12">
+<p><code>AgentSession.prompt</code> at
+<a href="https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/src/core/agent-session.ts#L1921-L2015">GH…/agent-session.ts#L1921-L2015</a>:
+extension commands, input handlers (L1950), skill/template expansion,
+model and auth validation.&#160;<a class="footnote-backref" href="#fnref:12" title="Jump back to footnote 12 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:12" title="Jump back to footnote 12 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:12" title="Jump back to footnote 12 in the text">&#8617;</a></p>
+</li>
+<li id="fn:13">
+<p>Streaming branch queues via <code>steer()</code>/<code>followUp()</code> at
+<a href="https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/src/core/agent-session.ts#L1967-L1975">GH…/agent-session.ts#L1967-L1975</a>;
+queue primitives in
+<a href="https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/agent/src/agent.ts#L299-L308">GH…/agent.ts#L299-L308</a>.&#160;<a class="footnote-backref" href="#fnref:13" title="Jump back to footnote 13 in the text">&#8617;</a></p>
+</li>
+<li id="fn:14">
+<p><code>emitBeforeAgentStart</code> at
+<a href="https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/src/core/agent-session.ts#L2015-L2030">GH…/agent-session.ts#L2015-L2030</a>.&#160;<a class="footnote-backref" href="#fnref:14" title="Jump back to footnote 14 in the text">&#8617;</a></p>
+</li>
+<li id="fn:15">
+<p><code>_preparePromptAndToolLoadout</code> at
+<a href="https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/src/core/agent-session.ts#L1689-L1701">GH…/agent-session.ts#L1689-L1701</a>;
+section diffing in <code>diffSystemPromptSections</code> at
+<a href="https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/src/core/system-prompt.ts#L204-L218">GH…/system-prompt.ts#L204-L218</a>
+(<code>null</code> removes a section).&#160;<a class="footnote-backref" href="#fnref:15" title="Jump back to footnote 15 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:15" title="Jump back to footnote 15 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:15" title="Jump back to footnote 15 in the text">&#8617;</a></p>
+</li>
+<li id="fn:16">
+<p>Section list and XML wrapping in <code>buildSystemPromptSections</code> at
+<a href="https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/src/core/system-prompt.ts#L121-L160">GH…/system-prompt.ts#L121-L160</a>;
+default tool selection <code>[read, bash, edit, write]</code> in
+<code>normalizeBuildSystemPromptOptions</code>.&#160;<a class="footnote-backref" href="#fnref:16" title="Jump back to footnote 16 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:16" title="Jump back to footnote 16 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:16" title="Jump back to footnote 16 in the text">&#8617;</a><a class="footnote-backref" href="#fnref4:16" title="Jump back to footnote 16 in the text">&#8617;</a></p>
+</li>
+<li id="fn:17">
+<p><code>declareToolChanges</code> at
+<a href="https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/agent/src/agent-loop.ts#L333-L360">GH…/agent-loop.ts#L333-L360</a>,
+applied to initial messages
+(<a href="https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/agent/src/agent-loop.ts#L110">L110</a>)
+and each turn's pending messages
+(<a href="https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/agent/src/agent-loop.ts#L211">L211</a>).&#160;<a class="footnote-backref" href="#fnref:17" title="Jump back to footnote 17 in the text">&#8617;</a></p>
+</li>
+<li id="fn:18">
+<p><code>Agent.prompt</code> →
+<a href="https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/agent/src/agent.ts#L373-L380">GH…/agent.ts#L373-L380</a>
+→ <code>runAgentLoop</code>
+(<a href="https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/agent/src/agent-loop.ts#L102">GH…/agent-loop.ts#L102</a>);
+the app's <code>streamFn</code> delegates to <code>modelRuntime.streamSimple</code> at
+<a href="https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/src/core/sdk.ts#L387-L406">GH…/sdk.ts#L387-L406</a>.&#160;<a class="footnote-backref" href="#fnref:18" title="Jump back to footnote 18 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:18" title="Jump back to footnote 18 in the text">&#8617;</a></p>
+</li>
+<li id="fn:19">
+<p><code>transformProviderPayload</code> / <code>handleProviderResponse</code> at
+<a href="https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/src/core/sdk.ts#L358-L380">GH…/sdk.ts#L358-L380</a>;
+prompt-cache warming at
+<a href="https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/src/core/sdk.ts#L404">L404</a>.&#160;<a class="footnote-backref" href="#fnref:19" title="Jump back to footnote 19 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:19" title="Jump back to footnote 19 in the text">&#8617;</a></p>
+</li>
+<li id="fn:20">
+<p>Tool-call extraction from assistant content blocks at
+<a href="https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/agent/src/agent-loop.ts#L259">GH…/agent-loop.ts#L259</a>
+and
+<a href="https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/agent/src/agent-loop.ts#L515">L515</a>.&#160;<a class="footnote-backref" href="#fnref:20" title="Jump back to footnote 20 in the text">&#8617;</a></p>
+</li>
+<li id="fn:21">
+<p>Truncated-response handling at
+<a href="https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/agent/src/agent-loop.ts#L472-L493">GH…/agent-loop.ts#L472-L493</a>
+(error result: "the response hit the output token limit, so its
+arguments may be truncated"), with the rationale at
+<a href="https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/agent/src/agent-loop.ts#L265">L265</a>.&#160;<a class="footnote-backref" href="#fnref:21" title="Jump back to footnote 21 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:21" title="Jump back to footnote 21 in the text">&#8617;</a></p>
+</li>
+<li id="fn:22">
+<p><code>toolExecution</code> mode (default <code>"parallel"</code>) in
+<a href="https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/agent/src/agent.ts#L240-L260">GH…/agent.ts#L240-L260</a>
+(constructor); per-call pipeline in <code>runToolCall</code> at
+<a href="https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/agent/src/agent-loop.ts#L810-L870">GH…/agent-loop.ts#L810-L870</a>.&#160;<a class="footnote-backref" href="#fnref:22" title="Jump back to footnote 22 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:22" title="Jump back to footnote 22 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:22" title="Jump back to footnote 22 in the text">&#8617;</a></p>
+</li>
+<li id="fn:23">
+<p><code>beforeToolCall</code> blocking and <code>terminate</code> marking at
+<a href="https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/agent/src/agent-loop.ts#L727-L746">GH…/agent-loop.ts#L727-L746</a>.&#160;<a class="footnote-backref" href="#fnref:23" title="Jump back to footnote 23 in the text">&#8617;</a></p>
+</li>
+<li id="fn:24">
+<p>The app's <code>_beforeToolCall</code> only forwards to extension <code>tool_call</code>
+handlers, at
+<a href="https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/src/core/agent-session.ts#L625-L648">GH…/agent-session.ts#L625-L648</a>;
+negative finding: no approval/confirmation prompt exists in
+<code>packages/coding-agent/src</code> or <code>packages/tui/src</code> (grep for
+<code>toolApproval|confirmTool|permissionManager</code> returns nothing).&#160;<a class="footnote-backref" href="#fnref:24" title="Jump back to footnote 24 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:24" title="Jump back to footnote 24 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:24" title="Jump back to footnote 24 in the text">&#8617;</a><a class="footnote-backref" href="#fnref4:24" title="Jump back to footnote 24 in the text">&#8617;</a></p>
+</li>
+<li id="fn:25">
+<p><code>createToolResultMessage</code> at
+<a href="https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/agent/src/agent-loop.ts#L922-L936">GH…/agent-loop.ts#L922-L936</a>;
+results appended to the transcript at
+<a href="https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/agent/src/agent-loop.ts#L276">L276</a>,
+feeding the next inner-loop request.&#160;<a class="footnote-backref" href="#fnref:25" title="Jump back to footnote 25 in the text">&#8617;</a></p>
+</li>
+<li id="fn:26">
+<p><code>_handlePostAgentRun</code> at
+<a href="https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/src/core/agent-session.ts#L1806-L1844">GH…/agent-session.ts#L1806-L1844</a>
+(auto-retry, compaction check at L1837); <code>agent_before_settle</code>
+boundary at
+<a href="https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/src/core/agent-session.ts#L1846-L1875">L1846-L1875</a>.&#160;<a class="footnote-backref" href="#fnref:26" title="Jump back to footnote 26 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:26" title="Jump back to footnote 26 in the text">&#8617;</a></p>
+</li>
+<li id="fn:27">
+<p>Built-in tool names in
+<a href="https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/src/core/tools/index.ts#L95-L97">GH…/core/tools/index.ts#L95-L97</a>;
+per-tool prompt contributions, e.g.
+<a href="https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/src/core/tools/bash.ts">GH…/core/tools/bash.ts</a>
+(<code>bashToolSystemPromptContribution</code>), consumed as <code>toolSnippets</code> /
+<code>toolGuidelines</code> in
+<a href="https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/src/core/system-prompt.ts">GH…/system-prompt.ts</a>.&#160;<a class="footnote-backref" href="#fnref:27" title="Jump back to footnote 27 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:27" title="Jump back to footnote 27 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:27" title="Jump back to footnote 27 in the text">&#8617;</a></p>
+</li>
+<li id="fn:28">
+<p><code>_executeNestedToolCall</code> at
+<a href="https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/src/core/agent-session.ts#L699-L730">GH…/agent-session.ts#L699-L730</a>
+re-enters <code>runToolCall</code> with the session's hooks.&#160;<a class="footnote-backref" href="#fnref:28" title="Jump back to footnote 28 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:28" title="Jump back to footnote 28 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:28" title="Jump back to footnote 28 in the text">&#8617;</a></p>
+</li>
+<li id="fn:29">
+<p>Provider files in
+<a href="https://github.com/earendil-works/pi/tree/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/ai/src/providers">GH…/ai/src/providers/</a>;
+per-request API-key resolution at
+<a href="https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/agent/src/agent-loop.ts#L401">GH…/agent-loop.ts#L401</a>;
+<code>thinkingBudgets</code> / <code>transport</code> forwarded opaquely via <code>AgentOptions</code>
+in
+<a href="https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/agent/src/agent.ts#L114-L186">GH…/agent.ts#L114-L186</a>.&#160;<a class="footnote-backref" href="#fnref:29" title="Jump back to footnote 29 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:29" title="Jump back to footnote 29 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:29" title="Jump back to footnote 29 in the text">&#8617;</a></p>
+</li>
+<li id="fn:30">
+<p>Session directory layout in
+<a href="https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/src/core/session-manager.ts#L587-L601">GH…/session-manager.ts#L587-L601</a>
+(<code>~/.pi/agent/sessions/</code>, <code>.jsonl</code> at L754); compaction in
+<a href="https://github.com/earendil-works/pi/tree/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/src/core/compaction">GH…/core/compaction/</a>
+with checks before and after each prompt
+(<a href="https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/src/core/agent-session.ts#L2009">GH…/agent-session.ts#L2009</a>,
+<a href="https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/src/core/agent-session.ts#L1837">L1837</a>).&#160;<a class="footnote-backref" href="#fnref:30" title="Jump back to footnote 30 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:30" title="Jump back to footnote 30 in the text">&#8617;</a></p>
+</li>
+<li id="fn:31">
+<p>Hook event types in
+<a href="https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/src/core/extensions/types.ts">GH…/core/extensions/types.ts</a>
+(e.g. <code>tool_call</code> at L1153, L1620), dispatched by the extension runner
+(<a href="https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/src/core/extensions/runner.ts#L1246">GH…/runner.ts#L1246</a>).&#160;<a class="footnote-backref" href="#fnref:31" title="Jump back to footnote 31 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:31" title="Jump back to footnote 31 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:31" title="Jump back to footnote 31 in the text">&#8617;</a><a class="footnote-backref" href="#fnref4:31" title="Jump back to footnote 31 in the text">&#8617;</a></p>
+</li>
+<li id="fn:32">
+<p>DOCS grade — stated in project documentation/philosophy, not derived
+from code: pi deliberately omits sub-agents and plan mode. Consistent
+with the code: <code>packages/agent/src</code> contains only the loop, the <code>Agent</code>
+wrapper, and types — no sub-agent orchestration
+(<a href="https://github.com/earendil-works/pi/tree/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/agent/src">GH…/agent/src</a>),
+and the loop has no planning stage
+(<a href="https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/agent/src/agent-loop.ts">GH…/agent-loop.ts</a>).
+The philosophical framing ("adapt pi to your workflows") remains a docs
+claim.&#160;<a class="footnote-backref" href="#fnref:32" title="Jump back to footnote 32 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:32" title="Jump back to footnote 32 in the text">&#8617;</a></p>
+</li>
+<li id="fn:33">
+<p><code>--approve</code> / <code>--no-approve</code> flags trust or ignore project-local
+files, at
+<a href="https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/src/cli/args.ts#L232-L234">GH…/cli/args.ts#L232-L234</a>
+(help text at L330-L331).&#160;<a class="footnote-backref" href="#fnref:33" title="Jump back to footnote 33 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:33" title="Jump back to footnote 33 in the text">&#8617;</a></p>
+</li>
+<li id="fn:34">
+<p><code>SkillFrontmatter</code> / <code>Skill</code> in
+<a href="https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/src/core/skills.ts#L67-L83">GH…/core/skills.ts#L67-L83</a>;
+<code>loadSkills</code> resolves the project dir, global agent dir, explicit
+paths, and defaults, deduplicating by canonical path, at
+<a href="https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/src/core/skills.ts#L394-L440">GH…/core/skills.ts#L394-L440</a>;
+skills render into the prompt at
+<a href="https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/src/core/skills.ts#L355">GH…/core/skills.ts#L355</a>
+(<code>formatSkillsForPrompt</code>).&#160;<a class="footnote-backref" href="#fnref:34" title="Jump back to footnote 34 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:34" title="Jump back to footnote 34 in the text">&#8617;</a></p>
+</li>
+<li id="fn:35">
+<p>Experimental plugin packaging: profile version and the default
+<code>session</code>/<code>tui</code> facets at
+<a href="https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/src/experimental/plugins/package.ts#L12-L13">GH…/experimental/plugins/package.ts#L12-L13</a>,
+bundled via <code>@earendil-works/chord/bundler</code>. Status is experimental —
+the API is not covered by the stability claims made for extensions.&#160;<a class="footnote-backref" href="#fnref:35" title="Jump back to footnote 35 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:35" title="Jump back to footnote 35 in the text">&#8617;</a></p>
+</li>
+<li id="fn:36">
+<p><code>Transport</code> in
+<a href="https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/ai/src/types.ts#L120">GH…/ai/src/types.ts#L120</a>;
+selected via settings and forwarded to the stream function
+(<a href="https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/src/core/sdk.ts#L387-L406">GH…/sdk.ts#L387-L406</a>).&#160;<a class="footnote-backref" href="#fnref:36" title="Jump back to footnote 36 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:36" title="Jump back to footnote 36 in the text">&#8617;</a></p>
+</li>
+<li id="fn:37">
+<p><code>@earendil-works/pi-protocol</code> — "Transport-neutral CBOR protocol for
+remote pi sessions"
+(<a href="https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/protocol/package.json">GH…/protocol/package.json</a>);
+<code>PROTOCOL_VERSION = 8</code> at
+<a href="https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/protocol/src/protocol.ts#L5">GH…/protocol/src/protocol.ts#L5</a>,
+with request/cancel envelopes and server/session/attachment targets.&#160;<a class="footnote-backref" href="#fnref:37" title="Jump back to footnote 37 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:37" title="Jump back to footnote 37 in the text">&#8617;</a></p>
+</li>
+<li id="fn:38">
+<p>Unix-socket server transport in
+<a href="https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/src/experimental/server.ts#L17">GH…/experimental/server.ts#L17</a>
+(<code>createUnixServer</code> from <code>@earendil-works/pi-server/unix</code>), socket path
+per server at L153.&#160;<a class="footnote-backref" href="#fnref:38" title="Jump back to footnote 38 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:38" title="Jump back to footnote 38 in the text">&#8617;</a></p>
+</li>
+<li id="fn:39">
+<p>Radius relay over WebSocket (<code>pi-session-relay.host.v1</code> /
+<code>pi-session-relay.client.v1</code> subprotocols) in
+<a href="https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/src/experimental/radius-relay.ts">GH…/experimental/radius-relay.ts</a>;
+<code>TransportAddress = UnixTransportAddress | RadiusTransportAddress</code> at
+<a href="https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/src/cli/experimental/command-options.ts#L19">GH…/cli/experimental/command-options.ts#L19</a>.&#160;<a class="footnote-backref" href="#fnref:39" title="Jump back to footnote 39 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:39" title="Jump back to footnote 39 in the text">&#8617;</a></p>
+</li>
+<li id="fn:40">
+<p><code>createMcpToolDefinition</code> in
+<a href="https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/src/extensions/mcp/tools.ts#L260-L300">GH…/extensions/mcp/tools.ts#L260-L300</a>
+wraps an MCP tool as a pi <code>ToolDefinition</code> (label
+<code>server/tool</code>, parameters from <code>inputSchema</code>, <code>execute</code> → MCP
+<code>callTool</code>).&#160;<a class="footnote-backref" href="#fnref:40" title="Jump back to footnote 40 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:40" title="Jump back to footnote 40 in the text">&#8617;</a></p>
+</li>
+<li id="fn:41">
+<p><code>@earendil-works/pi-mcp</code> — "Standalone Model Context Protocol client
+for pi and other applications"
+(<a href="https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/mcp/package.json">GH…/mcp/package.json</a>);
+transports in
+<a href="https://github.com/earendil-works/pi/tree/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/mcp/src/transports">GH…/mcp/src/transports/</a>
+(<code>stdio.ts</code>, <code>streamable-http.ts</code>, <code>in-memory.ts</code>).&#160;<a class="footnote-backref" href="#fnref:41" title="Jump back to footnote 41 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:41" title="Jump back to footnote 41 in the text">&#8617;</a></p>
+</li>
+<li id="fn:42">
+<p>Extension shape: a default-exported function taking <code>pi: ExtensionAPI</code>,
+installed in <code>~/.pi/agent/extensions/</code> or <code>&lt;project&gt;/.pi/extensions/</code>,
+per the header of
+<a href="https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/examples/extensions/commands.ts#L1-L16">GH…/examples/extensions/commands.ts#L1-L16</a>.&#160;<a class="footnote-backref" href="#fnref:42" title="Jump back to footnote 42 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:42" title="Jump back to footnote 42 in the text">&#8617;</a></p>
+</li>
+<li id="fn:43">
+<p><code>RegisteredCommand</code> (<code>handler: (args, ctx) =&gt; Promise&lt;void&gt;</code>) at
+<a href="https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/src/core/extensions/types.ts#L1528-L1534">GH…/core/extensions/types.ts#L1528-L1534</a>;
+<code>registerCommand</code> at
+<a href="https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/src/core/extensions/types.ts#L1639">L1639</a>,
+<code>registerTool</code> at
+<a href="https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/src/core/extensions/types.ts#L1630">L1630</a>.&#160;<a class="footnote-backref" href="#fnref:43" title="Jump back to footnote 43 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:43" title="Jump back to footnote 43 in the text">&#8617;</a></p>
+</li>
+<li id="fn:44">
+<p><code>ctx.ui.confirm</code> / <code>ctx.ui.notify</code> / <code>ctx.ui.select</code> as used in
+<a href="https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/examples/extensions/confirm-destructive.ts#L15-L55">GH…/examples/extensions/confirm-destructive.ts#L15-L55</a>.&#160;<a class="footnote-backref" href="#fnref:44" title="Jump back to footnote 44 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:44" title="Jump back to footnote 44 in the text">&#8617;</a></p>
+</li>
+<li id="fn:45">
+<p><code>ToolExposure = "direct" | "model-only" | "codemode" | "deferred" | "hidden"</code> at
+<a href="https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/src/core/extensions/types.ts#L509">GH…/core/extensions/types.ts#L509</a>;
+exposure and <code>defaultActive</code> semantics at
+<a href="https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/src/core/extensions/types.ts#L593-L606">L593-L606</a>.&#160;<a class="footnote-backref" href="#fnref:45" title="Jump back to footnote 45 in the text">&#8617;</a></p>
+</li>
+<li id="fn:46">
+<p><code>sendMessage</code> / <code>sendUserMessage</code> on <code>ExtensionAPI</code> at
+<a href="https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/src/core/extensions/types.ts#L1690-L1710">GH…/core/extensions/types.ts#L1690-L1710</a>.&#160;<a class="footnote-backref" href="#fnref:46" title="Jump back to footnote 46 in the text">&#8617;</a></p>
+</li>
+<li id="fn:47">
+<p>MCP server configuration (<code>command</code> for stdio, <code>url</code> for streamable
+HTTP) validated at
+<a href="https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/src/core/mcp-servers.ts#L265-L277">GH…/core/mcp-servers.ts#L265-L277</a>
+(schema at L46-L47).&#160;<a class="footnote-backref" href="#fnref:47" title="Jump back to footnote 47 in the text">&#8617;</a></p>
+</li>
+<li id="fn:48">
+<p>Default skill locations in
+<a href="https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/src/core/skills.ts#L453-L454">GH…/core/skills.ts#L453-L454</a>
+(<code>&lt;agentDir&gt;/skills</code> for user skills, <code>&lt;cwd&gt;/.pi/skills</code> for project
+skills).&#160;<a class="footnote-backref" href="#fnref:48" title="Jump back to footnote 48 in the text">&#8617;</a></p>
+</li>
+<li id="fn:49">
+<p><code>ToolCallEventResult</code> in
+<a href="https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/src/core/extensions/types.ts#L1413">GH…/core/extensions/types.ts#L1413</a>
+(<code>block</code>, <code>reason</code>, <code>terminate</code>).&#160;<a class="footnote-backref" href="#fnref:49" title="Jump back to footnote 49 in the text">&#8617;</a></p>
+</li>
+</ol>
+</div>
+  <a class="diagram-cta" href="../diagrams/template.html?data=../pi/diagrams/pi.json">
+    Explore the interactive architecture diagram
+    <span>Pan, zoom, and click any node for its source module reference</span>
+  </a>
+</main>
+</body>
+</html>
