@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1182" width="1600" font-family="system-ui, -apple-system, sans-serif">
+<defs><marker id="arrc" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 1 L 9 5 L 0 9 z" fill="#58a6ff"/></marker><marker id="arrr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 1 L 9 5 L 0 9 z" fill="#6e7681"/></marker></defs>
+<text x="140.65934065934067" y="44" font-size="26" font-weight="700" fill="#e6edf3">Goose: slash-command intercept + mode switch</text>
+<text x="140.65934065934067" y="74" font-size="15" fill="#8b949e">Slash input never reaches the model raw</text>
+<line x1="360" y1="110" x2="360" y2="1076" stroke="#30363d" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="176" y="82" width="369" height="56" rx="10" fill="#161b22" stroke="#30363d" stroke-width="1.5"/>
+<text x="360" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#e6edf3">User</text>
+<line x1="800" y1="110" x2="800" y2="1076" stroke="#30363d" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="615" y="82" width="369" height="56" rx="10" fill="#161b22" stroke="#30363d" stroke-width="1.5"/>
+<text x="800" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#e6edf3">Agent.reply</text>
+<line x1="1240" y1="110" x2="1240" y2="1076" stroke="#30363d" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="1055" y="82" width="369" height="56" rx="10" fill="#161b22" stroke="#30363d" stroke-width="1.5"/>
+<text x="1240" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#e6edf3">Session config</text>
+<line x1="360" y1="295" x2="790" y2="295" stroke="#58a6ff" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="502" cy="281" r="11" fill="#161b22" stroke="#58a6ff" stroke-width="1.5"/>
+<text x="502" y="286" text-anchor="middle" font-size="12" font-weight="700" fill="#e6edf3">1</text>
+<text x="520" y="286" font-size="14" fill="#e6edf3">user types &#x27;/mode approve&#x27;</text>
+<rect x="800" y="355" width="105" height="60" rx="6" fill="none" stroke="#58a6ff" stroke-width="2"/>
+<text x="930" y="390" font-size="14" fill="#8b949e">execute_command(text, session_id) before the loop</text>
+<rect x="176" y="443" width="1248" height="44" rx="8" fill="#1f6feb22" stroke="#1f6feb" stroke-width="1"/>
+<text x="800" y="492" text-anchor="middle" font-size="14" fill="#e6edf3">reply() intercepts slash input at agent.rs:2222 — before hooks, before inference</text>
+<rect x="800" y="563" width="105" height="60" rx="6" fill="none" stroke="#58a6ff" stroke-width="2"/>
+<text x="930" y="598" font-size="14" fill="#8b949e">parse_slash_command -&gt; dispatch</text>
+<line x1="800" y1="693" x2="1230" y2="693" stroke="#58a6ff" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="942" cy="679" r="11" fill="#161b22" stroke="#58a6ff" stroke-width="1.5"/>
+<text x="942" y="684" text-anchor="middle" font-size="12" font-weight="700" fill="#e6edf3">4</text>
+<text x="960" y="684" font-size="14" fill="#e6edf3">GooseMode switched for the session</text>
+<rect x="176" y="745" width="1248" height="44" rx="8" fill="#1f6feb22" stroke="#1f6feb" stroke-width="1"/>
+<text x="800" y="795" text-anchor="middle" font-size="14" fill="#e6edf3">Mode changes take effect on the next turn; the state machine models this as SlashCommandOperation, step 2 of 18</text>
+<line x1="800" y1="900" x2="370" y2="900" stroke="#6e7681" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrr)"/>
+<circle cx="502" cy="886" r="11" fill="#161b22" stroke="#6e7681" stroke-width="1.5"/>
+<text x="502" y="891" text-anchor="middle" font-size="12" font-weight="700" fill="#e6edf3">5</text>
+<text x="520" y="891" font-size="14" fill="#e6edf3">confirmation message</text>
+<rect x="176" y="953" width="1248" height="44" rx="8" fill="#1f6feb22" stroke="#1f6feb" stroke-width="1"/>
+<text x="800" y="1002" text-anchor="middle" font-size="14" fill="#e6edf3">Goal/grind commands go further: they inject a kickoff user message and fall straight into the reply loop</text>
+</svg>

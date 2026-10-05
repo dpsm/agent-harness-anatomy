@@ -603,6 +603,7 @@ and host-independent.<sup id="fnref3:4"><a class="footnote-ref" href="#fn:4">4</
 <p><strong>Start here:</strong> the plugin interface at
 <code>sdk/packages/shared/src/agent.ts:493-507</code>, then
 <code>DefaultRuntimeBuilder.build</code> to see where plugin tools merge.</p>
+<p><img alt="Plugin lifecycle and the 7-callback hook bag" src="figures/seq-plugin-lifecycle.svg" /></p>
 <h3 id="3-custom-tools">3. Custom tools</h3>
 <p><code>createTool({name, description, inputSchema, execute})</code> plus the execution
 contract (<code>executionMode</code>, <code>timeoutMs</code> defaulting to 30s, <code>retryable</code> /
@@ -620,17 +621,27 @@ automation without writing TypeScript. <code>PreCompact</code> is named in the c
 but maps to <code>undefined</code>: the extension point exists, the wiring doesn't.<sup id="fnref2:36"><a class="footnote-ref" href="#fn:36">36</a></sup></p>
 <p><strong>Start here:</strong> <code>hook-file-config.ts</code> for the ten names and discovery
 order, <code>hook-file-hooks.ts</code> for the engine.</p>
+<p><img alt="File-based user hook firing" src="figures/seq-user-hooks.svg" /></p>
 <h3 id="5-skills">5. Skills</h3>
 <p>The <code>skills</code> tool invokes skill bodies, with <code>SKILL.md</code> discovery across
 <code>~/.cline/skills</code>, <code>.agents/skills</code>, and project dirs — the same
 frontmatter-and-markdown shape pi uses, but executed as a tool call rather
 than prompt injection.<sup id="fnref2:43"><a class="footnote-ref" href="#fn:43">43</a></sup></p>
+<p><strong>Start here:</strong> <code>createSkillsTool</code> in <code>definitions.ts:761</code>, then the
+executor <code>createUserInstructionSkillsExecutor</code> — the body arrives via
+<code>formatSkillInvocation</code>, wrapped as <code>&lt;command-instructions&gt;</code>.</p>
+<p><img alt="Skills tool invocation" src="figures/seq-skills.svg" /></p>
 <h3 id="6-slash-commands">6. Slash commands</h3>
 <p>Two expansion semantics, split by host: VS Code's <code>expandSlashCommands</code> is
 permissive mid-message; the SDK/CLI <code>resolveRuntimeSlashCommand</code> only
 expands a leading <code>/</code>. Same user gesture, different parsing, depending on
 which host you're in — a small seam, but exactly the kind the bridge
 section warns about.<sup id="fnref3:43"><a class="footnote-ref" href="#fn:43">43</a></sup></p>
+<p><strong>Start here:</strong> <code>expandSlashCommands</code> in
+<code>apps/vscode/src/sdk/slash-command-expansion.ts:168</code> beside
+<code>resolveRuntimeSlashCommandFromWatcher</code> in <code>runtime-commands.ts:133</code> —
+read the two functions back to back and the seam draws itself.</p>
+<p><img alt="Slash-command expansion: two semantics" src="figures/seq-slash-commands.svg" /></p>
 <h3 id="7-mcp-servers">7. MCP servers</h3>
 <p>Configure in <code>cline_mcp_settings.json</code> (zod-validated, chokidar-watched);
 tools arrive as native <code>server__tool</code> <code>AgentTool</code>s. No wrapper layer, no
@@ -638,6 +649,7 @@ tools arrive as native <code>server__tool</code> <code>AgentTool</code>s. No wra
 toggle is the only live switch, and long names can miss their policies.<sup id="fnref:33"><a class="footnote-ref" href="#fn:33">33</a></sup><sup id="fnref3:34"><a class="footnote-ref" href="#fn:34">34</a></sup></p>
 <p><strong>Start here:</strong> <code>McpHub.ts</code> for lifecycle, <code>createMcpTools</code> for the
 tool-creation path.</p>
+<p><img alt="Runtime MCP tool call" src="figures/seq-mcp-tool-call.svg" /></p>
 <h3 id="8-sub-agents-teams">8. Sub-agents &amp; teams</h3>
 <p>Three generations coexist: legacy YAML agents (<code>~/Documents/Cline/Agents/</code>
 → <code>use_subagent_&lt;name&gt;</code> tools), the <code>spawn_agent</code> tool (full delegated
@@ -645,11 +657,19 @@ agent, waits, returns text/iterations/usage), configured markdown agents
 with frontmatter (name, description, tools, skills, provider, model,
 maxIterations), and the team runtime with its <code>team_*</code> tools — the only
 in-tree parallel tools.<sup id="fnref2:31"><a class="footnote-ref" href="#fn:31">31</a></sup><sup id="fnref:38"><a class="footnote-ref" href="#fn:38">38</a></sup></p>
+<p><strong>Start here:</strong> the <code>spawn_agent</code> tool definition
+(<code>team/spawn-agent-tool.ts:121</code>) — <code>createDelegatedAgent</code> plus
+<code>subAgent.run(task)</code> is the whole delegation primitive; the <code>team_*</code>
+tools are the same <code>AgentTool</code> shape pointed at shared sessions.</p>
+<p><img alt="spawn_agent delegation" src="figures/seq-subagent.svg" /></p>
 <h3 id="9-rules">9. Rules</h3>
 <p><code>.clinerules</code> files and the <code>registerRule</code> extension API feed
 <code>formatRulesForSystemPrompt</code>, rendering user rules as <code># Rules</code> /
 <code>## &lt;name&gt;</code> / instructions in the system prompt. Formatting only — no
 enforcement; the command guard is a separate, dumber layer.<sup id="fnref2:21"><a class="footnote-ref" href="#fn:21">21</a></sup><sup id="fnref:40"><a class="footnote-ref" href="#fn:40">40</a></sup></p>
+<p><strong>Start here:</strong> <code>formatRulesForSystemPrompt</code> in
+<code>core/src/runtime/safety/rules.ts:12-22</code> — the entire axis is one
+pure function, which is why there's no sequence diagram for it.</p>
 <h2 id="tradeoffs">Tradeoffs</h2>
 <ul>
 <li><strong>Approval-gating vs git-as-safety vs hook policy.</strong> pi gives you the

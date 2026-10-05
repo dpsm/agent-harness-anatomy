@@ -371,6 +371,10 @@ extending aider means editing settings, switching formats, or forking.
   **Start here:** read `cmd_add` and `cmd_undo` — context management
   and git-backed undo are the two commands every other feature
   orbits.
+
+![Slash-command dispatch](figures/seq-commands.svg)
+
+![Voice input via /voice](figures/seq-voice.svg)
 - **Model settings YAML.** The 313-entry `model-settings.yml` is the
   closest thing aider has to a plugin manifest: per-model edit
   format, repo-map on/off, streaming, temperature, reminder placement —
@@ -388,6 +392,8 @@ extending aider means editing settings, switching formats, or forking.
   comment convention — the one axis where aider accepts ambient,
   non-conversational input.[^28] **Start here:** `process_changes()`
   (`watch.py:181`).
+
+![Watch mode: the filesystem as input](figures/seq-watchmode.svg)
 
 What you cannot do without forking: add a hook into the loop (no hook
 system exists), register a tool (there is no tool protocol — the model

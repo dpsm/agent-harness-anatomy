@@ -504,6 +504,8 @@ closest thing to install-time review in the series.[^21][^22]
 **Start here:** `ExtensionConfig` in `crates/goose/src/agents/extension.rs`,
 then `ExtensionManager::add_extension` for the connect-per-type logic.
 
+![Runtime MCP tool call](figures/seq-mcp-toolcall.svg)
+
 ### 2. Plugin hooks (`hooks.json`)
 
 Twelve lifecycle events, shell-command actions, JSON on stdin, exit-2
@@ -515,6 +517,8 @@ without touching Rust.[^42]
 **Start here:** the shipped example at
 `examples/plugins/hello-hooks/hooks/hooks.json`, then the engine in
 `crates/goose/src/hooks/mod.rs`.
+
+![Plugin hook firing](figures/seq-hooks.svg)
 
 ### 3. Recipes
 
@@ -528,6 +532,11 @@ Cron expressions over recipes: `goose schedule add` plus the
 future runs. Always `Auto` mode — a scheduled job is headless by
 construction.[^43]
 
+**Start here:** `crates/goose/src/scheduler/full.rs` — `Job::new_async_tz`
+for the cron fire, `execute_job` for the recipe-to-session handoff.
+
+![Scheduled recipe execution](figures/seq-schedule.svg)
+
 ### 5. Sub-agents (`summon`)
 
 The `delegate` tool with ad-hoc, source-based, and combined modes; async
@@ -535,11 +544,24 @@ background execution with `load(taskId)`; forced Auto; 25-turn default
 budget; no nesting. Recursive in-process `Agent` — the child is a full
 agent, not a prompt template.[^44]
 
+**Start here:** `create_delegate_tool` in
+`crates/goose/src/agents/platform_extensions/summon.rs:724`, then
+`create_subagent_session` for the forced-Auto session birth.
+
+![Summon sub-agent delegation](figures/seq-subagent.svg)
+
 ### 6. Skills
 
 A skills platform extension (plus a state-machine `SkillOperation`),
 with `SKILL.md` discovery — the same frontmatter-and-markdown shape pi
 and Cline use.[^2]
+
+**Start here:** `SkillOperation` in
+`crates/goose/src/agents/state_machine/ops_skills.rs` — the `load_skill`
+tool is the whole runtime; skills are advertised in the system prompt
+and loaded on demand, never eagerly injected.
+
+![Skills discovery and load_skill](figures/seq-skills.svg)
 
 ### 7. Custom providers
 
@@ -547,6 +569,10 @@ Two tiers below the 34 hand-written impls: 48 bundled declarative JSON
 definitions for the long tail, and user-authored custom providers from
 `~/.config/goose/custom_providers/` (with command-based auth). Adding a
 provider to the long tail is a JSON file, not a Rust impl.[^35]
+
+**Start here:** drop a JSON file in the `custom_providers` dir
+(`config/declarative_providers.rs:22`) and copy the smallest bundled
+definition as the template — no compilation involved.
 
 ### 8. The `Provider` trait
 
@@ -563,6 +589,11 @@ smallest hand-written impl for the idiom.
 switches `GooseMode` mid-session); the state machine models it as an
 explicit `SlashCommandOperation`, step 2 of 18 — before compaction,
 before approval, before inference.[^13][^29]
+
+**Start here:** the intercept in `Agent::reply` (`agent.rs:2222`) —
+slash input never reaches the model raw.
+
+![Slash-command intercept and mode switch](figures/seq-slash.svg)
 
 ## Recipes: prompts as programs
 
