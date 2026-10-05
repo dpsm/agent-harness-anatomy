@@ -1,60 +1,60 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1008" width="1600" font-family="system-ui, -apple-system, sans-serif">
-<defs><marker id="arrc" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 1 L 9 5 L 0 9 z" fill="#d08c4e"/></marker><marker id="arrr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 1 L 9 5 L 0 9 z" fill="#8a7a66"/></marker></defs>
-<text x="90.78014184397163" y="44" font-size="26" font-weight="700" fill="#ece1d3">LLM router: policy vs agency</text>
-<text x="90.78014184397163" y="74" font-size="15" fill="#a89880">RouterLLM.select_llm per completion; switch_llm lets the agent swap mid-run</text>
+<defs><marker id="arrc" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 1 L 9 5 L 0 9 z" fill="#d08c4e"/></marker><marker id="arrr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 1 L 9 5 L 0 9 z" fill="#8a7a66"/></marker></defs><rect x="0" y="0" width="1600" height="1008" fill="#f7f2e9"/>
+<text x="90.78014184397163" y="44" font-size="26" font-weight="700" fill="#000000">LLM router: policy vs agency</text>
+<text x="90.78014184397163" y="74" font-size="15" fill="#000000">RouterLLM.select_llm per completion; switch_llm lets the agent swap mid-run</text>
 <line x1="233" y1="110" x2="233" y2="940" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
-<rect x="113" y="82" width="238" height="56" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/>
-<text x="233" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#ece1d3">Agent</text>
+<rect x="113" y="82" width="238" height="56" rx="10" fill="#ffffff" stroke="#3a2f26" stroke-width="1.5"/>
+<text x="233" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#000000">Agent</text>
 <line x1="516" y1="110" x2="516" y2="940" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
-<rect x="397" y="82" width="238" height="56" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/>
-<text x="516" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#ece1d3">RouterLLM</text>
+<rect x="397" y="82" width="238" height="56" rx="10" fill="#ffffff" stroke="#3a2f26" stroke-width="1.5"/>
+<text x="516" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#000000">RouterLLM</text>
 <line x1="800" y1="110" x2="800" y2="940" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
-<rect x="681" y="82" width="238" height="56" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/>
-<text x="800" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#ece1d3">select_llm</text>
+<rect x="681" y="82" width="238" height="56" rx="10" fill="#ffffff" stroke="#3a2f26" stroke-width="1.5"/>
+<text x="800" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#000000">select_llm</text>
 <line x1="1084" y1="110" x2="1084" y2="940" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
-<rect x="965" y="82" width="238" height="56" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/>
-<text x="1084" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#ece1d3">LLM pool</text>
+<rect x="965" y="82" width="238" height="56" rx="10" fill="#ffffff" stroke="#3a2f26" stroke-width="1.5"/>
+<text x="1084" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#000000">LLM pool</text>
 <line x1="1367" y1="110" x2="1367" y2="940" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
-<rect x="1248" y="82" width="238" height="56" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/>
-<text x="1367" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#ece1d3">Model</text>
+<rect x="1248" y="82" width="238" height="56" rx="10" fill="#ffffff" stroke="#3a2f26" stroke-width="1.5"/>
+<text x="1367" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#000000">Model</text>
 <rect x="113" y="163" width="1373" height="44" rx="8" fill="#d08c4e22" stroke="#d08c4e" stroke-width="1"/>
-<text x="800" y="195" text-anchor="middle" font-size="14" fill="#ece1d3">Routing by policy: RouterLLM subclasses LLM and picks a model per completion</text>
+<text x="800" y="195" text-anchor="middle" font-size="14" fill="#000000">Routing by policy: RouterLLM subclasses LLM and picks a model per completion</text>
 <line x1="233" y1="263" x2="506" y2="263" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
-<circle cx="296" cy="249" r="11" fill="#1f1a15" stroke="#d08c4e" stroke-width="1.5"/>
-<text x="296" y="254" text-anchor="middle" font-size="12" font-weight="700" fill="#ece1d3">1</text>
-<text x="314" y="254" font-size="14" fill="#ece1d3">completion(messages, tools)</text>
+<circle cx="296" cy="249" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="296" y="254" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">1</text>
+<text x="314" y="254" font-size="14" fill="#000000">completion(messages, tools)</text>
 <line x1="516" y1="325" x2="790" y2="325" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
-<circle cx="580" cy="311" r="11" fill="#1f1a15" stroke="#d08c4e" stroke-width="1.5"/>
-<text x="580" y="316" text-anchor="middle" font-size="12" font-weight="700" fill="#ece1d3">2</text>
-<text x="598" y="316" font-size="14" fill="#ece1d3">select_llm(messages)</text>
+<circle cx="580" cy="311" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="580" y="316" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">2</text>
+<text x="598" y="316" font-size="14" fill="#000000">select_llm(messages)</text>
 <rect x="113" y="359" width="1373" height="44" rx="8" fill="#d08c4e22" stroke="#d08c4e" stroke-width="1"/>
-<text x="800" y="390" text-anchor="middle" font-size="14" fill="#ece1d3">MultimodalRouter: image-bearing turns go to the vision-capable model; RandomRouter: random</text>
+<text x="800" y="390" text-anchor="middle" font-size="14" fill="#000000">MultimodalRouter: image-bearing turns go to the vision-capable model; RandomRouter: random</text>
 <line x1="800" y1="458" x2="526" y2="458" stroke="#8a7a66" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrr)"/>
-<circle cx="580" cy="444" r="11" fill="#1f1a15" stroke="#8a7a66" stroke-width="1.5"/>
-<text x="580" y="449" text-anchor="middle" font-size="12" font-weight="700" fill="#ece1d3">3</text>
-<text x="598" y="449" font-size="14" fill="#ece1d3">model key</text>
+<circle cx="580" cy="444" r="11" fill="#ffffff" stroke="#8a7a66" stroke-width="1.5"/>
+<text x="580" y="449" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">3</text>
+<text x="598" y="449" font-size="14" fill="#000000">model key</text>
 <line x1="516" y1="520" x2="1074" y2="520" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
-<circle cx="722" cy="506" r="11" fill="#1f1a15" stroke="#d08c4e" stroke-width="1.5"/>
-<text x="722" y="511" text-anchor="middle" font-size="12" font-weight="700" fill="#ece1d3">4</text>
-<text x="740" y="511" font-size="14" fill="#ece1d3">active_llm = llms_for_routing[key]</text>
+<circle cx="722" cy="506" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="722" y="511" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">4</text>
+<text x="740" y="511" font-size="14" fill="#000000">active_llm = llms_for_routing[key]</text>
 <line x1="516" y1="581" x2="1357" y2="581" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
-<circle cx="864" cy="567" r="11" fill="#1f1a15" stroke="#d08c4e" stroke-width="1.5"/>
-<text x="864" y="572" text-anchor="middle" font-size="12" font-weight="700" fill="#ece1d3">5</text>
-<text x="882" y="572" font-size="14" fill="#ece1d3">delegate completion() to the selected LLM</text>
+<circle cx="864" cy="567" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="864" y="572" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">5</text>
+<text x="882" y="572" font-size="14" fill="#000000">delegate completion() to the selected LLM</text>
 <line x1="1367" y1="642" x2="243" y2="642" stroke="#8a7a66" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrr)"/>
-<circle cx="722" cy="628" r="11" fill="#1f1a15" stroke="#8a7a66" stroke-width="1.5"/>
-<text x="722" y="633" text-anchor="middle" font-size="12" font-weight="700" fill="#ece1d3">6</text>
-<text x="740" y="633" font-size="14" fill="#ece1d3">LLMResponse</text>
+<circle cx="722" cy="628" r="11" fill="#ffffff" stroke="#8a7a66" stroke-width="1.5"/>
+<text x="722" y="633" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">6</text>
+<text x="740" y="633" font-size="14" fill="#000000">LLMResponse</text>
 <rect x="113" y="676" width="1373" height="44" rx="8" fill="#d08c4e22" stroke="#d08c4e" stroke-width="1"/>
-<text x="800" y="708" text-anchor="middle" font-size="14" fill="#ece1d3">Switching by agency: the agent swaps its own model mid-run</text>
+<text x="800" y="708" text-anchor="middle" font-size="14" fill="#000000">Switching by agency: the agent swaps its own model mid-run</text>
 <line x1="1367" y1="776" x2="243" y2="776" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
-<circle cx="722" cy="762" r="11" fill="#1f1a15" stroke="#d08c4e" stroke-width="1.5"/>
-<text x="722" y="767" text-anchor="middle" font-size="12" font-weight="700" fill="#ece1d3">7</text>
-<text x="740" y="767" font-size="14" fill="#ece1d3">switch_llm(profile_name, reason)</text>
+<circle cx="722" cy="762" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="722" y="767" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">7</text>
+<text x="740" y="767" font-size="14" fill="#000000">switch_llm(profile_name, reason)</text>
 <rect x="233" y="815" width="68" height="39" rx="6" fill="none" stroke="#d08c4e" stroke-width="2"/>
-<text x="317" y="837" font-size="14" fill="#a89880">activate saved LLM profile for future steps</text>
+<text x="317" y="837" font-size="14" fill="#000000">activate saved LLM profile for future steps</text>
 <line x1="233" y1="899" x2="1357" y2="899" stroke="#8a7a66" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrr)"/>
-<circle cx="722" cy="885" r="11" fill="#1f1a15" stroke="#8a7a66" stroke-width="1.5"/>
-<text x="722" y="890" text-anchor="middle" font-size="12" font-weight="700" fill="#ece1d3">9</text>
-<text x="740" y="890" font-size="14" fill="#ece1d3">next step runs on the new model</text>
+<circle cx="722" cy="885" r="11" fill="#ffffff" stroke="#8a7a66" stroke-width="1.5"/>
+<text x="722" y="890" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">9</text>
+<text x="740" y="890" font-size="14" fill="#000000">next step runs on the new model</text>
 </svg>
