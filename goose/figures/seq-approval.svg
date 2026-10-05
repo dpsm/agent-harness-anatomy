@@ -1,61 +1,61 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 866" width="1600" font-family="system-ui, -apple-system, sans-serif">
-<defs><marker id="arrc" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 1 L 9 5 L 0 9 z" fill="#d08c4e"/></marker><marker id="arrr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 1 L 9 5 L 0 9 z" fill="#8a7a66"/></marker></defs>
-<text x="77.10843373493975" y="44" font-size="26" font-weight="700" fill="#ece1d3">The approval path: mode x permission x inspectors</text>
-<text x="77.10843373493975" y="74" font-size="15" fill="#a89880">block/goose v1.53.0 — three cooperating layers plus an LLM judge</text>
+<defs><marker id="arrc" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 1 L 9 5 L 0 9 z" fill="#d08c4e"/></marker><marker id="arrr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 1 L 9 5 L 0 9 z" fill="#8a7a66"/></marker></defs><rect x="0" y="0" width="1600" height="866" fill="#f7f2e9"/>
+<text x="77.10843373493975" y="44" font-size="26" font-weight="700" fill="#000000">The approval path: mode x permission x inspectors</text>
+<text x="77.10843373493975" y="74" font-size="15" fill="#000000">block/goose v1.53.0 — three cooperating layers plus an LLM judge</text>
 <line x1="198" y1="110" x2="198" y2="808" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
-<rect x="96" y="82" width="202" height="56" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/>
-<text x="198" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#ece1d3">Tool call</text>
+<rect x="96" y="82" width="202" height="56" rx="10" fill="#ffffff" stroke="#3a2f26" stroke-width="1.5"/>
+<text x="198" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#000000">Tool call</text>
 <line x1="439" y1="110" x2="439" y2="808" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
-<rect x="337" y="82" width="202" height="56" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/>
-<text x="439" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#ece1d3">GooseMode</text>
+<rect x="337" y="82" width="202" height="56" rx="10" fill="#ffffff" stroke="#3a2f26" stroke-width="1.5"/>
+<text x="439" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#000000">GooseMode</text>
 <line x1="680" y1="110" x2="680" y2="808" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
-<rect x="578" y="82" width="202" height="56" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/>
-<text x="680" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#ece1d3">permission.yaml</text>
+<rect x="578" y="82" width="202" height="56" rx="10" fill="#ffffff" stroke="#3a2f26" stroke-width="1.5"/>
+<text x="680" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#000000">permission.yaml</text>
 <line x1="920" y1="110" x2="920" y2="808" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
-<rect x="819" y="82" width="202" height="56" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/>
-<text x="920" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#ece1d3">Inspector chain</text>
+<rect x="819" y="82" width="202" height="56" rx="10" fill="#ffffff" stroke="#3a2f26" stroke-width="1.5"/>
+<text x="920" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#000000">Inspector chain</text>
 <line x1="1161" y1="110" x2="1161" y2="808" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
-<rect x="1060" y="82" width="202" height="56" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/>
-<text x="1161" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#ece1d3">LLM judge</text>
+<rect x="1060" y="82" width="202" height="56" rx="10" fill="#ffffff" stroke="#3a2f26" stroke-width="1.5"/>
+<text x="1161" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#000000">LLM judge</text>
 <line x1="1402" y1="110" x2="1402" y2="808" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
-<rect x="1301" y="82" width="202" height="56" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/>
-<text x="1402" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#ece1d3">User</text>
+<rect x="1301" y="82" width="202" height="56" rx="10" fill="#ffffff" stroke="#3a2f26" stroke-width="1.5"/>
+<text x="1402" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#000000">User</text>
 <line x1="198" y1="162" x2="429" y2="162" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
-<circle cx="240" cy="148" r="11" fill="#1f1a15" stroke="#d08c4e" stroke-width="1.5"/>
-<text x="240" y="153" text-anchor="middle" font-size="12" font-weight="700" fill="#ece1d3">1</text>
-<text x="258" y="153" font-size="14" fill="#ece1d3">mode? Auto / Approve / SmartApprove / Chat</text>
+<circle cx="240" cy="148" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="240" y="153" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">1</text>
+<text x="258" y="153" font-size="14" fill="#000000">mode? Auto / Approve / SmartApprove / Chat</text>
 <line x1="439" y1="214" x2="670" y2="214" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
-<circle cx="481" cy="200" r="11" fill="#1f1a15" stroke="#d08c4e" stroke-width="1.5"/>
-<text x="481" y="205" text-anchor="middle" font-size="12" font-weight="700" fill="#ece1d3">2</text>
-<text x="499" y="205" font-size="14" fill="#ece1d3">lookup: NeverAllow &gt; AlwaysAllow &gt; AskBefore</text>
+<circle cx="481" cy="200" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="481" y="205" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">2</text>
+<text x="499" y="205" font-size="14" fill="#000000">lookup: NeverAllow &gt; AlwaysAllow &gt; AskBefore</text>
 <rect x="337" y="243" width="443" height="44" rx="8" fill="#d08c4e22" stroke="#d08c4e" stroke-width="1"/>
-<text x="559" y="270" text-anchor="middle" font-size="14" fill="#ece1d3">Keyed by full tool name; removing an extension prunes its entries</text>
+<text x="559" y="270" text-anchor="middle" font-size="14" fill="#000000">Keyed by full tool name; removing an extension prunes its entries</text>
 <line x1="680" y1="328" x2="910" y2="328" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
-<circle cx="722" cy="314" r="11" fill="#1f1a15" stroke="#d08c4e" stroke-width="1.5"/>
-<text x="722" y="319" text-anchor="middle" font-size="12" font-weight="700" fill="#ece1d3">3</text>
-<text x="740" y="319" font-size="14" fill="#ece1d3">Security -&gt; Egress -&gt; Adversary -&gt; Permission -&gt; Repetition</text>
+<circle cx="722" cy="314" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="722" y="319" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">3</text>
+<text x="740" y="319" font-size="14" fill="#000000">Security -&gt; Egress -&gt; Adversary -&gt; Permission -&gt; Repetition</text>
 <rect x="920" y="360" width="58" height="33" rx="6" fill="none" stroke="#d08c4e" stroke-width="2"/>
-<text x="992" y="380" font-size="14" fill="#a89880">Security can only escalate, never relax</text>
+<text x="992" y="380" font-size="14" fill="#000000">Security can only escalate, never relax</text>
 <line x1="920" y1="432" x2="1151" y2="432" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
-<circle cx="963" cy="418" r="11" fill="#1f1a15" stroke="#d08c4e" stroke-width="1.5"/>
-<text x="963" y="423" text-anchor="middle" font-size="12" font-weight="700" fill="#ece1d3">5</text>
-<text x="981" y="423" font-size="14" fill="#ece1d3">SmartApprove: detect_read_only_requests</text>
+<circle cx="963" cy="418" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="963" y="423" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">5</text>
+<text x="981" y="423" font-size="14" fill="#000000">SmartApprove: detect_read_only_requests</text>
 <rect x="819" y="461" width="443" height="44" rx="8" fill="#d08c4e22" stroke="#d08c4e" stroke-width="1"/>
-<text x="1041" y="488" text-anchor="middle" font-size="14" fill="#ece1d3">Requests labeled UNTRUSTED TOOL REQUEST DATA; judge failure fails closed</text>
+<text x="1041" y="488" text-anchor="middle" font-size="14" fill="#000000">Requests labeled UNTRUSTED TOOL REQUEST DATA; judge failure fails closed</text>
 <line x1="1161" y1="546" x2="930" y2="546" stroke="#8a7a66" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrr)"/>
-<circle cx="963" cy="532" r="11" fill="#1f1a15" stroke="#8a7a66" stroke-width="1.5"/>
-<text x="963" y="537" text-anchor="middle" font-size="12" font-weight="700" fill="#ece1d3">6</text>
-<text x="981" y="537" font-size="14" fill="#ece1d3">read-only verdict (cached as AskBefore)</text>
+<circle cx="963" cy="532" r="11" fill="#ffffff" stroke="#8a7a66" stroke-width="1.5"/>
+<text x="963" y="537" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">6</text>
+<text x="981" y="537" font-size="14" fill="#000000">read-only verdict (cached as AskBefore)</text>
 <line x1="920" y1="598" x2="1392" y2="598" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
-<circle cx="1083" cy="584" r="11" fill="#1f1a15" stroke="#d08c4e" stroke-width="1.5"/>
-<text x="1083" y="589" text-anchor="middle" font-size="12" font-weight="700" fill="#ece1d3">7</text>
-<text x="1101" y="589" font-size="14" fill="#ece1d3">prompt: Allow / Always Allow / Deny / Cancel</text>
+<circle cx="1083" cy="584" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="1083" y="589" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">7</text>
+<text x="1101" y="589" font-size="14" fill="#000000">prompt: Allow / Always Allow / Deny / Cancel</text>
 <rect x="819" y="627" width="684" height="44" rx="8" fill="#d08c4e22" stroke="#d08c4e" stroke-width="1"/>
-<text x="1161" y="653" text-anchor="middle" font-size="14" fill="#ece1d3">&quot;Always Allow&quot; withheld when a security inspector attached a warning</text>
+<text x="1161" y="653" text-anchor="middle" font-size="14" fill="#000000">&quot;Always Allow&quot; withheld when a security inspector attached a warning</text>
 <line x1="1402" y1="711" x2="208" y2="711" stroke="#8a7a66" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrr)"/>
-<circle cx="722" cy="697" r="11" fill="#1f1a15" stroke="#8a7a66" stroke-width="1.5"/>
-<text x="722" y="702" text-anchor="middle" font-size="12" font-weight="700" fill="#ece1d3">8</text>
-<text x="740" y="702" font-size="14" fill="#ece1d3">verdict -&gt; approved / denied</text>
+<circle cx="722" cy="697" r="11" fill="#ffffff" stroke="#8a7a66" stroke-width="1.5"/>
+<text x="722" y="702" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">8</text>
+<text x="740" y="702" font-size="14" fill="#000000">verdict -&gt; approved / denied</text>
 <rect x="96" y="740" width="1407" height="44" rx="8" fill="#d08c4e22" stroke="#d08c4e" stroke-width="1"/>
-<text x="800" y="767" text-anchor="middle" font-size="14" fill="#ece1d3">Legacy: oneshot pause mid-iteration. State machine: goose.executable effect.</text>
+<text x="800" y="767" text-anchor="middle" font-size="14" fill="#000000">Legacy: oneshot pause mid-iteration. State machine: goose.executable effect.</text>
 </svg>

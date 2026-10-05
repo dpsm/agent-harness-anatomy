@@ -1,48 +1,48 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 885" width="1600" font-family="system-ui, -apple-system, sans-serif">
-<defs><marker id="arrc" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 1 L 9 5 L 0 9 z" fill="#d08c4e"/></marker><marker id="arrr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 1 L 9 5 L 0 9 z" fill="#8a7a66"/></marker></defs>
-<text x="90.78014184397163" y="44" font-size="26" font-weight="700" fill="#ece1d3">aider: watch mode — the filesystem as input</text>
-<text x="90.78014184397163" y="74" font-size="15" fill="#a89880">AI! = request changes, AI? = ask questions (watch.py:181)</text>
+<defs><marker id="arrc" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 1 L 9 5 L 0 9 z" fill="#d08c4e"/></marker><marker id="arrr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 1 L 9 5 L 0 9 z" fill="#8a7a66"/></marker></defs><rect x="0" y="0" width="1600" height="885" fill="#f7f2e9"/>
+<text x="90.78014184397163" y="44" font-size="26" font-weight="700" fill="#000000">aider: watch mode — the filesystem as input</text>
+<text x="90.78014184397163" y="74" font-size="15" fill="#000000">AI! = request changes, AI? = ask questions (watch.py:181)</text>
 <line x1="233" y1="110" x2="233" y2="817" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
-<rect x="113" y="82" width="238" height="56" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/>
-<text x="233" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#ece1d3">Editor</text>
+<rect x="113" y="82" width="238" height="56" rx="10" fill="#ffffff" stroke="#3a2f26" stroke-width="1.5"/>
+<text x="233" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#000000">Editor</text>
 <line x1="516" y1="110" x2="516" y2="817" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
-<rect x="397" y="82" width="238" height="56" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/>
-<text x="516" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#ece1d3">watchdog</text>
+<rect x="397" y="82" width="238" height="56" rx="10" fill="#ffffff" stroke="#3a2f26" stroke-width="1.5"/>
+<text x="516" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#000000">watchdog</text>
 <line x1="800" y1="110" x2="800" y2="817" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
-<rect x="681" y="82" width="238" height="56" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/>
-<text x="800" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#ece1d3">FileWatcher</text>
+<rect x="681" y="82" width="238" height="56" rx="10" fill="#ffffff" stroke="#3a2f26" stroke-width="1.5"/>
+<text x="800" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#000000">FileWatcher</text>
 <line x1="1084" y1="110" x2="1084" y2="817" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
-<rect x="965" y="82" width="238" height="56" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/>
-<text x="1084" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#ece1d3">Input session</text>
+<rect x="965" y="82" width="238" height="56" rx="10" fill="#ffffff" stroke="#3a2f26" stroke-width="1.5"/>
+<text x="1084" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#000000">Input session</text>
 <line x1="1367" y1="110" x2="1367" y2="817" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
-<rect x="1248" y="82" width="238" height="56" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/>
-<text x="1367" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#ece1d3">Coder.run</text>
+<rect x="1248" y="82" width="238" height="56" rx="10" fill="#ffffff" stroke="#3a2f26" stroke-width="1.5"/>
+<text x="1367" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#000000">Coder.run</text>
 <line x1="233" y1="191" x2="506" y2="191" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
-<circle cx="296" cy="177" r="11" fill="#1f1a15" stroke="#d08c4e" stroke-width="1.5"/>
-<text x="296" y="182" text-anchor="middle" font-size="12" font-weight="700" fill="#ece1d3">1</text>
-<text x="314" y="182" font-size="14" fill="#ece1d3">file saved on disk</text>
+<circle cx="296" cy="177" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="296" y="182" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">1</text>
+<text x="314" y="182" font-size="14" fill="#000000">file saved on disk</text>
 <line x1="516" y1="252" x2="790" y2="252" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
-<circle cx="580" cy="238" r="11" fill="#1f1a15" stroke="#d08c4e" stroke-width="1.5"/>
-<text x="580" y="243" text-anchor="middle" font-size="12" font-weight="700" fill="#ece1d3">2</text>
-<text x="598" y="243" font-size="14" fill="#ece1d3">changed_files event</text>
+<circle cx="580" cy="238" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="580" y="243" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">2</text>
+<text x="598" y="243" font-size="14" fill="#000000">changed_files event</text>
 <line x1="800" y1="313" x2="1074" y2="313" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
-<circle cx="864" cy="299" r="11" fill="#1f1a15" stroke="#d08c4e" stroke-width="1.5"/>
-<text x="864" y="304" text-anchor="middle" font-size="12" font-weight="700" fill="#ece1d3">3</text>
-<text x="882" y="304" font-size="14" fill="#ece1d3">io.interrupt_input()</text>
+<circle cx="864" cy="299" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="864" y="304" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">3</text>
+<text x="882" y="304" font-size="14" fill="#000000">io.interrupt_input()</text>
 <rect x="681" y="347" width="522" height="44" rx="8" fill="#d08c4e22" stroke="#d08c4e" stroke-width="1"/>
-<text x="942" y="379" text-anchor="middle" font-size="14" fill="#ece1d3">Partial input is stashed as placeholder; the prompt session exits</text>
+<text x="942" y="379" text-anchor="middle" font-size="14" fill="#000000">Partial input is stashed as placeholder; the prompt session exits</text>
 <rect x="800" y="424" width="68" height="39" rx="6" fill="none" stroke="#d08c4e" stroke-width="2"/>
-<text x="884" y="447" font-size="14" fill="#a89880">process_changes()</text>
+<text x="884" y="447" font-size="14" fill="#000000">process_changes()</text>
 <rect x="800" y="486" width="68" height="39" rx="6" fill="none" stroke="#d08c4e" stroke-width="2"/>
-<text x="884" y="508" font-size="14" fill="#a89880">get_ai_comments(fname): scan for AI!/AI?</text>
+<text x="884" y="508" font-size="14" fill="#000000">get_ai_comments(fname): scan for AI!/AI?</text>
 <rect x="397" y="542" width="522" height="44" rx="8" fill="#d08c4e22" stroke="#d08c4e" stroke-width="1"/>
-<text x="658" y="574" text-anchor="middle" font-size="14" fill="#ece1d3">Files not yet in chat are auto-added; others only need the comment</text>
+<text x="658" y="574" text-anchor="middle" font-size="14" fill="#000000">Files not yet in chat are auto-added; others only need the comment</text>
 <rect x="800" y="620" width="68" height="39" rx="6" fill="none" stroke="#d08c4e" stroke-width="2"/>
-<text x="884" y="642" font-size="14" fill="#a89880">TreeContext around comment lines</text>
+<text x="884" y="642" font-size="14" fill="#000000">TreeContext around comment lines</text>
 <line x1="800" y1="704" x2="1357" y2="704" stroke="#8a7a66" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrr)"/>
-<circle cx="1006" cy="690" r="11" fill="#1f1a15" stroke="#8a7a66" stroke-width="1.5"/>
-<text x="1006" y="695" text-anchor="middle" font-size="12" font-weight="700" fill="#ece1d3">7</text>
-<text x="1024" y="695" font-size="14" fill="#ece1d3">watch_code_prompt / watch_ask_prompt + context</text>
+<circle cx="1006" cy="690" r="11" fill="#ffffff" stroke="#8a7a66" stroke-width="1.5"/>
+<text x="1006" y="695" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">7</text>
+<text x="1024" y="695" font-size="14" fill="#000000">watch_code_prompt / watch_ask_prompt + context</text>
 <rect x="681" y="738" width="806" height="44" rx="8" fill="#d08c4e22" stroke="#d08c4e" stroke-width="1"/>
-<text x="1084" y="769" text-anchor="middle" font-size="14" fill="#ece1d3">The prompt returns as the next user input — the filesystem is an input device</text>
+<text x="1084" y="769" text-anchor="middle" font-size="14" fill="#000000">The prompt returns as the next user input — the filesystem is an input device</text>
 </svg>
