@@ -1,66 +1,66 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1130" width="1600" font-family="system-ui, -apple-system, sans-serif">
-<defs><marker id="arrc" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 1 L 9 5 L 0 9 z" fill="#58a6ff"/></marker><marker id="arrr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 1 L 9 5 L 0 9 z" fill="#6e7681"/></marker></defs>
-<text x="90.78014184397163" y="44" font-size="26" font-weight="700" fill="#e6edf3">Skills: three activation paths</text>
-<text x="90.78014184397163" y="74" font-size="15" fill="#8b949e">progressive disclosure, trigger injection, invoke_skill tool</text>
-<line x1="233" y1="110" x2="233" y2="1062" stroke="#30363d" stroke-width="2" stroke-dasharray="8 6"/>
-<rect x="113" y="82" width="238" height="56" rx="10" fill="#161b22" stroke="#30363d" stroke-width="1.5"/>
-<text x="233" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#e6edf3">LocalConversation</text>
-<line x1="516" y1="110" x2="516" y2="1062" stroke="#30363d" stroke-width="2" stroke-dasharray="8 6"/>
-<rect x="397" y="82" width="238" height="56" rx="10" fill="#161b22" stroke="#30363d" stroke-width="1.5"/>
-<text x="516" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#e6edf3">AgentContext</text>
-<line x1="800" y1="110" x2="800" y2="1062" stroke="#30363d" stroke-width="2" stroke-dasharray="8 6"/>
-<rect x="681" y="82" width="238" height="56" rx="10" fill="#161b22" stroke="#30363d" stroke-width="1.5"/>
-<text x="800" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#e6edf3">SkillCatalog</text>
-<line x1="1084" y1="110" x2="1084" y2="1062" stroke="#30363d" stroke-width="2" stroke-dasharray="8 6"/>
-<rect x="965" y="82" width="238" height="56" rx="10" fill="#161b22" stroke="#30363d" stroke-width="1.5"/>
-<text x="1084" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#e6edf3">Model</text>
-<line x1="1367" y1="110" x2="1367" y2="1062" stroke="#30363d" stroke-width="2" stroke-dasharray="8 6"/>
-<rect x="1248" y="82" width="238" height="56" rx="10" fill="#161b22" stroke="#30363d" stroke-width="1.5"/>
-<text x="1367" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#e6edf3">invoke_skill</text>
-<rect x="113" y="163" width="1373" height="44" rx="8" fill="#1f6feb22" stroke="#1f6feb" stroke-width="1"/>
-<text x="800" y="195" text-anchor="middle" font-size="14" fill="#e6edf3">Path 1: progressive disclosure — skills listed in &lt;available_skills&gt;, read on demand</text>
-<line x1="233" y1="263" x2="506" y2="263" stroke="#58a6ff" stroke-width="2" marker-end="url(#arrc)"/>
-<circle cx="296" cy="249" r="11" fill="#161b22" stroke="#58a6ff" stroke-width="1.5"/>
-<text x="296" y="254" text-anchor="middle" font-size="12" font-weight="700" fill="#e6edf3">1</text>
-<text x="314" y="254" font-size="14" fill="#e6edf3">prepare_llm_messages(view): get_system_message_suffix()</text>
-<rect x="516" y="302" width="68" height="39" rx="6" fill="none" stroke="#58a6ff" stroke-width="2"/>
-<text x="600" y="325" font-size="14" fill="#8b949e">_resolve_dynamic_data(): render &lt;available_skills&gt;</text>
-<line x1="516" y1="386" x2="790" y2="386" stroke="#58a6ff" stroke-width="2" marker-end="url(#arrc)"/>
-<circle cx="580" cy="372" r="11" fill="#161b22" stroke="#58a6ff" stroke-width="1.5"/>
-<text x="580" y="377" text-anchor="middle" font-size="12" font-weight="700" fill="#e6edf3">3</text>
-<text x="598" y="377" font-size="14" fill="#e6edf3">list AgentSkills skills (desc truncated to 1024 chars)</text>
-<line x1="800" y1="447" x2="526" y2="447" stroke="#6e7681" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrr)"/>
-<circle cx="580" cy="433" r="11" fill="#161b22" stroke="#6e7681" stroke-width="1.5"/>
-<text x="580" y="438" text-anchor="middle" font-size="12" font-weight="700" fill="#e6edf3">4</text>
-<text x="598" y="438" font-size="14" fill="#e6edf3">Skill list</text>
-<line x1="516" y1="508" x2="1074" y2="508" stroke="#58a6ff" stroke-width="2" marker-end="url(#arrc)"/>
-<circle cx="722" cy="494" r="11" fill="#161b22" stroke="#58a6ff" stroke-width="1.5"/>
-<text x="722" y="499" text-anchor="middle" font-size="12" font-weight="700" fill="#e6edf3">5</text>
-<text x="740" y="499" font-size="14" fill="#e6edf3">system prompt carries &lt;available_skills&gt; block</text>
-<rect x="113" y="542" width="1373" height="44" rx="8" fill="#1f6feb22" stroke="#1f6feb" stroke-width="1"/>
-<text x="800" y="574" text-anchor="middle" font-size="14" fill="#e6edf3">Path 2: trigger injection — send_message matches triggers, appends content to the user message</text>
-<line x1="233" y1="642" x2="506" y2="642" stroke="#58a6ff" stroke-width="2" marker-end="url(#arrc)"/>
-<circle cx="296" cy="628" r="11" fill="#161b22" stroke="#58a6ff" stroke-width="1.5"/>
-<text x="296" y="633" text-anchor="middle" font-size="12" font-weight="700" fill="#e6edf3">6</text>
-<text x="314" y="633" font-size="14" fill="#e6edf3">send_message: get_user_message_suffix(message)</text>
-<rect x="516" y="681" width="68" height="39" rx="6" fill="none" stroke="#58a6ff" stroke-width="2"/>
-<text x="600" y="704" font-size="14" fill="#8b949e">match KeywordTrigger / TaskTrigger / PathTrigger</text>
-<line x1="516" y1="765" x2="243" y2="765" stroke="#6e7681" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrr)"/>
-<circle cx="296" cy="751" r="11" fill="#161b22" stroke="#6e7681" stroke-width="1.5"/>
-<text x="296" y="756" text-anchor="middle" font-size="12" font-weight="700" fill="#e6edf3">8</text>
-<text x="314" y="756" font-size="14" fill="#e6edf3">suffix + triggered names (recorded in activated_knowledge_skills)</text>
-<rect x="113" y="799" width="1373" height="44" rx="8" fill="#1f6feb22" stroke="#1f6feb" stroke-width="1"/>
-<text x="800" y="831" text-anchor="middle" font-size="14" fill="#e6edf3">Path 3: model invocation — the model calls the invoke_skill builtin tool</text>
-<line x1="1084" y1="899" x2="1357" y2="899" stroke="#58a6ff" stroke-width="2" marker-end="url(#arrc)"/>
-<circle cx="1148" cy="885" r="11" fill="#161b22" stroke="#58a6ff" stroke-width="1.5"/>
-<text x="1148" y="890" text-anchor="middle" font-size="12" font-weight="700" fill="#e6edf3">9</text>
-<text x="1166" y="890" font-size="14" fill="#e6edf3">invoke_skill(name)</text>
-<line x1="1367" y1="960" x2="810" y2="960" stroke="#58a6ff" stroke-width="2" marker-end="url(#arrc)"/>
-<circle cx="1006" cy="946" r="11" fill="#161b22" stroke="#58a6ff" stroke-width="1.5"/>
-<text x="1006" y="951" text-anchor="middle" font-size="12" font-weight="700" fill="#e6edf3">10</text>
-<text x="1024" y="951" font-size="14" fill="#e6edf3">render skill content (executes inline !commands)</text>
-<line x1="1367" y1="1021" x2="1094" y2="1021" stroke="#6e7681" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrr)"/>
-<circle cx="1148" cy="1007" r="11" fill="#161b22" stroke="#6e7681" stroke-width="1.5"/>
-<text x="1148" y="1012" text-anchor="middle" font-size="12" font-weight="700" fill="#e6edf3">11</text>
-<text x="1166" y="1012" font-size="14" fill="#e6edf3">InvokeSkillObservation (unless disable_model_invocation)</text>
+<defs><marker id="arrc" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 1 L 9 5 L 0 9 z" fill="#d08c4e"/></marker><marker id="arrr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 1 L 9 5 L 0 9 z" fill="#8a7a66"/></marker></defs>
+<text x="90.78014184397163" y="44" font-size="26" font-weight="700" fill="#ece1d3">Skills: three activation paths</text>
+<text x="90.78014184397163" y="74" font-size="15" fill="#a89880">progressive disclosure, trigger injection, invoke_skill tool</text>
+<line x1="233" y1="110" x2="233" y2="1062" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="113" y="82" width="238" height="56" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/>
+<text x="233" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#ece1d3">LocalConversation</text>
+<line x1="516" y1="110" x2="516" y2="1062" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="397" y="82" width="238" height="56" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/>
+<text x="516" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#ece1d3">AgentContext</text>
+<line x1="800" y1="110" x2="800" y2="1062" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="681" y="82" width="238" height="56" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/>
+<text x="800" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#ece1d3">SkillCatalog</text>
+<line x1="1084" y1="110" x2="1084" y2="1062" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="965" y="82" width="238" height="56" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/>
+<text x="1084" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#ece1d3">Model</text>
+<line x1="1367" y1="110" x2="1367" y2="1062" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="1248" y="82" width="238" height="56" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/>
+<text x="1367" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#ece1d3">invoke_skill</text>
+<rect x="113" y="163" width="1373" height="44" rx="8" fill="#d08c4e22" stroke="#d08c4e" stroke-width="1"/>
+<text x="800" y="195" text-anchor="middle" font-size="14" fill="#ece1d3">Path 1: progressive disclosure — skills listed in &lt;available_skills&gt;, read on demand</text>
+<line x1="233" y1="263" x2="506" y2="263" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="296" cy="249" r="11" fill="#1f1a15" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="296" y="254" text-anchor="middle" font-size="12" font-weight="700" fill="#ece1d3">1</text>
+<text x="314" y="254" font-size="14" fill="#ece1d3">prepare_llm_messages(view): get_system_message_suffix()</text>
+<rect x="516" y="302" width="68" height="39" rx="6" fill="none" stroke="#d08c4e" stroke-width="2"/>
+<text x="600" y="325" font-size="14" fill="#a89880">_resolve_dynamic_data(): render &lt;available_skills&gt;</text>
+<line x1="516" y1="386" x2="790" y2="386" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="580" cy="372" r="11" fill="#1f1a15" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="580" y="377" text-anchor="middle" font-size="12" font-weight="700" fill="#ece1d3">3</text>
+<text x="598" y="377" font-size="14" fill="#ece1d3">list AgentSkills skills (desc truncated to 1024 chars)</text>
+<line x1="800" y1="447" x2="526" y2="447" stroke="#8a7a66" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrr)"/>
+<circle cx="580" cy="433" r="11" fill="#1f1a15" stroke="#8a7a66" stroke-width="1.5"/>
+<text x="580" y="438" text-anchor="middle" font-size="12" font-weight="700" fill="#ece1d3">4</text>
+<text x="598" y="438" font-size="14" fill="#ece1d3">Skill list</text>
+<line x1="516" y1="508" x2="1074" y2="508" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="722" cy="494" r="11" fill="#1f1a15" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="722" y="499" text-anchor="middle" font-size="12" font-weight="700" fill="#ece1d3">5</text>
+<text x="740" y="499" font-size="14" fill="#ece1d3">system prompt carries &lt;available_skills&gt; block</text>
+<rect x="113" y="542" width="1373" height="44" rx="8" fill="#d08c4e22" stroke="#d08c4e" stroke-width="1"/>
+<text x="800" y="574" text-anchor="middle" font-size="14" fill="#ece1d3">Path 2: trigger injection — send_message matches triggers, appends content to the user message</text>
+<line x1="233" y1="642" x2="506" y2="642" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="296" cy="628" r="11" fill="#1f1a15" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="296" y="633" text-anchor="middle" font-size="12" font-weight="700" fill="#ece1d3">6</text>
+<text x="314" y="633" font-size="14" fill="#ece1d3">send_message: get_user_message_suffix(message)</text>
+<rect x="516" y="681" width="68" height="39" rx="6" fill="none" stroke="#d08c4e" stroke-width="2"/>
+<text x="600" y="704" font-size="14" fill="#a89880">match KeywordTrigger / TaskTrigger / PathTrigger</text>
+<line x1="516" y1="765" x2="243" y2="765" stroke="#8a7a66" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrr)"/>
+<circle cx="296" cy="751" r="11" fill="#1f1a15" stroke="#8a7a66" stroke-width="1.5"/>
+<text x="296" y="756" text-anchor="middle" font-size="12" font-weight="700" fill="#ece1d3">8</text>
+<text x="314" y="756" font-size="14" fill="#ece1d3">suffix + triggered names (recorded in activated_knowledge_skills)</text>
+<rect x="113" y="799" width="1373" height="44" rx="8" fill="#d08c4e22" stroke="#d08c4e" stroke-width="1"/>
+<text x="800" y="831" text-anchor="middle" font-size="14" fill="#ece1d3">Path 3: model invocation — the model calls the invoke_skill builtin tool</text>
+<line x1="1084" y1="899" x2="1357" y2="899" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="1148" cy="885" r="11" fill="#1f1a15" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="1148" y="890" text-anchor="middle" font-size="12" font-weight="700" fill="#ece1d3">9</text>
+<text x="1166" y="890" font-size="14" fill="#ece1d3">invoke_skill(name)</text>
+<line x1="1367" y1="960" x2="810" y2="960" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="1006" cy="946" r="11" fill="#1f1a15" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="1006" y="951" text-anchor="middle" font-size="12" font-weight="700" fill="#ece1d3">10</text>
+<text x="1024" y="951" font-size="14" fill="#ece1d3">render skill content (executes inline !commands)</text>
+<line x1="1367" y1="1021" x2="1094" y2="1021" stroke="#8a7a66" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrr)"/>
+<circle cx="1148" cy="1007" r="11" fill="#1f1a15" stroke="#8a7a66" stroke-width="1.5"/>
+<text x="1148" y="1012" text-anchor="middle" font-size="12" font-weight="700" fill="#ece1d3">11</text>
+<text x="1166" y="1012" font-size="14" fill="#ece1d3">InvokeSkillObservation (unless disable_model_invocation)</text>
 </svg>

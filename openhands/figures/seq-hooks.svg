@@ -1,89 +1,89 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1240" width="1600" font-family="system-ui, -apple-system, sans-serif">
-<defs><marker id="arrc" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 1 L 9 5 L 0 9 z" fill="#58a6ff"/></marker><marker id="arrr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 1 L 9 5 L 0 9 z" fill="#6e7681"/></marker></defs>
-<text x="77.10843373493975" y="44" font-size="26" font-weight="700" fill="#e6edf3">Hooks: stream interception</text>
-<text x="77.10843373493975" y="74" font-size="15" fill="#8b949e">HookEventProcessor wraps on_event — PreToolUse / UserPromptSubmit / Stop</text>
-<line x1="198" y1="110" x2="198" y2="1182" stroke="#30363d" stroke-width="2" stroke-dasharray="8 6"/>
-<rect x="96" y="82" width="202" height="56" rx="10" fill="#161b22" stroke="#30363d" stroke-width="1.5"/>
-<text x="198" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#e6edf3">Event stream</text>
-<line x1="439" y1="110" x2="439" y2="1182" stroke="#30363d" stroke-width="2" stroke-dasharray="8 6"/>
-<rect x="337" y="82" width="202" height="56" rx="10" fill="#161b22" stroke="#30363d" stroke-width="1.5"/>
-<text x="439" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#e6edf3">HookEventProcessor</text>
-<line x1="680" y1="110" x2="680" y2="1182" stroke="#30363d" stroke-width="2" stroke-dasharray="8 6"/>
-<rect x="578" y="82" width="202" height="56" rx="10" fill="#161b22" stroke="#30363d" stroke-width="1.5"/>
-<text x="680" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#e6edf3">HookManager</text>
-<line x1="920" y1="110" x2="920" y2="1182" stroke="#30363d" stroke-width="2" stroke-dasharray="8 6"/>
-<rect x="819" y="82" width="202" height="56" rx="10" fill="#161b22" stroke="#30363d" stroke-width="1.5"/>
-<text x="920" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#e6edf3">HookExecutor</text>
-<line x1="1161" y1="110" x2="1161" y2="1182" stroke="#30363d" stroke-width="2" stroke-dasharray="8 6"/>
-<rect x="1060" y="82" width="202" height="56" rx="10" fill="#161b22" stroke="#30363d" stroke-width="1.5"/>
-<text x="1161" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#e6edf3">ConversationState</text>
-<line x1="1402" y1="110" x2="1402" y2="1182" stroke="#30363d" stroke-width="2" stroke-dasharray="8 6"/>
-<rect x="1301" y="82" width="202" height="56" rx="10" fill="#161b22" stroke="#30363d" stroke-width="1.5"/>
-<text x="1402" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#e6edf3">Agent</text>
-<rect x="96" y="139" width="1407" height="44" rx="8" fill="#1f6feb22" stroke="#1f6feb" stroke-width="1"/>
-<text x="800" y="166" text-anchor="middle" font-size="14" fill="#e6edf3">PreToolUse deny: action blocked in state, batch emits UserRejectObservation instead of executing</text>
-<line x1="198" y1="224" x2="429" y2="224" stroke="#58a6ff" stroke-width="2" marker-end="url(#arrc)"/>
-<circle cx="240" cy="210" r="11" fill="#161b22" stroke="#58a6ff" stroke-width="1.5"/>
-<text x="240" y="215" text-anchor="middle" font-size="12" font-weight="700" fill="#e6edf3">1</text>
-<text x="258" y="215" font-size="14" fill="#e6edf3">on_event(ActionEvent)</text>
-<line x1="439" y1="276" x2="670" y2="276" stroke="#58a6ff" stroke-width="2" marker-end="url(#arrc)"/>
-<circle cx="481" cy="262" r="11" fill="#161b22" stroke="#58a6ff" stroke-width="1.5"/>
-<text x="481" y="267" text-anchor="middle" font-size="12" font-weight="700" fill="#e6edf3">2</text>
-<text x="499" y="267" font-size="14" fill="#e6edf3">run_pre_tool_use(tool_name, tool_input)</text>
-<line x1="680" y1="328" x2="910" y2="328" stroke="#58a6ff" stroke-width="2" marker-end="url(#arrc)"/>
-<circle cx="722" cy="314" r="11" fill="#161b22" stroke="#58a6ff" stroke-width="1.5"/>
-<text x="722" y="319" text-anchor="middle" font-size="12" font-weight="700" fill="#e6edf3">3</text>
-<text x="740" y="319" font-size="14" fill="#e6edf3">execute hook (command / prompt / agent kind)</text>
-<line x1="920" y1="380" x2="690" y2="380" stroke="#6e7681" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrr)"/>
-<circle cx="722" cy="366" r="11" fill="#161b22" stroke="#6e7681" stroke-width="1.5"/>
-<text x="722" y="371" text-anchor="middle" font-size="12" font-weight="700" fill="#e6edf3">4</text>
-<text x="740" y="371" font-size="14" fill="#e6edf3">HookResult(decision=DENY)</text>
-<line x1="439" y1="432" x2="1151" y2="432" stroke="#58a6ff" stroke-width="2" marker-end="url(#arrc)"/>
-<circle cx="722" cy="418" r="11" fill="#161b22" stroke="#58a6ff" stroke-width="1.5"/>
-<text x="722" y="423" text-anchor="middle" font-size="12" font-weight="700" fill="#e6edf3">5</text>
-<text x="740" y="423" font-size="14" fill="#e6edf3">block_action(event.id, reason)</text>
-<rect x="96" y="461" width="1407" height="44" rx="8" fill="#1f6feb22" stroke="#1f6feb" stroke-width="1"/>
-<text x="800" y="488" text-anchor="middle" font-size="14" fill="#e6edf3">_ActionBatch.prepare partitions blocked actions out; observation carries rejection_source=hook</text>
-<line x1="439" y1="546" x2="208" y2="546" stroke="#6e7681" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrr)"/>
-<circle cx="240" cy="532" r="11" fill="#161b22" stroke="#6e7681" stroke-width="1.5"/>
-<text x="240" y="537" text-anchor="middle" font-size="12" font-weight="700" fill="#e6edf3">6</text>
-<text x="258" y="537" font-size="14" fill="#e6edf3">HookExecutionEvent (observability, every hook run)</text>
-<rect x="96" y="574" width="1407" height="44" rx="8" fill="#1f6feb22" stroke="#1f6feb" stroke-width="1"/>
-<text x="800" y="601" text-anchor="middle" font-size="14" fill="#e6edf3">UserPromptSubmit deny: the message never reaches the model</text>
-<line x1="198" y1="659" x2="429" y2="659" stroke="#58a6ff" stroke-width="2" marker-end="url(#arrc)"/>
-<circle cx="240" cy="645" r="11" fill="#161b22" stroke="#58a6ff" stroke-width="1.5"/>
-<text x="240" y="650" text-anchor="middle" font-size="12" font-weight="700" fill="#e6edf3">7</text>
-<text x="258" y="650" font-size="14" fill="#e6edf3">on_event(MessageEvent, user)</text>
-<line x1="439" y1="711" x2="670" y2="711" stroke="#58a6ff" stroke-width="2" marker-end="url(#arrc)"/>
-<circle cx="481" cy="697" r="11" fill="#161b22" stroke="#58a6ff" stroke-width="1.5"/>
-<text x="481" y="702" text-anchor="middle" font-size="12" font-weight="700" fill="#e6edf3">8</text>
-<text x="499" y="702" font-size="14" fill="#e6edf3">run_user_prompt_submit(message)</text>
-<line x1="680" y1="763" x2="449" y2="763" stroke="#6e7681" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrr)"/>
-<circle cx="481" cy="749" r="11" fill="#161b22" stroke="#6e7681" stroke-width="1.5"/>
-<text x="481" y="754" text-anchor="middle" font-size="12" font-weight="700" fill="#e6edf3">9</text>
-<text x="499" y="754" font-size="14" fill="#e6edf3">deny (may inject additional_context)</text>
-<line x1="439" y1="815" x2="1151" y2="815" stroke="#58a6ff" stroke-width="2" marker-end="url(#arrc)"/>
-<circle cx="722" cy="801" r="11" fill="#161b22" stroke="#58a6ff" stroke-width="1.5"/>
-<text x="722" y="806" text-anchor="middle" font-size="12" font-weight="700" fill="#e6edf3">10</text>
-<text x="740" y="806" font-size="14" fill="#e6edf3">block_message(event.id, reason)</text>
-<line x1="1402" y1="867" x2="1171" y2="867" stroke="#58a6ff" stroke-width="2" marker-end="url(#arrc)"/>
-<circle cx="1204" cy="853" r="11" fill="#161b22" stroke="#58a6ff" stroke-width="1.5"/>
-<text x="1204" y="858" text-anchor="middle" font-size="12" font-weight="700" fill="#e6edf3">11</text>
-<text x="1222" y="858" font-size="14" fill="#e6edf3">pop_blocked_message()</text>
-<line x1="1161" y1="920" x2="1392" y2="920" stroke="#6e7681" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrr)"/>
-<circle cx="1204" cy="906" r="11" fill="#161b22" stroke="#6e7681" stroke-width="1.5"/>
-<text x="1204" y="911" text-anchor="middle" font-size="12" font-weight="700" fill="#e6edf3">12</text>
-<text x="1222" y="911" font-size="14" fill="#e6edf3">blocked -&gt; FINISHED, skip model call</text>
-<rect x="96" y="948" width="1407" height="44" rx="8" fill="#1f6feb22" stroke="#1f6feb" stroke-width="1"/>
-<text x="800" y="975" text-anchor="middle" font-size="14" fill="#e6edf3">Stop deny: flips FINISHED back to RUNNING, feedback injected as an environment message</text>
-<line x1="1402" y1="1033" x2="449" y2="1033" stroke="#58a6ff" stroke-width="2" marker-end="url(#arrc)"/>
-<circle cx="842" cy="1019" r="11" fill="#161b22" stroke="#58a6ff" stroke-width="1.5"/>
-<text x="842" y="1024" text-anchor="middle" font-size="12" font-weight="700" fill="#e6edf3">13</text>
-<text x="860" y="1024" font-size="14" fill="#e6edf3">run_stop(reason=agent_finished)</text>
-<line x1="439" y1="1085" x2="1392" y2="1085" stroke="#6e7681" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrr)"/>
-<circle cx="842" cy="1071" r="11" fill="#161b22" stroke="#6e7681" stroke-width="1.5"/>
-<text x="842" y="1076" text-anchor="middle" font-size="12" font-weight="700" fill="#e6edf3">14</text>
-<text x="860" y="1076" font-size="14" fill="#e6edf3">should_stop=False + feedback</text>
-<rect x="96" y="1114" width="1407" height="44" rx="8" fill="#1f6feb22" stroke="#1f6feb" stroke-width="1"/>
-<text x="800" y="1141" text-anchor="middle" font-size="14" fill="#e6edf3">Fail-open: a crashed hook returns HookResult(ALLOW) — it never blocks the loop (executor.py)</text>
+<defs><marker id="arrc" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 1 L 9 5 L 0 9 z" fill="#d08c4e"/></marker><marker id="arrr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 1 L 9 5 L 0 9 z" fill="#8a7a66"/></marker></defs>
+<text x="77.10843373493975" y="44" font-size="26" font-weight="700" fill="#ece1d3">Hooks: stream interception</text>
+<text x="77.10843373493975" y="74" font-size="15" fill="#a89880">HookEventProcessor wraps on_event — PreToolUse / UserPromptSubmit / Stop</text>
+<line x1="198" y1="110" x2="198" y2="1182" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="96" y="82" width="202" height="56" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/>
+<text x="198" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#ece1d3">Event stream</text>
+<line x1="439" y1="110" x2="439" y2="1182" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="337" y="82" width="202" height="56" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/>
+<text x="439" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#ece1d3">HookEventProcessor</text>
+<line x1="680" y1="110" x2="680" y2="1182" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="578" y="82" width="202" height="56" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/>
+<text x="680" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#ece1d3">HookManager</text>
+<line x1="920" y1="110" x2="920" y2="1182" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="819" y="82" width="202" height="56" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/>
+<text x="920" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#ece1d3">HookExecutor</text>
+<line x1="1161" y1="110" x2="1161" y2="1182" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="1060" y="82" width="202" height="56" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/>
+<text x="1161" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#ece1d3">ConversationState</text>
+<line x1="1402" y1="110" x2="1402" y2="1182" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="1301" y="82" width="202" height="56" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/>
+<text x="1402" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#ece1d3">Agent</text>
+<rect x="96" y="139" width="1407" height="44" rx="8" fill="#d08c4e22" stroke="#d08c4e" stroke-width="1"/>
+<text x="800" y="166" text-anchor="middle" font-size="14" fill="#ece1d3">PreToolUse deny: action blocked in state, batch emits UserRejectObservation instead of executing</text>
+<line x1="198" y1="224" x2="429" y2="224" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="240" cy="210" r="11" fill="#1f1a15" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="240" y="215" text-anchor="middle" font-size="12" font-weight="700" fill="#ece1d3">1</text>
+<text x="258" y="215" font-size="14" fill="#ece1d3">on_event(ActionEvent)</text>
+<line x1="439" y1="276" x2="670" y2="276" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="481" cy="262" r="11" fill="#1f1a15" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="481" y="267" text-anchor="middle" font-size="12" font-weight="700" fill="#ece1d3">2</text>
+<text x="499" y="267" font-size="14" fill="#ece1d3">run_pre_tool_use(tool_name, tool_input)</text>
+<line x1="680" y1="328" x2="910" y2="328" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="722" cy="314" r="11" fill="#1f1a15" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="722" y="319" text-anchor="middle" font-size="12" font-weight="700" fill="#ece1d3">3</text>
+<text x="740" y="319" font-size="14" fill="#ece1d3">execute hook (command / prompt / agent kind)</text>
+<line x1="920" y1="380" x2="690" y2="380" stroke="#8a7a66" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrr)"/>
+<circle cx="722" cy="366" r="11" fill="#1f1a15" stroke="#8a7a66" stroke-width="1.5"/>
+<text x="722" y="371" text-anchor="middle" font-size="12" font-weight="700" fill="#ece1d3">4</text>
+<text x="740" y="371" font-size="14" fill="#ece1d3">HookResult(decision=DENY)</text>
+<line x1="439" y1="432" x2="1151" y2="432" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="722" cy="418" r="11" fill="#1f1a15" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="722" y="423" text-anchor="middle" font-size="12" font-weight="700" fill="#ece1d3">5</text>
+<text x="740" y="423" font-size="14" fill="#ece1d3">block_action(event.id, reason)</text>
+<rect x="96" y="461" width="1407" height="44" rx="8" fill="#d08c4e22" stroke="#d08c4e" stroke-width="1"/>
+<text x="800" y="488" text-anchor="middle" font-size="14" fill="#ece1d3">_ActionBatch.prepare partitions blocked actions out; observation carries rejection_source=hook</text>
+<line x1="439" y1="546" x2="208" y2="546" stroke="#8a7a66" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrr)"/>
+<circle cx="240" cy="532" r="11" fill="#1f1a15" stroke="#8a7a66" stroke-width="1.5"/>
+<text x="240" y="537" text-anchor="middle" font-size="12" font-weight="700" fill="#ece1d3">6</text>
+<text x="258" y="537" font-size="14" fill="#ece1d3">HookExecutionEvent (observability, every hook run)</text>
+<rect x="96" y="574" width="1407" height="44" rx="8" fill="#d08c4e22" stroke="#d08c4e" stroke-width="1"/>
+<text x="800" y="601" text-anchor="middle" font-size="14" fill="#ece1d3">UserPromptSubmit deny: the message never reaches the model</text>
+<line x1="198" y1="659" x2="429" y2="659" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="240" cy="645" r="11" fill="#1f1a15" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="240" y="650" text-anchor="middle" font-size="12" font-weight="700" fill="#ece1d3">7</text>
+<text x="258" y="650" font-size="14" fill="#ece1d3">on_event(MessageEvent, user)</text>
+<line x1="439" y1="711" x2="670" y2="711" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="481" cy="697" r="11" fill="#1f1a15" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="481" y="702" text-anchor="middle" font-size="12" font-weight="700" fill="#ece1d3">8</text>
+<text x="499" y="702" font-size="14" fill="#ece1d3">run_user_prompt_submit(message)</text>
+<line x1="680" y1="763" x2="449" y2="763" stroke="#8a7a66" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrr)"/>
+<circle cx="481" cy="749" r="11" fill="#1f1a15" stroke="#8a7a66" stroke-width="1.5"/>
+<text x="481" y="754" text-anchor="middle" font-size="12" font-weight="700" fill="#ece1d3">9</text>
+<text x="499" y="754" font-size="14" fill="#ece1d3">deny (may inject additional_context)</text>
+<line x1="439" y1="815" x2="1151" y2="815" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="722" cy="801" r="11" fill="#1f1a15" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="722" y="806" text-anchor="middle" font-size="12" font-weight="700" fill="#ece1d3">10</text>
+<text x="740" y="806" font-size="14" fill="#ece1d3">block_message(event.id, reason)</text>
+<line x1="1402" y1="867" x2="1171" y2="867" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="1204" cy="853" r="11" fill="#1f1a15" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="1204" y="858" text-anchor="middle" font-size="12" font-weight="700" fill="#ece1d3">11</text>
+<text x="1222" y="858" font-size="14" fill="#ece1d3">pop_blocked_message()</text>
+<line x1="1161" y1="920" x2="1392" y2="920" stroke="#8a7a66" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrr)"/>
+<circle cx="1204" cy="906" r="11" fill="#1f1a15" stroke="#8a7a66" stroke-width="1.5"/>
+<text x="1204" y="911" text-anchor="middle" font-size="12" font-weight="700" fill="#ece1d3">12</text>
+<text x="1222" y="911" font-size="14" fill="#ece1d3">blocked -&gt; FINISHED, skip model call</text>
+<rect x="96" y="948" width="1407" height="44" rx="8" fill="#d08c4e22" stroke="#d08c4e" stroke-width="1"/>
+<text x="800" y="975" text-anchor="middle" font-size="14" fill="#ece1d3">Stop deny: flips FINISHED back to RUNNING, feedback injected as an environment message</text>
+<line x1="1402" y1="1033" x2="449" y2="1033" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="842" cy="1019" r="11" fill="#1f1a15" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="842" y="1024" text-anchor="middle" font-size="12" font-weight="700" fill="#ece1d3">13</text>
+<text x="860" y="1024" font-size="14" fill="#ece1d3">run_stop(reason=agent_finished)</text>
+<line x1="439" y1="1085" x2="1392" y2="1085" stroke="#8a7a66" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrr)"/>
+<circle cx="842" cy="1071" r="11" fill="#1f1a15" stroke="#8a7a66" stroke-width="1.5"/>
+<text x="842" y="1076" text-anchor="middle" font-size="12" font-weight="700" fill="#ece1d3">14</text>
+<text x="860" y="1076" font-size="14" fill="#ece1d3">should_stop=False + feedback</text>
+<rect x="96" y="1114" width="1407" height="44" rx="8" fill="#d08c4e22" stroke="#d08c4e" stroke-width="1"/>
+<text x="800" y="1141" text-anchor="middle" font-size="14" fill="#ece1d3">Fail-open: a crashed hook returns HookResult(ALLOW) — it never blocks the loop (executor.py)</text>
 </svg>
