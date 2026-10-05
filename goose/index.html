@@ -570,6 +570,7 @@ default lists. The OSV malware check on npx/uvx-spawned servers is the
 closest thing to install-time review in the series.<sup id="fnref:21"><a class="footnote-ref" href="#fn:21">21</a></sup><sup id="fnref:22"><a class="footnote-ref" href="#fn:22">22</a></sup></p>
 <p><strong>Start here:</strong> <code>ExtensionConfig</code> in <code>crates/goose/src/agents/extension.rs</code>,
 then <code>ExtensionManager::add_extension</code> for the connect-per-type logic.</p>
+<p><img alt="Runtime MCP tool call" src="figures/seq-mcp-toolcall.svg" /></p>
 <h3 id="2-plugin-hooks-hooksjson">2. Plugin hooks (<code>hooks.json</code>)</h3>
 <p>Twelve lifecycle events, shell-command actions, JSON on stdin, exit-2
 blocking. This is pi's <code>beforeToolCall</code> shape with plugin packaging: any
@@ -579,6 +580,7 @@ without touching Rust.<sup id="fnref:42"><a class="footnote-ref" href="#fn:42">4
 <p><strong>Start here:</strong> the shipped example at
 <code>examples/plugins/hello-hooks/hooks/hooks.json</code>, then the engine in
 <code>crates/goose/src/hooks/mod.rs</code>.</p>
+<p><img alt="Plugin hook firing" src="figures/seq-hooks.svg" /></p>
 <h3 id="3-recipes">3. Recipes</h3>
 <p>Declarative YAML task files — goose's most distinctive axis, covered in
 its own section below.<sup id="fnref:46"><a class="footnote-ref" href="#fn:46">46</a></sup></p>
@@ -587,20 +589,35 @@ its own section below.<sup id="fnref:46"><a class="footnote-ref" href="#fn:46">4
 <code>scheduler__manage_schedule</code> tool, so the agent can schedule its own
 future runs. Always <code>Auto</code> mode — a scheduled job is headless by
 construction.<sup id="fnref:43"><a class="footnote-ref" href="#fn:43">43</a></sup></p>
+<p><strong>Start here:</strong> <code>crates/goose/src/scheduler/full.rs</code> — <code>Job::new_async_tz</code>
+for the cron fire, <code>execute_job</code> for the recipe-to-session handoff.</p>
+<p><img alt="Scheduled recipe execution" src="figures/seq-schedule.svg" /></p>
 <h3 id="5-sub-agents-summon">5. Sub-agents (<code>summon</code>)</h3>
 <p>The <code>delegate</code> tool with ad-hoc, source-based, and combined modes; async
 background execution with <code>load(taskId)</code>; forced Auto; 25-turn default
 budget; no nesting. Recursive in-process <code>Agent</code> — the child is a full
 agent, not a prompt template.<sup id="fnref:44"><a class="footnote-ref" href="#fn:44">44</a></sup></p>
+<p><strong>Start here:</strong> <code>create_delegate_tool</code> in
+<code>crates/goose/src/agents/platform_extensions/summon.rs:724</code>, then
+<code>create_subagent_session</code> for the forced-Auto session birth.</p>
+<p><img alt="Summon sub-agent delegation" src="figures/seq-subagent.svg" /></p>
 <h3 id="6-skills">6. Skills</h3>
 <p>A skills platform extension (plus a state-machine <code>SkillOperation</code>),
 with <code>SKILL.md</code> discovery — the same frontmatter-and-markdown shape pi
 and Cline use.<sup id="fnref3:2"><a class="footnote-ref" href="#fn:2">2</a></sup></p>
+<p><strong>Start here:</strong> <code>SkillOperation</code> in
+<code>crates/goose/src/agents/state_machine/ops_skills.rs</code> — the <code>load_skill</code>
+tool is the whole runtime; skills are advertised in the system prompt
+and loaded on demand, never eagerly injected.</p>
+<p><img alt="Skills discovery and load_skill" src="figures/seq-skills.svg" /></p>
 <h3 id="7-custom-providers">7. Custom providers</h3>
 <p>Two tiers below the 34 hand-written impls: 48 bundled declarative JSON
 definitions for the long tail, and user-authored custom providers from
 <code>~/.config/goose/custom_providers/</code> (with command-based auth). Adding a
 provider to the long tail is a JSON file, not a Rust impl.<sup id="fnref:35"><a class="footnote-ref" href="#fn:35">35</a></sup></p>
+<p><strong>Start here:</strong> drop a JSON file in the <code>custom_providers</code> dir
+(<code>config/declarative_providers.rs:22</code>) and copy the smallest bundled
+definition as the template — no compilation involved.</p>
 <h3 id="8-the-provider-trait">8. The <code>Provider</code> trait</h3>
 <p><code>stream()</code> is the only required method; everything else — <code>complete()</code>,
 model recommendation, OAuth, thinking-effort plumbing, context ownership
@@ -612,6 +629,9 @@ smallest hand-written impl for the idiom.</p>
 switches <code>GooseMode</code> mid-session); the state machine models it as an
 explicit <code>SlashCommandOperation</code>, step 2 of 18 — before compaction,
 before approval, before inference.<sup id="fnref2:13"><a class="footnote-ref" href="#fn:13">13</a></sup><sup id="fnref2:29"><a class="footnote-ref" href="#fn:29">29</a></sup></p>
+<p><strong>Start here:</strong> the intercept in <code>Agent::reply</code> (<code>agent.rs:2222</code>) —
+slash input never reaches the model raw.</p>
+<p><img alt="Slash-command intercept and mode switch" src="figures/seq-slash.svg" /></p>
 <h2 id="recipes-prompts-as-programs">Recipes: prompts as programs</h2>
 <p>Recipes clear the new-section bar. They are not a configuration axis and
 not a subsystem of the loop — they are a first-class artifact type with

@@ -502,6 +502,8 @@ and host-independent.[^4]
 `sdk/packages/shared/src/agent.ts:493-507`, then
 `DefaultRuntimeBuilder.build` to see where plugin tools merge.
 
+![Plugin lifecycle and the 7-callback hook bag](figures/seq-plugin-lifecycle.svg)
+
 ### 3. Custom tools
 
 `createTool({name, description, inputSchema, execute})` plus the execution
@@ -525,12 +527,20 @@ but maps to `undefined`: the extension point exists, the wiring doesn't.[^36]
 **Start here:** `hook-file-config.ts` for the ten names and discovery
 order, `hook-file-hooks.ts` for the engine.
 
+![File-based user hook firing](figures/seq-user-hooks.svg)
+
 ### 5. Skills
 
 The `skills` tool invokes skill bodies, with `SKILL.md` discovery across
 `~/.cline/skills`, `.agents/skills`, and project dirs — the same
 frontmatter-and-markdown shape pi uses, but executed as a tool call rather
 than prompt injection.[^43]
+
+**Start here:** `createSkillsTool` in `definitions.ts:761`, then the
+executor `createUserInstructionSkillsExecutor` — the body arrives via
+`formatSkillInvocation`, wrapped as `<command-instructions>`.
+
+![Skills tool invocation](figures/seq-skills.svg)
 
 ### 6. Slash commands
 
@@ -539,6 +549,13 @@ permissive mid-message; the SDK/CLI `resolveRuntimeSlashCommand` only
 expands a leading `/`. Same user gesture, different parsing, depending on
 which host you're in — a small seam, but exactly the kind the bridge
 section warns about.[^43]
+
+**Start here:** `expandSlashCommands` in
+`apps/vscode/src/sdk/slash-command-expansion.ts:168` beside
+`resolveRuntimeSlashCommandFromWatcher` in `runtime-commands.ts:133` —
+read the two functions back to back and the seam draws itself.
+
+![Slash-command expansion: two semantics](figures/seq-slash-commands.svg)
 
 ### 7. MCP servers
 
@@ -550,6 +567,8 @@ toggle is the only live switch, and long names can miss their policies.[^33][^34
 **Start here:** `McpHub.ts` for lifecycle, `createMcpTools` for the
 tool-creation path.
 
+![Runtime MCP tool call](figures/seq-mcp-tool-call.svg)
+
 ### 8. Sub-agents & teams
 
 Three generations coexist: legacy YAML agents (`~/Documents/Cline/Agents/`
@@ -559,12 +578,23 @@ with frontmatter (name, description, tools, skills, provider, model,
 maxIterations), and the team runtime with its `team_*` tools — the only
 in-tree parallel tools.[^31][^38]
 
+**Start here:** the `spawn_agent` tool definition
+(`team/spawn-agent-tool.ts:121`) — `createDelegatedAgent` plus
+`subAgent.run(task)` is the whole delegation primitive; the `team_*`
+tools are the same `AgentTool` shape pointed at shared sessions.
+
+![spawn_agent delegation](figures/seq-subagent.svg)
+
 ### 9. Rules
 
 `.clinerules` files and the `registerRule` extension API feed
 `formatRulesForSystemPrompt`, rendering user rules as `# Rules` /
 `## <name>` / instructions in the system prompt. Formatting only — no
 enforcement; the command guard is a separate, dumber layer.[^21][^40]
+
+**Start here:** `formatRulesForSystemPrompt` in
+`core/src/runtime/safety/rules.ts:12-22` — the entire axis is one
+pure function, which is why there's no sequence diagram for it.
 
 ## Tradeoffs
 
