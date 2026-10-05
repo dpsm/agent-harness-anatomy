@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 946" width="1600" font-family="system-ui, -apple-system, sans-serif">
+<defs><marker id="arrc" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 1 L 9 5 L 0 9 z" fill="#58a6ff"/></marker><marker id="arrr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 1 L 9 5 L 0 9 z" fill="#6e7681"/></marker></defs>
+<text x="90.78014184397163" y="44" font-size="26" font-weight="700" fill="#e6edf3">Recipe lifecycle: prompts as programs</text>
+<text x="90.78014184397163" y="74" font-size="15" fill="#8b949e">block/goose v1.53.0 — declarative YAML task files with their own schema and security model</text>
+<line x1="233" y1="110" x2="233" y2="878" stroke="#30363d" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="113" y="82" width="238" height="56" rx="10" fill="#161b22" stroke="#30363d" stroke-width="1.5"/>
+<text x="233" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#e6edf3">recipe.yaml</text>
+<line x1="516" y1="110" x2="516" y2="878" stroke="#30363d" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="397" y="82" width="238" height="56" rx="10" fill="#161b22" stroke="#30363d" stroke-width="1.5"/>
+<text x="516" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#e6edf3">Validator</text>
+<line x1="800" y1="110" x2="800" y2="878" stroke="#30363d" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="681" y="82" width="238" height="56" rx="10" fill="#161b22" stroke="#30363d" stroke-width="1.5"/>
+<text x="800" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#e6edf3">Agent</text>
+<line x1="1084" y1="110" x2="1084" y2="878" stroke="#30363d" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="965" y="82" width="238" height="56" rx="10" fill="#161b22" stroke="#30363d" stroke-width="1.5"/>
+<text x="1084" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#e6edf3">Session DB</text>
+<line x1="1367" y1="110" x2="1367" y2="878" stroke="#30363d" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="1248" y="82" width="238" height="56" rx="10" fill="#161b22" stroke="#30363d" stroke-width="1.5"/>
+<text x="1367" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#e6edf3">Scheduler</text>
+<line x1="233" y1="191" x2="506" y2="191" stroke="#58a6ff" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="296" cy="177" r="11" fill="#161b22" stroke="#58a6ff" stroke-width="1.5"/>
+<text x="296" y="182" text-anchor="middle" font-size="12" font-weight="700" fill="#e6edf3">1</text>
+<text x="314" y="182" font-size="14" fill="#e6edf3">parse: version/title/description + options</text>
+<rect x="516" y="229" width="68" height="39" rx="6" fill="none" stroke="#58a6ff" stroke-width="2"/>
+<text x="600" y="252" font-size="14" fill="#8b949e">typed params: string/number/boolean/date/file/select</text>
+<rect x="397" y="286" width="522" height="44" rx="8" fill="#1f6feb22" stroke="#1f6feb" stroke-width="1"/>
+<text x="658" y="318" text-anchor="middle" font-size="14" fill="#e6edf3">Jinja {{ var }} templating; file params cannot have defaults</text>
+<rect x="516" y="363" width="68" height="39" rx="6" fill="none" stroke="#58a6ff" stroke-width="2"/>
+<text x="600" y="386" font-size="14" fill="#8b949e">check_for_security_warnings (unicode tag chars)</text>
+<line x1="516" y1="447" x2="790" y2="447" stroke="#58a6ff" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="580" cy="433" r="11" fill="#161b22" stroke="#58a6ff" stroke-width="1.5"/>
+<text x="580" y="438" text-anchor="middle" font-size="12" font-weight="700" fill="#e6edf3">4</text>
+<text x="598" y="438" font-size="14" fill="#e6edf3">response.json_schema -&gt; materialize final_output tool</text>
+<line x1="516" y1="508" x2="790" y2="508" stroke="#58a6ff" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="580" cy="494" r="11" fill="#161b22" stroke="#58a6ff" stroke-width="1.5"/>
+<text x="580" y="499" text-anchor="middle" font-size="12" font-weight="700" fill="#e6edf3">5</text>
+<text x="598" y="499" font-size="14" fill="#e6edf3">auto-augment: analyze ext + summon (if sub_recipes)</text>
+<line x1="800" y1="570" x2="1074" y2="570" stroke="#58a6ff" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="864" cy="556" r="11" fill="#161b22" stroke="#58a6ff" stroke-width="1.5"/>
+<text x="864" y="561" text-anchor="middle" font-size="12" font-weight="700" fill="#e6edf3">6</text>
+<text x="882" y="561" font-size="14" fill="#e6edf3">persist full Recipe on the session record</text>
+<rect x="681" y="604" width="522" height="44" rx="8" fill="#1f6feb22" stroke="#1f6feb" stroke-width="1"/>
+<text x="942" y="635" text-anchor="middle" font-size="14" fill="#e6edf3">instructions -&gt; system prompt; prompt -&gt; first user message</text>
+<line x1="1367" y1="704" x2="526" y2="704" stroke="#58a6ff" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="864" cy="690" r="11" fill="#161b22" stroke="#58a6ff" stroke-width="1.5"/>
+<text x="864" y="695" text-anchor="middle" font-size="12" font-weight="700" fill="#e6edf3">7</text>
+<text x="882" y="695" font-size="14" fill="#e6edf3">validate for schedule: no user_prompt params</text>
+<line x1="1367" y1="765" x2="810" y2="765" stroke="#58a6ff" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="1006" cy="751" r="11" fill="#161b22" stroke="#58a6ff" stroke-width="1.5"/>
+<text x="1006" y="756" text-anchor="middle" font-size="12" font-weight="700" fill="#e6edf3">8</text>
+<text x="1024" y="756" font-size="14" fill="#e6edf3">fire -&gt; SessionType::Scheduled, always GooseMode::Auto</text>
+<rect x="113" y="799" width="1373" height="44" rx="8" fill="#1f6feb22" stroke="#1f6feb" stroke-width="1"/>
+<text x="800" y="831" text-anchor="middle" font-size="14" fill="#e6edf3">Schedule copies: validated, &lt;=1 MiB, mode 0o600; 6-field cron, local tz</text>
+</svg>

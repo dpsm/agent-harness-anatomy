@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>One turn through Goose — step-by-step · Agent Harness Anatomy</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body {
+    background: #0d1117; color: #e6edf3;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    line-height: 1.7; padding: 48px 24px; margin: 0;
+  }
+  main { max-width: 960px; margin: 0 auto; }
+  a { color: #58a6ff; }
+  .topnav { font-size: 0.9rem; margin-bottom: 32px; }
+  .topnav a { color: #8b949e; text-decoration: none; }
+  .topnav a:hover { color: #e6edf3; }
+  h1 { font-size: 1.8rem; letter-spacing: -0.02em; margin-bottom: 8px; }
+  .sub { color: #8b949e; margin-bottom: 28px; max-width: 640px; }
+  .input-row { display: flex; gap: 12px; align-items: center; margin-bottom: 20px; flex-wrap: wrap; }
+  .input-row label { color: #8b949e; font-size: 0.95rem; }
+  .input-row input {
+    flex: 1; min-width: 240px; background: #161b22; border: 1px solid #30363d;
+    border-radius: 8px; color: #e6edf3; padding: 10px 14px; font-size: 0.95rem;
+    font-family: inherit;
+  }
+  .input-row input:focus { outline: none; border-color: #3fb950; }
+  .controls { display: flex; gap: 10px; align-items: center; margin-bottom: 24px; }
+  .controls button {
+    background: #161b22; border: 1px solid #30363d; color: #e6edf3;
+    border-radius: 8px; padding: 8px 16px; font-size: 0.9rem; cursor: pointer;
+    font-family: inherit; font-weight: 600;
+  }
+  .controls button:hover { border-color: #8b949e; }
+  .controls button.primary { background: #238636; border-color: #238636; color: #fff; }
+  .controls button.primary:hover { background: #2ea043; }
+  .counter { color: #8b949e; font-size: 0.9rem; margin-left: 4px; font-variant-numeric: tabular-nums; }
+  .trace { display: grid; grid-template-columns: 240px 1fr; gap: 24px; align-items: start; }
+  .rail { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 6px; }
+  .rail li {
+    border: 1px solid #21262d; border-radius: 8px; padding: 10px 12px;
+    cursor: pointer; display: flex; gap: 10px; align-items: baseline;
+    background: transparent;
+  }
+  .rail li:hover { border-color: #8b949e; }
+  .rail li.current { border-color: #3fb950; background: #161b22; }
+  .rail .num {
+    color: #6e7681; font-size: 0.8rem; font-variant-numeric: tabular-nums;
+    min-width: 16px;
+  }
+  .rail li.current .num { color: #3fb950; font-weight: 700; }
+  .rail .t { font-size: 0.92rem; }
+  .detail {
+    border: 1px solid #30363d; border-radius: 12px; padding: 28px;
+    background: #161b22; min-height: 420px;
+  }
+  .step-head { display: flex; gap: 14px; align-items: baseline; margin-bottom: 12px; }
+  .step-head .n {
+    color: #3fb950; font-weight: 700; font-size: 0.85rem;
+    border: 1px solid #3fb950; border-radius: 6px; padding: 2px 8px;
+    white-space: nowrap;
+  }
+  .step-head h2 { font-size: 1.3rem; margin: 0; }
+  .node-tag {
+    display: inline-block; margin-top: 6px; font-size: 0.8rem; color: #8b949e;
+    border: 1px solid #30363d; border-radius: 20px; padding: 2px 10px;
+  }
+  .node-tag b { color: #e6edf3; font-weight: 600; }
+  #dInputLine {
+    margin: 14px 0 4px; padding: 10px 14px; background: #0d1117;
+    border: 1px solid #30363d; border-radius: 8px; font-size: 0.92rem;
+  }
+  #dInputLine .k { color: #8b949e; }
+  .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 20px; }
+  .cols h3 {
+    font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.06em;
+    color: #8b949e; margin: 0 0 10px; font-weight: 600;
+  }
+  pre {
+    background: #0d1117; border: 1px solid #30363d; border-radius: 8px;
+    padding: 14px; overflow-x: auto; margin: 0; font-size: 0.82rem; line-height: 1.55;
+  }
+  pre code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    color: #e6edf3; background: none; padding: 0;
+  }
+  #dModules { list-style: none; padding: 0; margin: 0; }
+  #dModules li { margin-bottom: 8px; font-size: 0.9rem; }
+  #dModules .file { display: block; color: #6e7681; font-size: 0.78rem;
+    font-family: ui-monospace, Menlo, Consolas, monospace; }
+  .loopnote {
+    margin-top: 20px; padding: 12px 16px; border-left: 3px solid #3fb950;
+    background: #0d1117; border-radius: 0 8px 8px 0; font-size: 0.92rem;
+    color: #8b949e;
+  }
+  .loopnote:empty { display: none; }
+  .loopnote b { color: #e6edf3; }
+  .loopmap { margin-top: 36px; border: 1px solid #21262d; border-radius: 12px; padding: 24px; }
+  .loopmap h3 { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.06em;
+    color: #8b949e; margin: 0 0 16px; }
+  .flow { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 6px; }
+  .chip {
+    border: 1px solid #30363d; border-radius: 20px; padding: 4px 12px;
+    font-size: 0.82rem; background: #161b22; white-space: nowrap;
+  }
+  .chip.hot { border-color: #3fb950; color: #3fb950; }
+  .arrow { color: #6e7681; }
+  .ret {
+    margin: 2px 0 14px 8px; padding-left: 16px; border-left: 2px solid #3fb950;
+    font-size: 0.88rem; color: #8b949e;
+  }
+  .ret b { color: #e6edf3; }
+  footer { margin-top: 48px; color: #6e7681; font-size: 0.85rem; }
+  @media (max-width: 760px) {
+    .trace { grid-template-columns: 1fr; }
+    .rail { flex-direction: row; overflow-x: auto; padding-bottom: 8px; }
+    .rail li { flex: 0 0 auto; }
+    .cols { grid-template-columns: 1fr; }
+    .detail { padding: 20px; }
+  }
+</style>
+</head>
+<body>
+<main>
+  <nav class="topnav"><a href="./">&larr; Goose: the MCP-native agent that asks a judge</a></nav>
+  <h1 id="pageTitle">One turn through Goose</h1>
+  <p class="sub" id="pageSub"></p>
+
+  <div class="input-row">
+    <label for="userInput">Trace it with your own input:</label>
+    <input id="userInput" type="text" value="" autocomplete="off" spellcheck="false">
+  </div>
+
+  <div class="controls">
+    <button id="prevBtn" aria-label="Previous step">&larr; Prev</button>
+    <button id="playBtn" class="primary" aria-label="Play or pause">&#9654; Play</button>
+    <button id="nextBtn" aria-label="Next step">Next &rarr;</button>
+    <span class="counter" id="counter"></span>
+  </div>
+
+  <div class="trace">
+    <ol class="rail" id="rail"></ol>
+    <section class="detail" aria-live="polite">
+      <div class="step-head">
+        <span class="n" id="dNum"></span>
+        <div>
+          <h2 id="dTitle"></h2>
+          <span class="node-tag">architecture node: <b id="dNode"></b></span>
+        </div>
+      </div>
+      <div id="dInputLine" hidden><span class="k">User input:</span> <span id="dInputVal"></span></div>
+      <p id="dNarrative"></p>
+      <div class="cols">
+        <div>
+          <h3>Representation at this boundary</h3>
+          <pre><code id="dRepr"></code></pre>
+        </div>
+        <div>
+          <h3>Source modules</h3>
+          <ul id="dModules"></ul>
+        </div>
+      </div>
+      <div class="loopnote" id="dLoop"></div>
+    </section>
+  </div>
+
+  <section class="loopmap">
+    <h3>Loop map</h3>
+    <div class="flow" id="flowMain"></div>
+    <div class="ret"><b>One pass</b> &mdash; CLI &rarr; <code>Agent::reply</code> &rarr; prompt assembly &rarr; provider &rarr; tools &rarr; feedback. Two loops ship: the legacy <code>loop {}</code> (default) and an opt-in effect-sourced state machine (<code>GOOSE_STATE_MACHINE=1</code>).</div>
+    <div class="flow" id="flowBranch"></div>
+    <div class="ret"><b>Approval pause</b> &mdash; when a tool call needs approval, <code>handle_approval_tool_requests</code> registers a oneshot and yields <code>ActionRequired</code>; the loop is genuinely paused until <code>submit_tool_confirmation</code> delivers the verdict, resuming at step 6.</div>
+    <div class="ret" style="border-color:#58a6ff"><b>Outer turn loop</b> &mdash; after step 8 the <code>AgentEvent</code> stream is rendered by the CLI; the turn bound is <code>turns_taken &gt; 1000</code> (the repetition inspector is inert); the next user message re-enters at step 1.</div>
+  </section>
+
+  <footer>Simplified shapes of real Goose types, not verbatim runtime dumps. All module links pin <span id="sha"></span>.</footer>
+</main>
+
+<script>
+(function () {
+  var LOOP_NOTES = {
+    1: "<b>Input.</b> <code>Agent::reply</code> assigns a message ID; <code>reply_impl</code> fires <code>SessionStart</code>/<code>UserPromptSubmit</code> hooks and checks for slash commands. <code>use_state_machine=false</code> skips the new path &mdash; opt in with <code>GOOSE_STATE_MACHINE=1</code>.",
+    2: "<b>Prompt assembly.</b> Tools are collected via <code>list_tools</code> from the extension manager &mdash; every tool is an MCP server, builtins included &mdash; and <code>PromptManager</code> builds the system prompt from extension info, directory hints, and the goose mode.",
+    3: "<b>The model call.</b> <code>stream_response_from_provider</code> &rarr; <code>provider.stream()</code>, the single required method of the <code>Provider</code> trait. Pre-first-item transient retries (&le;3) on rate-limit/5xx/network.",
+    4: "<b>Response parse.</b> <code>categorize_tool_requests</code> extracts <code>ToolRequest</code>s, canonicalizes model-mangled names, and coerces arguments to the advertised JSON schema. Invalid calls become <code>invalid_request</code> data, not exceptions.",
+    5: "<b>The approval pause.</b> <code>inspect_tools</code> splits requests into approved / needs_approval / denied. A mutating call registers a oneshot and yields <code>ActionRequired</code> &mdash; the loop is genuinely paused until <code>submit_tool_confirmation</code> delivers the verdict.",
+    6: "<b>Result feedback.</b> Tool outputs attach as <code>ToolResponse</code> blocks; large outputs spill to an owner-only temp file (200,000-char default). Unparseable calls become a well-formed placeholder so strict providers never see malformed history.",
+    7: "<b>Loop or exit.</b> No more tool calls &rarr; <code>exit_chat = true</code> (the stop hook can still veto). Otherwise the loop continues until <code>turns_taken &gt; 1000</code> &mdash; the repetition inspector is inert, so turns are the bound.",
+    8: "<b>Rendering.</b> Nothing is printed by the loop itself &mdash; all output is <code>AgentEvent</code>s consumed by the CLI, the desktop, and ACP frontends. Final summary text accumulates in <code>last_assistant_text</code>."
+  };
+  var FLOW_MAIN = [1,2,3,4,5,6,7,8], FLOW_BRANCH = [5,6];
+
+  var data, idx = 0, timer = null;
+  var $ = function (id) { return document.getElementById(id); };
+  var rail = $("rail"), userInput = $("userInput");
+
+  function esc(s) {
+    return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
+
+  function renderFlow(el, steps, hot) {
+    el.innerHTML = steps.map(function (n, i) {
+      var s = data.steps[n - 1];
+      var chip = '<span class="chip' + (n === hot ? ' hot' : '') + '">' + n + ' &middot; ' + esc(s.title) + '</span>';
+      return i < steps.length - 1 ? chip + '<span class="arrow">&rarr;</span>' : chip;
+    }).join("");
+  }
+
+  function buildRail() {
+    rail.innerHTML = "";
+    data.steps.forEach(function (s, i) {
+      var li = document.createElement("li");
+      li.innerHTML = '<span class="num">' + s.step + '</span><span class="t"></span>';
+      li.querySelector(".t").textContent = s.title;
+      li.addEventListener("click", function () { stop(); go(i); });
+      rail.appendChild(li);
+    });
+  }
+
+  function go(i) {
+    idx = Math.max(0, Math.min(data.steps.length - 1, i));
+    var s = data.steps[idx];
+    Array.prototype.forEach.call(rail.children, function (li, j) {
+      li.classList.toggle("current", j === idx);
+    });
+    var cur = rail.children[idx];
+    if (cur) cur.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    $("dNum").textContent = "Step " + s.step;
+    $("dTitle").textContent = s.title;
+    $("dNode").textContent = s.node;
+    if (idx === 0) {
+      $("dInputLine").hidden = false;
+      $("dInputVal").textContent = "\u201c" + userInput.value + "\u201d";
+    } else {
+      $("dInputLine").hidden = true;
+    }
+    $("dNarrative").textContent = s.narrative;
+    $("dRepr").textContent = s.representation;
+    var ul = $("dModules");
+    ul.innerHTML = "";
+    s.modules.forEach(function (m) {
+      var li = document.createElement("li");
+      var a = document.createElement("a");
+      a.href = m.url; a.target = "_blank"; a.rel = "noopener";
+      a.textContent = m.label;
+      li.appendChild(a);
+      var f = document.createElement("span");
+      f.className = "file"; f.textContent = m.file;
+      li.appendChild(f);
+      ul.appendChild(li);
+    });
+    $("dLoop").innerHTML = LOOP_NOTES[s.step] || "";
+    $("counter").textContent = (idx + 1) + " / " + data.steps.length;
+    renderFlow($("flowMain"), FLOW_MAIN, s.step <= 5 ? s.step : -1);
+    renderFlow($("flowBranch"), FLOW_BRANCH, s.step >= 5 ? s.step : -1);
+  }
+
+  function stop() {
+    if (timer) { clearInterval(timer); timer = null; }
+    $("playBtn").innerHTML = "&#9654; Play";
+  }
+  function play() {
+    if (timer) { stop(); return; }
+    if (idx >= data.steps.length - 1) go(0);
+    $("playBtn").innerHTML = "&#10074;&#10074; Pause";
+    timer = setInterval(function () {
+      if (idx >= data.steps.length - 1) { stop(); return; }
+      go(idx + 1);
+    }, 4500);
+  }
+
+  $("prevBtn").addEventListener("click", function () { stop(); go(idx - 1); });
+  $("nextBtn").addEventListener("click", function () { stop(); go(idx + 1); });
+  $("playBtn").addEventListener("click", play);
+  userInput.addEventListener("input", function () { if (idx === 0) go(0); });
+  document.addEventListener("keydown", function (e) {
+    if (document.activeElement === userInput) return;
+    if (e.key === "ArrowRight") { stop(); go(idx + 1); }
+    if (e.key === "ArrowLeft") { stop(); go(idx - 1); }
+    if (e.key === " ") { e.preventDefault(); play(); }
+  });
+
+  fetch("diagrams/goose-trace-steps.json")
+    .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
+    .then(function (d) {
+      data = d;
+      document.title = d.title + " \u00b7 Agent Harness Anatomy";
+      $("pageTitle").textContent = d.title;
+      $("pageSub").textContent = "Follow one concrete user input through Goose's MCP-native tool loop. " +
+        "Each step shows the representation Goose selects at that boundary and the source modules involved. " + d.note;
+      $("sha").textContent = "v1.53.0 (" + d.sha.slice(0, 12) + "\u2026)";
+      if (!userInput.value) userInput.value = d.example_input;
+      buildRail();
+      go(0);
+    })
+    .catch(function () {
+      $("pageSub").textContent = "Could not load the trace data (diagrams/goose-trace-steps.json).";
+    });
+})();
+</script>
+</body>
+</html>
