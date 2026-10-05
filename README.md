@@ -1,3 +1,5 @@
+![Agent Harness Anatomy — anatomical blueprint plate of an AI agent harness](assets/banner.webp)
+
 # Agent Harness Anatomy
 
 Rigorous, source-grounded architecture teardowns of AI agent harnesses —
