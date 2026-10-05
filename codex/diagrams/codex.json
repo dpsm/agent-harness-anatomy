@@ -1,0 +1,684 @@
+{
+ "title": "Codex CLI — one turn through the harness",
+ "repo": "https://github.com/openai/codex",
+ "sha": "a956835d020762cb2b570053af06f643a11c0ecc",
+ "nodes": [
+  {
+   "id": "input",
+   "label": "Submit: turn/start RPC",
+   "sub": "tui/src/app_server_session.rs:1308",
+   "x": 190,
+   "y": 20,
+   "w": 220,
+   "h": 96,
+   "grade": "verified",
+   "links": [
+    {
+     "label": "app_server_session.rs:1308-1341",
+     "url": "https://github.com/openai/codex/blob/a956835d020762cb2b570053af06f643a11c0ecc/codex-rs/tui/src/app_server_session.rs#L1308-L1341"
+    }
+   ],
+   "excerpt": "        self.client\n            .request_typed(ClientRequest::TurnStart {\n                request_id,\n                params: TurnStartParams {\n                    disabled_plugin_ids: None,\n                    thread_id: thread_id.to_string(),",
+   "step": 1
+  },
+  {
+   "id": "route",
+   "label": "Route to core",
+   "sub": "protocol/src/protocol.rs:622",
+   "x": 190,
+   "y": 150,
+   "w": 220,
+   "h": 96,
+   "grade": "verified",
+   "links": [
+    {
+     "label": "protocol.rs:622",
+     "url": "https://github.com/openai/codex/blob/a956835d020762cb2b570053af06f643a11c0ecc/codex-rs/protocol/src/protocol.rs#L622"
+    },
+    {
+     "label": "handlers.rs:485",
+     "url": "https://github.com/openai/codex/blob/a956835d020762cb2b570053af06f643a11c0ecc/codex-rs/core/src/session/handlers.rs#L485"
+    }
+   ],
+   "excerpt": "    RealtimeConversationListVoices,\n\n    /// Submit turn input using the requested routing behavior.\n    TurnInput {\n        request: Box<TurnInputRequest>,",
+   "step": 2
+  },
+  {
+   "id": "task",
+   "label": "Start task",
+   "sub": "core/src/session/turn_input.rs:365",
+   "x": 190,
+   "y": 280,
+   "w": 220,
+   "h": 96,
+   "grade": "verified",
+   "links": [
+    {
+     "label": "turn_input.rs:365",
+     "url": "https://github.com/openai/codex/blob/a956835d020762cb2b570053af06f643a11c0ecc/codex-rs/core/src/session/turn_input.rs#L365"
+    },
+    {
+     "label": "mod.rs:287",
+     "url": "https://github.com/openai/codex/blob/a956835d020762cb2b570053af06f643a11c0ecc/codex-rs/core/src/tasks/mod.rs#L287"
+    }
+   ],
+   "excerpt": "                .spawn_task(turn_context, task_input, RegularTask::new())\n                .await;\n            Ok(TurnInputSubmission::Started {\n                turn_id: submission_id,",
+   "step": 3
+  },
+  {
+   "id": "taskloop",
+   "label": "Task loop",
+   "sub": "core/src/tasks/regular.rs:104",
+   "x": 190,
+   "y": 410,
+   "w": 220,
+   "h": 96,
+   "grade": "verified",
+   "links": [
+    {
+     "label": "regular.rs:40",
+     "url": "https://github.com/openai/codex/blob/a956835d020762cb2b570053af06f643a11c0ecc/codex-rs/core/src/tasks/regular.rs#L40"
+    },
+    {
+     "label": "regular.rs:104-105",
+     "url": "https://github.com/openai/codex/blob/a956835d020762cb2b570053af06f643a11c0ecc/codex-rs/core/src/tasks/regular.rs#L104-L105"
+    }
+   ],
+   "excerpt": "        loop {\n            let last_agent_message = run_turn(\n                Arc::clone(&sess),",
+   "step": 4
+  },
+  {
+   "id": "preamble",
+   "label": "Turn preamble",
+   "sub": "core/src/session/turn.rs:163",
+   "x": 190,
+   "y": 540,
+   "w": 220,
+   "h": 96,
+   "grade": "verified",
+   "links": [
+    {
+     "label": "turn.rs:163-172",
+     "url": "https://github.com/openai/codex/blob/a956835d020762cb2b570053af06f643a11c0ecc/codex-rs/core/src/session/turn.rs#L163-L172"
+    }
+   ],
+   "excerpt": "pub(crate) async fn run_turn(\n    sess: Arc<Session>,\n    turn_context: Arc<TurnContext>,\n    mut input: Vec<TurnInput>,\n    mcp_startup_requirements: &mut McpStartupRequirements,\n    prewarmed_client_session: Option<ModelClientSession>,\n    cancellation_token: CancellationToken,",
+   "step": 5
+  },
+  {
+   "id": "drain",
+   "label": "Drain + prompt hooks",
+   "sub": "core/src/session/turn.rs:426",
+   "x": 190,
+   "y": 670,
+   "w": 220,
+   "h": 96,
+   "grade": "verified",
+   "links": [
+    {
+     "label": "turn.rs:426-446",
+     "url": "https://github.com/openai/codex/blob/a956835d020762cb2b570053af06f643a11c0ecc/codex-rs/core/src/session/turn.rs#L426-L446"
+    }
+   ],
+   "excerpt": "    loop {\n        // Note that pending_input would be something like a message the user\n        // submitted through the UI while the model was running. Though the UI\n        // may support this, the model might not.\n        let pending_input = if can_drain_pending_input {\n            sess.input_queue",
+   "step": 6
+  },
+  {
+   "id": "stepctx",
+   "label": "Step context",
+   "sub": "core/src/session/turn.rs:461",
+   "x": 190,
+   "y": 800,
+   "w": 220,
+   "h": 96,
+   "grade": "verified",
+   "links": [
+    {
+     "label": "turn.rs:461-503",
+     "url": "https://github.com/openai/codex/blob/a956835d020762cb2b570053af06f643a11c0ecc/codex-rs/core/src/session/turn.rs#L461-L503"
+    }
+   ],
+   "excerpt": "        // Capture once so context, advertised tools, and tool calls share one request view.\n        let step_context = match next_step_context.take() {\n            Some(step_context) if pending_input.is_empty() => step_context,\n            None if pending_input.is_empty() => {",
+   "step": 7
+  },
+  {
+   "id": "prompt",
+   "label": "Prompt build",
+   "sub": "core/src/session/turn.rs:1583",
+   "x": 190,
+   "y": 930,
+   "w": 220,
+   "h": 96,
+   "grade": "verified",
+   "links": [
+    {
+     "label": "turn.rs:1583-1592",
+     "url": "https://github.com/openai/codex/blob/a956835d020762cb2b570053af06f643a11c0ecc/codex-rs/core/src/session/turn.rs#L1583-L1592"
+    }
+   ],
+   "excerpt": "    let turn_context = &step_context.turn;\n    Prompt {\n        input,\n        tools: step_context.tool_router.model_visible_specs(),\n        parallel_tool_calls: true,",
+   "step": 8
+  },
+  {
+   "id": "model",
+   "label": "Model call",
+   "sub": "core/src/client.rs:2218",
+   "x": 190,
+   "y": 1060,
+   "w": 220,
+   "h": 96,
+   "grade": "verified",
+   "links": [
+    {
+     "label": "client.rs:2218-2263",
+     "url": "https://github.com/openai/codex/blob/a956835d020762cb2b570053af06f643a11c0ecc/codex-rs/core/src/client.rs#L2218-L2263"
+    },
+    {
+     "label": "client.rs:886-1007",
+     "url": "https://github.com/openai/codex/blob/a956835d020762cb2b570053af06f643a11c0ecc/codex-rs/core/src/client.rs#L886-L1007"
+    }
+   ],
+   "excerpt": "    pub async fn stream(\n        &mut self,\n        prompt: &Prompt,\n        model_info: &ModelInfo,\n        session_telemetry: &SessionTelemetry,\n        effort: Option<ReasoningEffortConfig>,",
+   "step": 9
+  },
+  {
+   "id": "stream",
+   "label": "Stream handling",
+   "sub": "core/src/session/turn.rs:2605",
+   "x": 190,
+   "y": 1190,
+   "w": 220,
+   "h": 96,
+   "grade": "verified",
+   "links": [
+    {
+     "label": "turn.rs:2605",
+     "url": "https://github.com/openai/codex/blob/a956835d020762cb2b570053af06f643a11c0ecc/codex-rs/core/src/session/turn.rs#L2605"
+    },
+    {
+     "label": "stream_events_utils.rs:325",
+     "url": "https://github.com/openai/codex/blob/a956835d020762cb2b570053af06f643a11c0ecc/codex-rs/core/src/stream_events_utils.rs#L325"
+    }
+   ],
+   "excerpt": "    let outcome: CodexResult<SamplingRequestResult> = loop {\n        let handle_responses = trace_span!(\n            parent: &receiving_span,\n            \"handle_responses\",",
+   "step": 10
+  },
+  {
+   "id": "approval",
+   "label": "Approval (parked)",
+   "sub": "core/src/tools/approvals.rs:479",
+   "x": 190,
+   "y": 1320,
+   "w": 220,
+   "h": 96,
+   "grade": "verified",
+   "links": [
+    {
+     "label": "approvals.rs:479-552",
+     "url": "https://github.com/openai/codex/blob/a956835d020762cb2b570053af06f643a11c0ecc/codex-rs/core/src/tools/approvals.rs#L479-L552"
+    }
+   ],
+   "excerpt": "    pub(crate) async fn request_approval(\n        self: &Arc<Self>,\n        action: ApprovalAction,\n        ctx: ApprovalContext,\n    ) -> Result<ReviewDecision, ToolError> {",
+   "step": 11
+  },
+  {
+   "id": "loopstop",
+   "label": "Loop or stop",
+   "sub": "core/src/session/turn.rs:2466",
+   "x": 190,
+   "y": 1450,
+   "w": 220,
+   "h": 96,
+   "grade": "verified",
+   "links": [
+    {
+     "label": "turn.rs:2466-2492",
+     "url": "https://github.com/openai/codex/blob/a956835d020762cb2b570053af06f643a11c0ecc/codex-rs/core/src/session/turn.rs#L2466-L2492"
+    },
+    {
+     "label": "turn.rs:725",
+     "url": "https://github.com/openai/codex/blob/a956835d020762cb2b570053af06f643a11c0ecc/codex-rs/core/src/session/turn.rs#L725"
+    },
+    {
+     "label": "turn.rs:839",
+     "url": "https://github.com/openai/codex/blob/a956835d020762cb2b570053af06f643a11c0ecc/codex-rs/core/src/session/turn.rs#L839"
+    }
+   ],
+   "excerpt": "async fn drain_in_flight(\n    in_flight: &mut FuturesOrdered<InFlightFuture<'static>>,\n    sess: Arc<Session>,\n    step_context: &StepContext,\n) -> CodexResult<()> {",
+   "step": 12
+  },
+  {
+   "id": "execinproc",
+   "label": "exec: in-process server",
+   "sub": "exec/src/lib.rs:986",
+   "x": -140,
+   "y": 20,
+   "w": 220,
+   "h": 96,
+   "grade": "verified",
+   "links": [
+    {
+     "label": "lib.rs:986",
+     "url": "https://github.com/openai/codex/blob/a956835d020762cb2b570053af06f643a11c0ecc/codex-rs/exec/src/lib.rs#L986"
+    }
+   ],
+   "excerpt": "    let mut client = InProcessAppServerClient::start(in_process_start_args)\n        .await\n        .map_err(|err| {\n            anyhow::anyhow!(\"failed to initialize in-process app-server client: {err}\")\n        })?;"
+  },
+  {
+   "id": "taskrun",
+   "label": "RegularTask::run",
+   "sub": "core/src/tasks/regular.rs:40",
+   "x": -140,
+   "y": 150,
+   "w": 220,
+   "h": 96,
+   "grade": "verified",
+   "links": [
+    {
+     "label": "regular.rs:40",
+     "url": "https://github.com/openai/codex/blob/a956835d020762cb2b570053af06f643a11c0ecc/codex-rs/core/src/tasks/regular.rs#L40"
+    }
+   ],
+   "excerpt": "    async fn run(\n        self: Arc<Self>,\n        sess: Arc<Session>,\n        ctx: Arc<TurnContext>,"
+  },
+  {
+   "id": "steering",
+   "label": "Mid-stream steering",
+   "sub": "core/src/session/input_queue.rs:246",
+   "x": -140,
+   "y": 280,
+   "w": 220,
+   "h": 96,
+   "grade": "verified",
+   "links": [
+    {
+     "label": "input_queue.rs:246",
+     "url": "https://github.com/openai/codex/blob/a956835d020762cb2b570053af06f643a11c0ecc/codex-rs/core/src/session/input_queue.rs#L246"
+    }
+   ],
+   "excerpt": "    /// Signal once a user message is queued for this sampling request.\n    pub(crate) async fn watch_user_input(\n        &self,\n        active_turn: &Mutex<Option<ActiveTurn>>,"
+  },
+  {
+   "id": "inner",
+   "label": "Inner loops",
+   "sub": "core/src/session/turn.rs:1647",
+   "x": -140,
+   "y": 410,
+   "w": 220,
+   "h": 96,
+   "grade": "verified",
+   "links": [
+    {
+     "label": "turn.rs:1647",
+     "url": "https://github.com/openai/codex/blob/a956835d020762cb2b570053af06f643a11c0ecc/codex-rs/core/src/session/turn.rs#L1647"
+    },
+    {
+     "label": "turn.rs:2605",
+     "url": "https://github.com/openai/codex/blob/a956835d020762cb2b570053af06f643a11c0ecc/codex-rs/core/src/session/turn.rs#L2605"
+    }
+   ],
+   "excerpt": "    loop {\n        // Running code-mode cells can request review while this response is in flight.\n        // Keep the latest received ID until response.created replaces it.\n        let prompt_input = if let Some(input) = initial_input.take() {"
+  },
+  {
+   "id": "elicit",
+   "label": "Elicitation pause",
+   "sub": "core/src/elicitation.rs:6",
+   "x": -140,
+   "y": 540,
+   "w": 220,
+   "h": 96,
+   "grade": "verified",
+   "links": [
+    {
+     "label": "elicitation.rs:6-8",
+     "url": "https://github.com/openai/codex/blob/a956835d020762cb2b570053af06f643a11c0ecc/codex-rs/core/src/elicitation.rs#L6-L8"
+    }
+   ],
+   "excerpt": "/// Coordinates user elicitations that pause tool-result delivery for a session.\n///\n/// Registrations are counted so concurrent elicitations keep the session paused until all of them"
+  },
+  {
+   "id": "nocap",
+   "label": "No max_turns",
+   "sub": "turn.rs:426 — condition-driven",
+   "x": -140,
+   "y": 670,
+   "w": 220,
+   "h": 96,
+   "grade": "verified",
+   "links": [
+    {
+     "label": "turn.rs:426",
+     "url": "https://github.com/openai/codex/blob/a956835d020762cb2b570053af06f643a11c0ecc/codex-rs/core/src/session/turn.rs#L426"
+    }
+   ],
+   "excerpt": "    loop {\n        // Note that pending_input would be something like a message the user\n        // submitted through the UI while the model was running. Though the UI\n        // may support this, the model might not.\n        let pending_input = if can_drain_pending_input {\n            sess.input_queue"
+  },
+  {
+   "id": "appserver",
+   "label": "App-server JSON-RPC",
+   "sub": "app-server-protocol/.../common.rs:1032",
+   "x": 520,
+   "y": 20,
+   "w": 220,
+   "h": 96,
+   "grade": "verified",
+   "links": [
+    {
+     "label": "common.rs:1032-1036",
+     "url": "https://github.com/openai/codex/blob/a956835d020762cb2b570053af06f643a11c0ecc/codex-rs/app-server-protocol/src/protocol/common.rs#L1032-L1036"
+    }
+   ],
+   "excerpt": "    TurnStart => \"turn/start\" {\n        params: v2::TurnStartParams,\n        inspect_params: true,\n        serialization: thread_id(params.thread_id),\n        response: v2::TurnStartResponse,"
+  },
+  {
+   "id": "skills",
+   "label": "Skills = prompt injection",
+   "sub": "skills/src/selection.rs:42",
+   "x": 520,
+   "y": 150,
+   "w": 220,
+   "h": 96,
+   "grade": "verified",
+   "links": [
+    {
+     "label": "selection.rs:42",
+     "url": "https://github.com/openai/codex/blob/a956835d020762cb2b570053af06f643a11c0ecc/codex-rs/skills/src/selection.rs#L42"
+    }
+   ],
+   "excerpt": "pub fn collect_explicit_skill_mentions(\n    inputs: &[UserInput],\n    loaded_skills: &impl ExplicitSkillLookup,\n    connector_slug_counts: &HashMap<String, usize>,\n) -> Vec<SkillMetadata> {"
+  },
+  {
+   "id": "providers",
+   "label": "Responses-API only",
+   "sub": "model-provider-info/src/lib.rs:104",
+   "x": 520,
+   "y": 280,
+   "w": 220,
+   "h": 96,
+   "grade": "verified",
+   "links": [
+    {
+     "label": "lib.rs:104-129",
+     "url": "https://github.com/openai/codex/blob/a956835d020762cb2b570053af06f643a11c0ecc/codex-rs/model-provider-info/src/lib.rs#L104-L129"
+    },
+    {
+     "label": "lib.rs:653-686",
+     "url": "https://github.com/openai/codex/blob/a956835d020762cb2b570053af06f643a11c0ecc/codex-rs/model-provider-info/src/lib.rs#L653-L686"
+    }
+   ],
+   "excerpt": "pub enum WireApi {\n    /// The Responses API exposed by OpenAI at `/v1/responses`.\n    #[default]\n    Responses,\n}"
+  },
+  {
+   "id": "mcp",
+   "label": "MCP wrapped (client-only)",
+   "sub": "config/src/mcp_types.rs:28",
+   "x": 520,
+   "y": 410,
+   "w": 220,
+   "h": 96,
+   "grade": "verified",
+   "links": [
+    {
+     "label": "mcp_types.rs:28",
+     "url": "https://github.com/openai/codex/blob/a956835d020762cb2b570053af06f643a11c0ecc/codex-rs/config/src/mcp_types.rs#L28"
+    }
+   ],
+   "excerpt": "pub enum AppToolApproval {\n    #[default]\n    Auto,\n    Prompt,\n    Writes,\n    Approve,\n}"
+  },
+  {
+   "id": "tools",
+   "label": "ToolRegistry + ToolExecutor",
+   "sub": "core/src/tools/registry.rs:296",
+   "x": 520,
+   "y": 540,
+   "w": 220,
+   "h": 96,
+   "grade": "verified",
+   "links": [
+    {
+     "label": "registry.rs:296",
+     "url": "https://github.com/openai/codex/blob/a956835d020762cb2b570053af06f643a11c0ecc/codex-rs/core/src/tools/registry.rs#L296"
+    },
+    {
+     "label": "tool_executor.rs:51",
+     "url": "https://github.com/openai/codex/blob/a956835d020762cb2b570053af06f643a11c0ecc/codex-rs/tools/src/tool_executor.rs#L51"
+    }
+   ],
+   "excerpt": "    tools: IndexMap<ToolName, RegisteredTool>,\n    first_collision: Option<ToolName>,\n    pub(crate) tool_policy: Arc<ToolPolicy>,\n}\n"
+  },
+  {
+   "id": "subagents",
+   "label": "Sub-agents V1/V2",
+   "sub": "core/src/agent/api.rs:55",
+   "x": 520,
+   "y": 670,
+   "w": 220,
+   "h": 96,
+   "grade": "verified",
+   "links": [
+    {
+     "label": "api.rs:55-58",
+     "url": "https://github.com/openai/codex/blob/a956835d020762cb2b570053af06f643a11c0ecc/codex-rs/core/src/agent/api.rs#L55-L58"
+    },
+    {
+     "label": "spec_plan.rs:668",
+     "url": "https://github.com/openai/codex/blob/a956835d020762cb2b570053af06f643a11c0ecc/codex-rs/core/src/tools/spec_plan.rs#L668"
+    }
+   ],
+   "excerpt": "    fn spawn(\n        &self,\n        request: SpawnRequest,\n    ) -> BoxFuture<'_, Result<(LiveAgent, ThreadConfigSnapshot)>>;"
+  },
+  {
+   "id": "sandbox",
+   "label": "4-layer sandbox stack",
+   "sub": "sandboxing/src/lib.rs:1",
+   "x": 520,
+   "y": 800,
+   "w": 220,
+   "h": 96,
+   "grade": "verified",
+   "links": [
+    {
+     "label": "lib.rs:1-8",
+     "url": "https://github.com/openai/codex/blob/a956835d020762cb2b570053af06f643a11c0ecc/codex-rs/sandboxing/src/lib.rs#L1-L8"
+    },
+    {
+     "label": "policy_transforms.rs:646",
+     "url": "https://github.com/openai/codex/blob/a956835d020762cb2b570053af06f643a11c0ecc/codex-rs/sandboxing/src/policy_transforms.rs#L646"
+    }
+   ],
+   "excerpt": "#[cfg(target_os = \"linux\")]\nmod bwrap;\nmod denial;\npub mod landlock;\nmod linux_pid_namespace;\nmod manager;\npub mod policy_transforms;\n#[cfg(target_os = \"macos\")]"
+  },
+  {
+   "id": "approvals",
+   "label": "Per-action approvals",
+   "sub": "core/src/tools/approvals.rs:66",
+   "x": 520,
+   "y": 930,
+   "w": 220,
+   "h": 96,
+   "grade": "verified",
+   "links": [
+    {
+     "label": "approvals.rs:66",
+     "url": "https://github.com/openai/codex/blob/a956835d020762cb2b570053af06f643a11c0ecc/codex-rs/core/src/tools/approvals.rs#L66"
+    },
+    {
+     "label": "approvals.rs:505-507",
+     "url": "https://github.com/openai/codex/blob/a956835d020762cb2b570053af06f643a11c0ecc/codex-rs/core/src/tools/approvals.rs#L505-L507"
+    }
+   ],
+   "excerpt": "#[serde(tag = \"tool\", rename_all = \"snake_case\")]\npub(crate) enum ApprovalAction {\n    ExecCommand {\n        id: String,\n        environment_id: String,\n        // Approval precedence is:\n        // 1. Hooks\n        // 2. If StrictAutoReview || Guardian enabled, then Guardian. Else, user."
+  },
+  {
+   "id": "hooks",
+   "label": "Hooks (10 events)",
+   "sub": "core/src/tools/approvals.rs:505",
+   "x": 520,
+   "y": 1060,
+   "w": 220,
+   "h": 96,
+   "grade": "verified",
+   "links": [
+    {
+     "label": "approvals.rs:505-507",
+     "url": "https://github.com/openai/codex/blob/a956835d020762cb2b570053af06f643a11c0ecc/codex-rs/core/src/tools/approvals.rs#L505-L507"
+    }
+   ],
+   "excerpt": "        // Approval precedence is:\n        // 1. Hooks\n        // 2. If StrictAutoReview || Guardian enabled, then Guardian. Else, user."
+  },
+  {
+   "id": "sessions",
+   "label": "Rollout JSONL sessions",
+   "sub": "rollout/src/list.rs:438",
+   "x": 520,
+   "y": 1190,
+   "w": 220,
+   "h": 96,
+   "grade": "verified",
+   "links": [
+    {
+     "label": "list.rs:438-440",
+     "url": "https://github.com/openai/codex/blob/a956835d020762cb2b570053af06f643a11c0ecc/codex-rs/rollout/src/list.rs#L438-L440"
+    }
+   ],
+   "excerpt": "/// Directory layout: `~/.codex/sessions/YYYY/MM/DD/rollout-YYYY-MM-DDThh-mm-ss-<uuid>.jsonl`\n/// Returned newest (based on sort key) first.\nasync fn traverse_directories_for_paths("
+  }
+ ],
+ "edges": [
+  {
+   "from": "input",
+   "to": "route",
+   "label": "rpc"
+  },
+  {
+   "from": "route",
+   "to": "task"
+  },
+  {
+   "from": "task",
+   "to": "taskloop"
+  },
+  {
+   "from": "taskloop",
+   "to": "preamble"
+  },
+  {
+   "from": "preamble",
+   "to": "drain"
+  },
+  {
+   "from": "drain",
+   "to": "stepctx"
+  },
+  {
+   "from": "stepctx",
+   "to": "prompt"
+  },
+  {
+   "from": "prompt",
+   "to": "model"
+  },
+  {
+   "from": "model",
+   "to": "stream"
+  },
+  {
+   "from": "stream",
+   "to": "approval",
+   "label": "tool"
+  },
+  {
+   "from": "approval",
+   "to": "loopstop"
+  },
+  {
+   "from": "loopstop",
+   "to": "stream"
+  },
+  {
+   "from": "taskrun",
+   "to": "taskloop",
+   "label": "calls"
+  },
+  {
+   "from": "inner",
+   "to": "model",
+   "label": "retry"
+  },
+  {
+   "from": "inner",
+   "to": "stream",
+   "label": "cons"
+  },
+  {
+   "from": "nocap",
+   "to": "loopstop",
+   "label": "cond"
+  },
+  {
+   "from": "steering",
+   "to": "drain",
+   "label": "preempt"
+  },
+  {
+   "from": "execinproc",
+   "to": "input",
+   "label": "same"
+  },
+  {
+   "from": "elicit",
+   "to": "approval",
+   "label": "stalls"
+  },
+  {
+   "from": "appserver",
+   "to": "input",
+   "label": "rpc"
+  },
+  {
+   "from": "sandbox",
+   "to": "approval",
+   "label": "gate"
+  },
+  {
+   "from": "approvals",
+   "to": "approval",
+   "label": "chain"
+  },
+  {
+   "from": "tools",
+   "to": "stream",
+   "label": "route"
+  },
+  {
+   "from": "providers",
+   "to": "model",
+   "label": "ws"
+  },
+  {
+   "from": "sessions",
+   "to": "loopstop",
+   "label": "rollout"
+  },
+  {
+   "from": "tools",
+   "to": "subagents",
+   "label": "spawn"
+  },
+  {
+   "from": "hooks",
+   "to": "approval",
+   "label": "1st"
+  },
+  {
+   "from": "mcp",
+   "to": "tools",
+   "label": "wrap"
+  },
+  {
+   "from": "skills",
+   "to": "prompt",
+   "label": "inject"
+  }
+ ]
+}

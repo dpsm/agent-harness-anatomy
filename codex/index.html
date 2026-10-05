@@ -1,0 +1,1375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Agent Harness Anatomy #5: Codex CLI — the sandbox-first agent that speaks one wire protocol</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body {
+    background: #0d1117; color: #e6edf3;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    line-height: 1.7; padding: 48px 24px; margin: 0;
+  }
+  main { max-width: 760px; margin: 0 auto; }
+  a { color: #58a6ff; }
+  h1 { font-size: 1.9rem; letter-spacing: -0.02em; line-height: 1.25; margin-bottom: 16px; }
+  h2 { font-size: 1.4rem; margin: 40px 0 12px; padding-top: 8px; border-top: 1px solid #21262d; }
+  h3 { font-size: 1.1rem; margin: 28px 0 8px; }
+  p, li { margin-bottom: 12px; }
+  blockquote {
+    border-left: 3px solid #3fb950; padding: 4px 16px; margin: 20px 0;
+    color: #8b949e; background: #161b22; border-radius: 0 8px 8px 0;
+  }
+  blockquote p { margin-bottom: 6px; }
+  code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.88em; background: #161b22; padding: 2px 6px; border-radius: 6px;
+  }
+  pre { background: #161b22; border: 1px solid #30363d; border-radius: 8px;
+        padding: 16px; overflow-x: auto; }
+  pre code { background: none; padding: 0; }
+  img { max-width: 100%; height: auto; border: 1px solid #30363d;
+        border-radius: 12px; margin: 20px 0; background: #161b22; }
+  table { border-collapse: collapse; width: 100%; margin: 20px 0; font-size: 0.92rem;
+          display: block; overflow-x: auto; }
+  th, td { border: 1px solid #30363d; padding: 10px 12px; text-align: left;
+           vertical-align: top; }
+  th { background: #161b22; }
+  ul, ol { padding-left: 24px; }
+  hr { border: none; border-top: 1px solid #21262d; margin: 32px 0; }
+  .footnote { font-size: 0.88rem; color: #8b949e; }
+  .footnote hr { margin: 40px 0 16px; }
+  sup a { text-decoration: none; }
+  .topnav { max-width: 760px; margin: 0 auto 32px; font-size: 0.9rem; }
+  .topnav a { color: #8b949e; text-decoration: none; }
+  .topnav a:hover { color: #e6edf3; }
+  .diagram-cta {
+    display: block; text-align: center; margin: 28px 0; padding: 16px;
+    background: #161b22; border: 1px solid #30363d; border-radius: 12px;
+    color: #e6edf3; text-decoration: none; font-weight: 600;
+  }
+  .diagram-cta:hover { border-color: #3fb950; }
+  .diagram-cta span { display: block; font-weight: 400; font-size: 0.88rem;
+                      color: #8b949e; margin-top: 4px; }
+</style>
+</head>
+<body>
+<main>
+  <nav class="topnav"><a href="../">&larr; Agent Harness Anatomy</a></nav>
+<h1 id="agent-harness-anatomy-5-codex-cli-the-sandbox-first-agent-that-speaks-one-wire-protocol">Agent Harness Anatomy #5: Codex CLI — the sandbox-first agent that speaks one wire protocol</h1>
+<blockquote>
+<p><strong>Series:</strong> Agent Harness Anatomy — top-down dissections of real agent
+harnesses, grounded in verifiable source code. Every behavioral claim
+below carries a footnote to a pinned GitHub permalink; the full evidence
+lives in the endnotes.</p>
+</blockquote>
+<h2 id="version-block">Version block</h2>
+<ul>
+<li><strong>Repo:</strong> <a href="https://github.com/openai/codex">openai/codex</a></li>
+<li><strong>Pinned:</strong> tag <code>rust-v0.160.0</code> → <code>a956835d020762cb2b570053af06f643a11c0ecc</code> (2026-10-01)</li>
+<li><strong>Language:</strong> Rust (cargo workspace <code>codex-rs/</code>, 155 members)</li>
+<li><strong>License:</strong> Apache-2.0</li>
+<li><strong>Claim under test:</strong> "a local, extensible, open source AI agent"</li>
+<li><strong>Scope:</strong> this teardown covers the <strong>Rust CLI</strong> (<code>codex-rs/</code>), the
+  series' sandbox/security axis. The legacy TypeScript CLI (<code>codex-cli/</code>
+  at repo root) is out of scope.<sup id="fnref3:1"><a class="footnote-ref" href="#fn:1">1</a></sup></li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>Crate</th>
+<th>Non-test <code>.rs</code></th>
+<th>Role</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>core</code></td>
+<td>409 files, 123,071 LOC</td>
+<td>THE product crate: turn loop, tools, sandboxing, sessions</td>
+</tr>
+<tr>
+<td><code>tui</code></td>
+<td>698 files, 321,410 LOC</td>
+<td>Interactive terminal UI (Ratatui; genuinely large, no generated bulk)</td>
+</tr>
+<tr>
+<td><code>app-server</code></td>
+<td>119 files, 50,602 LOC</td>
+<td>JSON-RPC v2 substrate — the real interface layer</td>
+</tr>
+<tr>
+<td><code>exec-server</code></td>
+<td>89 files, 33,513 LOC</td>
+<td>Standalone remote/foreign-OS exec service</td>
+</tr>
+<tr>
+<td><code>cli</code></td>
+<td>50 files, 27,788 LOC</td>
+<td>CLI binary, ~25 subcommands</td>
+</tr>
+<tr>
+<td><code>protocol</code></td>
+<td>56 files, 28,203 LOC</td>
+<td>Shared protocol types (incl. <code>PermissionProfile</code>)</td>
+</tr>
+<tr>
+<td><code>config</code></td>
+<td>64 files, 21,549 LOC</td>
+<td>9-layer config stack</td>
+</tr>
+<tr>
+<td><code>codex-mcp</code></td>
+<td>36 files, 13,081 LOC</td>
+<td>MCP client runtime</td>
+</tr>
+<tr>
+<td><code>hooks</code></td>
+<td>28 files, 11,657 LOC</td>
+<td>Hook system (10 lifecycle events)</td>
+</tr>
+<tr>
+<td><code>rollout</code></td>
+<td>22 files, 9,423 LOC</td>
+<td>Session persistence (JSONL)</td>
+</tr>
+<tr>
+<td><code>model-provider</code></td>
+<td>20 files, 6,442 LOC</td>
+<td>Provider abstraction</td>
+</tr>
+<tr>
+<td><code>apply-patch</code></td>
+<td>9 files, 4,828 LOC</td>
+<td>Codex's own patch format + application</td>
+</tr>
+<tr>
+<td><code>exec</code></td>
+<td>8 files, 4,350 LOC</td>
+<td>Non-interactive mode (an app-server client)</td>
+</tr>
+<tr>
+<td><code>tools</code></td>
+<td>24 files, 3,398 LOC</td>
+<td>Shared tool definition layer (<code>ToolExecutor</code>)</td>
+</tr>
+<tr>
+<td><code>execpolicy</code></td>
+<td>11 files, 1,954 LOC</td>
+<td>Starlark exec-policy language</td>
+</tr>
+<tr>
+<td><code>skills</code></td>
+<td>9 files, 1,493 LOC</td>
+<td>SKILL.md discovery/injection</td>
+</tr>
+</tbody>
+</table>
+<p>Workspace total: 3,058 non-test <code>.rs</code> files under <code>codex-rs/*/src</code>.
+Entry is the CLI binary at <code>codex-rs/cli/src/main.rs</code> → <code>cli_main</code>;
+bare <code>codex</code> launches the TUI; the agent loop is <code>run_turn</code> at
+<code>codex-rs/core/src/session/turn.rs</code>.<sup id="fnref:1"><a class="footnote-ref" href="#fn:1">1</a></sup></p>
+<p><img alt="Codex CLI architecture" src="figures/codex.svg" /></p>
+<h2 id="the-mental-model">The mental model</h2>
+<p>Codex is a <strong>sandbox-first, approval-gated pair programmer that speaks
+exactly one wire protocol</strong>. Three inversions define it against the
+series so far. Against pi: where pi's interfaces subscribe to one event
+stream, Codex's interfaces are all JSON-RPC clients of one <strong>app-server</strong>
+— the TUI, <code>exec</code>, and the managed daemon drive core through it, and even
+<code>codex exec</code> spins an in-process app-server rather than calling core
+directly.<sup id="fnref:2"><a class="footnote-ref" href="#fn:2">2</a></sup> Against aider: where aider negotiates with the model through
+text edit formats and remembers via git, Codex speaks native Responses
+API function tools — and there is no Chat Completions path at all; the
+<code>WireApi</code> enum has exactly one variant, and <code>"chat"</code> deserialization is
+explicitly rejected.<sup id="fnref:3"><a class="footnote-ref" href="#fn:3">3</a></sup> Against Cline and Goose: where Cline's safety is
+approval-first and Goose's is preventive-plus-judge, Codex's is
+<strong>sandbox-first</strong> — a four-layer stack (Starlark exec-policy language →
+declarative permission profiles → three OS backends → MITM network
+proxy) that decides allow/prompt/forbid <em>before</em> anything runs, with
+approvals as the policy/UX layer on top.<sup id="fnref:4"><a class="footnote-ref" href="#fn:4">4</a></sup></p>
+<p>The governing tradeoff: Codex pays for the heaviest safety machinery in
+the series — OS-level MAC backends, not shell wrappers — and funds it
+with the narrowest wire protocol. One API shape, many doors in: 5
+built-in providers behind 8 auth modes. If you're building a harness,
+that's Codex's thesis in one sentence: <strong>constrain the blast radius in
+the OS, and you can afford to let the model act.</strong></p>
+<h2 id="package-map">Package map</h2>
+<p>A layered cargo workspace, dependency direction running strictly
+downward:<sup id="fnref2:1"><a class="footnote-ref" href="#fn:1">1</a></sup></p>
+<pre><code>model-provider-info   WireApi enum (Responses only), provider metadata
+        ↑
+model-provider        ModelProvider trait, auth plumbing, capabilities
+codex-mcp             MCP client runtime
+        ↑
+core                  turn loop, tool registry, sandboxing, sessions,
+                      approvals, compaction, hooks, sub-agents
+        ↑
+app-server            JSON-RPC v2 substrate: thread/start|resume|fork|...,
+                      consumed by exec, TUI, daemon, desktop app
+        ↑
+cli / tui / exec      all drive core through app-server; exec is in-process
+</code></pre>
+<p><code>codex-rs/core/src</code> key dirs: <code>session/</code> (the loop: <code>turn.rs</code> 3,187
+lines, <code>handlers.rs</code>, <code>turn_input.rs</code>, <code>input_queue.rs</code>), <code>tools/</code>
+(registry, router, orchestrator, approvals, <code>handlers/</code>, <code>runtimes/</code>),
+<code>sandboxing/</code> (platform backends), <code>exec_policy.rs</code>, <code>unified_exec/</code>,
+<code>compact*.rs</code>, <code>guardian/</code> (LLM auto-review), <code>agent/</code> (sub-agent
+control), <code>elicitation.rs</code>.</p>
+<h2 id="the-core-loop">The core loop</h2>
+<p><strong>Three nested loops</strong>, not one — each at a different altitude:<sup id="fnref:5"><a class="footnote-ref" href="#fn:5">5</a></sup></p>
+<ol>
+<li><strong>Task loop</strong> — <code>RegularTask::run</code> (<code>core/src/tasks/regular.rs:40</code>):
+   re-runs whole turns while pending user input remains (<code>loop {}</code> at
+   <code>:104</code>).</li>
+<li><strong>Turn loop</strong> — <code>run_turn</code>'s <code>loop {}</code> (<code>core/src/session/turn.rs:426</code>):
+   each iteration is one sampling request — one model call plus all the
+   tools that response triggered. <strong>This is the agent loop in the
+   article's sense.</strong></li>
+<li><strong>Inner loops</strong> — <code>try_run_sampling_request</code>'s stream-consumer loop
+   (<code>turn.rs:2605</code>) plus a retry loop in <code>run_sampling_request</code>
+   (<code>turn.rs:1647</code>).</li>
+</ol>
+<p><code>run_turn</code>'s signature, verbatim (<code>turn.rs:163-172</code>):<sup id="fnref:6"><a class="footnote-ref" href="#fn:6">6</a></sup></p>
+<pre><code class="language-rust">pub(crate) async fn run_turn(
+    sess: Arc&lt;Session&gt;,
+    turn_context: Arc&lt;TurnContext&gt;,
+    mut input: Vec&lt;TurnInput&gt;,
+    mcp_startup_requirements: &amp;mut McpStartupRequirements,
+    prewarmed_client_session: Option&lt;ModelClientSession&gt;,
+    cancellation_token: CancellationToken,
+) -&gt; CodexResult&lt;Option&lt;String&gt;&gt;
+</code></pre>
+<p>It returns the last agent message. The loop is <strong>condition-driven</strong>
+(<code>loop {}</code> + <code>break</code>/<code>continue</code>), not counter-driven — there is no
+iteration counter anywhere in the 155 crates.<sup id="fnref:7"><a class="footnote-ref" href="#fn:7">7</a></sup></p>
+<p>Loop-body stages per iteration (<code>turn.rs:426-838</code>): drain pending user
+input → prompt-hook inspection → step-context capture (re-resolves tools,
+permissions, environments) → time reminder + world state → prompt build
+→ sampling request → post-sampling bookkeeping → mid-turn compaction
+rollover (<code>continue</code>) → stop path (stop hooks, legacy after-agent hook,
+post-turn compaction) → <code>continue</code>/<code>break</code> → error arms.<sup id="fnref2:5"><a class="footnote-ref" href="#fn:5">5</a></sup></p>
+<p><strong>Termination:</strong> the model sends only an assistant message; a stop hook's
+<code>should_stop</code>; hook-blocked input; a terminal error; user interrupt
+(<code>Op::Interrupt</code> → <code>abort_all_tasks(Interrupted)</code> → <code>TurnAborted</code> at
+every await point); or the server's <code>end_turn: false</code> absent with no tool
+calls.<sup id="fnref:8"><a class="footnote-ref" href="#fn:8">8</a></sup> <strong>No <code>max_turns</code>, <code>max_iterations</code>, or step cap exists in
+non-test code</strong> — an exhaustive grep across all 155 crates finds only
+unrelated caps (a guardian token budget, a tool-search byte cap, TUI
+history-read limits).<sup id="fnref2:7"><a class="footnote-ref" href="#fn:7">7</a></sup> The doom-loop guard is a retry budget plus
+compaction-once-per-step plus the user interrupt — reactive, like
+Cline's, but without even Cline's identical-call counter.<sup id="fnref:9"><a class="footnote-ref" href="#fn:9">9</a></sup></p>
+<p><strong>Tool dispatch</strong> is concurrent by default: <code>ToolRouter::build_tool_call</code>
+per <code>OutputItemDone</code> (<code>stream_events_utils.rs:325</code>) → futures in
+<code>FuturesOrdered</code> → <code>drain_in_flight</code> (<code>turn.rs:2466</code>) records results
+into history before the next iteration. Tool errors become failure
+results, never break the loop. <code>parallel_tool_calls: true</code> on every
+prompt.<sup id="fnref:10"><a class="footnote-ref" href="#fn:10">10</a></sup></p>
+<p><strong>Approvals park the loop inside the tool future.</strong>
+<code>ApprovalService::request_approval</code> (<code>tools/approvals.rs:479</code>) runs the
+chain — hooks, then the Guardian LLM auto-reviewer, then the user — and
+the turn loop cannot proceed past <code>drain_in_flight</code> until the decision
+lands. Denials become failure tool results. Elicitation is a separate
+session-wide pause counter that stalls tool-result delivery without
+breaking the loop.<sup id="fnref:11"><a class="footnote-ref" href="#fn:11">11</a></sup></p>
+<p><strong>Compaction</strong> fires at four points: pre-turn, mid-turn rollover on
+token-limit (with <code>continue</code>), post-turn threshold check, and a
+one-per-step guardian-budget recovery. Two engines are selected by
+provider capability: local summarization vs remote V2 over the Responses
+endpoint.<sup id="fnref:12"><a class="footnote-ref" href="#fn:12">12</a></sup></p>
+<p><img alt="The three nested loops" src="figures/seq-loops.svg" /></p>
+<h2 id="trace-one-turn">Trace one turn</h2>
+<p>Trace input: the user types <code>refactor the retry helper to use exponential
+backoff</code> in the TUI and hits Enter. The trace crosses three process
+boundaries — TUI → app-server → core — because every interface is an
+RPC client:<sup id="fnref:13"><a class="footnote-ref" href="#fn:13">13</a></sup></p>
+<ol>
+<li><strong>Submit.</strong> The TUI sends app-server RPC <code>turn/start</code>
+   (<code>tui/src/app_server_session.rs:1308-1341</code>), packaging the text with
+   sandbox-policy and permission overrides resolved from config.</li>
+<li><strong>Route to core.</strong> <code>turn_processor.rs:630</code> →
+   <code>thread.start_or_steer_turn(...)</code> → <code>Op::TurnInput</code>
+   (<code>protocol/src/protocol.rs:622</code>) → <code>session/handlers.rs:485</code> →
+   <code>turn_input::handle</code>. The op enum is the entire vocabulary the
+   server speaks to core.<sup id="fnref2:13"><a class="footnote-ref" href="#fn:13">13</a></sup></li>
+<li><strong>Start task.</strong> No active turn → <code>spawn_task</code> (<code>turn_input.rs:365</code>) →
+   <code>tasks/mod.rs:287</code> records <code>ActiveTurn</code> and spawns with a fresh
+   <code>CancellationToken</code>.<sup id="fnref3:13"><a class="footnote-ref" href="#fn:13">13</a></sup></li>
+<li><strong>Task loop.</strong> <code>RegularTask::run</code> (<code>tasks/regular.rs:40</code>) emits
+   <code>TurnStarted</code> and enters its <code>loop {}</code> (<code>:104</code>), calling <code>run_turn</code>
+   (<code>:105</code>) with the input, MCP startup requirements, and any
+   prewarmed client session.<sup id="fnref4:5"><a class="footnote-ref" href="#fn:5">5</a></sup></li>
+<li><strong>Turn preamble.</strong> Inside <code>run_turn</code> (<code>turn.rs:163</code>): guardian check,
+   pre-sampling compaction, MCP resolution, the first step-context
+   capture, skill/plugin injection, session-start hooks — then the user
+   message is recorded to history.<sup id="fnref5:5"><a class="footnote-ref" href="#fn:5">5</a></sup></li>
+<li><strong>Iteration 1 — drain and inspect.</strong> The <code>loop {}</code> body
+   (<code>turn.rs:426</code>): no pending input to drain on a fresh turn;
+   prompt-hook inspection runs (<code>:426-446</code>).</li>
+<li><strong>Iteration 1 — step context.</strong> Tools re-resolved, approval policy
+   bound to the turn (<code>turn.rs:461-503</code>); time reminder and world state
+   assembled.</li>
+<li><strong>Iteration 1 — prompt.</strong> <code>clone_history().await.for_prompt(...)</code> plus
+   <code>executed_tool_calls.attach_to_prompt</code> → <code>build_prompt</code> →
+   <code>Prompt { input, tools, parallel_tool_calls: true,
+   base_instructions, ... }</code> (<code>turn.rs:1583-1592</code>).<sup id="fnref:14"><a class="footnote-ref" href="#fn:14">14</a></sup></li>
+<li><strong>Iteration 1 — model call.</strong> <code>run_sampling_request</code> →
+   <code>try_run_sampling_request</code> → <code>client_session.stream(...)</code> →
+   WebSocket-first (permanent HTTP/SSE fallback), both POSTing to
+   <code>/responses</code> (<code>client.rs:2218-2263</code>). The request carries
+   <code>store: false</code>, <code>stream: true</code>, and a thread-scoped
+   <code>prompt_cache_key</code> for cache affinity (<code>client.rs:886-1007</code>).<sup id="fnref3:3"><a class="footnote-ref" href="#fn:3">3</a></sup><sup id="fnref2:14"><a class="footnote-ref" href="#fn:14">14</a></sup></li>
+<li><strong>Stream handling.</strong> The inner loop (<code>turn.rs:2605</code>) consumes
+    <code>ResponseEvent</code>s: text deltas stream to the TUI live; each
+    completed tool call arrives as <code>OutputItemDone</code> →
+    <code>ToolRouter::build_tool_call</code> (<code>stream_events_utils.rs:325</code>),
+    spawned into <code>in_flight</code> with <code>needs_follow_up = true</code>.<sup id="fnref2:10"><a class="footnote-ref" href="#fn:10">10</a></sup></li>
+<li><strong>Approval, parked in the tool future.</strong> For any gated call,
+    <code>ApprovalService::request_approval</code> (<code>tools/approvals.rs:479</code>)
+    runs hooks → Guardian → user; the turn loop sits in
+    <code>drain_in_flight</code> (<code>turn.rs:2466</code>) until the decision lands.
+    Denials become failure tool results, not loop breaks.<sup id="fnref2:11"><a class="footnote-ref" href="#fn:11">11</a></sup></li>
+<li><strong>Loop or stop.</strong> <code>drain_in_flight</code> records every
+    <code>FunctionCallOutput</code> envelope into history (<code>turn.rs:2466-2492</code>).
+    <code>needs_follow_up = true</code> → <code>continue</code> (<code>turn.rs:725</code>): iteration 2
+    rebuilds the prompt from history now containing tool results. The
+    model replies with only an assistant message →
+    <code>!needs_follow_up</code> → stop hooks → post-turn compaction check →
+    <code>break</code> (<code>turn.rs:653-723</code>). <code>run_turn</code> returns
+    <code>Ok(last_agent_message)</code> (<code>:839</code>); <code>TurnCompleted</code> is emitted and
+    the TUI renders from the streamed events.<sup id="fnref6:5"><a class="footnote-ref" href="#fn:5">5</a></sup><sup id="fnref2:8"><a class="footnote-ref" href="#fn:8">8</a></sup></li>
+</ol>
+<p><strong>Steering variant:</strong> mid-stream user input cancels the step's preempt
+token (<code>input_queue.rs:246</code>); <code>run_sampling_request</code> returns early with
+<code>needs_follow_up: true</code>; the loop drains the new input at its top and
+re-samples — the same shape as Cline's mid-run steering, one layer
+lower.<sup id="fnref3:5"><a class="footnote-ref" href="#fn:5">5</a></sup> <strong>Exec variant:</strong> <code>codex exec</code> drives the identical pipeline
+through its in-process app-server — there is no second loop.<sup id="fnref2:2"><a class="footnote-ref" href="#fn:2">2</a></sup></p>
+<h2 id="the-sandbox-stack">The sandbox stack</h2>
+<p>The sandbox stack clears the new-section bar. It is not one mechanism
+but <strong>four stacked layers</strong>, each with its own language, its own
+authority, and its own failure modes — and it is precisely the series'
+stated angle for this teardown. No other harness in the series has
+anything at this altitude: aider has no sandbox, Cline's commands run
+unsandboxed in the user's shell, Goose checks extensions at install time
+and then trusts them. Codex constrains the blast radius in the OS.</p>
+<p><strong>Layer 1 — the exec-policy language.</strong> A Starlark per-command policy
+language (<code>codex-execpolicy</code> crate) that decides <strong>allow / prompt /
+forbid</strong> before anything runs. Exactly three builtins
+(<code>execpolicy/src/parser.rs:329-473</code>): <code>prefix_rule</code> (argv-prefix
+matching, first token keys the lookup; <code>match</code>/<code>not_match</code> examples
+validated at parse time), <code>network_rule</code> (wildcards forbidden at parse,
+<code>rule.rs:196-200</code>), <code>host_executable</code> (a PATH-spoofing defense).
+Decisions aggregate by max: Allow &lt; Prompt &lt; Forbidden
+(<code>decision.rs:7-27</code>). This layer is the approval gate — and it starts
+empty: <strong>no shipped default <code>.rules</code> file exists</strong> (verified by
+<code>find</code>), so hardcoded heuristics decide unmatched commands until the
+user amends policy. Approving "always allow" appends <code>prefix_rule(...)</code>
+lines to <code>$CODEX_HOME/rules/default.rules</code>, hot-swapped via
+<code>ArcSwap</code>.<sup id="fnref:15"><a class="footnote-ref" href="#fn:15">15</a></sup></p>
+<p><strong>Layer 2 — the permission profile.</strong> The declarative <em>what</em>:
+<code>PermissionProfile</code> (<code>protocol/src/models.rs:422</code>) =
+<code>Managed { file_system, network }</code> | <code>Disabled</code> ("do not apply an
+outer sandbox") | <code>External { network }</code> (filesystem isolation by an
+external caller). The classic <code>read-only</code> / <code>workspace-write</code> /
+<code>danger-full-access</code> names survive only as <strong>diagnostic tags</strong> —
+<code>sandbox_tags.rs</code> maps a live profile back to those names for metrics,
+and its header is explicit: "Labels never inspect the filesystem and
+<strong>must not be used for authorization</strong>"
+(<code>core/src/sandbox_tags.rs:1-2</code>). The user-facing config knob is still
+the legacy <code>SandboxMode</code> enum (<code>protocol/src/config_types.rs:104-114</code>,
+default <code>ReadOnly</code>) with a compatibility shim both ways — two policy
+models, one name, and the runtime authority is the profile.<sup id="fnref:16"><a class="footnote-ref" href="#fn:16">16</a></sup></p>
+<p><strong>Layer 3 — the platform backends.</strong> The OS <em>how</em>
+(<code>codex-sandboxing</code> crate + helpers), selected per platform by
+<code>get_platform_sandbox()</code> (<code>sandboxing/src/policy_transforms.rs:646</code>):
+- <strong>macOS:</strong> Seatbelt via <code>/usr/bin/sandbox-exec</code> with embedded
+  <code>.sbpl</code> templates, starting from <code>(deny default)</code>. The network
+  block is binary on/off — fine-grained domains need Layer 4.
+- <strong>Linux:</strong> bubblewrap (prefers system <code>bwrap</code>, falls back to the
+  bundled binary) + landlock + seccomp, driven by the
+  <code>codex-linux-sandbox</code> helper — which is the <code>codex-exec</code> binary
+  re-invoked through <strong>arg0 dispatch</strong> (<code>exec/src/main.rs:1-35</code>).
+  Mounts <code>--ro-bind / /</code> with writable roots layered on top,
+  deny-read globs expanded pre-launch, <code>--unshare-user</code> always,
+  <code>--unshare-pid</code> by default, <code>--unshare-net</code> for restricted
+  networking.
+- <strong>Windows:</strong> three backends — MXC native PSEC (AppContainer
+  fallbacks deliberately excluded, <code>mxc-sandbox/src/lib.rs:89-95</code>),
+  restricted-token (cannot enforce deny-reads — hard errors
+  instead), and elevated (WFP, deny-read ACLs, a provisioning
+  service). Two decision sites carry a <code>TODO(anp)</code> to reconcile
+  them.<sup id="fnref:17"><a class="footnote-ref" href="#fn:17">17</a></sup></p>
+<p><strong>Layer 4 — the network proxy.</strong> <code>codex-network-proxy</code>: a local
+MITM-capable forward proxy, the only path to the internet in
+restricted modes. This is what makes the macOS/Linux network
+asymmetry honest — Linux gets a real net namespace plus proxy
+bridge plus domain policy; macOS Seatbelt is binary on/off and
+fine-grained domains ride the managed proxy.<sup id="fnref:18"><a class="footnote-ref" href="#fn:18">18</a></sup></p>
+<p><strong>Escalation is three distinct things</strong>, and the code keeps them
+separate: <code>SandboxPermissions::RequireEscalated</code> (declarative "run
+outside the sandbox" — blocked when deny-reads exist, because they'd
+be silently dropped); the sandbox-denial retry loop (the "run outside
+the sandbox?" prompt after <code>SandboxErr::Denied</code>,
+<code>core/src/tools/orchestrator.rs:320-490</code>); and <code>shell-escalation</code> — a
+patched zsh fork whose execve wrapper asks an in-process server
+per-<code>exec()</code> whether to re-run unsandboxed
+(<code>shell-escalation/src/unix/</code>).<sup id="fnref:19"><a class="footnote-ref" href="#fn:19">19</a></sup></p>
+<p>The load-bearing seam: <strong>malformed <code>.rules</code> fails open</strong> to the
+requirements policy with a warning (<code>load_exec_policy_with_warning</code>)
+— fail-open on syntax, fail-closed on semantics — and hardcoded
+heuristics shadow the Starlark language as a second authority for
+unmatched commands. Two more honest edges: <code>AllowPrefixRules::
+IgnoreForCyberModel</code> can silently strip user-configured allow rules
+for certain models, and the docs for both sandboxing and exec-policy
+are three-line redirects to a website — the richest semantics doc in
+the tree is <code>linux-sandbox/README.md</code>, Linux only.<sup id="fnref:20"><a class="footnote-ref" href="#fn:20">20</a></sup></p>
+<p><img alt="The sandbox stack" src="figures/seq-sandbox.svg" /></p>
+<h2 id="subsystem-inventory">Subsystem inventory</h2>
+<h3 id="1-the-approval-model-policyux-half">1. The approval model (policy/UX half)</h3>
+<p>Approvals in Codex are <strong>per-action, not per-tool-name</strong>. The sealed
+<code>ApprovalAction</code> enum (<code>tools/approvals.rs:66</code>) enumerates exactly what
+can be approved: <code>ExecCommand</code>, <code>WriteStdin</code>, <code>Execve</code>, <code>ApplyPatch</code>,
+<code>McpToolCall</code>, <code>NetworkAccess</code>, <code>RequestPermissions</code>. There is no
+generic "approve tool X" primitive — <code>write_stdin</code> is an
+approval-worthy action category of its own, which tells you how
+fine the model is.<sup id="fnref:21"><a class="footnote-ref" href="#fn:21">21</a></sup></p>
+<p>The user-facing ladder is <code>AskForApproval::{UnlessTrusted, OnRequest,
+Granular, Never}</code> (<code>protocol/src/protocol.rs:986</code>; <code>OnRequest</code> is the
+default). <code>Granular</code> splits the policy surface five ways:
+<code>sandbox_approval</code>, <code>rules</code>, <code>skill_approval</code>, <code>request_permissions</code>,
+<code>mcp_elicitations</code>. Per call, the exec-policy layer (or a default
+requirement when no rule applies) yields an <code>ExecApprovalRequirement</code>
+(<code>core/src/tools/sandboxing.rs:153</code>): <code>Skip | NeedsApproval |
+Forbidden</code> — deny-reads make unsandboxed execution refuse outright
+(<code>sandboxing.rs:239-296</code>): "Denied reads only exist inside the
+sandbox."<sup id="fnref2:21"><a class="footnote-ref" href="#fn:21">21</a></sup></p>
+<p>The request flow (<code>Session::request_approval</code>, <code>approvals.rs:479-552</code>)
+follows a precedence the code states verbatim in a comment: <strong>1.
+Hooks → 2. Guardian auto-review → 3. User.</strong> The Guardian
+(<code>core/src/guardian/</code>) is an LLM auto-reviewer extension; <code>None</code> from
+the reviewer falls through to the user — "no contributor is never an
+implicit allow" — and <code>strict_auto_review</code> forces the Guardian path
+even for <code>Skip</code> requirements. User prompts emit
+<code>ExecApprovalRequest</code> events; decisions return via oneshot.
+<code>ReviewDecision</code> (<code>protocol.rs:4159</code>) has eight variants:
+<code>Approved</code>, <code>ApprovedExecpolicyAmendment</code>,
+<code>ApprovedForSession</code>, <code>ApprovedMcpPolicyAmendment</code>,
+<code>NetworkPolicyAmendment</code>, <code>Denied</code>, <code>TimedOut</code>, <code>Abort</code> — note how
+many of them <em>amend policy</em>, not just the call: approving "always
+allow" writes Starlark into <code>$CODEX_HOME/rules/default.rules</code>, and
+approving an MCP policy writes a persistent cross-session amendment.
+Session caching via <code>with_cached_approval</code> uses canonicalized
+command keys.<sup id="fnref:22"><a class="footnote-ref" href="#fn:22">22</a></sup></p>
+<p><strong>Start here:</strong> <code>core/src/tools/approvals.rs:479</code> for the chain,
+<code>core/src/tools/sandboxing.rs:153</code> for the decision type.</p>
+<p><img alt="The approval model" src="figures/seq-approval.svg" /></p>
+<h3 id="2-the-tool-system">2. The tool system</h3>
+<p>The tool layer is split across two crates: <code>codex-rs/tools/</code> (the
+shared definition layer — <code>ToolSpec</code>, the <code>ToolExecutor</code> trait,
+Responses API serialization) and <code>core/src/tools/</code> (the host:
+<code>ToolRegistry</code> as <code>IndexMap&lt;ToolName, RegisteredTool&gt;</code>
+(<code>registry.rs:296</code>), <code>ToolRouter</code>, <code>orchestrator.rs</code> for the
+approval+sandbox stages, <code>handlers/</code> per built-in). Registration
+distinguishes trusted (core built-ins) from external
+(dynamic/MCP/extension; reserved names rejected); duplicate
+registration is a hard error. <code>ToolExposure</code>
+(<code>tools/src/tool_executor.rs:51</code>) — <code>Direct | Deferred |
+DeferredModelOnly | DirectModelOnly | CodeModeOnly | Hidden</code> —
+controls visibility: heavy tools (MCP, v1 sub-agents) register
+<code>Deferred</code>, and the model calls <code>tool_search</code> to load namespaces on
+demand, aider-<code>SwitchCoder</code> style but per-namespace. The per-turn
+toolset is assembled in <code>spec_plan.rs</code> (~1,534 lines).<sup id="fnref:23"><a class="footnote-ref" href="#fn:23">23</a></sup></p>
+<p>Built-ins (model-facing names): <code>exec_command</code>, <code>write_stdin</code>,
+<code>apply_patch</code>, <code>update_plan</code>, <code>tool_search</code>, <code>request_user_input</code>
+(<code>_async</code>), <code>send_message_to_user_async</code>, <code>new_context</code>,
+<code>get_context_remaining</code>, <code>curr_time</code>, <code>sleep</code>,
+<code>wait_for_environment</code>, <code>view_image</code>, <code>request_permissions</code>,
+<code>list_available_plugins_to_install</code>, <code>request_plugin_install</code>,
+<code>list_mcp_resources</code>, <code>list_mcp_resource_templates</code>,
+<code>read_mcp_resource</code>, <code>&lt;namespace&gt;.&lt;tool&gt;</code> (MCP), <code>spawn_agent</code>
+(plus V1 <code>multi_agent_v1.*</code>), and extension tools (<code>notes.*</code>,
+<code>history.*</code>, <code>image_gen.imagegen</code>, <code>web.run</code>, <code>memories.*</code>,
+<code>*_goal</code>). Tools reach the model as Responses API function tools
+(<code>client.rs:912,937</code>).<sup id="fnref2:23"><a class="footnote-ref" href="#fn:23">23</a></sup></p>
+<p>The negative that defines the design: <strong>no built-in
+<code>read_file</code>/<code>write_file</code>/<code>edit</code>/<code>search</code> tool exists in core.</strong>
+Reads, listings, and searches go through <code>exec_command</code>; edits go
+through <code>apply_patch</code>. The model shells out to see the world —
+which is exactly why the sandbox stack has to be this good.<sup id="fnref:24"><a class="footnote-ref" href="#fn:24">24</a></sup></p>
+<p><strong>Start here:</strong> <code>codex-rs/tools/src/tool_executor.rs</code> for the trait,
+<code>core/src/tools/registry.rs:296</code> for registration.</p>
+<h3 id="3-apply-patch">3. apply-patch</h3>
+<p>Codex's own patch format — a series institution carried over from
+the TS CLI: <code>*** Begin Patch</code> / <code>*** Add|Delete|Update File:</code> /
+<code>@@</code> hunks / <code>*** End Patch</code>, parsed by
+<code>apply-patch/src/parser.rs</code> and verified into an <code>ApplyPatchAction</code>
+<em>before</em> execution, so the diff can be shown in the approval
+prompt; it renders back to unified diff for display. Standalone via
+argv[1] <code>--codex-run-as-apply-patch</code> self-invocation — the same
+arg0-dispatch trick as the Linux sandbox helper.<sup id="fnref:25"><a class="footnote-ref" href="#fn:25">25</a></sup></p>
+<h3 id="4-mcp">4. MCP</h3>
+<p><code>codex-mcp</code> is an MCP <strong>client</strong> runtime (<code>McpConnectionManager</code>) —
+not a server exposing Codex. Servers are configured in
+<code>config.toml</code>'s <code>mcp_servers</code> (stdio + streamable-HTTP transports)
+and their tools are <strong>wrapped</strong> in <code>McpHandler</code> (a <code>CoreToolRuntime</code>)
+under sanitized namespaced names (<code>&lt;namespace&gt;.&lt;tool&gt;</code>), raw names
+preserved for protocol calls. Approval is per server/tool via
+<code>AppToolApproval::{Auto, Prompt, Writes, Approve}</code>
+(<code>config/src/mcp_types.rs:28</code>), settable per-server or per-tool,
+with a dedicated connector-attributed prompt UI, session-remember,
+and persistent cross-session policy amendments
+(<code>ApprovedMcpPolicyAmendment</code>). MCP server-side elicitation is
+gated by the granular <code>mcp_elicitations</code> approval mode.<sup id="fnref:26"><a class="footnote-ref" href="#fn:26">26</a></sup></p>
+<p>Contrast the series: Goose's tools <em>are</em> MCP (everything is a
+server); Cline's are native <code>AgentTool</code>s; pi wraps servers as native
+tools; Codex wraps too — but with the richest per-server approval
+machinery of the four.</p>
+<p><strong>Start here:</strong> <code>config/src/mcp_types.rs:28</code>, then <code>McpHandler</code>.</p>
+<h3 id="5-skills-hooks-plugins-slash-commands">5. Skills, hooks, plugins, slash commands</h3>
+<ul>
+<li><strong>Skills</strong> are <strong>prompt injection, not tools</strong>: <code>SKILL.md</code>
+  frontmatter discovery across User/Repo/System/Admin scopes;
+  <code>$skill://</code> mentions → <code>collect_explicit_skill_mentions</code> →
+  fragments injected into the turn. Plus implicit invocation when a
+  shell command matches a skill's. Same shape as pi and Cline —
+  skills ride the prompt, never the tool registry.<sup id="fnref2:27"><a class="footnote-ref" href="#fn:27">27</a></sup></li>
+<li><strong>Hooks</strong>: 10 lifecycle events (<code>session_start</code>,
+  <code>user_prompt_submit</code>, <code>pre_tool_use</code>, <code>permission_request</code>,
+  <code>post_tool_use</code>, <code>stop</code>, <code>interrupt</code>, <code>pre/post_compact</code>,
+  <code>session_end</code>) plus the legacy <code>after_agent</code>. Hooks are shell
+  commands or MCP servers; they can block, rewrite tool input,
+  inject context, or force approval decisions — and they sit at
+  precedence #1 in the approval chain, ahead of the Guardian and
+  the user.<sup id="fnref2:28"><a class="footnote-ref" href="#fn:28">28</a></sup></li>
+<li><strong>Plugins</strong>: a manifest declares skills, MCP servers, apps, and
+  hooks — model tools come from those, never from a direct
+  "plugin tool" API. There is a <code>ToolContributor</code> API for
+  programmatic registration.<sup id="fnref3:29"><a class="footnote-ref" href="#fn:29">29</a></sup></li>
+<li><strong>Slash commands</strong>: a <strong>closed TUI-only enum</strong>
+  (<code>tui/src/slash_command.rs</code>) — not user-extensible. Plugins
+  contribute prompt text through skill interfaces instead.<sup id="fnref4:29"><a class="footnote-ref" href="#fn:29">29</a></sup></li>
+</ul>
+<h3 id="6-sub-agents">6. Sub-agents</h3>
+<p>Present, in <strong>two generations</strong> selected by
+<code>multi_agent_version</code> (<code>spec_plan.rs:668</code>): V1
+(<code>multi_agent_v1.spawn_agent</code> / <code>send_input</code> / <code>resume_agent</code> /
+<code>wait_agent</code> / <code>close_agent</code>) and V2 (<code>spawn_agent</code>,
+<code>send_message</code>, <code>followup_task</code>, <code>wait_agent</code>,
+<code>interrupt_agent</code>, <code>list_agents</code>), depth-limited via
+<code>agent_max_depth</code>. <code>AgentControl::spawn</code>
+(<code>core/src/agent/api.rs:40</code>); inter-agent communication runs over
+<code>agent_message_board.rs</code> and
+<code>RolloutItem::InterAgentCommunication</code>; subagents get
+nicknames/roles and skip the memory pipeline.<sup id="fnref:30"><a class="footnote-ref" href="#fn:30">30</a></sup></p>
+<h3 id="7-providers">7. Providers</h3>
+<p><strong>Responses-API-only</strong> — the narrowest wire protocol in the
+series. <code>WireApi::Responses</code> is the sole enum variant; <code>"chat"</code>
+is rejected at deserialization with
+<code>CHAT_WIRE_API_REMOVED_ERROR</code>
+(<code>model-provider-info/src/lib.rs:104-129</code>). Transport is
+WebSocket-first with permanent HTTP/SSE fallback, both to
+<code>/responses</code> (<code>client.rs:2235-2263</code>); stream retries default 5,
+hard cap 100 (<code>model-provider-info/src/lib.rs:64-72</code>); terminal
+errors are enumerated via <code>retry_delay() → None</code>
+(<code>protocol/src/error.rs:389</code>); a WebSocket→HTTP fallback resets
+the retry counter; <code>UnboundedConnectionRetries</code> retries
+connection failures forever on a 5s→60s backoff.<sup id="fnref2:3"><a class="footnote-ref" href="#fn:3">3</a></sup><sup id="fnref:31"><a class="footnote-ref" href="#fn:31">31</a></sup></p>
+<p>Five built-in providers: <code>openai</code> (default), <code>amazon-bedrock</code>,
+<code>amazon-bedrock-runtime</code>, <code>ollama</code> (localhost:11434), <code>lmstudio</code>
+(localhost:1234) (<code>model-provider-info/src/lib.rs:653-686</code>) — and
+the repo comment explicitly refuses third-party bundling; users
+add <code>model_providers</code> in config.toml. The <code>ModelProvider</code> trait
+(<code>model-provider/src/provider.rs:141</code>) exposes <code>info()</code>,
+<code>capabilities()</code> (<code>namespace_tools</code>, <code>image_generation</code>,
+<code>web_search</code>, <code>external_web_access</code>, <code>remote_compaction</code>), and
+auth plumbing. <strong>Eight auth modes</strong> (<code>CodexAuth</code>,
+<code>login/src/auth/manager.rs:92</code>): API key, ChatGPT OAuth PKCE
+(subscription), auth tokens, headers, agent identity, PAT, Bedrock
+key/credentials. The broadest auth surface in the series behind
+the narrowest wire protocol — one API shape, many doors in.<sup id="fnref2:31"><a class="footnote-ref" href="#fn:31">31</a></sup></p>
+<h3 id="8-prompt-construction">8. Prompt construction</h3>
+<p><code>Prompt { input, tools, parallel_tool_calls: true,
+base_instructions, output_schema, cyber_access_program }</code>
+(<code>turn.rs:1583</code>) becomes a <code>ResponsesApiRequest</code> with <code>model</code>,
+<code>instructions</code>, <code>input</code>, <code>tools</code>, <code>tool_choice: "auto"</code> —
+<strong><code>store: false</code>, <code>stream: true</code></strong>, and a thread-scoped
+<code>prompt_cache_key</code> (<code>client.rs:886-1007</code>). Two shapes exist: full
+Responses vs <strong>responses-lite</strong>, which moves instructions/tools
+into the input prefix with stable thread-scoped UUIDv5 IDs for
+prefix-cache hits. Cache affinity is per-thread; resume is a
+client-side rebuild from rollout JSONL — no server-side state.<sup id="fnref:32"><a class="footnote-ref" href="#fn:32">32</a></sup></p>
+<p>Assembly order: <code>base_instructions</code> (model-catalog template or
+custom override, provenance-tracked) → developer-role message
+(dev instructions + world-state sections: permissions,
+environments, tools budget, collaboration mode) → user-role
+message (AGENTS.md, memory ≤8.9KB, env, skills, hooks). The repo's
+AGENTS.md house rules for prompt fragments: no history rewrite,
+nothing over 10K tokens, every fragment bounded with a hard
+cap.<sup id="fnref2:32"><a class="footnote-ref" href="#fn:32">32</a></sup></p>
+<h3 id="9-sessions">9. Sessions</h3>
+<p>Rollout JSONL at
+<code>~/.codex/sessions/YYYY/MM/DD/rollout-&lt;ts&gt;-&lt;uuid&gt;.jsonl</code>
+(<code>rollout/src/list.rs:438</code>); 14 <code>RolloutItem</code> variants
+(<code>history/src/lib.rs:201</code>) — <code>SessionMeta</code>, <code>ResponseItem</code>,
+<code>InterAgentCommunication</code>, <code>Compacted</code>, <code>TurnContext</code>,
+<code>TokenUsageRecord</code>, <code>WorldState</code>, <code>SecurityRiskScore</code>,
+<code>RetainedContext</code>, <code>EventMsg</code>, and more. A <code>codex-state</code> crate
+mirrors metadata into SQLite; <code>thread-store</code> keeps a session
+index. Resume is <code>thread/resume</code> RPC → rollout re-read
+(<code>InitialHistory::{New, Cleared, Resumed, Forked}</code>); fork via
+<code>thread/fork</code> with three persistence modes (<code>Copied</code>,
+<code>CopiedDeferred</code>, <code>Referenced</code>).<sup id="fnref:33"><a class="footnote-ref" href="#fn:33">33</a></sup></p>
+<p><strong>Cross-session memory</strong> is a first-class pipeline:
+<code>$CODEX_HOME/memories[_v2]/</code>, two-phase LLM
+extraction/consolidation at root-session startup, feature-gated,
+skipped for subagents. CLI surface: <code>codex resume | fork |
+archive | unarchive | delete | queue</code>.<sup id="fnref:34"><a class="footnote-ref" href="#fn:34">34</a></sup></p>
+<h3 id="10-interfaces">10. Interfaces</h3>
+<ul>
+<li><strong>CLI</strong> (<code>cli/src/main.rs</code>): ~25 subcommands; bare <code>codex</code> →
+  TUI; <code>exec</code>, <code>review</code>, <code>apply</code>, <code>resume</code>, <code>fork</code>, <code>queue</code>,
+  <code>agents</code>, <code>login</code>, <code>mcp</code>, <code>plugin</code>, <code>marketplace</code>, <code>cloud</code>,
+  <code>doctor</code>, <code>sandbox</code>, <code>debug</code> — plus hidden <code>tcp-tunnel</code>,
+  <code>execpolicy</code>, <code>responses-api-proxy</code>, <code>stdio-to-uds</code>.</li>
+<li><strong>TUI</strong> (<code>tui/</code>): interactive Ratatui UI against an in-process
+  or remote app-server daemon.</li>
+<li><strong><code>exec</code></strong>: non-interactive — and it does <strong>not</strong> call core.
+  It starts an <code>InProcessAppServerClient</code>
+  (<code>exec/src/lib.rs:986</code>) and drives everything via JSON-RPC.
+  Headless event processors, <code>--json</code> JSONL output, and the
+  escape hatch <code>--dangerously-bypass-approvals-and-sandbox</code>.</li>
+<li><strong>app-server</strong>: the full JSON-RPC v2 API (<code>initialize</code>,
+  <code>thread/*</code>, <code>memory/*</code>, <code>rollout/compress</code>, config,
+  <code>userVerification/*</code>, …), v1 frozen; consumers are exec, the
+  TUI, the <code>app-server-daemon</code> (managed shared daemon), and the
+  desktop app.</li>
+<li><strong>exec-server</strong>: a separate standalone service with its own
+  protocol for remote/foreign-OS execution.<sup id="fnref3:2"><a class="footnote-ref" href="#fn:2">2</a></sup></li>
+</ul>
+<p><img alt="The app-server bridge" src="figures/seq-appserver.svg" /></p>
+<h3 id="11-config">11. Config</h3>
+<p>A <strong>9-layer stack</strong>
+(<code>config/src/config_layer_source.rs:6</code>): PackagedDefaults → Mdm
+→ System → EnterpriseManaged → User (<code>~/.codex/config.toml</code> +
+named profiles) → Project (<code>.codex/</code>) → SessionFlags → CLI
+<code>--config</code> overrides. Key settings: <code>model</code>,
+<code>model_provider(s)</code>, <code>approval_policy</code>, <code>sandbox_mode</code>,
+<code>instructions</code>, <code>profile</code>, <code>otel</code>, <code>memories</code>,
+<code>project_doc_max_bytes</code>. The schema is emitted to
+<code>core/config.schema.json</code>.<sup id="fnref:35"><a class="footnote-ref" href="#fn:35">35</a></sup></p>
+<h3 id="12-agentsmd-handling">12. AGENTS.md handling</h3>
+<p>Discovery walks up from the cwd to the nearest
+<code>project_root_markers</code> (default <code>.git</code>), concatenating
+<code>AGENTS.md</code> root→cwd; <code>AGENTS.override.md</code> is checked first;
+<code>$CODEX_HOME/AGENTS.md</code> supplies the global layer. Untrusted
+projects skip repository docs. Thread instructions are capped
+at ~10k tokens (rejected, not truncated); project docs are
+bounded by <code>project_doc_max_bytes</code> (truncated with warning).
+Injected as a user-role <code>ContextualUserFragment</code>; subagents
+inherit the snapshot.<sup id="fnref:36"><a class="footnote-ref" href="#fn:36">36</a></sup></p>
+<h2 id="extension-points">Extension points</h2>
+<p>Nine axes, each with its practical starting point:</p>
+<h3 id="1-the-toolexecutor-trait">1. The <code>ToolExecutor</code> trait</h3>
+<p>The programmatic axis: implement <code>ToolExecutor</code> in the
+<code>codex-rs/tools</code> crate, register through the <code>ToolRegistry</code>
+(<code>IndexMap&lt;ToolName, RegisteredTool&gt;</code>), pick a <code>ToolExposure</code>
+(<code>Direct</code> vs <code>Deferred</code> + <code>tool_search</code> for heavy namespaces).
+Trusted (core built-ins) vs external (dynamic/MCP/extension)
+registration; reserved names rejected; duplicates are a hard
+error.<sup id="fnref3:23"><a class="footnote-ref" href="#fn:23">23</a></sup></p>
+<p><strong>Start here:</strong> <code>codex-rs/tools/src/tool_executor.rs:51</code>
+(<code>ToolExposure</code>), then <code>core/src/tools/registry.rs:296</code>.</p>
+<h3 id="2-mcp-servers">2. MCP servers</h3>
+<p><code>config.toml</code> <code>mcp_servers</code> (stdio + streamable-HTTP); tools
+wrapped in <code>McpHandler</code> as <code>&lt;namespace&gt;.&lt;tool&gt;</code>; approval per
+server/tool via <code>AppToolApproval::{Auto, Prompt, Writes,
+Approve}</code> with session-remember and persistent cross-session
+amendments.<sup id="fnref2:26"><a class="footnote-ref" href="#fn:26">26</a></sup></p>
+<p><strong>Start here:</strong> <code>config/src/mcp_types.rs:28</code>, then the
+<code>McpHandler</code> wrapping in <code>core/src/tools/</code>.</p>
+<h3 id="3-skills">3. Skills</h3>
+<p><code>SKILL.md</code> frontmatter discovery (User/Repo/System/Admin
+scopes); <code>$skill://</code> mentions inject fragments into the turn;
+implicit invocation on shell-command match. Prompt injection,
+not tools.<sup id="fnref:27"><a class="footnote-ref" href="#fn:27">27</a></sup></p>
+<p><strong>Start here:</strong> <code>collect_explicit_skill_mentions</code> in
+<code>core/src/</code>, then the <code>skills</code> crate for discovery.</p>
+<h3 id="4-hooks">4. Hooks</h3>
+<p>10 lifecycle events + legacy <code>after_agent</code>; shell commands or
+MCP servers; can block, rewrite tool input, inject context, or
+force approval decisions — precedence #1 in the approval chain,
+ahead of the Guardian and the user.<sup id="fnref:28"><a class="footnote-ref" href="#fn:28">28</a></sup></p>
+<p><strong>Start here:</strong> the <code>hooks</code> crate event list, then the
+approval-chain comment at
+<code>core/src/tools/approvals.rs:506</code>.</p>
+<h3 id="5-plugins">5. Plugins</h3>
+<p>Manifests declaring skills, MCP servers, apps, hooks —
+<code>ToolContributor</code> for programmatic tools; model tools arrive
+through the declared surfaces, never a direct "plugin tool"
+API. Schedule shapes can be declared (metadata-only at this
+SHA — no executor in the tree).<sup id="fnref:29"><a class="footnote-ref" href="#fn:29">29</a></sup><sup id="fnref:37"><a class="footnote-ref" href="#fn:37">37</a></sup></p>
+<p><strong>Start here:</strong> the plugin manifest schema, then
+<code>ToolContributor</code>.</p>
+<h3 id="6-slash-commands">6. Slash commands</h3>
+<p>Closed TUI-only enum (<code>tui/src/slash_command.rs</code>) — the
+finding is the closedness: extending the command surface means
+forking the TUI, like aider's 42 closed commands.<sup id="fnref2:29"><a class="footnote-ref" href="#fn:29">29</a></sup></p>
+<h3 id="7-sub-agents">7. Sub-agents</h3>
+<p>V1 (<code>multi_agent_v1.*</code>) and V2 (plain names) selected by
+<code>multi_agent_version</code> (<code>spec_plan.rs:668</code>),
+<code>agent_max_depth</code>-limited, communicating over the agent
+message board with rollout-persisted
+<code>InterAgentCommunication</code> items.<sup id="fnref2:30"><a class="footnote-ref" href="#fn:30">30</a></sup></p>
+<p><strong>Start here:</strong> <code>core/src/agent/api.rs:40</code>
+(<code>AgentControl::spawn</code>).</p>
+<h3 id="8-custom-providers">8. Custom providers</h3>
+<p><code>model_providers</code> in config.toml — the repo refuses
+third-party bundling, so the long tail is user-declared, not
+shipped. Implement the <code>ModelProvider</code> trait
+(<code>model-provider/src/provider.rs:141</code>): <code>info()</code>,
+<code>capabilities()</code>, auth plumbing; <code>stream()</code> does the work.<sup id="fnref3:31"><a class="footnote-ref" href="#fn:31">31</a></sup></p>
+<p><strong>Start here:</strong> <code>model-provider/src/provider.rs:141</code>, then
+the smallest built-in impl as the idiom.</p>
+<h3 id="9-config-profiles">9. Config profiles</h3>
+<p>Named profiles in <code>~/.codex/config.toml</code>, project <code>.codex/</code>
+layers, session flags, CLI <code>--config</code> overrides — the 9-layer
+stack makes "my team's locked-down profile" a config artifact,
+not a fork.<sup id="fnref2:35"><a class="footnote-ref" href="#fn:35">35</a></sup></p>
+<p><strong>Start here:</strong>
+<code>config/src/config_layer_source.rs:6</code>.</p>
+<h2 id="tradeoffs">Tradeoffs</h2>
+<ul>
+<li><strong>Sandbox-first vs approval-first vs git-as-safety vs judge.</strong>
+  Cline asks the user constantly and sandboxes nothing; aider never asks
+  for chat files and lets git remember; Goose prevents (modes,
+  inspectors, an LLM judge) but never restores; pi hands you the hook.
+  Codex is the only harness whose safety story is <em>enforcement in the
+  OS</em> — Seatbelt, bubblewrap+landlock+seccomp, restricted tokens —
+  with approvals as the policy/UX layer deciding what enters the
+  sandbox. The price is platform complexity: three backends, two
+  Windows decision sites, and a macOS/Linux network asymmetry that
+  needs a proxy to paper over.<sup id="fnref2:4"><a class="footnote-ref" href="#fn:4">4</a></sup><sup id="fnref2:17"><a class="footnote-ref" href="#fn:17">17</a></sup><sup id="fnref2:18"><a class="footnote-ref" href="#fn:18">18</a></sup></li>
+<li><strong>One wire protocol vs model-agnosticism.</strong> pi's <code>StreamFn</code> will
+  talk to anything; aider's YAML and Goose's catalog bend per model;
+  Cline unifies transport behind one adapter. Codex goes further:
+  <code>WireApi</code> has exactly one variant, and <code>"chat"</code> is rejected at
+  deserialization. The dividend is total control of the prompt shape
+  (responses-lite, UUIDv5 prefix-cache IDs, <code>store: false</code>); the
+  cost is that every non-OpenAI-shaped provider must speak Responses
+  or go through a shim.<sup id="fnref4:3"><a class="footnote-ref" href="#fn:3">3</a></sup><sup id="fnref3:32"><a class="footnote-ref" href="#fn:32">32</a></sup></li>
+<li><strong>Per-action approvals vs per-tool policies.</strong> Cline approves tool
+  names; Goose approves calls through modes and a judge. Codex's
+  sealed <code>ApprovalAction</code> enum approves <em>actions</em> — <code>WriteStdin</code> is
+  its own category, distinct from <code>ExecCommand</code>. Finer than Cline's
+  per-tool policies, and it composes with the sandbox: the same
+  decision type (<code>ExecApprovalRequirement</code>) drives both the prompt
+  and the sandbox bypass.<sup id="fnref3:21"><a class="footnote-ref" href="#fn:21">21</a></sup></li>
+<li><strong>App-server substrate vs embedded loop.</strong> pi, aider, and Goose
+  embed the loop in the process you launched; Cline extracts it into
+  an SDK library. Codex extracts it behind a <em>server</em>: TUI, exec,
+  daemon, and desktop are all JSON-RPC clients. The win is interface
+  uniformity (one protocol, many frontends, including headless
+  <code>--json</code>); the tax is a protocol boundary inside what used to be
+  a function call — every turn crosses it twice.<sup id="fnref4:2"><a class="footnote-ref" href="#fn:2">2</a></sup></li>
+<li><strong>No read_file, by design.</strong> The model shells out to see the
+  world (<code>exec_command</code>) and patches through <code>apply_patch</code>. This
+  looks primitive next to Cline's typed file tools — until you see
+  the sandbox stack it funds. When every read is a subprocess, the
+  sandbox sees everything; a native <code>read_file</code> would bypass
+  Layer 1's Starlark policy entirely. The missing tool is the
+  sandbox's load-bearing wall.<sup id="fnref2:24"><a class="footnote-ref" href="#fn:24">24</a></sup><sup id="fnref2:15"><a class="footnote-ref" href="#fn:15">15</a></sup></li>
+<li><strong>Unbounded by construction.</strong> No <code>max_turns</code> anywhere in 155
+  crates — the loop ends when the model stops calling tools, a hook
+  says stop, or the user interrupts. Against Goose's 1000-turn
+  budget and Cline's 5-identical-call tripwire, Codex trusts the
+  retry budget, compaction-once-per-step, and the human. It's the
+  most permissive loop in the series, paired with the most
+  restrictive execution environment — freedom of <em>iteration</em>,
+  constraint of <em>action</em>.<sup id="fnref3:7"><a class="footnote-ref" href="#fn:7">7</a></sup><sup id="fnref2:9"><a class="footnote-ref" href="#fn:9">9</a></sup></li>
+<li><strong>Two policy models, one name.</strong> <code>PermissionProfile</code> is the
+  runtime authority; the legacy <code>SandboxMode</code> enum is the config
+  knob with a shim both ways; the classic mode names survive as
+  diagnostic tags that "must not be used for authorization." Three
+  representations of "how locked down is this," and only one of
+  them decides. The migration seam is honest, and it's the kind of
+  thing that bites at 2 AM.<sup id="fnref2:16"><a class="footnote-ref" href="#fn:16">16</a></sup></li>
+</ul>
+<h2 id="deliberate-omissions">Deliberate omissions</h2>
+<ul>
+<li><strong>No Chat Completions path.</strong> <code>WireApi</code> has one variant;
+  <code>"chat"</code> fails deserialization with a dedicated error. There is
+  no fallback, no compat shim — the one place in the series where
+  a wire protocol was <em>removed</em> rather than added.<sup id="fnref5:3"><a class="footnote-ref" href="#fn:3">3</a></sup></li>
+<li><strong>No built-in read_file / write_file / edit / search.</strong>
+  Reads go through <code>exec_command</code>, edits through <code>apply_patch</code>.
+  The negative grep over the tool handlers and <code>spec_plan.rs</code> is
+  clean — this is architecture, not oversight.<sup id="fnref3:24"><a class="footnote-ref" href="#fn:24">24</a></sup></li>
+<li><strong>No repo map.</strong> aider's PageRank-over-tree-sitter signature
+  subsystem has no Codex equivalent; <code>file-search</code> is a fuzzy path
+  finder, not a code map. Context comes from the working tree the
+  sandbox already sees.<sup id="fnref3:14"><a class="footnote-ref" href="#fn:14">14</a></sup></li>
+<li><strong>No git-based undo.</strong> aider auto-commits every turn; Cline
+  stashes every turn under private refs. Codex has neither — the
+  negative grep finds only rollout replay. Like Goose, the safety
+  story is entirely preventive; unlike Goose, the prevention is in
+  the kernel.<sup id="fnref2:33"><a class="footnote-ref" href="#fn:33">33</a></sup></li>
+<li><strong>No scheduler executor.</strong> Plugins declare schedule shapes;
+  the only <code>ScheduledTask</code> hits are the protocol type, a test
+  fixture, and a remote plugin stub. Goose runs cron in-process;
+  Codex declares it and stops.<sup id="fnref2:37"><a class="footnote-ref" href="#fn:37">37</a></sup></li>
+<li><strong>No shipped default <code>.rules</code>.</strong> The Starlark policy language
+  starts empty; hardcoded heuristics decide until the user
+  amends. The most powerful layer of the sandbox is opt-in
+  configuration — a deliberate bootstrapping choice with a
+  fail-open seam on malformed rules.<sup id="fnref3:15"><a class="footnote-ref" href="#fn:15">15</a></sup><sup id="fnref2:20"><a class="footnote-ref" href="#fn:20">20</a></sup></li>
+<li><strong>No third-party provider bundling.</strong> The repo comment refuses
+  it outright; the long tail is user-declared in config.toml.
+  Five providers ship; the eighth auth mode is yours to wire.<sup id="fnref4:31"><a class="footnote-ref" href="#fn:31">31</a></sup></li>
+</ul>
+<h2 id="comparison-matrix-row">Comparison matrix row</h2>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Dimension</th>
+<th>pi (v1.0.2)</th>
+<th>aider (v0.86.2)</th>
+<th>Cline (v4.1.22)</th>
+<th>Goose (v1.53.0)</th>
+<th>Codex (rust-v0.160.0)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>Agent loop</td>
+<td>Event-sourced; inner + outer loops; no iteration cap</td>
+<td>No tool-call loop; parse→apply→reflect; REPL + reflection (≤3) + retry</td>
+<td>Host-independent SDK <code>AgentRuntime.execute</code>; <code>maxIterations: undefined</code> — bound is 5 identical tool calls</td>
+<td>Two loops, migration in progress: legacy <code>agent.rs</code> plain <code>loop{}</code> (default, <code>max_turns</code>=1000) vs opt-in effect-sourced state machine, LLM call dead last</td>
+<td><strong>Three nested</strong>: <code>RegularTask::run</code> → <code>run_turn</code> <code>loop{}</code> (one sampling request/iter) → stream-consumer + retry; condition-driven; <strong>no max_turns anywhere in 155 crates</strong> — bound is retry budget + compaction-once-per-step + user interrupt <sup id="fnref7:5"><a class="footnote-ref" href="#fn:5">5</a></sup><sup id="fnref4:7"><a class="footnote-ref" href="#fn:7">7</a></sup><sup id="fnref3:9"><a class="footnote-ref" href="#fn:9">9</a></sup></td>
+</tr>
+<tr>
+<td>2</td>
+<td>Tool system</td>
+<td>4 built-ins + registry; TypeBox validation; sequential/parallel</td>
+<td>None — model emits SEARCH/REPLACE blocks</td>
+<td>9 built-ins + MCP natives + team tools; sequential default, adjacent-parallel batching</td>
+<td>Entirely MCP-shaped: every tool is an MCP server (builtins = in-process tokio duplex); <code>ext__tool</code> namespacing; no non-MCP path</td>
+<td>Responses API function tools; <code>ToolRegistry</code> (<code>IndexMap</code>) + <code>ToolExecutor</code> trait; <code>ToolExposure</code> (<code>Deferred</code> + <code>tool_search</code>); concurrent dispatch (<code>FuturesOrdered</code>); <strong>no built-in read_file/write_file/edit</strong> — reads via <code>exec_command</code>, edits via <code>apply_patch</code> <sup id="fnref3:10"><a class="footnote-ref" href="#fn:10">10</a></sup><sup id="fnref4:23"><a class="footnote-ref" href="#fn:23">23</a></sup><sup id="fnref4:24"><a class="footnote-ref" href="#fn:24">24</a></sup><sup id="fnref2:25"><a class="footnote-ref" href="#fn:25">25</a></sup></td>
+</tr>
+<tr>
+<td>3</td>
+<td>Model providers</td>
+<td>~35 behind one <code>StreamFn</code></td>
+<td>litellm; 313-entry YAML + substring heuristics</td>
+<td>228 providers, one generic Vercel AI SDK adapter; exact-ID resolution</td>
+<td>Single <code>Provider</code> trait (<code>stream()</code> required); 34 static + 48 declarative JSON + custom; 8,160-entry models.dev snapshot + heuristics</td>
+<td><strong>Responses-API-only</strong> (<code>WireApi</code> single variant; <code>"chat"</code> rejected); 5 built-in providers (openai, 2× Bedrock, ollama, lmstudio); <strong>8 auth modes</strong>; <code>ModelProvider</code> trait; WS-first + HTTP/SSE fallback to <code>/responses</code>; retries 5 (cap 100) <sup id="fnref6:3"><a class="footnote-ref" href="#fn:3">3</a></sup><sup id="fnref5:31"><a class="footnote-ref" href="#fn:31">31</a></sup></td>
+</tr>
+<tr>
+<td>4</td>
+<td>Prompt construction</td>
+<td>Structured sections, diffed per turn</td>
+<td>Fixed wire order, synthetic user/assistant pairs, cache breakpoints</td>
+<td>Template + placeholder replacement; <code>MessageBuilder</code> normalization</td>
+<td><code>PromptManager</code> from extension info + directory hints + goose mode; toolshim/native split per model</td>
+<td><code>Prompt</code> → <code>ResponsesApiRequest</code> (<code>store: false</code>, <code>stream: true</code>, thread <code>prompt_cache_key</code>); <strong>responses-lite</strong> shape (UUIDv5 prefix-cache IDs); assembly base→developer→user; fragments hard-capped (AGENTS.md ≤10K) <sup id="fnref4:14"><a class="footnote-ref" href="#fn:14">14</a></sup><sup id="fnref4:32"><a class="footnote-ref" href="#fn:32">32</a></sup></td>
+</tr>
+<tr>
+<td>5</td>
+<td>Memory/session</td>
+<td>JSONL sessions; compaction</td>
+<td>In-memory cur/done; background summarization; markdown log; git auto-commit</td>
+<td>SQLite + file-backend; versioned whole-file JSON envelopes; manual <code>/compact</code></td>
+<td>SQLite <code>sessions.db</code> + JSON blobs; full <code>Recipe</code> persisted; explicit cross-session recall; <code>user_visible</code>/<code>agent_visible</code> flags</td>
+<td><strong>Rollout JSONL</strong> <code>~/.codex/sessions/YYYY/MM/DD/</code> (14 <code>RolloutItem</code> variants) + SQLite index; fork 3 modes (<code>Copied</code>/<code>CopiedDeferred</code>/<code>Referenced</code>); <strong>cross-session LLM memory extraction</strong> (<code>$CODEX_HOME/memories</code>); resume = client-side rebuild <sup id="fnref3:33"><a class="footnote-ref" href="#fn:33">33</a></sup><sup id="fnref2:34"><a class="footnote-ref" href="#fn:34">34</a></sup></td>
+</tr>
+<tr>
+<td>6</td>
+<td>Reasoning/planning</td>
+<td>Thinking forwarded; no planner/sub-agents</td>
+<td>Architect = sequential delegation with user gate</td>
+<td>plan/act modes (differ by one tool); sub-agents + teams</td>
+<td>GooseMode (Auto/Approve/SmartApprove/Chat); <code>summon</code> sub-agents (forced Auto, 25 turns, no nesting); recipes; in-process cron</td>
+<td><strong>Sub-agents, two generations</strong> (V1 <code>multi_agent_v1.*</code>, V2 plain names) via <code>multi_agent_version</code>, <code>agent_max_depth</code>; <code>update_plan</code> tool; <strong>Guardian LLM auto-reviewer</strong> in the approval chain <sup id="fnref3:30"><a class="footnote-ref" href="#fn:30">30</a></sup><sup id="fnref2:22"><a class="footnote-ref" href="#fn:22">22</a></sup><sup id="fnref5:23"><a class="footnote-ref" href="#fn:23">23</a></sup></td>
+</tr>
+<tr>
+<td>7</td>
+<td>Extensibility</td>
+<td>TS extensions, hooks, MCP, skills</td>
+<td>42 closed commands; no plugin API/MCP/skills</td>
+<td><code>AgentRuntimePlugin</code>, 7-callback hooks, file hooks, skills, MCP, sub-agents</td>
+<td>Broadest so far: MCP configs (4 transports), 12-event hooks, recipes, schedules, sub-agents, skills, custom providers, <code>Provider</code> trait</td>
+<td><code>ToolExecutor</code> trait + <code>ToolContributor</code>; <strong>MCP wrapped</strong> (<code>McpHandler</code>, client-only); skills = prompt injection; hooks (10 events, precedence #1 in approvals); plugins (manifest); <strong>closed TUI slash commands</strong>; user-declared providers <sup id="fnref6:23"><a class="footnote-ref" href="#fn:23">23</a></sup><sup id="fnref3:26"><a class="footnote-ref" href="#fn:26">26</a></sup><sup id="fnref3:27"><a class="footnote-ref" href="#fn:27">27</a></sup><sup id="fnref3:28"><a class="footnote-ref" href="#fn:28">28</a></sup><sup id="fnref5:29"><a class="footnote-ref" href="#fn:29">29</a></sup><sup id="fnref6:31"><a class="footnote-ref" href="#fn:31">31</a></sup></td>
+</tr>
+<tr>
+<td>8</td>
+<td>Interfaces</td>
+<td>TUI / print / RPC / SDK on one event stream</td>
+<td>prompt_toolkit CLI + streamlit GUI</td>
+<td>VS Code webview over proto-bus gRPC (22 svcs/224 RPCs) + CLI host + npm SDK re-export</td>
+<td>Rust CLI REPL + Electron desktop + ACP bridge + Telegram gateway; <code>AgentEvent</code>s; uniffi bindings</td>
+<td><strong>All RPC</strong>: TUI + <code>exec</code> + daemon are <strong>app-server (JSON-RPC v2) clients</strong>; <code>exec</code> is in-process; separate <code>exec-server</code> for remote/foreign-OS <sup id="fnref5:2"><a class="footnote-ref" href="#fn:2">2</a></sup></td>
+</tr>
+<tr>
+<td>9</td>
+<td>Failure handling</td>
+<td>Auto-retry, truncation guards, abort; no cap</td>
+<td>Exp-backoff (60s); malformed edits reflected (≤3)</td>
+<td>Provider retry 3×; output-limit recovery 3×; loop detection 3×/5× (reactive); mistake tracker 6; no host iteration cap</td>
+<td>Three-layer retry; <code>max_turns</code>=1000; repetition guard inert — the bound is turns, not loops</td>
+<td>Stream retries 5 (cap 100); WS→HTTP fallback resets counter; <strong>unbounded connection retries</strong> (5s→60s); <strong>no loop detection by design</strong>; tool errors become failure results, never break the loop <sup id="fnref7:3"><a class="footnote-ref" href="#fn:3">3</a></sup><sup id="fnref4:9"><a class="footnote-ref" href="#fn:9">9</a></sup><sup id="fnref4:10"><a class="footnote-ref" href="#fn:10">10</a></sup></td>
+</tr>
+<tr>
+<td>10</td>
+<td>Security model</td>
+<td>Project trust + extension hooks; no approval UX</td>
+<td>Boundary prompts; git auto-commit + <code>/undo</code>; no sandbox</td>
+<td>Finest-grained: per-tool policies + webview UI + diff previews; commands always prompt; no sandbox; per-turn stash checkpoints</td>
+<td>Modes × <code>permission.yaml</code> × 5-inspector chain; LLM judge for SmartApprove; no undo</td>
+<td><strong>Strongest: 4-layer sandbox</strong> (Starlark exec-policy → <code>PermissionProfile</code> → OS backends: Seatbelt / bwrap+landlock+seccomp / Windows PSEC → MITM network proxy); <strong>per-action approvals</strong> (sealed enum); hooks → Guardian → user; <code>AskForApproval</code> 4-mode ladder; <strong>no undo</strong> <sup id="fnref3:4"><a class="footnote-ref" href="#fn:4">4</a></sup><sup id="fnref4:15"><a class="footnote-ref" href="#fn:15">15</a></sup><sup id="fnref3:16"><a class="footnote-ref" href="#fn:16">16</a></sup><sup id="fnref3:17"><a class="footnote-ref" href="#fn:17">17</a></sup><sup id="fnref3:18"><a class="footnote-ref" href="#fn:18">18</a></sup><sup id="fnref4:21"><a class="footnote-ref" href="#fn:21">21</a></sup><sup id="fnref3:22"><a class="footnote-ref" href="#fn:22">22</a></sup></td>
+</tr>
+</tbody>
+</table>
+<h2 id="endnotes">Endnotes</h2>
+<p>All notes are VERIFIED against <code>rust-v0.160.0</code>
+(<code>a956835d020762cb2b570053af06f643a11c0ecc</code>) unless marked DOCS.
+<code>GH</code> = <code>https://github.com/openai/codex/blob/a956835d020762cb2b570053af06f643a11c0ecc/</code>.</p>
+<div class="footnote">
+<hr />
+<ol>
+<li id="fn:1">
+<p>Tag <code>rust-v0.160.0</code>, SHA
+<code>a956835d020762cb2b570053af06f643a11c0ecc</code>, committed 2026-10-01
+17:13:37 +0000; Apache-2.0 (<code>LICENSE</code>); Rust cargo workspace
+<code>codex-rs/</code> (155 members per <code>Cargo.toml</code>). Non-test <code>.rs</code> in
+<code>*/src</code>: <code>core</code> 409 files / 123,071 LOC, <code>tui</code> 698 / 321,410,
+<code>app-server</code> 119 / 50,602, <code>exec-server</code> 89 / 33,513, <code>cli</code> 50 /
+27,788, <code>protocol</code> 56 / 28,203, <code>config</code> 64 / 21,549,
+<code>codex-mcp</code> 36 / 13,081, <code>hooks</code> 28 / 11,657, <code>rollout</code> 22 /
+9,423, <code>model-provider</code> 20 / 6,442, <code>apply-patch</code> 9 / 4,828,
+<code>exec</code> 8 / 4,350, <code>tools</code> 24 / 3,398, <code>execpolicy</code> 11 / 1,954,
+<code>skills</code> 9 / 1,493. Entry:
+<a href="https://github.com/openai/codex/blob/a956835d020762cb2b570053af06f643a11c0ecc/codex-rs/cli/src/main.rs">GH…/codex-rs/cli/src/main.rs</a>
+→ <code>cli_main</code>; the agent loop at
+<a href="https://github.com/openai/codex/blob/a956835d020762cb2b570053af06f643a11c0ecc/codex-rs/core/src/session/turn.rs">GH…/codex-rs/core/src/session/turn.rs</a>.
+Claim under test from the repo tagline. Scope: the Rust CLI
+(<code>codex-rs/</code>); the legacy TypeScript CLI (<code>codex-cli/</code>) is out
+of scope.&#160;<a class="footnote-backref" href="#fnref:1" title="Jump back to footnote 1 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:1" title="Jump back to footnote 1 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:1" title="Jump back to footnote 1 in the text">&#8617;</a></p>
+</li>
+<li id="fn:2">
+<p>Even <code>codex exec</code> drives core through an in-process app-server:
+<code>InProcessAppServerClient::start</code> at
+<a href="https://github.com/openai/codex/blob/a956835d020762cb2b570053af06f643a11c0ecc/codex-rs/exec/src/lib.rs#L986">GH…/codex-rs/exec/src/lib.rs#L986</a>.
+The app-server exposes the full JSON-RPC v2 API
+(<code>initialize</code>, <code>thread/*</code>, <code>memory/*</code>, <code>rollout/compress</code>,
+config, …) consumed by exec, the TUI, the <code>app-server-daemon</code>
+(managed shared daemon), and the desktop app; v1 is frozen. A
+separate <code>exec-server</code> crate (own protocol) handles
+remote/foreign-OS execution.&#160;<a class="footnote-backref" href="#fnref:2" title="Jump back to footnote 2 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:2" title="Jump back to footnote 2 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:2" title="Jump back to footnote 2 in the text">&#8617;</a><a class="footnote-backref" href="#fnref4:2" title="Jump back to footnote 2 in the text">&#8617;</a><a class="footnote-backref" href="#fnref5:2" title="Jump back to footnote 2 in the text">&#8617;</a></p>
+</li>
+<li id="fn:3">
+<p><code>WireApi</code> has exactly one variant:
+<a href="https://github.com/openai/codex/blob/a956835d020762cb2b570053af06f643a11c0ecc/codex-rs/model-provider-info/src/lib.rs#L104-L129">GH…/codex-rs/model-provider-info/src/lib.rs#L104-L129</a>
+(<code>Responses</code>; <code>"chat"</code> → <code>CHAT_WIRE_API_REMOVED_ERROR</code>).
+Transport is WebSocket-first with permanent HTTP/SSE fallback,
+both to <code>/responses</code>
+(<a href="https://github.com/openai/codex/blob/a956835d020762cb2b570053af06f643a11c0ecc/codex-rs/core/src/client.rs#L2235-L2263">GH…/codex-rs/core/src/client.rs#L2235-L2263</a>).
+Stream retries default 5, hard cap 100
+(<a href="https://github.com/openai/codex/blob/a956835d020762cb2b570053af06f643a11c0ecc/codex-rs/model-provider-info/src/lib.rs#L64-L72">GH…/codex-rs/model-provider-info/src/lib.rs#L64-L72</a>);
+terminal errors enumerated via <code>retry_delay() → None</code>
+(<code>protocol/src/error.rs:389</code>); WebSocket→HTTP fallback resets
+the counter; <code>UnboundedConnectionRetries</code> retries connection
+failures forever (5s→60s backoff).&#160;<a class="footnote-backref" href="#fnref:3" title="Jump back to footnote 3 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:3" title="Jump back to footnote 3 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:3" title="Jump back to footnote 3 in the text">&#8617;</a><a class="footnote-backref" href="#fnref4:3" title="Jump back to footnote 3 in the text">&#8617;</a><a class="footnote-backref" href="#fnref5:3" title="Jump back to footnote 3 in the text">&#8617;</a><a class="footnote-backref" href="#fnref6:3" title="Jump back to footnote 3 in the text">&#8617;</a><a class="footnote-backref" href="#fnref7:3" title="Jump back to footnote 3 in the text">&#8617;</a></p>
+</li>
+<li id="fn:4">
+<p>The four layers: the Starlark exec-policy language
+(<code>codex-rs/execpolicy/</code>), the declarative <code>PermissionProfile</code>
+(<a href="https://github.com/openai/codex/blob/a956835d020762cb2b570053af06f643a11c0ecc/codex-rs/protocol/src/models.rs#L422">GH…/codex-rs/protocol/src/models.rs#L422</a>),
+the OS backends (<code>codex-rs/sandboxing/</code> + helpers), and the
+local MITM network proxy (<code>codex-rs/codex-network-proxy/</code>).&#160;<a class="footnote-backref" href="#fnref:4" title="Jump back to footnote 4 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:4" title="Jump back to footnote 4 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:4" title="Jump back to footnote 4 in the text">&#8617;</a></p>
+</li>
+<li id="fn:5">
+<p>Three nested loops: <code>RegularTask::run</code>
+(<a href="https://github.com/openai/codex/blob/a956835d020762cb2b570053af06f643a11c0ecc/codex-rs/core/src/tasks/regular.rs#L40">GH…/codex-rs/core/src/tasks/regular.rs#L40</a>,
+<code>loop {}</code> at <code>:104</code>, <code>run_turn</code> called at <code>:105</code>) →
+<code>run_turn</code>'s <code>loop {}</code>
+(<a href="https://github.com/openai/codex/blob/a956835d020762cb2b570053af06f643a11c0ecc/codex-rs/core/src/session/turn.rs#L426">GH…/codex-rs/core/src/session/turn.rs#L426</a>)
+→ the stream-consumer loop (<code>:2605</code>) plus the retry loop in
+<code>run_sampling_request</code> (<code>:1647</code>). Loop-body stages per
+iteration: <code>turn.rs:426-838</code> (drain input → prompt-hook
+inspection → step-context capture → time reminder + world
+state → prompt build → sampling → bookkeeping → mid-turn
+compaction rollover → stop path → error arms). Mid-stream
+steering cancels the step preempt token
+(<code>session/input_queue.rs:246</code>); <code>run_sampling_request</code>
+returns early with <code>needs_follow_up: true</code>.&#160;<a class="footnote-backref" href="#fnref:5" title="Jump back to footnote 5 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:5" title="Jump back to footnote 5 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:5" title="Jump back to footnote 5 in the text">&#8617;</a><a class="footnote-backref" href="#fnref4:5" title="Jump back to footnote 5 in the text">&#8617;</a><a class="footnote-backref" href="#fnref5:5" title="Jump back to footnote 5 in the text">&#8617;</a><a class="footnote-backref" href="#fnref6:5" title="Jump back to footnote 5 in the text">&#8617;</a><a class="footnote-backref" href="#fnref7:5" title="Jump back to footnote 5 in the text">&#8617;</a></p>
+</li>
+<li id="fn:6">
+<p><code>run_turn</code> signature, verbatim, at
+<a href="https://github.com/openai/codex/blob/a956835d020762cb2b570053af06f643a11c0ecc/codex-rs/core/src/session/turn.rs#L163-L172">GH…/codex-rs/core/src/session/turn.rs#L163-L172</a>.
+Returns the last agent message (<code>Ok(last_agent_message)</code> at
+<code>:839</code>).&#160;<a class="footnote-backref" href="#fnref:6" title="Jump back to footnote 6 in the text">&#8617;</a></p>
+</li>
+<li id="fn:7">
+<p>No <code>max_turns</code> / <code>max_iterations</code> / <code>max_steps</code> in non-test
+code: <code>grep -rniE "max_turns|max_iterations|max_steps|
+max_tool_calls" codex-rs --include="*.rs"</code> across all 155
+crates, excluding tests/snapshots → only
+<code>RECAP_HISTORY_MAX_TURNS</code> (a TUI display cap,
+<code>tui/src/app/recap_history.rs:13</code>); second sweep
+<code>max_turn|iteration_cap|turn_limit|doom.?loop</code> → only TUI
+history-read limits. The loop is condition-driven
+(<code>loop {}</code> + <code>break</code>/<code>continue</code>), never counter-driven.&#160;<a class="footnote-backref" href="#fnref:7" title="Jump back to footnote 7 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:7" title="Jump back to footnote 7 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:7" title="Jump back to footnote 7 in the text">&#8617;</a><a class="footnote-backref" href="#fnref4:7" title="Jump back to footnote 7 in the text">&#8617;</a></p>
+</li>
+<li id="fn:8">
+<p>Termination: model sends only an assistant message;
+stop-hook <code>should_stop</code>; hook-blocked input; terminal error;
+user interrupt (<code>Op::Interrupt</code> →
+<a href="https://github.com/openai/codex/blob/a956835d020762cb2b570053af06f643a11c0ecc/codex-rs/core/src/tasks/mod.rs#L536">GH…/core/src/tasks/mod.rs#L536</a>
+<code>abort_all_tasks(Interrupted)</code> → <code>TurnAborted</code> at every await
+point); or no <code>end_turn: false</code> with no tool calls
+(<code>turn.rs:2973</code>).&#160;<a class="footnote-backref" href="#fnref:8" title="Jump back to footnote 8 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:8" title="Jump back to footnote 8 in the text">&#8617;</a></p>
+</li>
+<li id="fn:9">
+<p>No identical-call tracking like Cline's loop detection —
+the doom-loop guard is the retry budget,
+compaction-once-per-step, and the user interrupt only.
+Deliberate by construction: the loop trusts the model to stop
+and the human to intervene.&#160;<a class="footnote-backref" href="#fnref:9" title="Jump back to footnote 9 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:9" title="Jump back to footnote 9 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:9" title="Jump back to footnote 9 in the text">&#8617;</a><a class="footnote-backref" href="#fnref4:9" title="Jump back to footnote 9 in the text">&#8617;</a></p>
+</li>
+<li id="fn:10">
+<p><code>ToolRouter::build_tool_call</code> per <code>OutputItemDone</code>
+(<a href="https://github.com/openai/codex/blob/a956835d020762cb2b570053af06f643a11c0ecc/codex-rs/core/src/stream_events_utils.rs#L325">GH…/codex-rs/core/src/stream_events_utils.rs#L325</a>);
+futures in <code>FuturesOrdered</code>; <code>drain_in_flight</code>
+(<a href="https://github.com/openai/codex/blob/a956835d020762cb2b570053af06f643a11c0ecc/codex-rs/core/src/session/turn.rs#L2466">GH…/codex-rs/core/src/session/turn.rs#L2466</a>)
+records results into history before the next iteration.
+<code>parallel_tool_calls: true</code> on every prompt (<code>turn.rs:1592</code>).
+Tool errors become failure results, never break the loop.&#160;<a class="footnote-backref" href="#fnref:10" title="Jump back to footnote 10 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:10" title="Jump back to footnote 10 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:10" title="Jump back to footnote 10 in the text">&#8617;</a><a class="footnote-backref" href="#fnref4:10" title="Jump back to footnote 10 in the text">&#8617;</a></p>
+</li>
+<li id="fn:11">
+<p><code>ApprovalService::request_approval</code> at
+<a href="https://github.com/openai/codex/blob/a956835d020762cb2b570053af06f643a11c0ecc/codex-rs/core/src/tools/approvals.rs#L479">GH…/codex-rs/core/src/tools/approvals.rs#L479</a>
+— the turn loop parks in <code>drain_in_flight</code> until the decision
+lands. Elicitation is a separate session-wide pause counter
+that stalls tool-result delivery without breaking the loop.&#160;<a class="footnote-backref" href="#fnref:11" title="Jump back to footnote 11 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:11" title="Jump back to footnote 11 in the text">&#8617;</a></p>
+</li>
+<li id="fn:12">
+<p>Compaction at four points: pre-turn, mid-turn rollover on
+token-limit (with <code>continue</code>), post-turn threshold check,
+one-per-step guardian-budget recovery
+(<a href="https://github.com/openai/codex/blob/a956835d020762cb2b570053af06f643a11c0ecc/codex-rs/core/src/compact.rs">GH…/core/src/compact.rs</a>).
+Two engines by provider capability: local summarization vs
+remote V2 over the Responses endpoint.&#160;<a class="footnote-backref" href="#fnref:12" title="Jump back to footnote 12 in the text">&#8617;</a></p>
+</li>
+<li id="fn:13">
+<p>Trace steps 1–3: TUI <code>turn/start</code> RPC
+(<a href="https://github.com/openai/codex/blob/a956835d020762cb2b570053af06f643a11c0ecc/codex-rs/tui/src/app_server_session.rs#L1308-L1341">GH…/codex-rs/tui/src/app_server_session.rs#L1308-L1341</a>);
+<code>turn_processor.rs:630</code> → <code>thread.start_or_steer_turn</code> →
+<code>Op::TurnInput</code>
+(<a href="https://github.com/openai/codex/blob/a956835d020762cb2b570053af06f643a11c0ecc/codex-rs/protocol/src/protocol.rs#L622">GH…/codex-rs/protocol/src/protocol.rs#L622</a>)
+→ <code>session/handlers.rs:485</code> → <code>turn_input::handle</code>;
+<code>spawn_task</code> at
+<a href="https://github.com/openai/codex/blob/a956835d020762cb2b570053af06f643a11c0ecc/codex-rs/core/src/session/turn_input.rs#L365">GH…/codex-rs/core/src/session/turn_input.rs#L365</a>,
+<code>ActiveTurn</code> recorded at <code>tasks/mod.rs:287</code> with a fresh
+<code>CancellationToken</code>.&#160;<a class="footnote-backref" href="#fnref:13" title="Jump back to footnote 13 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:13" title="Jump back to footnote 13 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:13" title="Jump back to footnote 13 in the text">&#8617;</a></p>
+</li>
+<li id="fn:14">
+<p>Prompt build: <code>clone_history().await.for_prompt(...)</code> +
+<code>executed_tool_calls.attach_to_prompt</code> → <code>build_prompt</code> →
+<code>Prompt { input, tools, parallel_tool_calls: true,
+base_instructions, ... }</code>
+(<a href="https://github.com/openai/codex/blob/a956835d020762cb2b570053af06f643a11c0ecc/codex-rs/core/src/session/turn.rs#L1583-L1592">GH…/codex-rs/core/src/session/turn.rs#L1583-L1592</a>).
+The request carries <code>store: false</code>, <code>stream: true</code>, and a
+thread-scoped <code>prompt_cache_key</code>
+(<a href="https://github.com/openai/codex/blob/a956835d020762cb2b570053af06f643a11c0ecc/codex-rs/core/src/client.rs#L886-L1007">GH…/codex-rs/core/src/client.rs#L886-L1007</a>,
+<code>store: false</code> at <code>:997</code>). Resume is client-side rebuild
+from rollout JSONL — no server-side state.&#160;<a class="footnote-backref" href="#fnref:14" title="Jump back to footnote 14 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:14" title="Jump back to footnote 14 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:14" title="Jump back to footnote 14 in the text">&#8617;</a><a class="footnote-backref" href="#fnref4:14" title="Jump back to footnote 14 in the text">&#8617;</a></p>
+</li>
+<li id="fn:15">
+<p>The Starlark exec-policy language (<code>codex-rs/execpolicy/</code>)
+has exactly three builtins
+(<a href="https://github.com/openai/codex/blob/a956835d020762cb2b570053af06f643a11c0ecc/codex-rs/execpolicy/src/parser.rs#L329-L473">GH…/codex-rs/execpolicy/src/parser.rs#L329-L473</a>):
+<code>prefix_rule</code>, <code>network_rule</code> (wildcards rejected at parse,
+<code>rule.rs:196-200</code>), <code>host_executable</code>. Decisions aggregate
+by max, Allow &lt; Prompt &lt; Forbidden
+(<a href="https://github.com/openai/codex/blob/a956835d020762cb2b570053af06f643a11c0ecc/codex-rs/execpolicy/src/decision.rs#L7-L27">GH…/codex-rs/execpolicy/src/decision.rs#L7-L27</a>).
+<strong>No shipped default <code>.rules</code> file</strong>: <code>find codex-rs -name
+'default.rules'</code> returns nothing — hardcoded heuristics
+decide until the user amends; "always allow" appends
+<code>prefix_rule(...)</code> lines to
+<code>$CODEX_HOME/rules/default.rules</code>, hot-swapped via
+<code>ArcSwap</code>.&#160;<a class="footnote-backref" href="#fnref:15" title="Jump back to footnote 15 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:15" title="Jump back to footnote 15 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:15" title="Jump back to footnote 15 in the text">&#8617;</a><a class="footnote-backref" href="#fnref4:15" title="Jump back to footnote 15 in the text">&#8617;</a></p>
+</li>
+<li id="fn:16">
+<p><code>PermissionProfile</code>
+(<a href="https://github.com/openai/codex/blob/a956835d020762cb2b570053af06f643a11c0ecc/codex-rs/protocol/src/models.rs#L422">GH…/codex-rs/protocol/src/models.rs#L422</a>):
+<code>Managed { file_system, network }</code> | <code>Disabled</code> | <code>External
+{ network }</code>. The classic mode names are diagnostic tags
+only —
+<a href="https://github.com/openai/codex/blob/a956835d020762cb2b570053af06f643a11c0ecc/codex-rs/core/src/sandbox_tags.rs#L1-L2">GH…/codex-rs/core/src/sandbox_tags.rs#L1-L2</a>:
+"Labels never inspect the filesystem and <strong>must not be used
+for authorization</strong>." The legacy <code>SandboxMode</code> enum
+(<code>protocol/src/config_types.rs:104-114</code>, default <code>ReadOnly</code>)
+remains the user-facing config knob with a compatibility
+shim both ways.&#160;<a class="footnote-backref" href="#fnref:16" title="Jump back to footnote 16 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:16" title="Jump back to footnote 16 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:16" title="Jump back to footnote 16 in the text">&#8617;</a></p>
+</li>
+<li id="fn:17">
+<p>Backend selection via <code>get_platform_sandbox()</code>
+(<code>sandboxing/src/policy_transforms.rs:646</code>). macOS:
+Seatbelt via <code>/usr/bin/sandbox-exec</code> (deny-default
+<code>.sbpl</code>). Linux: bubblewrap + landlock + seccomp through
+the <code>codex-linux-sandbox</code> helper — the <code>codex-exec</code> binary
+re-invoked via <strong>arg0 dispatch</strong>
+(<a href="https://github.com/openai/codex/blob/a956835d020762cb2b570053af06f643a11c0ecc/codex-rs/exec/src/main.rs#L1-L35">GH…/codex-rs/exec/src/main.rs#L1-L35</a>);
+<code>--ro-bind / /</code>, <code>--unshare-user</code> always, <code>--unshare-pid</code>
+default, <code>--unshare-net</code> for restricted networking.
+Windows: MXC native PSEC (AppContainer fallbacks
+deliberately excluded,
+<code>mxc-sandbox/src/lib.rs:89-95</code>), restricted-token,
+elevated — with a <code>TODO(anp)</code> on two decision sites to
+reconcile them. <code>mod bwrap</code> is <code>#[cfg(target_os =
+"linux")]</code>, <code>pub mod seatbelt</code> is <code>#[cfg(target_os =
+"macos")]</code> (<code>sandboxing/src/lib.rs</code>); off-platform
+requests are a hard error.&#160;<a class="footnote-backref" href="#fnref:17" title="Jump back to footnote 17 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:17" title="Jump back to footnote 17 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:17" title="Jump back to footnote 17 in the text">&#8617;</a></p>
+</li>
+<li id="fn:18">
+<p><a href="https://github.com/openai/codex/blob/a956835d020762cb2b570053af06f643a11c0ecc/codex-rs/codex-network-proxy/">GH…/codex-network-proxy/</a>
+— a local MITM-capable forward proxy, the only path to the
+internet in restricted modes. Linux gets net namespace + proxy
+bridge + domain policy; macOS Seatbelt's network block is
+binary on/off, fine domains need the managed proxy.&#160;<a class="footnote-backref" href="#fnref:18" title="Jump back to footnote 18 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:18" title="Jump back to footnote 18 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:18" title="Jump back to footnote 18 in the text">&#8617;</a></p>
+</li>
+<li id="fn:19">
+<p>Three escalations: <code>SandboxPermissions::RequireEscalated</code>
+(declarative; blocked when deny-reads exist); the
+sandbox-denial retry loop ("run outside the sandbox?"
+after <code>SandboxErr::Denied</code>,
+<a href="https://github.com/openai/codex/blob/a956835d020762cb2b570053af06f643a11c0ecc/codex-rs/core/src/tools/orchestrator.rs#L320-L490">GH…/codex-rs/core/src/tools/orchestrator.rs#L320-L490</a>);
+<code>shell-escalation</code> — a patched zsh fork whose execve
+wrapper asks an in-process server per-<code>exec()</code>
+(<code>shell-escalation/src/unix/</code>).&#160;<a class="footnote-backref" href="#fnref:19" title="Jump back to footnote 19 in the text">&#8617;</a></p>
+</li>
+<li id="fn:20">
+<p>Seams: malformed <code>.rules</code> <strong>fails open</strong> to the
+requirements policy with a warning
+(<a href="https://github.com/openai/codex/blob/a956835d020762cb2b570053af06f643a11c0ecc/codex-rs/core/src/exec_policy.rs#L645">GH…/core/src/exec_policy.rs#L645</a>
+<code>load_exec_policy_with_warning</code>) — fail-open on syntax,
+fail-closed on semantics; hardcoded heuristics shadow the
+Starlark language as a second authority for unmatched
+commands; <code>AllowPrefixRules::IgnoreForCyberModel</code>
+(<a href="https://github.com/openai/codex/blob/a956835d020762cb2b570053af06f643a11c0ecc/codex-rs/core/src/exec_policy/model_policy.rs#L11">GH…/core/src/exec_policy/model_policy.rs#L11</a>)
+can silently strip user allow rules for certain models;
+<code>docs/sandbox.md</code> and <code>docs/execpolicy.md</code> are 3-line
+redirects to a website — the richest semantics doc in-tree
+is <code>linux-sandbox/README.md</code>, Linux only.&#160;<a class="footnote-backref" href="#fnref:20" title="Jump back to footnote 20 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:20" title="Jump back to footnote 20 in the text">&#8617;</a></p>
+</li>
+<li id="fn:21">
+<p>The sealed <code>ApprovalAction</code> enum
+(<a href="https://github.com/openai/codex/blob/a956835d020762cb2b570053af06f643a11c0ecc/codex-rs/core/src/tools/approvals.rs#L66">GH…/codex-rs/core/src/tools/approvals.rs#L66</a>):
+<code>ExecCommand, WriteStdin, Execve, ApplyPatch,
+McpToolCall, NetworkAccess, RequestPermissions</code> —
+approvals are per-action, not per-tool-name. Per-call
+policy: <code>ExecApprovalRequirement::{Skip, NeedsApproval,
+Forbidden}</code>
+(<a href="https://github.com/openai/codex/blob/a956835d020762cb2b570053af06f643a11c0ecc/codex-rs/core/src/tools/sandboxing.rs#L153">GH…/codex-rs/core/src/tools/sandboxing.rs#L153</a>);
+deny-reads make unsandboxed execution refuse outright
+(<code>sandboxing.rs:239-296</code>). The user ladder is
+<code>AskForApproval::{UnlessTrusted, OnRequest, Granular,
+Never}</code>
+(<a href="https://github.com/openai/codex/blob/a956835d020762cb2b570053af06f643a11c0ecc/codex-rs/protocol/src/protocol.rs#L986">GH…/codex-rs/protocol/src/protocol.rs#L986</a>);
+<code>Granular</code> splits <code>sandbox_approval</code>, <code>rules</code>,
+<code>skill_approval</code>, <code>request_permissions</code>,
+<code>mcp_elicitations</code>.&#160;<a class="footnote-backref" href="#fnref:21" title="Jump back to footnote 21 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:21" title="Jump back to footnote 21 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:21" title="Jump back to footnote 21 in the text">&#8617;</a><a class="footnote-backref" href="#fnref4:21" title="Jump back to footnote 21 in the text">&#8617;</a></p>
+</li>
+<li id="fn:22">
+<p><code>Session::request_approval</code>
+(<a href="https://github.com/openai/codex/blob/a956835d020762cb2b570053af06f643a11c0ecc/codex-rs/core/src/tools/approvals.rs#L479-L552">GH…/codex-rs/core/src/tools/approvals.rs#L479-L552</a>),
+precedence verbatim from the code comment: <strong>1. Hooks →
+2. Guardian auto-review (or <code>strict_auto_review</code>) → 3.
+User.</strong> The Guardian (<code>codex-rs/core/src/guardian/</code>) is an
+LLM auto-reviewer; <code>None</code> falls through to the user.
+<code>ReviewDecision</code>
+(<a href="https://github.com/openai/codex/blob/a956835d020762cb2b570053af06f643a11c0ecc/codex-rs/protocol/src/protocol.rs#L4159">GH…/codex-rs/protocol/src/protocol.rs#L4159</a>):
+<code>Approved</code>, <code>ApprovedExecpolicyAmendment</code>,
+<code>ApprovedForSession</code>, <code>ApprovedMcpPolicyAmendment</code>,
+<code>NetworkPolicyAmendment</code>, <code>Denied</code>, <code>TimedOut</code>, <code>Abort</code>.
+Session caching via <code>with_cached_approval</code> with
+canonicalized command keys.&#160;<a class="footnote-backref" href="#fnref:22" title="Jump back to footnote 22 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:22" title="Jump back to footnote 22 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:22" title="Jump back to footnote 22 in the text">&#8617;</a></p>
+</li>
+<li id="fn:23">
+<p><code>ToolRegistry</code> as <code>IndexMap&lt;ToolName, RegisteredTool&gt;</code>
+(<a href="https://github.com/openai/codex/blob/a956835d020762cb2b570053af06f643a11c0ecc/codex-rs/core/src/tools/registry.rs#L296">GH…/codex-rs/core/src/tools/registry.rs#L296</a>);
+<code>ToolExposure</code>
+(<a href="https://github.com/openai/codex/blob/a956835d020762cb2b570053af06f643a11c0ecc/codex-rs/tools/src/tool_executor.rs#L51">GH…/codex-rs/tools/src/tool_executor.rs#L51</a>):
+<code>Direct | Deferred | DeferredModelOnly | DirectModelOnly |
+CodeModeOnly | Hidden</code> — heavy tools register <code>Deferred</code>
+and the model calls <code>tool_search</code>. Per-turn toolset
+assembly in <code>spec_plan.rs</code> (~1,534 lines). Built-ins reach
+the model as Responses API function tools
+(<code>client.rs:912,937</code>).&#160;<a class="footnote-backref" href="#fnref:23" title="Jump back to footnote 23 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:23" title="Jump back to footnote 23 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:23" title="Jump back to footnote 23 in the text">&#8617;</a><a class="footnote-backref" href="#fnref4:23" title="Jump back to footnote 23 in the text">&#8617;</a><a class="footnote-backref" href="#fnref5:23" title="Jump back to footnote 23 in the text">&#8617;</a><a class="footnote-backref" href="#fnref6:23" title="Jump back to footnote 23 in the text">&#8617;</a></p>
+</li>
+<li id="fn:24">
+<p>No built-in <code>read_file</code>/<code>write_file</code>/<code>edit</code>/<code>search</code>:
+<code>grep</code> over <code>core/src/tools/handlers/*_spec.rs</code> +
+<code>spec_plan.rs</code> for <code>"fetch"|"web_fetch"|"http_get"|
+"read_file"</code> → no hits (only extension <code>notes.*</code> tools
+and test fixtures). Reads go through <code>exec_command</code>;
+edits go through <code>apply_patch</code> — the model shells out to
+see the world, which is why the sandbox stack must be
+this good.&#160;<a class="footnote-backref" href="#fnref:24" title="Jump back to footnote 24 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:24" title="Jump back to footnote 24 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:24" title="Jump back to footnote 24 in the text">&#8617;</a><a class="footnote-backref" href="#fnref4:24" title="Jump back to footnote 24 in the text">&#8617;</a></p>
+</li>
+<li id="fn:25">
+<p><code>apply-patch</code> format (<code>*** Begin Patch</code> / <code>***
+Add|Delete|Update File:</code> / <code>@@</code> hunks / <code>*** End Patch</code>),
+parsed by
+<a href="https://github.com/openai/codex/blob/a956835d020762cb2b570053af06f643a11c0ecc/codex-rs/apply-patch/src/parser.rs">GH…/apply-patch/src/parser.rs</a>
+and verified into <code>ApplyPatchAction</code> before execution so
+the diff renders in the approval prompt. Standalone via
+argv[1] <code>--codex-run-as-apply-patch</code> self-invocation.&#160;<a class="footnote-backref" href="#fnref:25" title="Jump back to footnote 25 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:25" title="Jump back to footnote 25 in the text">&#8617;</a></p>
+</li>
+<li id="fn:26">
+<p><code>codex-mcp</code> is an MCP <strong>client</strong> runtime
+(<code>McpConnectionManager</code>); servers from <code>config.toml</code>
+<code>mcp_servers</code> (stdio + streamable-HTTP), tools wrapped in
+<code>McpHandler</code> as <code>&lt;namespace&gt;.&lt;tool&gt;</code>. Approval per
+server/tool: <code>AppToolApproval::{Auto, Prompt, Writes,
+Approve}</code>
+(<a href="https://github.com/openai/codex/blob/a956835d020762cb2b570053af06f643a11c0ecc/codex-rs/config/src/mcp_types.rs#L28">GH…/codex-rs/config/src/mcp_types.rs#L28</a>),
+with session-remember and persistent cross-session
+amendments (<code>ApprovedMcpPolicyAmendment</code>).&#160;<a class="footnote-backref" href="#fnref:26" title="Jump back to footnote 26 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:26" title="Jump back to footnote 26 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:26" title="Jump back to footnote 26 in the text">&#8617;</a></p>
+</li>
+<li id="fn:27">
+<p>Skills are prompt injection, not tools: <code>SKILL.md</code>
+frontmatter discovery (User/Repo/System/Admin scopes);
+<code>$skill://</code> mentions →
+<a href="https://github.com/openai/codex/blob/a956835d020762cb2b570053af06f643a11c0ecc/codex-rs/skills/src/selection.rs#L42">GH…/skills/src/selection.rs#L42</a>
+<code>collect_explicit_skill_mentions</code> → fragments injected
+into the turn; implicit invocation when a shell command
+matches a skill.&#160;<a class="footnote-backref" href="#fnref:27" title="Jump back to footnote 27 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:27" title="Jump back to footnote 27 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:27" title="Jump back to footnote 27 in the text">&#8617;</a></p>
+</li>
+<li id="fn:28">
+<p>10 hook events (<code>session_start</code>,
+<code>user_prompt_submit</code>, <code>pre_tool_use</code>,
+<code>permission_request</code>, <code>post_tool_use</code>, <code>stop</code>, <code>interrupt</code>,
+<code>pre/post_compact</code>, <code>session_end</code>) + legacy
+<code>after_agent</code>; shell commands or MCP servers; precedence</p>
+<h1 id="1-in-the-approval-chain">1 in the approval chain</h1>
+<p>(<a href="https://github.com/openai/codex/blob/a956835d020762cb2b570053af06f643a11c0ecc/codex-rs/core/src/tools/approvals.rs#L506">GH…/core/src/tools/approvals.rs#L506</a>),
+ahead of the Guardian and the user.&#160;<a class="footnote-backref" href="#fnref:28" title="Jump back to footnote 28 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:28" title="Jump back to footnote 28 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:28" title="Jump back to footnote 28 in the text">&#8617;</a></p>
+</li>
+<li id="fn:29">
+<p>Plugins declare skills, MCP servers, apps, hooks via
+manifest (plus the <code>ToolContributor</code> API); model tools
+come from those surfaces, never a direct "plugin tool"
+API. Slash commands are a <strong>closed TUI-only enum</strong>
+(<a href="https://github.com/openai/codex/blob/a956835d020762cb2b570053af06f643a11c0ecc/codex-rs/tui/src/slash_command.rs">GH…/tui/src/slash_command.rs</a>)
+— extending them means forking the TUI, like aider's 42
+closed commands.&#160;<a class="footnote-backref" href="#fnref:29" title="Jump back to footnote 29 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:29" title="Jump back to footnote 29 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:29" title="Jump back to footnote 29 in the text">&#8617;</a><a class="footnote-backref" href="#fnref4:29" title="Jump back to footnote 29 in the text">&#8617;</a><a class="footnote-backref" href="#fnref5:29" title="Jump back to footnote 29 in the text">&#8617;</a></p>
+</li>
+<li id="fn:30">
+<p>Two sub-agent generations selected by
+<code>multi_agent_version</code>
+(<a href="https://github.com/openai/codex/blob/a956835d020762cb2b570053af06f643a11c0ecc/codex-rs/core/src/tools/spec_plan.rs#L668">GH…/core/src/tools/spec_plan.rs#L668</a>):
+V1 (<code>multi_agent_v1.spawn_agent/send_input/resume_agent/
+wait_agent/close_agent</code>) and V2 (<code>spawn_agent</code>,
+<code>send_message</code>, <code>followup_task</code>, <code>wait_agent</code>,
+<code>interrupt_agent</code>, <code>list_agents</code>), depth-limited via
+<code>agent_max_depth</code>. <code>AgentControl::spawn</code>
+(<a href="https://github.com/openai/codex/blob/a956835d020762cb2b570053af06f643a11c0ecc/codex-rs/core/src/agent/api.rs#L55">GH…/core/src/agent/api.rs#L55</a>);
+inter-agent traffic over <code>agent_message_board.rs</code>,
+persisted as <code>RolloutItem::InterAgentCommunication</code>;
+subagents skip the memory pipeline.&#160;<a class="footnote-backref" href="#fnref:30" title="Jump back to footnote 30 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:30" title="Jump back to footnote 30 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:30" title="Jump back to footnote 30 in the text">&#8617;</a></p>
+</li>
+<li id="fn:31">
+<p>Five built-in providers
+(<a href="https://github.com/openai/codex/blob/a956835d020762cb2b570053af06f643a11c0ecc/codex-rs/model-provider-info/src/lib.rs#L653-L686">GH…/codex-rs/model-provider-info/src/lib.rs#L653-L686</a>):
+<code>openai</code> (default), <code>amazon-bedrock</code>,
+<code>amazon-bedrock-runtime</code>, <code>ollama</code>, <code>lmstudio</code> — the repo
+comment refuses third-party bundling. <code>ModelProvider</code>
+trait
+(<a href="https://github.com/openai/codex/blob/a956835d020762cb2b570053af06f643a11c0ecc/codex-rs/model-provider/src/provider.rs#L141">GH…/codex-rs/model-provider/src/provider.rs#L141</a>).
+Eight auth modes (<code>CodexAuth</code>,
+<code>login/src/auth/manager.rs:92</code>): API key, ChatGPT OAuth
+PKCE, auth tokens, headers, agent identity, PAT, Bedrock
+key/credentials.&#160;<a class="footnote-backref" href="#fnref:31" title="Jump back to footnote 31 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:31" title="Jump back to footnote 31 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:31" title="Jump back to footnote 31 in the text">&#8617;</a><a class="footnote-backref" href="#fnref4:31" title="Jump back to footnote 31 in the text">&#8617;</a><a class="footnote-backref" href="#fnref5:31" title="Jump back to footnote 31 in the text">&#8617;</a><a class="footnote-backref" href="#fnref6:31" title="Jump back to footnote 31 in the text">&#8617;</a></p>
+</li>
+<li id="fn:32">
+<p><code>Prompt { input, tools, parallel_tool_calls: true,
+base_instructions, output_schema,
+cyber_access_program }</code>
+(<a href="https://github.com/openai/codex/blob/a956835d020762cb2b570053af06f643a11c0ecc/codex-rs/core/src/session/turn.rs#L1583">GH…/core/src/session/turn.rs#L1583</a>)
+→ full Responses vs <strong>responses-lite</strong> (instructions/tools
+moved into the input prefix with stable thread-scoped
+UUIDv5 IDs). Assembly: <code>base_instructions</code> →
+developer-role message (dev instructions + world state:
+permissions, environments, tools budget, collaboration
+mode) → user-role message (AGENTS.md, memory ≤8.9KB, env,
+skills, hooks). Fragment house rules: no history rewrite,
+nothing over 10K tokens, every fragment hard-capped.&#160;<a class="footnote-backref" href="#fnref:32" title="Jump back to footnote 32 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:32" title="Jump back to footnote 32 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:32" title="Jump back to footnote 32 in the text">&#8617;</a><a class="footnote-backref" href="#fnref4:32" title="Jump back to footnote 32 in the text">&#8617;</a></p>
+</li>
+<li id="fn:33">
+<p>Rollout JSONL at
+<code>~/.codex/sessions/YYYY/MM/DD/rollout-&lt;ts&gt;-&lt;uuid&gt;.jsonl</code>
+(<a href="https://github.com/openai/codex/blob/a956835d020762cb2b570053af06f643a11c0ecc/codex-rs/rollout/src/list.rs#L438">GH…/codex-rs/rollout/src/list.rs#L438</a>);
+14 <code>RolloutItem</code> variants (<code>history/src/lib.rs:201</code>).
+<code>codex-state</code> mirrors metadata into SQLite;
+<code>thread-store</code> keeps a session index. Fork via
+<code>thread/fork</code>: <code>Copied | CopiedDeferred | Referenced</code>.
+No git-based undo anywhere — revert is rollout replay
+only (negative grep over session restore paths).&#160;<a class="footnote-backref" href="#fnref:33" title="Jump back to footnote 33 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:33" title="Jump back to footnote 33 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:33" title="Jump back to footnote 33 in the text">&#8617;</a></p>
+</li>
+<li id="fn:34">
+<p>Cross-session memory:
+<a href="https://github.com/openai/codex/blob/a956835d020762cb2b570053af06f643a11c0ecc/codex-rs/core/src/context/memory.rs">GH…/core/src/context/memory.rs</a>
+(<code>$CODEX_HOME/memories[_v2]/</code>), two-phase LLM
+extraction/consolidation at root-session startup,
+feature-gated, skipped for subagents. CLI:
+<code>codex resume | fork | archive | unarchive | delete |
+queue</code>.&#160;<a class="footnote-backref" href="#fnref:34" title="Jump back to footnote 34 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:34" title="Jump back to footnote 34 in the text">&#8617;</a></p>
+</li>
+<li id="fn:35">
+<p>9-layer config stack
+(<a href="https://github.com/openai/codex/blob/a956835d020762cb2b570053af06f643a11c0ecc/codex-rs/config/src/config_layer_source.rs#L6">GH…/codex-rs/config/src/config_layer_source.rs#L6</a>):
+PackagedDefaults → Mdm → System → EnterpriseManaged →
+User (<code>~/.codex/config.toml</code> + named profiles) → Project
+(<code>.codex/</code>) → SessionFlags → CLI <code>--config</code> overrides.
+Schema emitted to <code>core/config.schema.json</code>.&#160;<a class="footnote-backref" href="#fnref:35" title="Jump back to footnote 35 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:35" title="Jump back to footnote 35 in the text">&#8617;</a></p>
+</li>
+<li id="fn:36">
+<p>AGENTS.md discovery
+(<a href="https://github.com/openai/codex/blob/a956835d020762cb2b570053af06f643a11c0ecc/codex-rs/core/src/agents_md.rs">GH…/core/src/agents_md.rs</a>)
+walks up from cwd to the nearest <code>project_root_markers</code>
+(default <code>.git</code>), concatenating root→cwd;
+<code>AGENTS.override.md</code> checked first;
+<code>$CODEX_HOME/AGENTS.md</code> global. Untrusted projects skip
+repository docs. Thread instructions capped ~10k tokens
+(rejected, not truncated); project docs bounded by
+<code>project_doc_max_bytes</code>. Injected as a user-role
+<code>ContextualUserFragment</code>; subagents inherit the
+snapshot.&#160;<a class="footnote-backref" href="#fnref:36" title="Jump back to footnote 36 in the text">&#8617;</a></p>
+</li>
+<li id="fn:37">
+<p>Schedules are metadata-only: <code>grep -rln
+"ScheduledTask\b" codex-rs --include="*.rs"</code> → only
+<code>app-server-protocol/src/protocol/v2/plugin.rs</code>, a test
+fixture, and <code>core-plugins/src/remote.rs</code>. Plugins can
+declare schedule shapes; no executor exists in the tree
+at this SHA.&#160;<a class="footnote-backref" href="#fnref:37" title="Jump back to footnote 37 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:37" title="Jump back to footnote 37 in the text">&#8617;</a></p>
+</li>
+</ol>
+</div>
+  <a class="diagram-cta" href="trace.html">
+    Step through one turn live
+    <span>Play the 12-step trace: TUI to app-server to core, the sandbox stack, the approval pause, and source modules</span>
+  </a>
+  <a class="diagram-cta" href="../diagrams/template.html?data=../codex/diagrams/codex.json">
+    Explore the interactive architecture diagram
+    <span>Pan, zoom, and click any node for its source module reference</span>
+  </a>
+</main>
+</body>
+</html>

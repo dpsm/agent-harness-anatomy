@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1214" width="1600" font-family="system-ui, -apple-system, sans-serif">
+<defs><marker id="arrc" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 1 L 9 5 L 0 9 z" fill="#58a6ff"/></marker><marker id="arrr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 1 L 9 5 L 0 9 z" fill="#6e7681"/></marker></defs>
+<text x="90.78014184397163" y="44" font-size="26" font-weight="700" fill="#e6edf3">The sandbox stack: four layers, one command</text>
+<text x="90.78014184397163" y="74" font-size="15" fill="#8b949e">openai/codex rust-v0.160.0 - allow / prompt / forbid before anything runs</text>
+<line x1="233" y1="110" x2="233" y2="1146" stroke="#30363d" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="113" y="82" width="238" height="56" rx="10" fill="#161b22" stroke="#30363d" stroke-width="1.5"/>
+<text x="233" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#e6edf3">Tool call</text>
+<line x1="516" y1="110" x2="516" y2="1146" stroke="#30363d" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="397" y="82" width="238" height="56" rx="10" fill="#161b22" stroke="#30363d" stroke-width="1.5"/>
+<text x="516" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#e6edf3">ExecPolicy (Starlark)</text>
+<line x1="800" y1="110" x2="800" y2="1146" stroke="#30363d" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="681" y="82" width="238" height="56" rx="10" fill="#161b22" stroke="#30363d" stroke-width="1.5"/>
+<text x="800" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#e6edf3">PermissionProfile</text>
+<line x1="1084" y1="110" x2="1084" y2="1146" stroke="#30363d" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="965" y="82" width="238" height="56" rx="10" fill="#161b22" stroke="#30363d" stroke-width="1.5"/>
+<text x="1084" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#e6edf3">OS backend (bwrap)</text>
+<line x1="1367" y1="110" x2="1367" y2="1146" stroke="#30363d" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="1248" y="82" width="238" height="56" rx="10" fill="#161b22" stroke="#30363d" stroke-width="1.5"/>
+<text x="1367" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#e6edf3">Network proxy</text>
+<line x1="233" y1="191" x2="506" y2="191" stroke="#58a6ff" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="296" cy="177" r="11" fill="#161b22" stroke="#58a6ff" stroke-width="1.5"/>
+<text x="296" y="182" text-anchor="middle" font-size="12" font-weight="700" fill="#e6edf3">1</text>
+<text x="314" y="182" font-size="14" fill="#e6edf3">exec_command(argv, cwd)</text>
+<rect x="516" y="229" width="68" height="39" rx="6" fill="none" stroke="#58a6ff" stroke-width="2"/>
+<text x="600" y="252" font-size="14" fill="#8b949e">eval: prefix_rule / network_rule / host_executable</text>
+<rect x="397" y="286" width="522" height="44" rx="8" fill="#1f6feb22" stroke="#1f6feb" stroke-width="1"/>
+<text x="658" y="318" text-anchor="middle" font-size="14" fill="#e6edf3">No shipped default.rules: hardcoded heuristics decide until amended</text>
+<rect x="516" y="363" width="68" height="39" rx="6" fill="none" stroke="#58a6ff" stroke-width="2"/>
+<text x="600" y="386" font-size="14" fill="#8b949e">aggregate: max(Allow &lt; Prompt &lt; Forbidden)</text>
+<line x1="516" y1="447" x2="790" y2="447" stroke="#58a6ff" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="580" cy="433" r="11" fill="#161b22" stroke="#58a6ff" stroke-width="1.5"/>
+<text x="580" y="438" text-anchor="middle" font-size="12" font-weight="700" fill="#e6edf3">4</text>
+<text x="598" y="438" font-size="14" fill="#e6edf3">ExecApprovalRequirement: Skip | NeedsApproval | Forbidden</text>
+<rect x="800" y="486" width="68" height="39" rx="6" fill="none" stroke="#58a6ff" stroke-width="2"/>
+<text x="884" y="508" font-size="14" fill="#8b949e">Managed { file_system, network } | Disabled | External</text>
+<rect x="681" y="542" width="522" height="44" rx="8" fill="#1f6feb22" stroke="#1f6feb" stroke-width="1"/>
+<text x="942" y="574" text-anchor="middle" font-size="14" fill="#e6edf3">models.rs:422 is the runtime authority; SandboxMode is the config knob</text>
+<line x1="800" y1="642" x2="1074" y2="642" stroke="#58a6ff" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="864" cy="628" r="11" fill="#161b22" stroke="#58a6ff" stroke-width="1.5"/>
+<text x="864" y="633" text-anchor="middle" font-size="12" font-weight="700" fill="#e6edf3">6</text>
+<text x="882" y="633" font-size="14" fill="#e6edf3">get_platform_sandbox() -&gt; Linux path</text>
+<rect x="1084" y="681" width="68" height="39" rx="6" fill="none" stroke="#58a6ff" stroke-width="2"/>
+<text x="1168" y="704" font-size="14" fill="#8b949e">codex-linux-sandbox via arg0 dispatch</text>
+<rect x="965" y="738" width="522" height="44" rx="8" fill="#1f6feb22" stroke="#1f6feb" stroke-width="1"/>
+<text x="1226" y="769" text-anchor="middle" font-size="14" fill="#e6edf3">bwrap + landlock + seccomp: --ro-bind /, --unshare-user, --unshare-pid</text>
+<line x1="1084" y1="837" x2="1357" y2="837" stroke="#58a6ff" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="1148" cy="823" r="11" fill="#161b22" stroke="#58a6ff" stroke-width="1.5"/>
+<text x="1148" y="828" text-anchor="middle" font-size="12" font-weight="700" fill="#e6edf3">8</text>
+<text x="1166" y="828" font-size="14" fill="#e6edf3">restricted net -&gt; bridge via proxy</text>
+<rect x="965" y="871" width="522" height="44" rx="8" fill="#1f6feb22" stroke="#1f6feb" stroke-width="1"/>
+<text x="1226" y="903" text-anchor="middle" font-size="14" fill="#e6edf3">macOS Seatbelt: network on/off only; fine domains need the proxy</text>
+<rect x="1367" y="949" width="68" height="39" rx="6" fill="none" stroke="#58a6ff" stroke-width="2"/>
+<text x="1451" y="971" font-size="14" fill="#8b949e">MITM proxy active</text>
+<line x1="1084" y1="1033" x2="243" y2="1033" stroke="#6e7681" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrr)"/>
+<circle cx="580" cy="1019" r="11" fill="#161b22" stroke="#6e7681" stroke-width="1.5"/>
+<text x="580" y="1024" text-anchor="middle" font-size="12" font-weight="700" fill="#e6edf3">10</text>
+<text x="598" y="1024" font-size="14" fill="#e6edf3">SandboxErr::Denied -&gt; retry: run outside the sandbox?</text>
+<rect x="113" y="1067" width="1373" height="44" rx="8" fill="#1f6feb22" stroke="#1f6feb" stroke-width="1"/>
+<text x="800" y="1098" text-anchor="middle" font-size="14" fill="#e6edf3">Escalation is three things: RequireEscalated, the denial retry loop, shell-escalation</text>
+</svg>

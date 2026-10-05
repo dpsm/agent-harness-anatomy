@@ -1,0 +1,237 @@
+{
+ "title": "Codex CLI — one turn, end to end",
+ "repo": "https://github.com/openai/codex",
+ "sha": "a956835d020762cb2b570053af06f643a11c0ecc",
+ "example_input": "refactor the retry helper to use exponential backoff",
+ "note": "TUI → app-server → core. Pinned at rust-v0.160.0.",
+ "steps": [
+  {
+   "step": 1,
+   "node": "input",
+   "title": "Submit",
+   "narrative": "The user types 'refactor the retry helper to use exponential backoff' in the TUI and hits Enter. The TUI sends app-server RPC turn/start (app_server_session.rs:1308-1341), packaging the text with sandbox-policy and permission overrides resolved from config.",
+   "representation": "TUI keypress\n  → ClientRequest::TurnStart\n  → app-server (JSON-RPC)",
+   "modules": [
+    {
+     "file": "codex-rs/tui/src/app_server_session.rs",
+     "label": "app_server_session.rs:1308-1341",
+     "line": "1308",
+     "url": "https://github.com/openai/codex/blob/a956835d020762cb2b570053af06f643a11c0ecc/codex-rs/tui/src/app_server_session.rs#L1308-L1341"
+    }
+   ]
+  },
+  {
+   "step": 2,
+   "node": "route",
+   "title": "Route to core",
+   "narrative": "turn_processor.rs:630 → thread.start_or_steer_turn(...) → Op::TurnInput (protocol.rs:622) → session/handlers.rs:485 → turn_input::handle. The op enum is the entire vocabulary the server speaks to core.",
+   "representation": "turn_processor.rs:630\n  → Op::TurnInput\n  → session/handlers.rs → turn_input::handle",
+   "modules": [
+    {
+     "file": "codex-rs/protocol/src/protocol.rs",
+     "label": "protocol.rs:622",
+     "line": "622",
+     "url": "https://github.com/openai/codex/blob/a956835d020762cb2b570053af06f643a11c0ecc/codex-rs/protocol/src/protocol.rs#L622"
+    },
+    {
+     "file": "codex-rs/core/src/session/handlers.rs",
+     "label": "handlers.rs:485",
+     "line": "485",
+     "url": "https://github.com/openai/codex/blob/a956835d020762cb2b570053af06f643a11c0ecc/codex-rs/core/src/session/handlers.rs#L485"
+    }
+   ]
+  },
+  {
+   "step": 3,
+   "node": "task",
+   "title": "Start task",
+   "narrative": "No active turn → spawn_task (turn_input.rs:365) → tasks/mod.rs:287 records ActiveTurn and spawns with a fresh CancellationToken.",
+   "representation": "turn_input::handle\n  → spawn_task(...)\n  → ActiveTurn + CancellationToken",
+   "modules": [
+    {
+     "file": "codex-rs/core/src/session/turn_input.rs",
+     "label": "turn_input.rs:365",
+     "line": "365",
+     "url": "https://github.com/openai/codex/blob/a956835d020762cb2b570053af06f643a11c0ecc/codex-rs/core/src/session/turn_input.rs#L365"
+    },
+    {
+     "file": "codex-rs/core/src/tasks/mod.rs",
+     "label": "mod.rs:287",
+     "line": "287",
+     "url": "https://github.com/openai/codex/blob/a956835d020762cb2b570053af06f643a11c0ecc/codex-rs/core/src/tasks/mod.rs#L287"
+    }
+   ]
+  },
+  {
+   "step": 4,
+   "node": "taskloop",
+   "title": "Task loop",
+   "narrative": "RegularTask::run (tasks/regular.rs:40) emits TurnStarted and enters its loop {} (:104), calling run_turn (:105) with the input, MCP startup requirements, and any prewarmed client session.",
+   "representation": "RegularTask::run\n  → loop {} (:104)\n  → run_turn(input, ...) (:105)",
+   "modules": [
+    {
+     "file": "codex-rs/core/src/tasks/regular.rs",
+     "label": "regular.rs:40",
+     "line": "40",
+     "url": "https://github.com/openai/codex/blob/a956835d020762cb2b570053af06f643a11c0ecc/codex-rs/core/src/tasks/regular.rs#L40"
+    },
+    {
+     "file": "codex-rs/core/src/tasks/regular.rs",
+     "label": "regular.rs:104-105",
+     "line": "104",
+     "url": "https://github.com/openai/codex/blob/a956835d020762cb2b570053af06f643a11c0ecc/codex-rs/core/src/tasks/regular.rs#L104-L105"
+    }
+   ]
+  },
+  {
+   "step": 5,
+   "node": "preamble",
+   "title": "Turn preamble",
+   "narrative": "Inside run_turn (turn.rs:163): guardian check, pre-sampling compaction, MCP resolution, the first step-context capture, skill/plugin injection, session-start hooks — then the user message is recorded to history.",
+   "representation": "run_turn(sess, turn_context, input, ...)\n  → guardian check, compaction, MCP, step-context\n  → user message → history",
+   "modules": [
+    {
+     "file": "codex-rs/core/src/session/turn.rs",
+     "label": "turn.rs:163-172",
+     "line": "163",
+     "url": "https://github.com/openai/codex/blob/a956835d020762cb2b570053af06f643a11c0ecc/codex-rs/core/src/session/turn.rs#L163-L172"
+    }
+   ]
+  },
+  {
+   "step": 6,
+   "node": "drain",
+   "title": "Drain + prompt hooks",
+   "narrative": "The loop {} body (turn.rs:426): no pending input to drain on a fresh turn; prompt-hook inspection runs (:426-446).",
+   "representation": "loop {} (:426)\n  → drain pending input (none)\n  → prompt-hook inspection",
+   "modules": [
+    {
+     "file": "codex-rs/core/src/session/turn.rs",
+     "label": "turn.rs:426-446",
+     "line": "426",
+     "url": "https://github.com/openai/codex/blob/a956835d020762cb2b570053af06f643a11c0ecc/codex-rs/core/src/session/turn.rs#L426-L446"
+    }
+   ]
+  },
+  {
+   "step": 7,
+   "node": "stepctx",
+   "title": "Step context",
+   "narrative": "Tools re-resolved, approval policy bound to the turn (turn.rs:461-503); time reminder and world state assembled. Context, advertised tools, and tool calls share one request view.",
+   "representation": "capture_step_context(...)\n  → tools re-resolved\n  → approval policy bound → world state",
+   "modules": [
+    {
+     "file": "codex-rs/core/src/session/turn.rs",
+     "label": "turn.rs:461-503",
+     "line": "461",
+     "url": "https://github.com/openai/codex/blob/a956835d020762cb2b570053af06f643a11c0ecc/codex-rs/core/src/session/turn.rs#L461-L503"
+    }
+   ]
+  },
+  {
+   "step": 8,
+   "node": "prompt",
+   "title": "Prompt build",
+   "narrative": "clone_history().await.for_prompt(...) plus executed_tool_calls.attach_to_prompt → build_prompt → Prompt { input, tools, parallel_tool_calls: true, base_instructions, ... } (turn.rs:1583-1592).",
+   "representation": "for_prompt(history + tool calls)\n  → build_prompt → Prompt\n  → parallel_tool_calls: true",
+   "modules": [
+    {
+     "file": "codex-rs/core/src/session/turn.rs",
+     "label": "turn.rs:1583-1592",
+     "line": "1583",
+     "url": "https://github.com/openai/codex/blob/a956835d020762cb2b570053af06f643a11c0ecc/codex-rs/core/src/session/turn.rs#L1583-L1592"
+    }
+   ]
+  },
+  {
+   "step": 9,
+   "node": "model",
+   "title": "Model call",
+   "narrative": "run_sampling_request → try_run_sampling_request → client_session.stream(...) → WebSocket-first (permanent HTTP/SSE fallback), both POSTing to /responses (client.rs:2218-2263). The request carries store: false, stream: true, and a thread-scoped prompt_cache_key for cache affinity (client.rs:886-1007).",
+   "representation": "run_sampling_request\n  → client_session.stream(...) → /responses\n  → store: false, stream: true, prompt_cache_key",
+   "modules": [
+    {
+     "file": "codex-rs/core/src/client.rs",
+     "label": "client.rs:2218-2263",
+     "line": "2218",
+     "url": "https://github.com/openai/codex/blob/a956835d020762cb2b570053af06f643a11c0ecc/codex-rs/core/src/client.rs#L2218-L2263"
+    },
+    {
+     "file": "codex-rs/core/src/client.rs",
+     "label": "client.rs:886-1007",
+     "line": "886",
+     "url": "https://github.com/openai/codex/blob/a956835d020762cb2b570053af06f643a11c0ecc/codex-rs/core/src/client.rs#L886-L1007"
+    }
+   ]
+  },
+  {
+   "step": 10,
+   "node": "stream",
+   "title": "Stream handling",
+   "narrative": "The inner loop (turn.rs:2605) consumes ResponseEvents: text deltas stream to the TUI live; each completed tool call arrives as OutputItemDone → ToolRouter::build_tool_call (stream_events_utils.rs:325), spawned into in_flight with needs_follow_up = true.",
+   "representation": "loop {} (:2605) consumes ResponseEvents\n  → text deltas → TUI (live)\n  → OutputItemDone → build_tool_call → in_flight",
+   "modules": [
+    {
+     "file": "codex-rs/core/src/session/turn.rs",
+     "label": "turn.rs:2605",
+     "line": "2605",
+     "url": "https://github.com/openai/codex/blob/a956835d020762cb2b570053af06f643a11c0ecc/codex-rs/core/src/session/turn.rs#L2605"
+    },
+    {
+     "file": "codex-rs/core/src/stream_events_utils.rs",
+     "label": "stream_events_utils.rs:325",
+     "line": "325",
+     "url": "https://github.com/openai/codex/blob/a956835d020762cb2b570053af06f643a11c0ecc/codex-rs/core/src/stream_events_utils.rs#L325"
+    }
+   ]
+  },
+  {
+   "step": 11,
+   "node": "approval",
+   "title": "Approval (parked)",
+   "narrative": "For any gated call, ApprovalService::request_approval (tools/approvals.rs:479) runs hooks → Guardian → user; the turn loop sits in drain_in_flight (turn.rs:2466) until the decision lands. Denials become failure tool results, not loop breaks.",
+   "representation": "gated call → request_approval\n  → hooks → Guardian → user\n  → loop parked in drain_in_flight",
+   "modules": [
+    {
+     "file": "codex-rs/core/src/tools/approvals.rs",
+     "label": "approvals.rs:479-552",
+     "line": "479",
+     "url": "https://github.com/openai/codex/blob/a956835d020762cb2b570053af06f643a11c0ecc/codex-rs/core/src/tools/approvals.rs#L479-L552"
+    },
+    {
+     "file": "codex-rs/core/src/session/turn.rs",
+     "label": "turn.rs:2466",
+     "line": "2466",
+     "url": "https://github.com/openai/codex/blob/a956835d020762cb2b570053af06f643a11c0ecc/codex-rs/core/src/session/turn.rs#L2466"
+    }
+   ]
+  },
+  {
+   "step": 12,
+   "node": "loopstop",
+   "title": "Loop or stop",
+   "narrative": "drain_in_flight records every FunctionCallOutput envelope into history (turn.rs:2466-2492). needs_follow_up = true → continue (turn.rs:725): iteration 2 rebuilds the prompt from history now containing tool results. The model replies with only an assistant message → !needs_follow_up → stop hooks → post-turn compaction check → break (turn.rs:653-723). run_turn returns Ok(last_agent_message) (:839); TurnCompleted is emitted and the TUI renders from the streamed events.",
+   "representation": "drain_in_flight → history\n  → needs_follow_up ? continue (:725) : break (:653)\n  → Ok(last_agent_message) (:839) → TurnCompleted",
+   "modules": [
+    {
+     "file": "codex-rs/core/src/session/turn.rs",
+     "label": "turn.rs:2466-2492",
+     "line": "2466",
+     "url": "https://github.com/openai/codex/blob/a956835d020762cb2b570053af06f643a11c0ecc/codex-rs/core/src/session/turn.rs#L2466-L2492"
+    },
+    {
+     "file": "codex-rs/core/src/session/turn.rs",
+     "label": "turn.rs:653-723",
+     "line": "653",
+     "url": "https://github.com/openai/codex/blob/a956835d020762cb2b570053af06f643a11c0ecc/codex-rs/core/src/session/turn.rs#L653-L723"
+    },
+    {
+     "file": "codex-rs/core/src/session/turn.rs",
+     "label": "turn.rs:839",
+     "line": "839",
+     "url": "https://github.com/openai/codex/blob/a956835d020762cb2b570053af06f643a11c0ecc/codex-rs/core/src/session/turn.rs#L839"
+    }
+   ]
+  }
+ ]
+}
