@@ -1,180 +1,180 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="-20 -70 820 1786" width="1600" height="3484" font-family="system-ui, -apple-system, sans-serif">
 <defs>
-<marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 1 L 9 5 L 0 9 z" fill="#6e7681"/></marker>
+<marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 1 L 9 5 L 0 9 z" fill="#8a7a66"/></marker>
 </defs>
-<text x="-20" y="-36" font-size="26" font-weight="700" fill="#e6edf3">OpenHands — one turn through the harness</text>
-<text x="-20" y="-10" font-size="15" fill="#8b949e">OpenHands/software-agent-sdk @ 54daf05</text>
+<text x="-20" y="-36" font-size="26" font-weight="700" fill="#ece1d3">OpenHands — one turn through the harness</text>
+<text x="-20" y="-10" font-size="15" fill="#a89880">OpenHands/software-agent-sdk @ 54daf05</text>
 <g>
-<path d="M 390.0 116 C 390.0 133.0, 390.0 133.0, 390.0 150" fill="none" stroke="#6e7681" stroke-width="2" marker-end="url(#arrow)"/>
-<text x="398.0" y="133.0" font-size="13" fill="#8b949e">view + skills</text>
-<path d="M 390.0 246 C 390.0 263.0, 390.0 263.0, 390.0 280" fill="none" stroke="#6e7681" stroke-width="2" marker-end="url(#arrow)"/>
-<text x="398.0" y="263.0" font-size="13" fill="#8b949e">messages, tools</text>
-<path d="M 390.0 376 C 390.0 393.0, 390.0 393.0, 390.0 410" fill="none" stroke="#6e7681" stroke-width="2" marker-end="url(#arrow)"/>
-<text x="398.0" y="393.0" font-size="13" fill="#8b949e">Message</text>
-<path d="M 390.0 506 C 390.0 523.0, 390.0 523.0, 390.0 540" fill="none" stroke="#6e7681" stroke-width="2" marker-end="url(#arrow)"/>
-<text x="398.0" y="523.0" font-size="13" fill="#8b949e">TOOL_CALLS</text>
-<path d="M 390.0 506 C 390.0 653.0, 390.0 653.0, 390.0 800" fill="none" stroke="#6e7681" stroke-width="2" marker-end="url(#arrow)"/>
-<text x="398.0" y="653.0" font-size="13" fill="#8b949e">CONTENT -&gt; FINISHED</text>
-<path d="M 390.0 636 C 390.0 653.0, 390.0 653.0, 390.0 670" fill="none" stroke="#6e7681" stroke-width="2" marker-end="url(#arrow)"/>
-<text x="398.0" y="653.0" font-size="13" fill="#8b949e">batch</text>
-<path d="M 390.0 766 C 390.0 783.0, 390.0 783.0, 390.0 800" fill="none" stroke="#6e7681" stroke-width="2" marker-end="url(#arrow)"/>
-<text x="398.0" y="783.0" font-size="13" fill="#8b949e">FinishTool</text>
-<path d="M 390.0 896 C 390.0 913.0, 390.0 913.0, 390.0 930" fill="none" stroke="#6e7681" stroke-width="2" marker-end="url(#arrow)"/>
-<text x="398.0" y="913.0" font-size="13" fill="#8b949e">events</text>
-<path d="M 650.0 116 C 650.0 133.0, 390.0 133.0, 390.0 150" fill="none" stroke="#6e7681" stroke-width="2" marker-end="url(#arrow)"/>
-<text x="528.0" y="133.0" font-size="13" fill="#8b949e">prepare view</text>
-<path d="M 650.0 116 C 650.0 198.0, 390.0 198.0, 390.0 280" fill="none" stroke="#6e7681" stroke-width="2" marker-end="url(#arrow)"/>
-<text x="528.0" y="198.0" font-size="13" fill="#8b949e">generate()</text>
-<path d="M 130.0 116 C 130.0 133.0, 130.0 133.0, 130.0 150" fill="none" stroke="#6e7681" stroke-width="2" marker-end="url(#arrow)"/>
-<text x="138.0" y="133.0" font-size="13" fill="#8b949e">projects</text>
-<path d="M 130.0 246 C 130.0 198.0, 390.0 198.0, 390.0 150" fill="none" stroke="#6e7681" stroke-width="2" marker-end="url(#arrow)"/>
-<text x="268.0" y="198.0" font-size="13" fill="#8b949e">cached</text>
-<path d="M 130.0 376 C 130.0 198.0, 390.0 198.0, 390.0 20" fill="none" stroke="#6e7681" stroke-width="2" marker-end="url(#arrow)"/>
-<text x="268.0" y="198.0" font-size="13" fill="#8b949e">wraps on_event</text>
-<path d="M 130.0 506 C 130.0 263.0, 390.0 263.0, 390.0 20" fill="none" stroke="#6e7681" stroke-width="2" marker-end="url(#arrow)"/>
-<text x="268.0" y="263.0" font-size="13" fill="#8b949e">deny blocks</text>
-<path d="M 130.0 896 C 130.0 848.0, 390.0 848.0, 390.0 800" fill="none" stroke="#6e7681" stroke-width="2" marker-end="url(#arrow)"/>
-<text x="268.0" y="848.0" font-size="13" fill="#8b949e">deny -&gt; RUNNING</text>
-<path d="M 130.0 376 C 130.0 458.0, 390.0 458.0, 390.0 540" fill="none" stroke="#6e7681" stroke-width="2" marker-end="url(#arrow)"/>
-<text x="268.0" y="458.0" font-size="13" fill="#8b949e">PreToolUse veto</text>
-<path d="M 130.0 636 C 130.0 328.0, 390.0 328.0, 390.0 20" fill="none" stroke="#6e7681" stroke-width="2" marker-end="url(#arrow)"/>
-<text x="268.0" y="328.0" font-size="13" fill="#8b949e">suffix inject</text>
-<path d="M 130.0 766 C 130.0 458.0, 390.0 458.0, 390.0 150" fill="none" stroke="#6e7681" stroke-width="2" marker-end="url(#arrow)"/>
-<text x="268.0" y="458.0" font-size="13" fill="#8b949e">&lt;available_skills&gt;</text>
-<path d="M 650.0 1286 C 650.0 978.0, 130.0 978.0, 130.0 670" fill="none" stroke="#6e7681" stroke-width="2" marker-end="url(#arrow)"/>
-<text x="398.0" y="978.0" font-size="13" fill="#8b949e">bundles</text>
-<path d="M 650.0 1416 C 650.0 1303.0, 650.0 1303.0, 650.0 1190" fill="none" stroke="#6e7681" stroke-width="2" marker-end="url(#arrow)"/>
-<text x="658.0" y="1303.0" font-size="13" fill="#8b949e">distributes</text>
-<path d="M 650.0 376 C 650.0 458.0, 390.0 458.0, 390.0 540" fill="none" stroke="#6e7681" stroke-width="2" marker-end="url(#arrow)"/>
-<text x="528.0" y="458.0" font-size="13" fill="#8b949e">resolve</text>
-<path d="M 650.0 1156 C 650.0 718.0, 650.0 718.0, 650.0 280" fill="none" stroke="#6e7681" stroke-width="2" marker-end="url(#arrow)"/>
-<text x="658.0" y="718.0" font-size="13" fill="#8b949e">server tools</text>
-<path d="M 650.0 506 C 650.0 523.0, 390.0 523.0, 390.0 540" fill="none" stroke="#6e7681" stroke-width="2" marker-end="url(#arrow)"/>
-<text x="528.0" y="523.0" font-size="13" fill="#8b949e">confirmation gate</text>
-<path d="M 650.0 636 C 650.0 588.0, 390.0 588.0, 390.0 540" fill="none" stroke="#6e7681" stroke-width="2" marker-end="url(#arrow)"/>
-<text x="528.0" y="588.0" font-size="13" fill="#8b949e">score per call</text>
-<path d="M 650.0 636 C 650.0 718.0, 390.0 718.0, 390.0 800" fill="none" stroke="#6e7681" stroke-width="2" marker-end="url(#arrow)"/>
-<text x="528.0" y="718.0" font-size="13" fill="#8b949e">refinement check</text>
-<path d="M 650.0 1026 C 650.0 783.0, 390.0 783.0, 390.0 540" fill="none" stroke="#6e7681" stroke-width="2" marker-end="url(#arrow)"/>
-<text x="528.0" y="783.0" font-size="13" fill="#8b949e">delegate</text>
-<path d="M 650.0 766 C 650.0 523.0, 390.0 523.0, 390.0 280" fill="none" stroke="#6e7681" stroke-width="2" marker-end="url(#arrow)"/>
-<text x="528.0" y="523.0" font-size="13" fill="#8b949e">per-completion</text>
-<path d="M 650.0 896 C 650.0 458.0, 650.0 458.0, 650.0 20" fill="none" stroke="#6e7681" stroke-width="2" marker-end="url(#arrow)"/>
-<text x="658.0" y="458.0" font-size="13" fill="#8b949e">mid-run swap</text>
-<path d="M 130.0 1156 C 130.0 718.0, 390.0 718.0, 390.0 280" fill="none" stroke="#6e7681" stroke-width="2" marker-end="url(#arrow)"/>
-<text x="268.0" y="718.0" font-size="13" fill="#8b949e">token callback</text>
-<path d="M 650.0 246 C 650.0 198.0, 390.0 198.0, 390.0 150" fill="none" stroke="#6e7681" stroke-width="2" marker-end="url(#arrow)"/>
-<text x="528.0" y="198.0" font-size="13" fill="#8b949e">condense(view)</text>
-<path d="M 650.0 1546 C 650.0 783.0, 650.0 783.0, 650.0 20" fill="none" stroke="#6e7681" stroke-width="2" marker-end="url(#arrow)"/>
-<text x="658.0" y="783.0" font-size="13" fill="#8b949e">nudge / STUCK</text>
-<path d="M 650.0 1676 C 650.0 848.0, 650.0 848.0, 650.0 20" fill="none" stroke="#6e7681" stroke-width="2" marker-end="url(#arrow)"/>
-<text x="658.0" y="848.0" font-size="13" fill="#8b949e">goal loop</text>
-<path d="M 390.0 766 C 390.0 848.0, 390.0 848.0, 390.0 930" fill="none" stroke="#6e7681" stroke-width="2" marker-end="url(#arrow)"/>
-<text x="398.0" y="848.0" font-size="13" fill="#8b949e">observations</text>
-<path d="M 130.0 1026 C 130.0 978.0, 390.0 978.0, 390.0 930" fill="none" stroke="#6e7681" stroke-width="2" marker-end="url(#arrow)"/>
-<text x="268.0" y="978.0" font-size="13" fill="#8b949e">pub/sub</text>
+<path d="M 390.0 116 C 390.0 133.0, 390.0 133.0, 390.0 150" fill="none" stroke="#8a7a66" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="398.0" y="133.0" font-size="13" fill="#a89880">view + skills</text>
+<path d="M 390.0 246 C 390.0 263.0, 390.0 263.0, 390.0 280" fill="none" stroke="#8a7a66" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="398.0" y="263.0" font-size="13" fill="#a89880">messages, tools</text>
+<path d="M 390.0 376 C 390.0 393.0, 390.0 393.0, 390.0 410" fill="none" stroke="#8a7a66" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="398.0" y="393.0" font-size="13" fill="#a89880">Message</text>
+<path d="M 390.0 506 C 390.0 523.0, 390.0 523.0, 390.0 540" fill="none" stroke="#8a7a66" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="398.0" y="523.0" font-size="13" fill="#a89880">TOOL_CALLS</text>
+<path d="M 390.0 506 C 390.0 653.0, 390.0 653.0, 390.0 800" fill="none" stroke="#8a7a66" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="398.0" y="653.0" font-size="13" fill="#a89880">CONTENT -&gt; FINISHED</text>
+<path d="M 390.0 636 C 390.0 653.0, 390.0 653.0, 390.0 670" fill="none" stroke="#8a7a66" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="398.0" y="653.0" font-size="13" fill="#a89880">batch</text>
+<path d="M 390.0 766 C 390.0 783.0, 390.0 783.0, 390.0 800" fill="none" stroke="#8a7a66" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="398.0" y="783.0" font-size="13" fill="#a89880">FinishTool</text>
+<path d="M 390.0 896 C 390.0 913.0, 390.0 913.0, 390.0 930" fill="none" stroke="#8a7a66" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="398.0" y="913.0" font-size="13" fill="#a89880">events</text>
+<path d="M 650.0 116 C 650.0 133.0, 390.0 133.0, 390.0 150" fill="none" stroke="#8a7a66" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="528.0" y="133.0" font-size="13" fill="#a89880">prepare view</text>
+<path d="M 650.0 116 C 650.0 198.0, 390.0 198.0, 390.0 280" fill="none" stroke="#8a7a66" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="528.0" y="198.0" font-size="13" fill="#a89880">generate()</text>
+<path d="M 130.0 116 C 130.0 133.0, 130.0 133.0, 130.0 150" fill="none" stroke="#8a7a66" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="138.0" y="133.0" font-size="13" fill="#a89880">projects</text>
+<path d="M 130.0 246 C 130.0 198.0, 390.0 198.0, 390.0 150" fill="none" stroke="#8a7a66" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="268.0" y="198.0" font-size="13" fill="#a89880">cached</text>
+<path d="M 130.0 376 C 130.0 198.0, 390.0 198.0, 390.0 20" fill="none" stroke="#8a7a66" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="268.0" y="198.0" font-size="13" fill="#a89880">wraps on_event</text>
+<path d="M 130.0 506 C 130.0 263.0, 390.0 263.0, 390.0 20" fill="none" stroke="#8a7a66" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="268.0" y="263.0" font-size="13" fill="#a89880">deny blocks</text>
+<path d="M 130.0 896 C 130.0 848.0, 390.0 848.0, 390.0 800" fill="none" stroke="#8a7a66" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="268.0" y="848.0" font-size="13" fill="#a89880">deny -&gt; RUNNING</text>
+<path d="M 130.0 376 C 130.0 458.0, 390.0 458.0, 390.0 540" fill="none" stroke="#8a7a66" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="268.0" y="458.0" font-size="13" fill="#a89880">PreToolUse veto</text>
+<path d="M 130.0 636 C 130.0 328.0, 390.0 328.0, 390.0 20" fill="none" stroke="#8a7a66" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="268.0" y="328.0" font-size="13" fill="#a89880">suffix inject</text>
+<path d="M 130.0 766 C 130.0 458.0, 390.0 458.0, 390.0 150" fill="none" stroke="#8a7a66" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="268.0" y="458.0" font-size="13" fill="#a89880">&lt;available_skills&gt;</text>
+<path d="M 650.0 1286 C 650.0 978.0, 130.0 978.0, 130.0 670" fill="none" stroke="#8a7a66" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="398.0" y="978.0" font-size="13" fill="#a89880">bundles</text>
+<path d="M 650.0 1416 C 650.0 1303.0, 650.0 1303.0, 650.0 1190" fill="none" stroke="#8a7a66" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="658.0" y="1303.0" font-size="13" fill="#a89880">distributes</text>
+<path d="M 650.0 376 C 650.0 458.0, 390.0 458.0, 390.0 540" fill="none" stroke="#8a7a66" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="528.0" y="458.0" font-size="13" fill="#a89880">resolve</text>
+<path d="M 650.0 1156 C 650.0 718.0, 650.0 718.0, 650.0 280" fill="none" stroke="#8a7a66" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="658.0" y="718.0" font-size="13" fill="#a89880">server tools</text>
+<path d="M 650.0 506 C 650.0 523.0, 390.0 523.0, 390.0 540" fill="none" stroke="#8a7a66" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="528.0" y="523.0" font-size="13" fill="#a89880">confirmation gate</text>
+<path d="M 650.0 636 C 650.0 588.0, 390.0 588.0, 390.0 540" fill="none" stroke="#8a7a66" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="528.0" y="588.0" font-size="13" fill="#a89880">score per call</text>
+<path d="M 650.0 636 C 650.0 718.0, 390.0 718.0, 390.0 800" fill="none" stroke="#8a7a66" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="528.0" y="718.0" font-size="13" fill="#a89880">refinement check</text>
+<path d="M 650.0 1026 C 650.0 783.0, 390.0 783.0, 390.0 540" fill="none" stroke="#8a7a66" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="528.0" y="783.0" font-size="13" fill="#a89880">delegate</text>
+<path d="M 650.0 766 C 650.0 523.0, 390.0 523.0, 390.0 280" fill="none" stroke="#8a7a66" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="528.0" y="523.0" font-size="13" fill="#a89880">per-completion</text>
+<path d="M 650.0 896 C 650.0 458.0, 650.0 458.0, 650.0 20" fill="none" stroke="#8a7a66" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="658.0" y="458.0" font-size="13" fill="#a89880">mid-run swap</text>
+<path d="M 130.0 1156 C 130.0 718.0, 390.0 718.0, 390.0 280" fill="none" stroke="#8a7a66" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="268.0" y="718.0" font-size="13" fill="#a89880">token callback</text>
+<path d="M 650.0 246 C 650.0 198.0, 390.0 198.0, 390.0 150" fill="none" stroke="#8a7a66" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="528.0" y="198.0" font-size="13" fill="#a89880">condense(view)</text>
+<path d="M 650.0 1546 C 650.0 783.0, 650.0 783.0, 650.0 20" fill="none" stroke="#8a7a66" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="658.0" y="783.0" font-size="13" fill="#a89880">nudge / STUCK</text>
+<path d="M 650.0 1676 C 650.0 848.0, 650.0 848.0, 650.0 20" fill="none" stroke="#8a7a66" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="658.0" y="848.0" font-size="13" fill="#a89880">goal loop</text>
+<path d="M 390.0 766 C 390.0 848.0, 390.0 848.0, 390.0 930" fill="none" stroke="#8a7a66" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="398.0" y="848.0" font-size="13" fill="#a89880">observations</text>
+<path d="M 130.0 1026 C 130.0 978.0, 390.0 978.0, 390.0 930" fill="none" stroke="#8a7a66" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="268.0" y="978.0" font-size="13" fill="#a89880">pub/sub</text>
 </g><g>
-<rect x="280" y="20" width="220" height="96" rx="10" fill="#161b22" stroke="#30363d" stroke-width="1.5"/><rect x="280" y="20" width="5" height="96" rx="2" fill="#3fb950"/>
-<circle cx="302" cy="42" r="13" fill="#1f6feb"/><text x="302" y="47" text-anchor="middle" font-size="14" font-weight="700" fill="#ffffff">1</text>
-<text x="324" y="48" font-size="15" font-weight="600" fill="#e6edf3">send_message input</text><text x="324" y="68" font-size="12" fill="#8b949e">openhands-sdk/openhands/sdk/conversation</text>
-<text x="294" y="104" font-size="11" fill="#8b949e">2 source links · verified</text>
-<rect x="280" y="150" width="220" height="96" rx="10" fill="#161b22" stroke="#30363d" stroke-width="1.5"/><rect x="280" y="150" width="5" height="96" rx="2" fill="#3fb950"/>
-<circle cx="302" cy="172" r="13" fill="#1f6feb"/><text x="302" y="177" text-anchor="middle" font-size="14" font-weight="700" fill="#ffffff">2</text>
-<text x="324" y="178" font-size="15" font-weight="600" fill="#e6edf3">prepare_llm_messages</text><text x="324" y="198" font-size="12" fill="#8b949e">openhands-sdk/openhands/sdk/agent/utils.</text>
-<text x="294" y="234" font-size="11" fill="#8b949e">2 source links · verified</text>
-<rect x="280" y="280" width="220" height="96" rx="10" fill="#161b22" stroke="#30363d" stroke-width="1.5"/><rect x="280" y="280" width="5" height="96" rx="2" fill="#3fb950"/>
-<circle cx="302" cy="302" r="13" fill="#1f6feb"/><text x="302" y="307" text-anchor="middle" font-size="14" font-weight="700" fill="#ffffff">3</text>
-<text x="324" y="308" font-size="15" font-weight="600" fill="#e6edf3">llm.generate (LiteLLM)</text><text x="324" y="328" font-size="12" fill="#8b949e">openhands-sdk/openhands/sdk/llm/llm.py:7</text>
-<text x="294" y="364" font-size="11" fill="#8b949e">2 source links · verified</text>
-<rect x="280" y="410" width="220" height="96" rx="10" fill="#161b22" stroke="#30363d" stroke-width="1.5"/><rect x="280" y="410" width="5" height="96" rx="2" fill="#3fb950"/>
-<circle cx="302" cy="432" r="13" fill="#1f6feb"/><text x="302" y="437" text-anchor="middle" font-size="14" font-weight="700" fill="#ffffff">4</text>
-<text x="324" y="438" font-size="15" font-weight="600" fill="#e6edf3">classify_response</text><text x="324" y="458" font-size="12" fill="#8b949e">openhands-sdk/openhands/sdk/agent/respon</text>
-<text x="294" y="494" font-size="11" fill="#8b949e">1 source link · verified</text>
-<rect x="280" y="540" width="220" height="96" rx="10" fill="#161b22" stroke="#30363d" stroke-width="1.5"/><rect x="280" y="540" width="5" height="96" rx="2" fill="#3fb950"/>
-<circle cx="302" cy="562" r="13" fill="#1f6feb"/><text x="302" y="567" text-anchor="middle" font-size="14" font-weight="700" fill="#ffffff">5</text>
-<text x="324" y="568" font-size="15" font-weight="600" fill="#e6edf3">_handle_tool_calls / _get_action_event</text><text x="324" y="588" font-size="12" fill="#8b949e">openhands-sdk/openhands/sdk/agent/agent.</text>
-<text x="294" y="624" font-size="11" fill="#8b949e">2 source links · verified</text>
-<rect x="280" y="670" width="220" height="96" rx="10" fill="#161b22" stroke="#30363d" stroke-width="1.5"/><rect x="280" y="670" width="5" height="96" rx="2" fill="#3fb950"/>
-<circle cx="302" cy="692" r="13" fill="#1f6feb"/><text x="302" y="697" text-anchor="middle" font-size="14" font-weight="700" fill="#ffffff">6</text>
-<text x="324" y="698" font-size="15" font-weight="600" fill="#e6edf3">ParallelToolExecutor</text><text x="324" y="718" font-size="12" fill="#8b949e">openhands-sdk/openhands/sdk/agent/parall</text>
-<text x="294" y="754" font-size="11" fill="#8b949e">2 source links · verified</text>
-<rect x="280" y="800" width="220" height="96" rx="10" fill="#161b22" stroke="#30363d" stroke-width="1.5"/><rect x="280" y="800" width="5" height="96" rx="2" fill="#3fb950"/>
-<circle cx="302" cy="822" r="13" fill="#1f6feb"/><text x="302" y="827" text-anchor="middle" font-size="14" font-weight="700" fill="#ffffff">7</text>
-<text x="324" y="828" font-size="15" font-weight="600" fill="#e6edf3">_ActionBatch.finalize + FinishTool</text><text x="324" y="848" font-size="12" fill="#8b949e">openhands-sdk/openhands/sdk/agent/agent.</text>
-<text x="294" y="884" font-size="11" fill="#8b949e">3 source links · verified</text>
-<rect x="280" y="930" width="220" height="96" rx="10" fill="#161b22" stroke="#30363d" stroke-width="1.5"/><rect x="280" y="930" width="5" height="96" rx="2" fill="#3fb950"/>
-<circle cx="302" cy="952" r="13" fill="#1f6feb"/><text x="302" y="957" text-anchor="middle" font-size="14" font-weight="700" fill="#ffffff">8</text>
-<text x="324" y="958" font-size="15" font-weight="600" fill="#e6edf3">EventLog (JSONL)</text><text x="324" y="978" font-size="12" fill="#8b949e">openhands-sdk/openhands/sdk/conversation</text>
-<text x="294" y="1014" font-size="11" fill="#8b949e">1 source link · verified</text>
-<rect x="20" y="20" width="220" height="96" rx="10" fill="#161b22" stroke="#30363d" stroke-width="1.5"/><rect x="20" y="20" width="5" height="96" rx="2" fill="#3fb950"/>
-<text x="64" y="48" font-size="15" font-weight="600" fill="#e6edf3">ConversationState event tree</text><text x="64" y="68" font-size="12" fill="#8b949e">openhands-sdk/openhands/sdk/event/types.</text>
-<text x="34" y="104" font-size="11" fill="#8b949e">1 source link · verified</text>
-<rect x="20" y="150" width="220" height="96" rx="10" fill="#161b22" stroke="#30363d" stroke-width="1.5"/><rect x="20" y="150" width="5" height="96" rx="2" fill="#3fb950"/>
-<text x="64" y="178" font-size="15" font-weight="600" fill="#e6edf3">state.view (cached view)</text><text x="64" y="198" font-size="12" fill="#8b949e">openhands-sdk/openhands/sdk/context/view</text>
-<text x="34" y="234" font-size="11" fill="#8b949e">2 source links · verified</text>
-<rect x="20" y="280" width="220" height="96" rx="10" fill="#161b22" stroke="#30363d" stroke-width="1.5"/><rect x="20" y="280" width="5" height="96" rx="2" fill="#3fb950"/>
-<text x="64" y="308" font-size="15" font-weight="600" fill="#e6edf3">HookEventProcessor</text><text x="64" y="328" font-size="12" fill="#8b949e">openhands-sdk/openhands/sdk/hooks/conver</text>
-<text x="34" y="364" font-size="11" fill="#8b949e">1 source link · verified</text>
-<rect x="20" y="410" width="220" height="96" rx="10" fill="#161b22" stroke="#30363d" stroke-width="1.5"/><rect x="20" y="410" width="5" height="96" rx="2" fill="#3fb950"/>
-<text x="64" y="438" font-size="15" font-weight="600" fill="#e6edf3">UserPromptSubmit hooks</text><text x="64" y="458" font-size="12" fill="#8b949e">openhands-sdk/openhands/sdk/hooks/conver</text>
-<text x="34" y="494" font-size="11" fill="#8b949e">2 source links · verified</text>
-<rect x="20" y="540" width="220" height="96" rx="10" fill="#161b22" stroke="#30363d" stroke-width="1.5"/><rect x="20" y="540" width="5" height="96" rx="2" fill="#3fb950"/>
-<text x="64" y="568" font-size="15" font-weight="600" fill="#e6edf3">Skill trigger matching</text><text x="64" y="588" font-size="12" fill="#8b949e">openhands-sdk/openhands/sdk/skills/trigg</text>
-<text x="34" y="624" font-size="11" fill="#8b949e">2 source links · verified</text>
-<rect x="20" y="670" width="220" height="96" rx="10" fill="#161b22" stroke="#30363d" stroke-width="1.5"/><rect x="20" y="670" width="5" height="96" rx="2" fill="#3fb950"/>
-<text x="64" y="698" font-size="15" font-weight="600" fill="#e6edf3">Skills (3 activation paths)</text><text x="64" y="718" font-size="12" fill="#8b949e">openhands-sdk/openhands/sdk/skills/skill</text>
-<text x="34" y="754" font-size="11" fill="#8b949e">1 source link · verified</text>
-<rect x="20" y="800" width="220" height="96" rx="10" fill="#161b22" stroke="#30363d" stroke-width="1.5"/><rect x="20" y="800" width="5" height="96" rx="2" fill="#3fb950"/>
-<text x="64" y="828" font-size="15" font-weight="600" fill="#e6edf3">Stop hook veto</text><text x="64" y="848" font-size="12" fill="#8b949e">openhands-sdk/openhands/sdk/conversation</text>
-<text x="34" y="884" font-size="11" fill="#8b949e">1 source link · verified</text>
-<rect x="20" y="930" width="220" height="96" rx="10" fill="#161b22" stroke="#30363d" stroke-width="1.5"/><rect x="20" y="930" width="5" height="96" rx="2" fill="#3fb950"/>
-<text x="64" y="958" font-size="15" font-weight="600" fill="#e6edf3">EventService pub/sub</text><text x="64" y="978" font-size="12" fill="#8b949e">agent_server/event_service.py:202</text>
-<text x="34" y="1014" font-size="11" fill="#8b949e">1 source link · verified</text>
-<rect x="20" y="1060" width="220" height="96" rx="10" fill="#161b22" stroke="#30363d" stroke-width="1.5"/><rect x="20" y="1060" width="5" height="96" rx="2" fill="#3fb950"/>
-<text x="64" y="1088" font-size="15" font-weight="600" fill="#e6edf3">StreamContext</text><text x="64" y="1108" font-size="12" fill="#8b949e">openhands-sdk/openhands/sdk/agent/stream</text>
-<text x="34" y="1144" font-size="11" fill="#8b949e">1 source link · verified</text>
-<rect x="540" y="20" width="220" height="96" rx="10" fill="#161b22" stroke="#30363d" stroke-width="1.5"/><rect x="540" y="20" width="5" height="96" rx="2" fill="#3fb950"/>
-<text x="584" y="48" font-size="15" font-weight="600" fill="#e6edf3">Agent.step</text><text x="584" y="68" font-size="12" fill="#8b949e">openhands-sdk/openhands/sdk/agent/agent.</text>
-<text x="554" y="104" font-size="11" fill="#8b949e">2 source links · verified</text>
-<rect x="540" y="150" width="220" height="96" rx="10" fill="#161b22" stroke="#30363d" stroke-width="1.5"/><rect x="540" y="150" width="5" height="96" rx="2" fill="#3fb950"/>
-<text x="584" y="178" font-size="15" font-weight="600" fill="#e6edf3">Condenser</text><text x="584" y="198" font-size="12" fill="#8b949e">openhands-sdk/openhands/sdk/context/cond</text>
-<text x="554" y="234" font-size="11" fill="#8b949e">2 source links · verified</text>
-<rect x="540" y="280" width="220" height="96" rx="10" fill="#161b22" stroke="#30363d" stroke-width="1.5"/><rect x="540" y="280" width="5" height="96" rx="2" fill="#3fb950"/>
-<text x="584" y="308" font-size="15" font-weight="600" fill="#e6edf3">Tool registry (spec/resolve)</text><text x="584" y="328" font-size="12" fill="#8b949e">openhands-sdk/openhands/sdk/tool/registr</text>
-<text x="554" y="364" font-size="11" fill="#8b949e">3 source links · verified</text>
-<rect x="540" y="410" width="220" height="96" rx="10" fill="#161b22" stroke="#30363d" stroke-width="1.5"/><rect x="540" y="410" width="5" height="96" rx="2" fill="#3fb950"/>
-<text x="584" y="438" font-size="15" font-weight="600" fill="#e6edf3">Security analyzer + confirmation gate</text><text x="584" y="458" font-size="12" fill="#8b949e">openhands-sdk/openhands/sdk/agent/agent.</text>
-<text x="554" y="494" font-size="11" fill="#8b949e">2 source links · verified</text>
-<rect x="540" y="540" width="220" height="96" rx="10" fill="#161b22" stroke="#30363d" stroke-width="1.5"/><rect x="540" y="540" width="5" height="96" rx="2" fill="#3fb950"/>
-<text x="584" y="568" font-size="15" font-weight="600" fill="#e6edf3">Critic + iterative refinement</text><text x="584" y="588" font-size="12" fill="#8b949e">openhands-sdk/openhands/sdk/critic/base.</text>
-<text x="554" y="624" font-size="11" fill="#8b949e">2 source links · verified</text>
-<rect x="540" y="670" width="220" height="96" rx="10" fill="#161b22" stroke="#30363d" stroke-width="1.5"/><rect x="540" y="670" width="5" height="96" rx="2" fill="#3fb950"/>
-<text x="584" y="698" font-size="15" font-weight="600" fill="#e6edf3">RouterLLM</text><text x="584" y="718" font-size="12" fill="#8b949e">openhands-sdk/openhands/sdk/llm/router/b</text>
-<text x="554" y="754" font-size="11" fill="#8b949e">2 source links · verified</text>
-<rect x="540" y="800" width="220" height="96" rx="10" fill="#161b22" stroke="#30363d" stroke-width="1.5"/><rect x="540" y="800" width="5" height="96" rx="2" fill="#3fb950"/>
-<text x="584" y="828" font-size="15" font-weight="600" fill="#e6edf3">switch_llm builtin</text><text x="584" y="848" font-size="12" fill="#8b949e">openhands-sdk/openhands/sdk/tool/builtin</text>
-<text x="554" y="884" font-size="11" fill="#8b949e">1 source link · verified</text>
-<rect x="540" y="930" width="220" height="96" rx="10" fill="#161b22" stroke="#30363d" stroke-width="1.5"/><rect x="540" y="930" width="5" height="96" rx="2" fill="#3fb950"/>
-<text x="584" y="958" font-size="15" font-weight="600" fill="#e6edf3">Sub-agent delegation</text><text x="584" y="978" font-size="12" fill="#8b949e">tools/delegate/impl.py:33</text>
-<text x="554" y="1014" font-size="11" fill="#8b949e">3 source links · verified</text>
-<rect x="540" y="1060" width="220" height="96" rx="10" fill="#161b22" stroke="#30363d" stroke-width="1.5"/><rect x="540" y="1060" width="5" height="96" rx="2" fill="#3fb950"/>
-<text x="584" y="1088" font-size="15" font-weight="600" fill="#e6edf3">MCP servers</text><text x="584" y="1108" font-size="12" fill="#8b949e">openhands-sdk/openhands/sdk/mcp/config.p</text>
-<text x="554" y="1144" font-size="11" fill="#8b949e">2 source links · verified</text>
-<rect x="540" y="1190" width="220" height="96" rx="10" fill="#161b22" stroke="#30363d" stroke-width="1.5"/><rect x="540" y="1190" width="5" height="96" rx="2" fill="#3fb950"/>
-<text x="584" y="1218" font-size="15" font-weight="600" fill="#e6edf3">Plugins</text><text x="584" y="1238" font-size="12" fill="#8b949e">openhands-sdk/openhands/sdk/plugin/plugi</text>
-<text x="554" y="1274" font-size="11" fill="#8b949e">2 source links · verified</text>
-<rect x="540" y="1320" width="220" height="96" rx="10" fill="#161b22" stroke="#30363d" stroke-width="1.5"/><rect x="540" y="1320" width="5" height="96" rx="2" fill="#3fb950"/>
-<text x="584" y="1348" font-size="15" font-weight="600" fill="#e6edf3">Marketplace registry</text><text x="584" y="1368" font-size="12" fill="#8b949e">openhands-sdk/openhands/sdk/marketplace/</text>
-<text x="554" y="1404" font-size="11" fill="#8b949e">2 source links · verified</text>
-<rect x="540" y="1450" width="220" height="96" rx="10" fill="#161b22" stroke="#30363d" stroke-width="1.5"/><rect x="540" y="1450" width="5" height="96" rx="2" fill="#3fb950"/>
-<text x="584" y="1478" font-size="15" font-weight="600" fill="#e6edf3">Stuck detector</text><text x="584" y="1498" font-size="12" fill="#8b949e">openhands-sdk/openhands/sdk/conversation</text>
-<text x="554" y="1534" font-size="11" fill="#8b949e">1 source link · verified</text>
-<rect x="540" y="1580" width="220" height="96" rx="10" fill="#161b22" stroke="#30363d" stroke-width="1.5"/><rect x="540" y="1580" width="5" height="96" rx="2" fill="#3fb950"/>
-<text x="584" y="1608" font-size="15" font-weight="600" fill="#e6edf3">GoalController</text><text x="584" y="1628" font-size="12" fill="#8b949e">openhands-sdk/openhands/sdk/conversation</text>
-<text x="554" y="1664" font-size="11" fill="#8b949e">1 source link · verified</text>
+<rect x="280" y="20" width="220" height="96" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/><rect x="280" y="20" width="5" height="96" rx="2" fill="#d08c4e"/>
+<circle cx="302" cy="42" r="13" fill="#d08c4e"/><text x="302" y="47" text-anchor="middle" font-size="14" font-weight="700" fill="#161210">1</text>
+<text x="324" y="48" font-size="15" font-weight="600" fill="#ece1d3">send_message input</text><text x="324" y="68" font-size="12" fill="#a89880">openhands-sdk/openhands/sdk/conversation</text>
+<text x="294" y="104" font-size="11" fill="#a89880">2 source links · verified</text>
+<rect x="280" y="150" width="220" height="96" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/><rect x="280" y="150" width="5" height="96" rx="2" fill="#d08c4e"/>
+<circle cx="302" cy="172" r="13" fill="#d08c4e"/><text x="302" y="177" text-anchor="middle" font-size="14" font-weight="700" fill="#161210">2</text>
+<text x="324" y="178" font-size="15" font-weight="600" fill="#ece1d3">prepare_llm_messages</text><text x="324" y="198" font-size="12" fill="#a89880">openhands-sdk/openhands/sdk/agent/utils.</text>
+<text x="294" y="234" font-size="11" fill="#a89880">2 source links · verified</text>
+<rect x="280" y="280" width="220" height="96" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/><rect x="280" y="280" width="5" height="96" rx="2" fill="#d08c4e"/>
+<circle cx="302" cy="302" r="13" fill="#d08c4e"/><text x="302" y="307" text-anchor="middle" font-size="14" font-weight="700" fill="#161210">3</text>
+<text x="324" y="308" font-size="15" font-weight="600" fill="#ece1d3">llm.generate (LiteLLM)</text><text x="324" y="328" font-size="12" fill="#a89880">openhands-sdk/openhands/sdk/llm/llm.py:7</text>
+<text x="294" y="364" font-size="11" fill="#a89880">2 source links · verified</text>
+<rect x="280" y="410" width="220" height="96" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/><rect x="280" y="410" width="5" height="96" rx="2" fill="#d08c4e"/>
+<circle cx="302" cy="432" r="13" fill="#d08c4e"/><text x="302" y="437" text-anchor="middle" font-size="14" font-weight="700" fill="#161210">4</text>
+<text x="324" y="438" font-size="15" font-weight="600" fill="#ece1d3">classify_response</text><text x="324" y="458" font-size="12" fill="#a89880">openhands-sdk/openhands/sdk/agent/respon</text>
+<text x="294" y="494" font-size="11" fill="#a89880">1 source link · verified</text>
+<rect x="280" y="540" width="220" height="96" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/><rect x="280" y="540" width="5" height="96" rx="2" fill="#d08c4e"/>
+<circle cx="302" cy="562" r="13" fill="#d08c4e"/><text x="302" y="567" text-anchor="middle" font-size="14" font-weight="700" fill="#161210">5</text>
+<text x="324" y="568" font-size="15" font-weight="600" fill="#ece1d3">_handle_tool_calls / _get_action_event</text><text x="324" y="588" font-size="12" fill="#a89880">openhands-sdk/openhands/sdk/agent/agent.</text>
+<text x="294" y="624" font-size="11" fill="#a89880">2 source links · verified</text>
+<rect x="280" y="670" width="220" height="96" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/><rect x="280" y="670" width="5" height="96" rx="2" fill="#d08c4e"/>
+<circle cx="302" cy="692" r="13" fill="#d08c4e"/><text x="302" y="697" text-anchor="middle" font-size="14" font-weight="700" fill="#161210">6</text>
+<text x="324" y="698" font-size="15" font-weight="600" fill="#ece1d3">ParallelToolExecutor</text><text x="324" y="718" font-size="12" fill="#a89880">openhands-sdk/openhands/sdk/agent/parall</text>
+<text x="294" y="754" font-size="11" fill="#a89880">2 source links · verified</text>
+<rect x="280" y="800" width="220" height="96" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/><rect x="280" y="800" width="5" height="96" rx="2" fill="#d08c4e"/>
+<circle cx="302" cy="822" r="13" fill="#d08c4e"/><text x="302" y="827" text-anchor="middle" font-size="14" font-weight="700" fill="#161210">7</text>
+<text x="324" y="828" font-size="15" font-weight="600" fill="#ece1d3">_ActionBatch.finalize + FinishTool</text><text x="324" y="848" font-size="12" fill="#a89880">openhands-sdk/openhands/sdk/agent/agent.</text>
+<text x="294" y="884" font-size="11" fill="#a89880">3 source links · verified</text>
+<rect x="280" y="930" width="220" height="96" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/><rect x="280" y="930" width="5" height="96" rx="2" fill="#d08c4e"/>
+<circle cx="302" cy="952" r="13" fill="#d08c4e"/><text x="302" y="957" text-anchor="middle" font-size="14" font-weight="700" fill="#161210">8</text>
+<text x="324" y="958" font-size="15" font-weight="600" fill="#ece1d3">EventLog (JSONL)</text><text x="324" y="978" font-size="12" fill="#a89880">openhands-sdk/openhands/sdk/conversation</text>
+<text x="294" y="1014" font-size="11" fill="#a89880">1 source link · verified</text>
+<rect x="20" y="20" width="220" height="96" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/><rect x="20" y="20" width="5" height="96" rx="2" fill="#d08c4e"/>
+<text x="64" y="48" font-size="15" font-weight="600" fill="#ece1d3">ConversationState event tree</text><text x="64" y="68" font-size="12" fill="#a89880">openhands-sdk/openhands/sdk/event/types.</text>
+<text x="34" y="104" font-size="11" fill="#a89880">1 source link · verified</text>
+<rect x="20" y="150" width="220" height="96" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/><rect x="20" y="150" width="5" height="96" rx="2" fill="#d08c4e"/>
+<text x="64" y="178" font-size="15" font-weight="600" fill="#ece1d3">state.view (cached view)</text><text x="64" y="198" font-size="12" fill="#a89880">openhands-sdk/openhands/sdk/context/view</text>
+<text x="34" y="234" font-size="11" fill="#a89880">2 source links · verified</text>
+<rect x="20" y="280" width="220" height="96" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/><rect x="20" y="280" width="5" height="96" rx="2" fill="#d08c4e"/>
+<text x="64" y="308" font-size="15" font-weight="600" fill="#ece1d3">HookEventProcessor</text><text x="64" y="328" font-size="12" fill="#a89880">openhands-sdk/openhands/sdk/hooks/conver</text>
+<text x="34" y="364" font-size="11" fill="#a89880">1 source link · verified</text>
+<rect x="20" y="410" width="220" height="96" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/><rect x="20" y="410" width="5" height="96" rx="2" fill="#d08c4e"/>
+<text x="64" y="438" font-size="15" font-weight="600" fill="#ece1d3">UserPromptSubmit hooks</text><text x="64" y="458" font-size="12" fill="#a89880">openhands-sdk/openhands/sdk/hooks/conver</text>
+<text x="34" y="494" font-size="11" fill="#a89880">2 source links · verified</text>
+<rect x="20" y="540" width="220" height="96" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/><rect x="20" y="540" width="5" height="96" rx="2" fill="#d08c4e"/>
+<text x="64" y="568" font-size="15" font-weight="600" fill="#ece1d3">Skill trigger matching</text><text x="64" y="588" font-size="12" fill="#a89880">openhands-sdk/openhands/sdk/skills/trigg</text>
+<text x="34" y="624" font-size="11" fill="#a89880">2 source links · verified</text>
+<rect x="20" y="670" width="220" height="96" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/><rect x="20" y="670" width="5" height="96" rx="2" fill="#d08c4e"/>
+<text x="64" y="698" font-size="15" font-weight="600" fill="#ece1d3">Skills (3 activation paths)</text><text x="64" y="718" font-size="12" fill="#a89880">openhands-sdk/openhands/sdk/skills/skill</text>
+<text x="34" y="754" font-size="11" fill="#a89880">1 source link · verified</text>
+<rect x="20" y="800" width="220" height="96" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/><rect x="20" y="800" width="5" height="96" rx="2" fill="#d08c4e"/>
+<text x="64" y="828" font-size="15" font-weight="600" fill="#ece1d3">Stop hook veto</text><text x="64" y="848" font-size="12" fill="#a89880">openhands-sdk/openhands/sdk/conversation</text>
+<text x="34" y="884" font-size="11" fill="#a89880">1 source link · verified</text>
+<rect x="20" y="930" width="220" height="96" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/><rect x="20" y="930" width="5" height="96" rx="2" fill="#d08c4e"/>
+<text x="64" y="958" font-size="15" font-weight="600" fill="#ece1d3">EventService pub/sub</text><text x="64" y="978" font-size="12" fill="#a89880">agent_server/event_service.py:202</text>
+<text x="34" y="1014" font-size="11" fill="#a89880">1 source link · verified</text>
+<rect x="20" y="1060" width="220" height="96" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/><rect x="20" y="1060" width="5" height="96" rx="2" fill="#d08c4e"/>
+<text x="64" y="1088" font-size="15" font-weight="600" fill="#ece1d3">StreamContext</text><text x="64" y="1108" font-size="12" fill="#a89880">openhands-sdk/openhands/sdk/agent/stream</text>
+<text x="34" y="1144" font-size="11" fill="#a89880">1 source link · verified</text>
+<rect x="540" y="20" width="220" height="96" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/><rect x="540" y="20" width="5" height="96" rx="2" fill="#d08c4e"/>
+<text x="584" y="48" font-size="15" font-weight="600" fill="#ece1d3">Agent.step</text><text x="584" y="68" font-size="12" fill="#a89880">openhands-sdk/openhands/sdk/agent/agent.</text>
+<text x="554" y="104" font-size="11" fill="#a89880">2 source links · verified</text>
+<rect x="540" y="150" width="220" height="96" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/><rect x="540" y="150" width="5" height="96" rx="2" fill="#d08c4e"/>
+<text x="584" y="178" font-size="15" font-weight="600" fill="#ece1d3">Condenser</text><text x="584" y="198" font-size="12" fill="#a89880">openhands-sdk/openhands/sdk/context/cond</text>
+<text x="554" y="234" font-size="11" fill="#a89880">2 source links · verified</text>
+<rect x="540" y="280" width="220" height="96" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/><rect x="540" y="280" width="5" height="96" rx="2" fill="#d08c4e"/>
+<text x="584" y="308" font-size="15" font-weight="600" fill="#ece1d3">Tool registry (spec/resolve)</text><text x="584" y="328" font-size="12" fill="#a89880">openhands-sdk/openhands/sdk/tool/registr</text>
+<text x="554" y="364" font-size="11" fill="#a89880">3 source links · verified</text>
+<rect x="540" y="410" width="220" height="96" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/><rect x="540" y="410" width="5" height="96" rx="2" fill="#d08c4e"/>
+<text x="584" y="438" font-size="15" font-weight="600" fill="#ece1d3">Security analyzer + confirmation gate</text><text x="584" y="458" font-size="12" fill="#a89880">openhands-sdk/openhands/sdk/agent/agent.</text>
+<text x="554" y="494" font-size="11" fill="#a89880">2 source links · verified</text>
+<rect x="540" y="540" width="220" height="96" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/><rect x="540" y="540" width="5" height="96" rx="2" fill="#d08c4e"/>
+<text x="584" y="568" font-size="15" font-weight="600" fill="#ece1d3">Critic + iterative refinement</text><text x="584" y="588" font-size="12" fill="#a89880">openhands-sdk/openhands/sdk/critic/base.</text>
+<text x="554" y="624" font-size="11" fill="#a89880">2 source links · verified</text>
+<rect x="540" y="670" width="220" height="96" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/><rect x="540" y="670" width="5" height="96" rx="2" fill="#d08c4e"/>
+<text x="584" y="698" font-size="15" font-weight="600" fill="#ece1d3">RouterLLM</text><text x="584" y="718" font-size="12" fill="#a89880">openhands-sdk/openhands/sdk/llm/router/b</text>
+<text x="554" y="754" font-size="11" fill="#a89880">2 source links · verified</text>
+<rect x="540" y="800" width="220" height="96" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/><rect x="540" y="800" width="5" height="96" rx="2" fill="#d08c4e"/>
+<text x="584" y="828" font-size="15" font-weight="600" fill="#ece1d3">switch_llm builtin</text><text x="584" y="848" font-size="12" fill="#a89880">openhands-sdk/openhands/sdk/tool/builtin</text>
+<text x="554" y="884" font-size="11" fill="#a89880">1 source link · verified</text>
+<rect x="540" y="930" width="220" height="96" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/><rect x="540" y="930" width="5" height="96" rx="2" fill="#d08c4e"/>
+<text x="584" y="958" font-size="15" font-weight="600" fill="#ece1d3">Sub-agent delegation</text><text x="584" y="978" font-size="12" fill="#a89880">tools/delegate/impl.py:33</text>
+<text x="554" y="1014" font-size="11" fill="#a89880">3 source links · verified</text>
+<rect x="540" y="1060" width="220" height="96" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/><rect x="540" y="1060" width="5" height="96" rx="2" fill="#d08c4e"/>
+<text x="584" y="1088" font-size="15" font-weight="600" fill="#ece1d3">MCP servers</text><text x="584" y="1108" font-size="12" fill="#a89880">openhands-sdk/openhands/sdk/mcp/config.p</text>
+<text x="554" y="1144" font-size="11" fill="#a89880">2 source links · verified</text>
+<rect x="540" y="1190" width="220" height="96" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/><rect x="540" y="1190" width="5" height="96" rx="2" fill="#d08c4e"/>
+<text x="584" y="1218" font-size="15" font-weight="600" fill="#ece1d3">Plugins</text><text x="584" y="1238" font-size="12" fill="#a89880">openhands-sdk/openhands/sdk/plugin/plugi</text>
+<text x="554" y="1274" font-size="11" fill="#a89880">2 source links · verified</text>
+<rect x="540" y="1320" width="220" height="96" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/><rect x="540" y="1320" width="5" height="96" rx="2" fill="#d08c4e"/>
+<text x="584" y="1348" font-size="15" font-weight="600" fill="#ece1d3">Marketplace registry</text><text x="584" y="1368" font-size="12" fill="#a89880">openhands-sdk/openhands/sdk/marketplace/</text>
+<text x="554" y="1404" font-size="11" fill="#a89880">2 source links · verified</text>
+<rect x="540" y="1450" width="220" height="96" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/><rect x="540" y="1450" width="5" height="96" rx="2" fill="#d08c4e"/>
+<text x="584" y="1478" font-size="15" font-weight="600" fill="#ece1d3">Stuck detector</text><text x="584" y="1498" font-size="12" fill="#a89880">openhands-sdk/openhands/sdk/conversation</text>
+<text x="554" y="1534" font-size="11" fill="#a89880">1 source link · verified</text>
+<rect x="540" y="1580" width="220" height="96" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/><rect x="540" y="1580" width="5" height="96" rx="2" fill="#d08c4e"/>
+<text x="584" y="1608" font-size="15" font-weight="600" fill="#ece1d3">GoalController</text><text x="584" y="1628" font-size="12" fill="#a89880">openhands-sdk/openhands/sdk/conversation</text>
+<text x="554" y="1664" font-size="11" fill="#a89880">1 source link · verified</text>
 </g>
-<g font-size="12" fill="#8b949e">
-<rect x="470" y="1681" width="12" height="12" rx="2" fill="#3fb950"/><text x="487" y="1692">verified</text>
-<rect x="575" y="1681" width="12" height="12" rx="2" fill="#d29922"/><text x="592" y="1692">docs</text>
-<rect x="680" y="1681" width="12" height="12" rx="2" fill="#f85149"/><text x="697" y="1692">inferred</text>
+<g font-size="12" fill="#a89880">
+<rect x="470" y="1681" width="12" height="12" rx="2" fill="#d08c4e"/><text x="487" y="1692">verified</text>
+<rect x="575" y="1681" width="12" height="12" rx="2" fill="#7c8aa0"/><text x="592" y="1692">docs</text>
+<rect x="680" y="1681" width="12" height="12" rx="2" fill="#8a7a66"/><text x="697" y="1692">inferred</text>
 </g></svg>
