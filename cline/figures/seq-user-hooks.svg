@@ -1,38 +1,38 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1182" width="1600" font-family="system-ui, -apple-system, sans-serif">
-<defs><marker id="arrc" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 1 L 9 5 L 0 9 z" fill="#d08c4e"/></marker><marker id="arrr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 1 L 9 5 L 0 9 z" fill="#8a7a66"/></marker></defs>
-<text x="140.65934065934067" y="44" font-size="26" font-weight="700" fill="#ece1d3">Cline: file-based user hook firing</text>
-<text x="140.65934065934067" y="74" font-size="15" fill="#a89880">10 named hook files; output is a JSON control record, not just text</text>
+<defs><marker id="arrc" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 1 L 9 5 L 0 9 z" fill="#d08c4e"/></marker><marker id="arrr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 1 L 9 5 L 0 9 z" fill="#8a7a66"/></marker></defs><rect x="0" y="0" width="1600" height="1182" fill="#f7f2e9"/>
+<text x="140.65934065934067" y="44" font-size="26" font-weight="700" fill="#000000">Cline: file-based user hook firing</text>
+<text x="140.65934065934067" y="74" font-size="15" fill="#000000">10 named hook files; output is a JSON control record, not just text</text>
 <line x1="360" y1="110" x2="360" y2="1076" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
-<rect x="176" y="82" width="369" height="56" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/>
-<text x="360" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#ece1d3">AgentRuntime</text>
+<rect x="176" y="82" width="369" height="56" rx="10" fill="#ffffff" stroke="#3a2f26" stroke-width="1.5"/>
+<text x="360" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#000000">AgentRuntime</text>
 <line x1="800" y1="110" x2="800" y2="1076" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
-<rect x="615" y="82" width="369" height="56" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/>
-<text x="800" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#ece1d3">Hook engine</text>
+<rect x="615" y="82" width="369" height="56" rx="10" fill="#ffffff" stroke="#3a2f26" stroke-width="1.5"/>
+<text x="800" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#000000">Hook engine</text>
 <line x1="1240" y1="110" x2="1240" y2="1076" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
-<rect x="1055" y="82" width="369" height="56" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/>
-<text x="1240" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#ece1d3">Hook script</text>
+<rect x="1055" y="82" width="369" height="56" rx="10" fill="#ffffff" stroke="#3a2f26" stroke-width="1.5"/>
+<text x="1240" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#000000">Hook script</text>
 <line x1="360" y1="295" x2="790" y2="295" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
-<circle cx="502" cy="281" r="11" fill="#1f1a15" stroke="#d08c4e" stroke-width="1.5"/>
-<text x="502" y="286" text-anchor="middle" font-size="12" font-weight="700" fill="#ece1d3">1</text>
-<text x="520" y="286" font-size="14" fill="#ece1d3">event fires (tool use, file edit, session start...)</text>
+<circle cx="502" cy="281" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="502" y="286" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">1</text>
+<text x="520" y="286" font-size="14" fill="#000000">event fires (tool use, file edit, session start...)</text>
 <rect x="800" y="355" width="105" height="60" rx="6" fill="none" stroke="#d08c4e" stroke-width="2"/>
-<text x="930" y="390" font-size="14" fill="#a89880">createHookCommandMap(workspace): discover hook files</text>
+<text x="930" y="390" font-size="14" fill="#000000">createHookCommandMap(workspace): discover hook files</text>
 <rect x="176" y="443" width="1248" height="44" rx="8" fill="#d08c4e22" stroke="#d08c4e" stroke-width="1"/>
-<text x="800" y="492" text-anchor="middle" font-size="14" fill="#ece1d3">~/Documents/Cline/Hooks, ~/.cline/hooks, workspace .clinerules/hooks, .cline/hooks</text>
+<text x="800" y="492" text-anchor="middle" font-size="14" fill="#000000">~/Documents/Cline/Hooks, ~/.cline/hooks, workspace .clinerules/hooks, .cline/hooks</text>
 <line x1="800" y1="598" x2="1230" y2="598" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
-<circle cx="942" cy="584" r="11" fill="#1f1a15" stroke="#d08c4e" stroke-width="1.5"/>
-<text x="942" y="589" text-anchor="middle" font-size="12" font-weight="700" fill="#ece1d3">3</text>
-<text x="960" y="589" font-size="14" fill="#ece1d3">runHookCommand(payload, {command, cwd, env})</text>
+<circle cx="942" cy="584" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="942" y="589" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">3</text>
+<text x="960" y="589" font-size="14" fill="#000000">runHookCommand(payload, {command, cwd, env})</text>
 <rect x="615" y="651" width="809" height="44" rx="8" fill="#d08c4e22" stroke="#d08c4e" stroke-width="1"/>
-<text x="1020" y="700" text-anchor="middle" font-size="14" fill="#ece1d3">JSON payload on stdin; subprocess with timeout; Windows python fallback</text>
+<text x="1020" y="700" text-anchor="middle" font-size="14" fill="#000000">JSON payload on stdin; subprocess with timeout; Windows python fallback</text>
 <line x1="1240" y1="805" x2="810" y2="805" stroke="#8a7a66" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrr)"/>
-<circle cx="942" cy="791" r="11" fill="#1f1a15" stroke="#8a7a66" stroke-width="1.5"/>
-<text x="942" y="796" text-anchor="middle" font-size="12" font-weight="700" fill="#ece1d3">4</text>
-<text x="960" y="796" font-size="14" fill="#ece1d3">stdout JSON: cancel / contextModification / appendMessages / systemPrompt</text>
+<circle cx="942" cy="791" r="11" fill="#ffffff" stroke="#8a7a66" stroke-width="1.5"/>
+<text x="942" y="796" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">4</text>
+<text x="960" y="796" font-size="14" fill="#000000">stdout JSON: cancel / contextModification / appendMessages / systemPrompt</text>
 <line x1="800" y1="900" x2="370" y2="900" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
-<circle cx="502" cy="886" r="11" fill="#1f1a15" stroke="#d08c4e" stroke-width="1.5"/>
-<text x="502" y="891" text-anchor="middle" font-size="12" font-weight="700" fill="#ece1d3">5</text>
-<text x="520" y="891" font-size="14" fill="#ece1d3">merge outputs (cancel wins, contexts concatenate)</text>
+<circle cx="502" cy="886" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="502" y="891" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">5</text>
+<text x="520" y="891" font-size="14" fill="#000000">merge outputs (cancel wins, contexts concatenate)</text>
 <rect x="176" y="953" width="1248" height="44" rx="8" fill="#d08c4e22" stroke="#d08c4e" stroke-width="1"/>
-<text x="800" y="1002" text-anchor="middle" font-size="14" fill="#ece1d3">PreCompact is named in config but maps to undefined — the point exists, the wiring doesn&#x27;t</text>
+<text x="800" y="1002" text-anchor="middle" font-size="14" fill="#000000">PreCompact is named in config but maps to undefined — the point exists, the wiring doesn&#x27;t</text>
 </svg>

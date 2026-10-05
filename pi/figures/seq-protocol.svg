@@ -1,40 +1,40 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1051" width="1600" font-family="system-ui, -apple-system, sans-serif">
-<defs><marker id="arrc" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 1 L 9 5 L 0 9 z" fill="#d08c4e"/></marker><marker id="arrr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 1 L 9 5 L 0 9 z" fill="#8a7a66"/></marker></defs>
-<text x="140.65934065934067" y="44" font-size="26" font-weight="700" fill="#ece1d3">Remote session: CBOR envelopes over a byte transport</text>
-<text x="140.65934065934067" y="74" font-size="15" fill="#a89880">@earendil-works/pi-protocol v8 — hello / request / cancel</text>
+<defs><marker id="arrc" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 1 L 9 5 L 0 9 z" fill="#d08c4e"/></marker><marker id="arrr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 1 L 9 5 L 0 9 z" fill="#8a7a66"/></marker></defs><rect x="0" y="0" width="1600" height="1051" fill="#f7f2e9"/>
+<text x="140.65934065934067" y="44" font-size="26" font-weight="700" fill="#000000">Remote session: CBOR envelopes over a byte transport</text>
+<text x="140.65934065934067" y="74" font-size="15" fill="#000000">@earendil-works/pi-protocol v8 — hello / request / cancel</text>
 <line x1="360" y1="110" x2="360" y2="946" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
-<rect x="176" y="82" width="369" height="56" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/>
-<text x="360" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#ece1d3">Client</text>
+<rect x="176" y="82" width="369" height="56" rx="10" fill="#ffffff" stroke="#3a2f26" stroke-width="1.5"/>
+<text x="360" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#000000">Client</text>
 <line x1="800" y1="110" x2="800" y2="946" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
-<rect x="615" y="82" width="369" height="56" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/>
-<text x="800" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#ece1d3">PiServer</text>
+<rect x="615" y="82" width="369" height="56" rx="10" fill="#ffffff" stroke="#3a2f26" stroke-width="1.5"/>
+<text x="800" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#000000">PiServer</text>
 <line x1="1240" y1="110" x2="1240" y2="946" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
-<rect x="1055" y="82" width="369" height="56" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/>
-<text x="1240" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#ece1d3">Session</text>
+<rect x="1055" y="82" width="369" height="56" rx="10" fill="#ffffff" stroke="#3a2f26" stroke-width="1.5"/>
+<text x="1240" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#000000">Session</text>
 <line x1="360" y1="295" x2="790" y2="295" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
-<circle cx="502" cy="281" r="11" fill="#1f1a15" stroke="#d08c4e" stroke-width="1.5"/>
-<text x="502" y="286" text-anchor="middle" font-size="12" font-weight="700" fill="#ece1d3">1</text>
-<text x="520" y="286" font-size="14" fill="#ece1d3">ClientHello {type: &quot;hello&quot;, version: 8}</text>
+<circle cx="502" cy="281" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="502" y="286" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">1</text>
+<text x="520" y="286" font-size="14" fill="#000000">ClientHello {type: &quot;hello&quot;, version: 8}</text>
 <line x1="800" y1="390" x2="370" y2="390" stroke="#8a7a66" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrr)"/>
-<circle cx="502" cy="376" r="11" fill="#1f1a15" stroke="#8a7a66" stroke-width="1.5"/>
-<text x="502" y="381" text-anchor="middle" font-size="12" font-weight="700" fill="#ece1d3">2</text>
-<text x="520" y="381" font-size="14" fill="#ece1d3">accept {serverId}</text>
+<circle cx="502" cy="376" r="11" fill="#ffffff" stroke="#8a7a66" stroke-width="1.5"/>
+<text x="502" y="381" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">2</text>
+<text x="520" y="381" font-size="14" fill="#000000">accept {serverId}</text>
 <line x1="360" y1="485" x2="790" y2="485" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
-<circle cx="502" cy="471" r="11" fill="#1f1a15" stroke="#d08c4e" stroke-width="1.5"/>
-<text x="502" y="476" text-anchor="middle" font-size="12" font-weight="700" fill="#ece1d3">3</text>
-<text x="520" y="476" font-size="14" fill="#ece1d3">RequestEnvelope {id, target, call}</text>
+<circle cx="502" cy="471" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="502" y="476" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">3</text>
+<text x="520" y="476" font-size="14" fill="#000000">RequestEnvelope {id, target, call}</text>
 <line x1="800" y1="580" x2="1230" y2="580" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
-<circle cx="942" cy="566" r="11" fill="#1f1a15" stroke="#d08c4e" stroke-width="1.5"/>
-<text x="942" y="571" text-anchor="middle" font-size="12" font-weight="700" fill="#ece1d3">4</text>
-<text x="960" y="571" font-size="14" fill="#ece1d3">route by {serverId, sessionId, attachmentId}</text>
+<circle cx="942" cy="566" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="942" y="571" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">4</text>
+<text x="960" y="571" font-size="14" fill="#000000">route by {serverId, sessionId, attachmentId}</text>
 <line x1="1240" y1="675" x2="370" y2="675" stroke="#8a7a66" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrr)"/>
-<circle cx="722" cy="661" r="11" fill="#1f1a15" stroke="#8a7a66" stroke-width="1.5"/>
-<text x="722" y="666" text-anchor="middle" font-size="12" font-weight="700" fill="#ece1d3">5</text>
-<text x="740" y="666" font-size="14" fill="#ece1d3">AgentEvent frames (CBOR, streamed)</text>
+<circle cx="722" cy="661" r="11" fill="#ffffff" stroke="#8a7a66" stroke-width="1.5"/>
+<text x="722" y="666" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">5</text>
+<text x="740" y="666" font-size="14" fill="#000000">AgentEvent frames (CBOR, streamed)</text>
 <line x1="360" y1="770" x2="790" y2="770" stroke="#8a7a66" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrr)"/>
-<circle cx="502" cy="756" r="11" fill="#1f1a15" stroke="#8a7a66" stroke-width="1.5"/>
-<text x="502" y="761" text-anchor="middle" font-size="12" font-weight="700" fill="#ece1d3">6</text>
-<text x="520" y="761" font-size="14" fill="#ece1d3">CancelEnvelope {id, target}</text>
+<circle cx="502" cy="756" r="11" fill="#ffffff" stroke="#8a7a66" stroke-width="1.5"/>
+<text x="502" y="761" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">6</text>
+<text x="520" y="761" font-size="14" fill="#000000">CancelEnvelope {id, target}</text>
 <rect x="176" y="823" width="1248" height="44" rx="8" fill="#d08c4e22" stroke="#d08c4e" stroke-width="1"/>
-<text x="800" y="872" text-anchor="middle" font-size="14" fill="#ece1d3">Carried over Unix sockets locally, radius relay (WebSocket) remotely</text>
+<text x="800" y="872" text-anchor="middle" font-size="14" fill="#000000">Carried over Unix sockets locally, radius relay (WebSocket) remotely</text>
 </svg>
