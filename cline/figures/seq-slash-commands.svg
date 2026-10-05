@@ -1,43 +1,43 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1001" width="1600" font-family="system-ui, -apple-system, sans-serif">
-<defs><marker id="arrc" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 1 L 9 5 L 0 9 z" fill="#58a6ff"/></marker><marker id="arrr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 1 L 9 5 L 0 9 z" fill="#6e7681"/></marker></defs>
-<text x="110.3448275862069" y="44" font-size="26" font-weight="700" fill="#e6edf3">Cline: slash-command expansion (two semantics)</text>
-<text x="110.3448275862069" y="74" font-size="15" fill="#8b949e">The seam: same /token, different expansion semantics per host</text>
-<line x1="283" y1="110" x2="283" y2="919" stroke="#30363d" stroke-width="2" stroke-dasharray="8 6"/>
-<rect x="138" y="82" width="290" height="56" rx="10" fill="#161b22" stroke="#30363d" stroke-width="1.5"/>
-<text x="283" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#e6edf3">User</text>
-<line x1="628" y1="110" x2="628" y2="919" stroke="#30363d" stroke-width="2" stroke-dasharray="8 6"/>
-<rect x="483" y="82" width="290" height="56" rx="10" fill="#161b22" stroke="#30363d" stroke-width="1.5"/>
-<text x="628" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#e6edf3">VS Code expand</text>
-<line x1="972" y1="110" x2="972" y2="919" stroke="#30363d" stroke-width="2" stroke-dasharray="8 6"/>
-<rect x="828" y="82" width="290" height="56" rx="10" fill="#161b22" stroke="#30363d" stroke-width="1.5"/>
-<text x="972" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#e6edf3">SDK/CLI resolve</text>
-<line x1="1317" y1="110" x2="1317" y2="919" stroke="#30363d" stroke-width="2" stroke-dasharray="8 6"/>
-<rect x="1172" y="82" width="290" height="56" rx="10" fill="#161b22" stroke="#30363d" stroke-width="1.5"/>
-<text x="1317" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#e6edf3">Prompt</text>
-<line x1="283" y1="232" x2="618" y2="232" stroke="#58a6ff" stroke-width="2" marker-end="url(#arrc)"/>
-<circle cx="377" cy="218" r="11" fill="#161b22" stroke="#58a6ff" stroke-width="1.5"/>
-<text x="377" y="223" text-anchor="middle" font-size="12" font-weight="700" fill="#e6edf3">1</text>
-<text x="395" y="223" font-size="14" fill="#e6edf3">user types message with /token</text>
-<rect x="628" y="279" width="83" height="47" rx="6" fill="none" stroke="#58a6ff" stroke-width="2"/>
-<text x="730" y="306" font-size="14" fill="#8b949e">expandSlashCommands(text): regex-scan whole message</text>
-<rect x="138" y="348" width="979" height="44" rx="8" fill="#1f6feb22" stroke="#1f6feb" stroke-width="1"/>
-<text x="628" y="386" text-anchor="middle" font-size="14" fill="#e6edf3">Mid-message regex match; workflows always expand; non-builtin skills skip (skills tool serves them)</text>
-<line x1="628" y1="469" x2="1307" y2="469" stroke="#6e7681" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrr)"/>
-<circle cx="894" cy="455" r="11" fill="#161b22" stroke="#6e7681" stroke-width="1.5"/>
-<text x="894" y="460" text-anchor="middle" font-size="12" font-weight="700" fill="#e6edf3">3</text>
-<text x="912" y="460" font-size="14" fill="#e6edf3">instructions spliced into prompt</text>
-<line x1="283" y1="543" x2="962" y2="543" stroke="#58a6ff" stroke-width="2" marker-end="url(#arrc)"/>
-<circle cx="550" cy="529" r="11" fill="#161b22" stroke="#58a6ff" stroke-width="1.5"/>
-<text x="550" y="534" text-anchor="middle" font-size="12" font-weight="700" fill="#e6edf3">4</text>
-<text x="568" y="534" font-size="14" fill="#e6edf3">user types &#x27;/token ...&#x27;</text>
-<rect x="972" y="590" width="83" height="47" rx="6" fill="none" stroke="#58a6ff" stroke-width="2"/>
-<text x="1074" y="618" font-size="14" fill="#8b949e">resolveRuntimeSlashCommandFromWatcher(input)</text>
-<rect x="483" y="659" width="979" height="44" rx="8" fill="#1f6feb22" stroke="#1f6feb" stroke-width="1"/>
-<text x="972" y="698" text-anchor="middle" font-size="14" fill="#e6edf3">Leading &#x27;/&#x27; required; no match -&gt; input passes through untouched</text>
-<line x1="972" y1="781" x2="1307" y2="781" stroke="#6e7681" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrr)"/>
-<circle cx="1067" cy="767" r="11" fill="#161b22" stroke="#6e7681" stroke-width="1.5"/>
-<text x="1067" y="772" text-anchor="middle" font-size="12" font-weight="700" fill="#e6edf3">6</text>
-<text x="1085" y="772" font-size="14" fill="#e6edf3">instructions + remainder</text>
-<rect x="138" y="822" width="1324" height="44" rx="8" fill="#1f6feb22" stroke="#1f6feb" stroke-width="1"/>
-<text x="800" y="861" text-anchor="middle" font-size="14" fill="#e6edf3">Workflows (kind === &#x27;workflow&#x27;) ride this path too — they have no separate runtime; same gesture, different parsing per host</text>
+<defs><marker id="arrc" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 1 L 9 5 L 0 9 z" fill="#d08c4e"/></marker><marker id="arrr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 1 L 9 5 L 0 9 z" fill="#8a7a66"/></marker></defs>
+<text x="110.3448275862069" y="44" font-size="26" font-weight="700" fill="#ece1d3">Cline: slash-command expansion (two semantics)</text>
+<text x="110.3448275862069" y="74" font-size="15" fill="#a89880">The seam: same /token, different expansion semantics per host</text>
+<line x1="283" y1="110" x2="283" y2="919" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="138" y="82" width="290" height="56" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/>
+<text x="283" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#ece1d3">User</text>
+<line x1="628" y1="110" x2="628" y2="919" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="483" y="82" width="290" height="56" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/>
+<text x="628" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#ece1d3">VS Code expand</text>
+<line x1="972" y1="110" x2="972" y2="919" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="828" y="82" width="290" height="56" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/>
+<text x="972" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#ece1d3">SDK/CLI resolve</text>
+<line x1="1317" y1="110" x2="1317" y2="919" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="1172" y="82" width="290" height="56" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/>
+<text x="1317" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#ece1d3">Prompt</text>
+<line x1="283" y1="232" x2="618" y2="232" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="377" cy="218" r="11" fill="#1f1a15" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="377" y="223" text-anchor="middle" font-size="12" font-weight="700" fill="#ece1d3">1</text>
+<text x="395" y="223" font-size="14" fill="#ece1d3">user types message with /token</text>
+<rect x="628" y="279" width="83" height="47" rx="6" fill="none" stroke="#d08c4e" stroke-width="2"/>
+<text x="730" y="306" font-size="14" fill="#a89880">expandSlashCommands(text): regex-scan whole message</text>
+<rect x="138" y="348" width="979" height="44" rx="8" fill="#d08c4e22" stroke="#d08c4e" stroke-width="1"/>
+<text x="628" y="386" text-anchor="middle" font-size="14" fill="#ece1d3">Mid-message regex match; workflows always expand; non-builtin skills skip (skills tool serves them)</text>
+<line x1="628" y1="469" x2="1307" y2="469" stroke="#8a7a66" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrr)"/>
+<circle cx="894" cy="455" r="11" fill="#1f1a15" stroke="#8a7a66" stroke-width="1.5"/>
+<text x="894" y="460" text-anchor="middle" font-size="12" font-weight="700" fill="#ece1d3">3</text>
+<text x="912" y="460" font-size="14" fill="#ece1d3">instructions spliced into prompt</text>
+<line x1="283" y1="543" x2="962" y2="543" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="550" cy="529" r="11" fill="#1f1a15" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="550" y="534" text-anchor="middle" font-size="12" font-weight="700" fill="#ece1d3">4</text>
+<text x="568" y="534" font-size="14" fill="#ece1d3">user types &#x27;/token ...&#x27;</text>
+<rect x="972" y="590" width="83" height="47" rx="6" fill="none" stroke="#d08c4e" stroke-width="2"/>
+<text x="1074" y="618" font-size="14" fill="#a89880">resolveRuntimeSlashCommandFromWatcher(input)</text>
+<rect x="483" y="659" width="979" height="44" rx="8" fill="#d08c4e22" stroke="#d08c4e" stroke-width="1"/>
+<text x="972" y="698" text-anchor="middle" font-size="14" fill="#ece1d3">Leading &#x27;/&#x27; required; no match -&gt; input passes through untouched</text>
+<line x1="972" y1="781" x2="1307" y2="781" stroke="#8a7a66" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrr)"/>
+<circle cx="1067" cy="767" r="11" fill="#1f1a15" stroke="#8a7a66" stroke-width="1.5"/>
+<text x="1067" y="772" text-anchor="middle" font-size="12" font-weight="700" fill="#ece1d3">6</text>
+<text x="1085" y="772" font-size="14" fill="#ece1d3">instructions + remainder</text>
+<rect x="138" y="822" width="1324" height="44" rx="8" fill="#d08c4e22" stroke="#d08c4e" stroke-width="1"/>
+<text x="800" y="861" text-anchor="middle" font-size="14" fill="#ece1d3">Workflows (kind === &#x27;workflow&#x27;) ride this path too — they have no separate runtime; same gesture, different parsing per host</text>
 </svg>

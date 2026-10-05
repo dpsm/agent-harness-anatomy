@@ -1,71 +1,71 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1074" width="1600" font-family="system-ui, -apple-system, sans-serif">
-<defs><marker id="arrc" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 1 L 9 5 L 0 9 z" fill="#58a6ff"/></marker><marker id="arrr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 1 L 9 5 L 0 9 z" fill="#6e7681"/></marker></defs>
-<text x="77.10843373493975" y="44" font-size="26" font-weight="700" fill="#e6edf3">The two loops: legacy vs state machine</text>
-<text x="77.10843373493975" y="74" font-size="15" fill="#8b949e">block/goose v1.53.0 — a migration in progress; GOOSE_STATE_MACHINE=1 opts into the new path</text>
-<line x1="198" y1="110" x2="198" y2="1016" stroke="#30363d" stroke-width="2" stroke-dasharray="8 6"/>
-<rect x="96" y="82" width="202" height="56" rx="10" fill="#161b22" stroke="#30363d" stroke-width="1.5"/>
-<text x="198" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#e6edf3">CLI</text>
-<line x1="439" y1="110" x2="439" y2="1016" stroke="#30363d" stroke-width="2" stroke-dasharray="8 6"/>
-<rect x="337" y="82" width="202" height="56" rx="10" fill="#161b22" stroke="#30363d" stroke-width="1.5"/>
-<text x="439" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#e6edf3">Agent::reply</text>
-<line x1="680" y1="110" x2="680" y2="1016" stroke="#30363d" stroke-width="2" stroke-dasharray="8 6"/>
-<rect x="578" y="82" width="202" height="56" rx="10" fill="#161b22" stroke="#30363d" stroke-width="1.5"/>
-<text x="680" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#e6edf3">Legacy loop</text>
-<line x1="920" y1="110" x2="920" y2="1016" stroke="#30363d" stroke-width="2" stroke-dasharray="8 6"/>
-<rect x="819" y="82" width="202" height="56" rx="10" fill="#161b22" stroke="#30363d" stroke-width="1.5"/>
-<text x="920" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#e6edf3">State machine</text>
-<line x1="1161" y1="110" x2="1161" y2="1016" stroke="#30363d" stroke-width="2" stroke-dasharray="8 6"/>
-<rect x="1060" y="82" width="202" height="56" rx="10" fill="#161b22" stroke="#30363d" stroke-width="1.5"/>
-<text x="1161" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#e6edf3">Provider</text>
-<line x1="1402" y1="110" x2="1402" y2="1016" stroke="#30363d" stroke-width="2" stroke-dasharray="8 6"/>
-<rect x="1301" y="82" width="202" height="56" rx="10" fill="#161b22" stroke="#30363d" stroke-width="1.5"/>
-<text x="1402" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#e6edf3">Frontend</text>
-<line x1="198" y1="162" x2="429" y2="162" stroke="#58a6ff" stroke-width="2" marker-end="url(#arrc)"/>
-<circle cx="240" cy="148" r="11" fill="#161b22" stroke="#58a6ff" stroke-width="1.5"/>
-<text x="240" y="153" text-anchor="middle" font-size="12" font-weight="700" fill="#e6edf3">1</text>
-<text x="258" y="153" font-size="14" fill="#e6edf3">reply(msg, use_state_machine)</text>
-<rect x="337" y="191" width="684" height="44" rx="8" fill="#1f6feb22" stroke="#1f6feb" stroke-width="1"/>
-<text x="680" y="218" text-anchor="middle" font-size="14" fill="#e6edf3">use_state_machine=false unless GOOSE_STATE_MACHINE is 1/true/TRUE/yes</text>
-<line x1="439" y1="276" x2="670" y2="276" stroke="#58a6ff" stroke-width="2" marker-end="url(#arrc)"/>
-<circle cx="481" cy="262" r="11" fill="#161b22" stroke="#58a6ff" stroke-width="1.5"/>
-<text x="481" y="267" text-anchor="middle" font-size="12" font-weight="700" fill="#e6edf3">2</text>
-<text x="499" y="267" font-size="14" fill="#e6edf3">reply_impl -&gt; reply_internal (default)</text>
-<line x1="439" y1="328" x2="910" y2="328" stroke="#6e7681" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrr)"/>
-<circle cx="602" cy="314" r="11" fill="#161b22" stroke="#6e7681" stroke-width="1.5"/>
-<text x="602" y="319" text-anchor="middle" font-size="12" font-weight="700" fill="#e6edf3">3</text>
-<text x="620" y="319" font-size="14" fill="#e6edf3">dispatch (opt-in)</text>
-<rect x="680" y="360" width="58" height="33" rx="6" fill="none" stroke="#58a6ff" stroke-width="2"/>
-<text x="751" y="380" font-size="14" fill="#8b949e">plain loop { } — one provider round-trip + tool-drain per turn</text>
-<line x1="680" y1="432" x2="1151" y2="432" stroke="#58a6ff" stroke-width="2" marker-end="url(#arrc)"/>
-<circle cx="842" cy="418" r="11" fill="#161b22" stroke="#58a6ff" stroke-width="1.5"/>
-<text x="842" y="423" text-anchor="middle" font-size="12" font-weight="700" fill="#e6edf3">5</text>
-<text x="860" y="423" font-size="14" fill="#e6edf3">stream_response_from_provider()</text>
-<line x1="1161" y1="484" x2="690" y2="484" stroke="#6e7681" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrr)"/>
-<circle cx="842" cy="470" r="11" fill="#161b22" stroke="#6e7681" stroke-width="1.5"/>
-<text x="842" y="475" text-anchor="middle" font-size="12" font-weight="700" fill="#e6edf3">6</text>
-<text x="860" y="475" font-size="14" fill="#e6edf3">stream: text + ToolRequests</text>
-<rect x="680" y="517" width="58" height="33" rx="6" fill="none" stroke="#58a6ff" stroke-width="2"/>
-<text x="751" y="536" font-size="14" fill="#8b949e">inspect_tools: approved / needs_approval / denied</text>
-<line x1="680" y1="588" x2="1392" y2="588" stroke="#58a6ff" stroke-width="2" marker-end="url(#arrc)"/>
-<circle cx="963" cy="574" r="11" fill="#161b22" stroke="#58a6ff" stroke-width="1.5"/>
-<text x="963" y="579" text-anchor="middle" font-size="12" font-weight="700" fill="#e6edf3">8</text>
-<text x="981" y="579" font-size="14" fill="#e6edf3">ActionRequired (loop awaits oneshot verdict)</text>
-<line x1="1402" y1="640" x2="690" y2="640" stroke="#6e7681" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrr)"/>
-<circle cx="963" cy="626" r="11" fill="#161b22" stroke="#6e7681" stroke-width="1.5"/>
-<text x="963" y="631" text-anchor="middle" font-size="12" font-weight="700" fill="#e6edf3">9</text>
-<text x="981" y="631" font-size="14" fill="#e6edf3">submit_tool_confirmation(permission)</text>
-<rect x="680" y="673" width="58" height="33" rx="6" fill="none" stroke="#58a6ff" stroke-width="2"/>
-<text x="751" y="692" font-size="14" fill="#8b949e">turns_taken &gt; 1000 -&gt; MAX_TURNS_MESSAGE, break</text>
-<rect x="920" y="725" width="58" height="33" rx="6" fill="none" stroke="#58a6ff" stroke-width="2"/>
-<text x="992" y="744" font-size="14" fill="#8b949e">18 ordered operations; Inference is LAST</text>
-<rect x="578" y="773" width="684" height="44" rx="8" fill="#1f6feb22" stroke="#1f6feb" stroke-width="1"/>
-<text x="920" y="800" text-anchor="middle" font-size="14" fill="#e6edf3">EntryHook .. ExitOnError, then Inference gathers tools + prompt parts from all ops</text>
-<line x1="920" y1="858" x2="1151" y2="858" stroke="#58a6ff" stroke-width="2" marker-end="url(#arrc)"/>
-<circle cx="963" cy="844" r="11" fill="#161b22" stroke="#58a6ff" stroke-width="1.5"/>
-<text x="963" y="849" text-anchor="middle" font-size="12" font-weight="700" fill="#e6edf3">12</text>
-<text x="981" y="849" font-size="14" fill="#e6edf3">Inference: provider.stream(tools, prompt_parts, moim_parts)</text>
-<rect x="96" y="887" width="1407" height="44" rx="8" fill="#1f6feb22" stroke="#1f6feb" stroke-width="1"/>
-<text x="800" y="914" text-anchor="middle" font-size="14" fill="#e6edf3">Seam: the legacy loop imports the new path&#x27;s MAX_TURNS_MESSAGE (agent.rs:40)</text>
-<rect x="96" y="948" width="1407" height="44" rx="8" fill="#1f6feb22" stroke="#1f6feb" stroke-width="1"/>
-<text x="800" y="975" text-anchor="middle" font-size="14" fill="#e6edf3">Migration tax: every behavior change lands in both paths until parity (AGENTS.md)</text>
+<defs><marker id="arrc" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 1 L 9 5 L 0 9 z" fill="#d08c4e"/></marker><marker id="arrr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 1 L 9 5 L 0 9 z" fill="#8a7a66"/></marker></defs>
+<text x="77.10843373493975" y="44" font-size="26" font-weight="700" fill="#ece1d3">The two loops: legacy vs state machine</text>
+<text x="77.10843373493975" y="74" font-size="15" fill="#a89880">block/goose v1.53.0 — a migration in progress; GOOSE_STATE_MACHINE=1 opts into the new path</text>
+<line x1="198" y1="110" x2="198" y2="1016" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="96" y="82" width="202" height="56" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/>
+<text x="198" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#ece1d3">CLI</text>
+<line x1="439" y1="110" x2="439" y2="1016" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="337" y="82" width="202" height="56" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/>
+<text x="439" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#ece1d3">Agent::reply</text>
+<line x1="680" y1="110" x2="680" y2="1016" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="578" y="82" width="202" height="56" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/>
+<text x="680" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#ece1d3">Legacy loop</text>
+<line x1="920" y1="110" x2="920" y2="1016" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="819" y="82" width="202" height="56" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/>
+<text x="920" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#ece1d3">State machine</text>
+<line x1="1161" y1="110" x2="1161" y2="1016" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="1060" y="82" width="202" height="56" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/>
+<text x="1161" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#ece1d3">Provider</text>
+<line x1="1402" y1="110" x2="1402" y2="1016" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="1301" y="82" width="202" height="56" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/>
+<text x="1402" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#ece1d3">Frontend</text>
+<line x1="198" y1="162" x2="429" y2="162" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="240" cy="148" r="11" fill="#1f1a15" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="240" y="153" text-anchor="middle" font-size="12" font-weight="700" fill="#ece1d3">1</text>
+<text x="258" y="153" font-size="14" fill="#ece1d3">reply(msg, use_state_machine)</text>
+<rect x="337" y="191" width="684" height="44" rx="8" fill="#d08c4e22" stroke="#d08c4e" stroke-width="1"/>
+<text x="680" y="218" text-anchor="middle" font-size="14" fill="#ece1d3">use_state_machine=false unless GOOSE_STATE_MACHINE is 1/true/TRUE/yes</text>
+<line x1="439" y1="276" x2="670" y2="276" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="481" cy="262" r="11" fill="#1f1a15" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="481" y="267" text-anchor="middle" font-size="12" font-weight="700" fill="#ece1d3">2</text>
+<text x="499" y="267" font-size="14" fill="#ece1d3">reply_impl -&gt; reply_internal (default)</text>
+<line x1="439" y1="328" x2="910" y2="328" stroke="#8a7a66" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrr)"/>
+<circle cx="602" cy="314" r="11" fill="#1f1a15" stroke="#8a7a66" stroke-width="1.5"/>
+<text x="602" y="319" text-anchor="middle" font-size="12" font-weight="700" fill="#ece1d3">3</text>
+<text x="620" y="319" font-size="14" fill="#ece1d3">dispatch (opt-in)</text>
+<rect x="680" y="360" width="58" height="33" rx="6" fill="none" stroke="#d08c4e" stroke-width="2"/>
+<text x="751" y="380" font-size="14" fill="#a89880">plain loop { } — one provider round-trip + tool-drain per turn</text>
+<line x1="680" y1="432" x2="1151" y2="432" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="842" cy="418" r="11" fill="#1f1a15" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="842" y="423" text-anchor="middle" font-size="12" font-weight="700" fill="#ece1d3">5</text>
+<text x="860" y="423" font-size="14" fill="#ece1d3">stream_response_from_provider()</text>
+<line x1="1161" y1="484" x2="690" y2="484" stroke="#8a7a66" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrr)"/>
+<circle cx="842" cy="470" r="11" fill="#1f1a15" stroke="#8a7a66" stroke-width="1.5"/>
+<text x="842" y="475" text-anchor="middle" font-size="12" font-weight="700" fill="#ece1d3">6</text>
+<text x="860" y="475" font-size="14" fill="#ece1d3">stream: text + ToolRequests</text>
+<rect x="680" y="517" width="58" height="33" rx="6" fill="none" stroke="#d08c4e" stroke-width="2"/>
+<text x="751" y="536" font-size="14" fill="#a89880">inspect_tools: approved / needs_approval / denied</text>
+<line x1="680" y1="588" x2="1392" y2="588" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="963" cy="574" r="11" fill="#1f1a15" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="963" y="579" text-anchor="middle" font-size="12" font-weight="700" fill="#ece1d3">8</text>
+<text x="981" y="579" font-size="14" fill="#ece1d3">ActionRequired (loop awaits oneshot verdict)</text>
+<line x1="1402" y1="640" x2="690" y2="640" stroke="#8a7a66" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrr)"/>
+<circle cx="963" cy="626" r="11" fill="#1f1a15" stroke="#8a7a66" stroke-width="1.5"/>
+<text x="963" y="631" text-anchor="middle" font-size="12" font-weight="700" fill="#ece1d3">9</text>
+<text x="981" y="631" font-size="14" fill="#ece1d3">submit_tool_confirmation(permission)</text>
+<rect x="680" y="673" width="58" height="33" rx="6" fill="none" stroke="#d08c4e" stroke-width="2"/>
+<text x="751" y="692" font-size="14" fill="#a89880">turns_taken &gt; 1000 -&gt; MAX_TURNS_MESSAGE, break</text>
+<rect x="920" y="725" width="58" height="33" rx="6" fill="none" stroke="#d08c4e" stroke-width="2"/>
+<text x="992" y="744" font-size="14" fill="#a89880">18 ordered operations; Inference is LAST</text>
+<rect x="578" y="773" width="684" height="44" rx="8" fill="#d08c4e22" stroke="#d08c4e" stroke-width="1"/>
+<text x="920" y="800" text-anchor="middle" font-size="14" fill="#ece1d3">EntryHook .. ExitOnError, then Inference gathers tools + prompt parts from all ops</text>
+<line x1="920" y1="858" x2="1151" y2="858" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="963" cy="844" r="11" fill="#1f1a15" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="963" y="849" text-anchor="middle" font-size="12" font-weight="700" fill="#ece1d3">12</text>
+<text x="981" y="849" font-size="14" fill="#ece1d3">Inference: provider.stream(tools, prompt_parts, moim_parts)</text>
+<rect x="96" y="887" width="1407" height="44" rx="8" fill="#d08c4e22" stroke="#d08c4e" stroke-width="1"/>
+<text x="800" y="914" text-anchor="middle" font-size="14" fill="#ece1d3">Seam: the legacy loop imports the new path&#x27;s MAX_TURNS_MESSAGE (agent.rs:40)</text>
+<rect x="96" y="948" width="1407" height="44" rx="8" fill="#d08c4e22" stroke="#d08c4e" stroke-width="1"/>
+<text x="800" y="975" text-anchor="middle" font-size="14" fill="#ece1d3">Migration tax: every behavior change lands in both paths until parity (AGENTS.md)</text>
 </svg>

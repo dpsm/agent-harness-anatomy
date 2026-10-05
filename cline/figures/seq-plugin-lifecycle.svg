@@ -1,61 +1,61 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 856" width="1600" font-family="system-ui, -apple-system, sans-serif">
-<defs><marker id="arrc" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 1 L 9 5 L 0 9 z" fill="#58a6ff"/></marker><marker id="arrr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 1 L 9 5 L 0 9 z" fill="#6e7681"/></marker></defs>
-<text x="77.10843373493975" y="44" font-size="26" font-weight="700" fill="#e6edf3">Cline: plugin lifecycle + the 7-callback hook bag</text>
-<text x="77.10843373493975" y="74" font-size="15" fill="#8b949e">setup() returns {tools, hooks}; createTool feeds the same registry</text>
-<line x1="198" y1="110" x2="198" y2="798" stroke="#30363d" stroke-width="2" stroke-dasharray="8 6"/>
-<rect x="96" y="82" width="202" height="56" rx="10" fill="#161b22" stroke="#30363d" stroke-width="1.5"/>
-<text x="198" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#e6edf3">RuntimeBuilder</text>
-<line x1="439" y1="110" x2="439" y2="798" stroke="#30363d" stroke-width="2" stroke-dasharray="8 6"/>
-<rect x="337" y="82" width="202" height="56" rx="10" fill="#161b22" stroke="#30363d" stroke-width="1.5"/>
-<text x="439" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#e6edf3">Plugin</text>
-<line x1="680" y1="110" x2="680" y2="798" stroke="#30363d" stroke-width="2" stroke-dasharray="8 6"/>
-<rect x="578" y="82" width="202" height="56" rx="10" fill="#161b22" stroke="#30363d" stroke-width="1.5"/>
-<text x="680" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#e6edf3">Tool registry</text>
-<line x1="920" y1="110" x2="920" y2="798" stroke="#30363d" stroke-width="2" stroke-dasharray="8 6"/>
-<rect x="819" y="82" width="202" height="56" rx="10" fill="#161b22" stroke="#30363d" stroke-width="1.5"/>
-<text x="920" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#e6edf3">Hook bag</text>
-<line x1="1161" y1="110" x2="1161" y2="798" stroke="#30363d" stroke-width="2" stroke-dasharray="8 6"/>
-<rect x="1060" y="82" width="202" height="56" rx="10" fill="#161b22" stroke="#30363d" stroke-width="1.5"/>
-<text x="1161" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#e6edf3">AgentRuntime</text>
-<line x1="1402" y1="110" x2="1402" y2="798" stroke="#30363d" stroke-width="2" stroke-dasharray="8 6"/>
-<rect x="1301" y="82" width="202" height="56" rx="10" fill="#161b22" stroke="#30363d" stroke-width="1.5"/>
-<text x="1402" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#e6edf3">Tool executor</text>
-<line x1="198" y1="162" x2="429" y2="162" stroke="#58a6ff" stroke-width="2" marker-end="url(#arrc)"/>
-<circle cx="240" cy="148" r="11" fill="#161b22" stroke="#58a6ff" stroke-width="1.5"/>
-<text x="240" y="153" text-anchor="middle" font-size="12" font-weight="700" fill="#e6edf3">1</text>
-<text x="258" y="153" font-size="14" fill="#e6edf3">plugin.setup(ctx)</text>
-<line x1="439" y1="214" x2="208" y2="214" stroke="#6e7681" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrr)"/>
-<circle cx="240" cy="200" r="11" fill="#161b22" stroke="#6e7681" stroke-width="1.5"/>
-<text x="240" y="205" text-anchor="middle" font-size="12" font-weight="700" fill="#e6edf3">2</text>
-<text x="258" y="205" font-size="14" fill="#e6edf3">{tools, hooks} (or undefined)</text>
-<line x1="198" y1="266" x2="670" y2="266" stroke="#58a6ff" stroke-width="2" marker-end="url(#arrc)"/>
-<circle cx="361" cy="252" r="11" fill="#161b22" stroke="#58a6ff" stroke-width="1.5"/>
-<text x="361" y="257" text-anchor="middle" font-size="12" font-weight="700" fill="#e6edf3">3</text>
-<text x="379" y="257" font-size="14" fill="#e6edf3">merge plugin tools into registry</text>
-<rect x="96" y="295" width="684" height="44" rx="8" fill="#1f6feb22" stroke="#1f6feb" stroke-width="1"/>
-<text x="439" y="322" text-anchor="middle" font-size="14" fill="#e6edf3">Plugin tools enter the same registry + ToolPolicy pipeline as the 9 built-ins</text>
-<line x1="198" y1="380" x2="910" y2="380" stroke="#58a6ff" stroke-width="2" marker-end="url(#arrc)"/>
-<circle cx="481" cy="366" r="11" fill="#161b22" stroke="#58a6ff" stroke-width="1.5"/>
-<text x="481" y="371" text-anchor="middle" font-size="12" font-weight="700" fill="#e6edf3">4</text>
-<text x="499" y="371" font-size="14" fill="#e6edf3">merge plugin hooks into runtime bag</text>
-<rect x="96" y="409" width="925" height="44" rx="8" fill="#1f6feb22" stroke="#1f6feb" stroke-width="1"/>
-<text x="559" y="436" text-anchor="middle" font-size="14" fill="#e6edf3">beforeRun/afterRun/beforeModel/afterModel/beforeTool/afterTool/onEvent</text>
-<line x1="1161" y1="493" x2="930" y2="493" stroke="#58a6ff" stroke-width="2" marker-end="url(#arrc)"/>
-<circle cx="963" cy="479" r="11" fill="#161b22" stroke="#58a6ff" stroke-width="1.5"/>
-<text x="963" y="484" text-anchor="middle" font-size="12" font-weight="700" fill="#e6edf3">5</text>
-<text x="981" y="484" font-size="14" fill="#e6edf3">prepareToolExecution(toolCall)</text>
-<rect x="920" y="526" width="58" height="33" rx="6" fill="none" stroke="#58a6ff" stroke-width="2"/>
-<text x="992" y="546" font-size="14" fill="#8b949e">beforeTool: rewrite input / override policy / skip</text>
-<line x1="1161" y1="598" x2="1392" y2="598" stroke="#58a6ff" stroke-width="2" marker-end="url(#arrc)"/>
-<circle cx="1204" cy="584" r="11" fill="#161b22" stroke="#58a6ff" stroke-width="1.5"/>
-<text x="1204" y="589" text-anchor="middle" font-size="12" font-weight="700" fill="#e6edf3">7</text>
-<text x="1222" y="589" font-size="14" fill="#e6edf3">execute tool</text>
-<rect x="920" y="630" width="58" height="33" rx="6" fill="none" stroke="#58a6ff" stroke-width="2"/>
-<text x="992" y="650" font-size="14" fill="#8b949e">afterTool: stop / replace result / appendContext</text>
-<rect x="819" y="679" width="684" height="44" rx="8" fill="#1f6feb22" stroke="#1f6feb" stroke-width="1"/>
-<text x="1161" y="706" text-anchor="middle" font-size="14" fill="#e6edf3">appendContext surfaces as &lt;hook_context&gt; on the next model request</text>
-<line x1="1402" y1="763" x2="1171" y2="763" stroke="#6e7681" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrr)"/>
-<circle cx="1204" cy="749" r="11" fill="#161b22" stroke="#6e7681" stroke-width="1.5"/>
-<text x="1204" y="754" text-anchor="middle" font-size="12" font-weight="700" fill="#e6edf3">9</text>
-<text x="1222" y="754" font-size="14" fill="#e6edf3">result</text>
+<defs><marker id="arrc" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 1 L 9 5 L 0 9 z" fill="#d08c4e"/></marker><marker id="arrr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 1 L 9 5 L 0 9 z" fill="#8a7a66"/></marker></defs>
+<text x="77.10843373493975" y="44" font-size="26" font-weight="700" fill="#ece1d3">Cline: plugin lifecycle + the 7-callback hook bag</text>
+<text x="77.10843373493975" y="74" font-size="15" fill="#a89880">setup() returns {tools, hooks}; createTool feeds the same registry</text>
+<line x1="198" y1="110" x2="198" y2="798" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="96" y="82" width="202" height="56" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/>
+<text x="198" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#ece1d3">RuntimeBuilder</text>
+<line x1="439" y1="110" x2="439" y2="798" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="337" y="82" width="202" height="56" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/>
+<text x="439" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#ece1d3">Plugin</text>
+<line x1="680" y1="110" x2="680" y2="798" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="578" y="82" width="202" height="56" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/>
+<text x="680" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#ece1d3">Tool registry</text>
+<line x1="920" y1="110" x2="920" y2="798" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="819" y="82" width="202" height="56" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/>
+<text x="920" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#ece1d3">Hook bag</text>
+<line x1="1161" y1="110" x2="1161" y2="798" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="1060" y="82" width="202" height="56" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/>
+<text x="1161" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#ece1d3">AgentRuntime</text>
+<line x1="1402" y1="110" x2="1402" y2="798" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="1301" y="82" width="202" height="56" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/>
+<text x="1402" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#ece1d3">Tool executor</text>
+<line x1="198" y1="162" x2="429" y2="162" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="240" cy="148" r="11" fill="#1f1a15" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="240" y="153" text-anchor="middle" font-size="12" font-weight="700" fill="#ece1d3">1</text>
+<text x="258" y="153" font-size="14" fill="#ece1d3">plugin.setup(ctx)</text>
+<line x1="439" y1="214" x2="208" y2="214" stroke="#8a7a66" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrr)"/>
+<circle cx="240" cy="200" r="11" fill="#1f1a15" stroke="#8a7a66" stroke-width="1.5"/>
+<text x="240" y="205" text-anchor="middle" font-size="12" font-weight="700" fill="#ece1d3">2</text>
+<text x="258" y="205" font-size="14" fill="#ece1d3">{tools, hooks} (or undefined)</text>
+<line x1="198" y1="266" x2="670" y2="266" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="361" cy="252" r="11" fill="#1f1a15" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="361" y="257" text-anchor="middle" font-size="12" font-weight="700" fill="#ece1d3">3</text>
+<text x="379" y="257" font-size="14" fill="#ece1d3">merge plugin tools into registry</text>
+<rect x="96" y="295" width="684" height="44" rx="8" fill="#d08c4e22" stroke="#d08c4e" stroke-width="1"/>
+<text x="439" y="322" text-anchor="middle" font-size="14" fill="#ece1d3">Plugin tools enter the same registry + ToolPolicy pipeline as the 9 built-ins</text>
+<line x1="198" y1="380" x2="910" y2="380" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="481" cy="366" r="11" fill="#1f1a15" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="481" y="371" text-anchor="middle" font-size="12" font-weight="700" fill="#ece1d3">4</text>
+<text x="499" y="371" font-size="14" fill="#ece1d3">merge plugin hooks into runtime bag</text>
+<rect x="96" y="409" width="925" height="44" rx="8" fill="#d08c4e22" stroke="#d08c4e" stroke-width="1"/>
+<text x="559" y="436" text-anchor="middle" font-size="14" fill="#ece1d3">beforeRun/afterRun/beforeModel/afterModel/beforeTool/afterTool/onEvent</text>
+<line x1="1161" y1="493" x2="930" y2="493" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="963" cy="479" r="11" fill="#1f1a15" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="963" y="484" text-anchor="middle" font-size="12" font-weight="700" fill="#ece1d3">5</text>
+<text x="981" y="484" font-size="14" fill="#ece1d3">prepareToolExecution(toolCall)</text>
+<rect x="920" y="526" width="58" height="33" rx="6" fill="none" stroke="#d08c4e" stroke-width="2"/>
+<text x="992" y="546" font-size="14" fill="#a89880">beforeTool: rewrite input / override policy / skip</text>
+<line x1="1161" y1="598" x2="1392" y2="598" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="1204" cy="584" r="11" fill="#1f1a15" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="1204" y="589" text-anchor="middle" font-size="12" font-weight="700" fill="#ece1d3">7</text>
+<text x="1222" y="589" font-size="14" fill="#ece1d3">execute tool</text>
+<rect x="920" y="630" width="58" height="33" rx="6" fill="none" stroke="#d08c4e" stroke-width="2"/>
+<text x="992" y="650" font-size="14" fill="#a89880">afterTool: stop / replace result / appendContext</text>
+<rect x="819" y="679" width="684" height="44" rx="8" fill="#d08c4e22" stroke="#d08c4e" stroke-width="1"/>
+<text x="1161" y="706" text-anchor="middle" font-size="14" fill="#ece1d3">appendContext surfaces as &lt;hook_context&gt; on the next model request</text>
+<line x1="1402" y1="763" x2="1171" y2="763" stroke="#8a7a66" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrr)"/>
+<circle cx="1204" cy="749" r="11" fill="#1f1a15" stroke="#8a7a66" stroke-width="1.5"/>
+<text x="1204" y="754" text-anchor="middle" font-size="12" font-weight="700" fill="#ece1d3">9</text>
+<text x="1222" y="754" font-size="14" fill="#ece1d3">result</text>
 </svg>

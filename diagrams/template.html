@@ -6,9 +6,9 @@
 <title>Agent Harness Anatomy — Interactive Diagram</title>
 <style>
   :root {
-    --bg: #0d1117; --panel: #161b22; --border: #30363d;
-    --text: #e6edf3; --muted: #8b949e; --accent: #58a6ff;
-    --verified: #3fb950; --docs: #d29922; --inferred: #f85149;
+    --bg: #161210; --panel: #1f1a15; --border: #3a2f26;
+    --text: #ece1d3; --muted: #a89880; --accent: #d08c4e;
+    --verified: #d08c4e; --docs: #7c8aa0; --inferred: #8a7a66;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
@@ -36,9 +36,9 @@
                  font-size: 18px; cursor: pointer; }
   .grade { display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 10px;
            text-transform: uppercase; letter-spacing: .5px; margin-bottom: 10px; }
-  .grade.verified { background: rgba(63,185,80,.15); color: var(--verified); border: 1px solid var(--verified); }
-  .grade.docs { background: rgba(210,153,34,.15); color: var(--docs); border: 1px solid var(--docs); }
-  .grade.inferred { background: rgba(248,81,73,.15); color: var(--inferred); border: 1px solid var(--inferred); }
+  .grade.verified { background: rgba(208,140,78,.15); color: var(--verified); border: 1px solid var(--verified); }
+  .grade.docs { background: rgba(124,138,160,.15); color: var(--docs); border: 1px solid var(--docs); }
+  .grade.inferred { background: rgba(138,122,102,.15); color: var(--inferred); border: 1px solid var(--inferred); }
   #legend { position: absolute; bottom: 16px; left: 16px; background: var(--panel);
             border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; font-size: 12px; }
   #legend div { margin: 3px 0; color: var(--muted); }
@@ -53,8 +53,9 @@
   .node text { fill: var(--text); font-size: 13px; font-weight: 600; }
   .node .sub { fill: var(--muted); font-size: 10.5px; font-weight: 400; font-family: ui-monospace, monospace; }
   .node .badge { fill: var(--accent); }
-  .node .badge-text { fill: #fff; font-size: 12px; font-weight: 700; }
-  .edge { stroke: #6e7681; stroke-width: 1.5; fill: none; }
+  .node .badge-text { fill: #161210; font-size: 12px; font-weight: 700; }
+  .edge { stroke: #8a7a66; stroke-width: 1.5; fill: none; }
+  .edge.hl { stroke: #d08c4e; stroke-width: 2; }
   .edge-label { fill: var(--muted); font-size: 11px; }
   #tooltip { position: absolute; pointer-events: none; background: var(--panel);
              border: 1px solid var(--border); border-radius: 6px; padding: 8px 10px;
@@ -100,7 +101,7 @@ window.DIAGRAM_DATA = {
   "edges": []
 };
 
-const GRADE_COLORS = { verified: "#3fb950", docs: "#d29922", inferred: "#f85149" };
+const GRADE_COLORS = { verified: "#d08c4e", docs: "#7c8aa0", inferred: "#8a7a66" };
 const svg = document.getElementById("canvas");
 const tooltip = document.getElementById("tooltip");
 let vb = { x: 0, y: 0, w: 1200, h: 800 };
@@ -124,7 +125,10 @@ function render(data) {
   const defs = document.createElementNS(NS, "defs");
   defs.innerHTML = `<marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5"
       markerWidth="7" markerHeight="7" orient="auto-start-reverse">
-      <path d="M 0 1 L 9 5 L 0 9 z" fill="#6e7681"/></marker>`;
+      <path d="M 0 1 L 9 5 L 0 9 z" fill="#8a7a66"/></marker>
+    <marker id="arrowHl" viewBox="0 0 10 10" refX="8" refY="5"
+      markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 1 L 9 5 L 0 9 z" fill="#d08c4e"/></marker>`;
   svg.appendChild(defs);
 
   const gE = document.createElementNS(NS, "g");
@@ -138,6 +142,7 @@ function render(data) {
     p.setAttribute("d", edgePath(a, b));
     p.setAttribute("class", "edge");
     p.setAttribute("marker-end", "url(#arrow)");
+    p.dataset.from = e.from; p.dataset.to = e.to;
     gE.appendChild(p);
     if (e.label) {
       const t = document.createElementNS(NS, "text");
@@ -215,6 +220,11 @@ function render(data) {
 function selectNode(id, data) {
   document.querySelectorAll(".node").forEach(el =>
     el.classList.toggle("selected", el.dataset.id === id));
+  document.querySelectorAll(".edge").forEach(el => {
+    const hl = el.dataset.from === id || el.dataset.to === id;
+    el.classList.toggle("hl", hl);
+    el.setAttribute("marker-end", hl ? "url(#arrowHl)" : "url(#arrow)");
+  });
   const n = data.nodes.find(n => n.id === id);
   const panel = document.getElementById("panel");
   const body = document.getElementById("panelBody");
@@ -230,6 +240,10 @@ function selectNode(id, data) {
 document.getElementById("closePanel").addEventListener("click", () => {
   document.getElementById("panel").classList.remove("open");
   document.querySelectorAll(".node").forEach(el => el.classList.remove("selected"));
+  document.querySelectorAll(".edge").forEach(el => {
+    el.classList.remove("hl");
+    el.setAttribute("marker-end", "url(#arrow)");
+  });
 });
 
 // pan & zoom

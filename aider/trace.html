@@ -8,111 +8,111 @@
   :root { color-scheme: dark; }
   * { box-sizing: border-box; }
   body {
-    background: #0d1117; color: #e6edf3;
+    background: #161210; color: #ece1d3;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
     line-height: 1.7; padding: 48px 24px; margin: 0;
   }
   main { max-width: 960px; margin: 0 auto; }
-  a { color: #58a6ff; }
+  a { color: #d08c4e; }
   .topnav { font-size: 0.9rem; margin-bottom: 32px; }
-  .topnav a { color: #8b949e; text-decoration: none; }
-  .topnav a:hover { color: #e6edf3; }
+  .topnav a { color: #a89880; text-decoration: none; }
+  .topnav a:hover { color: #ece1d3; }
   h1 { font-size: 1.8rem; letter-spacing: -0.02em; margin-bottom: 8px; }
-  .sub { color: #8b949e; margin-bottom: 28px; max-width: 640px; }
+  .sub { color: #a89880; margin-bottom: 28px; max-width: 640px; }
   .input-row { display: flex; gap: 12px; align-items: center; margin-bottom: 20px; flex-wrap: wrap; }
-  .input-row label { color: #8b949e; font-size: 0.95rem; }
+  .input-row label { color: #a89880; font-size: 0.95rem; }
   .input-row input {
-    flex: 1; min-width: 240px; background: #161b22; border: 1px solid #30363d;
-    border-radius: 8px; color: #e6edf3; padding: 10px 14px; font-size: 0.95rem;
+    flex: 1; min-width: 240px; background: #1f1a15; border: 1px solid #3a2f26;
+    border-radius: 8px; color: #ece1d3; padding: 10px 14px; font-size: 0.95rem;
     font-family: inherit;
   }
-  .input-row input:focus { outline: none; border-color: #3fb950; }
+  .input-row input:focus { outline: none; border-color: #d08c4e; }
   .controls { display: flex; gap: 10px; align-items: center; margin-bottom: 24px; }
   .controls button {
-    background: #161b22; border: 1px solid #30363d; color: #e6edf3;
+    background: #1f1a15; border: 1px solid #3a2f26; color: #ece1d3;
     border-radius: 8px; padding: 8px 16px; font-size: 0.9rem; cursor: pointer;
     font-family: inherit; font-weight: 600;
   }
-  .controls button:hover { border-color: #8b949e; }
-  .controls button.primary { background: #238636; border-color: #238636; color: #fff; }
-  .controls button.primary:hover { background: #2ea043; }
-  .counter { color: #8b949e; font-size: 0.9rem; margin-left: 4px; font-variant-numeric: tabular-nums; }
+  .controls button:hover { border-color: #a89880; }
+  .controls button.primary { background: #d08c4e; border-color: #d08c4e; color: #161210; }
+  .controls button.primary:hover { background: #e0a266; }
+  .counter { color: #a89880; font-size: 0.9rem; margin-left: 4px; font-variant-numeric: tabular-nums; }
   .trace { display: grid; grid-template-columns: 240px 1fr; gap: 24px; align-items: start; }
   .rail { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 6px; }
   .rail li {
-    border: 1px solid #21262d; border-radius: 8px; padding: 10px 12px;
+    border: 1px solid #2c231b; border-radius: 8px; padding: 10px 12px;
     cursor: pointer; display: flex; gap: 10px; align-items: baseline;
     background: transparent;
   }
-  .rail li:hover { border-color: #8b949e; }
-  .rail li.current { border-color: #3fb950; background: #161b22; }
+  .rail li:hover { border-color: #a89880; }
+  .rail li.current { border-color: #d08c4e; background: #1f1a15; }
   .rail .num {
-    color: #6e7681; font-size: 0.8rem; font-variant-numeric: tabular-nums;
+    color: #a89880; font-size: 0.8rem; font-variant-numeric: tabular-nums;
     min-width: 16px;
   }
-  .rail li.current .num { color: #3fb950; font-weight: 700; }
+  .rail li.current .num { color: #d08c4e; font-weight: 700; }
   .rail .t { font-size: 0.92rem; }
   .detail {
-    border: 1px solid #30363d; border-radius: 12px; padding: 28px;
-    background: #161b22; min-height: 420px;
+    border: 1px solid #3a2f26; border-radius: 12px; padding: 28px;
+    background: #1f1a15; min-height: 420px;
   }
   .step-head { display: flex; gap: 14px; align-items: baseline; margin-bottom: 12px; }
   .step-head .n {
-    color: #3fb950; font-weight: 700; font-size: 0.85rem;
-    border: 1px solid #3fb950; border-radius: 6px; padding: 2px 8px;
+    color: #d08c4e; font-weight: 700; font-size: 0.85rem;
+    border: 1px solid #d08c4e; border-radius: 6px; padding: 2px 8px;
     white-space: nowrap;
   }
   .step-head h2 { font-size: 1.3rem; margin: 0; }
   .node-tag {
-    display: inline-block; margin-top: 6px; font-size: 0.8rem; color: #8b949e;
-    border: 1px solid #30363d; border-radius: 20px; padding: 2px 10px;
+    display: inline-block; margin-top: 6px; font-size: 0.8rem; color: #a89880;
+    border: 1px solid #3a2f26; border-radius: 20px; padding: 2px 10px;
   }
-  .node-tag b { color: #e6edf3; font-weight: 600; }
+  .node-tag b { color: #ece1d3; font-weight: 600; }
   #dInputLine {
-    margin: 14px 0 4px; padding: 10px 14px; background: #0d1117;
-    border: 1px solid #30363d; border-radius: 8px; font-size: 0.92rem;
+    margin: 14px 0 4px; padding: 10px 14px; background: #161210;
+    border: 1px solid #3a2f26; border-radius: 8px; font-size: 0.92rem;
   }
-  #dInputLine .k { color: #8b949e; }
+  #dInputLine .k { color: #a89880; }
   .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 20px; }
   .cols h3 {
     font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.06em;
-    color: #8b949e; margin: 0 0 10px; font-weight: 600;
+    color: #a89880; margin: 0 0 10px; font-weight: 600;
   }
   pre {
-    background: #0d1117; border: 1px solid #30363d; border-radius: 8px;
+    background: #161210; border: 1px solid #3a2f26; border-radius: 8px;
     padding: 14px; overflow-x: auto; margin: 0; font-size: 0.82rem; line-height: 1.55;
   }
   pre code {
     font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-    color: #e6edf3; background: none; padding: 0;
+    color: #ece1d3; background: none; padding: 0;
   }
   #dModules { list-style: none; padding: 0; margin: 0; }
   #dModules li { margin-bottom: 8px; font-size: 0.9rem; }
-  #dModules .file { display: block; color: #6e7681; font-size: 0.78rem;
+  #dModules .file { display: block; color: #a89880; font-size: 0.78rem;
     font-family: ui-monospace, Menlo, Consolas, monospace; }
   .loopnote {
-    margin-top: 20px; padding: 12px 16px; border-left: 3px solid #3fb950;
-    background: #0d1117; border-radius: 0 8px 8px 0; font-size: 0.92rem;
-    color: #8b949e;
+    margin-top: 20px; padding: 12px 16px; border-left: 3px solid #d08c4e;
+    background: #161210; border-radius: 0 8px 8px 0; font-size: 0.92rem;
+    color: #a89880;
   }
   .loopnote:empty { display: none; }
-  .loopnote b { color: #e6edf3; }
-  .loopmap { margin-top: 36px; border: 1px solid #21262d; border-radius: 12px; padding: 24px; }
+  .loopnote b { color: #ece1d3; }
+  .loopmap { margin-top: 36px; border: 1px solid #2c231b; border-radius: 12px; padding: 24px; }
   .loopmap h3 { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.06em;
-    color: #8b949e; margin: 0 0 16px; }
+    color: #a89880; margin: 0 0 16px; }
   .flow { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 6px; }
   .chip {
-    border: 1px solid #30363d; border-radius: 20px; padding: 4px 12px;
-    font-size: 0.82rem; background: #161b22; white-space: nowrap;
+    border: 1px solid #3a2f26; border-radius: 20px; padding: 4px 12px;
+    font-size: 0.82rem; background: #1f1a15; white-space: nowrap;
   }
-  .chip.hot { border-color: #3fb950; color: #3fb950; }
-  .arrow { color: #6e7681; }
+  .chip.hot { border-color: #d08c4e; color: #d08c4e; }
+  .arrow { color: #a89880; }
   .ret {
-    margin: 2px 0 14px 8px; padding-left: 16px; border-left: 2px solid #3fb950;
-    font-size: 0.88rem; color: #8b949e;
+    margin: 2px 0 14px 8px; padding-left: 16px; border-left: 2px solid #d08c4e;
+    font-size: 0.88rem; color: #a89880;
   }
-  .ret b { color: #e6edf3; }
-  footer { margin-top: 48px; color: #6e7681; font-size: 0.85rem; }
+  .ret b { color: #ece1d3; }
+  footer { margin-top: 48px; color: #a89880; font-size: 0.85rem; }
   @media (max-width: 760px) {
     .trace { grid-template-columns: 1fr; }
     .rail { flex-direction: row; overflow-x: auto; padding-bottom: 8px; }
@@ -172,7 +172,7 @@
     <div class="ret"><b>One pass</b> &mdash; one LLM call per turn (step 3), then a deterministic parse&rarr;apply&rarr;verify pipeline. The model never calls tools; aider parses its prose.</div>
     <div class="flow" id="flowBranch"></div>
     <div class="ret"><b>Reflection loop</b> &mdash; when step 7 hits malformed edits, lint, or test errors, the error text becomes a new user message and re-enters at step 3 &mdash; at most 3 reflections per turn.</div>
-    <div class="ret" style="border-color:#58a6ff"><b>Outer REPL</b> &mdash; after step 8 the turn is git-committed (undoable via <code>/undo</code>); the next user message re-enters at step 1.</div>
+    <div class="ret" style="border-color:#d08c4e"><b>Outer REPL</b> &mdash; after step 8 the turn is git-committed (undoable via <code>/undo</code>); the next user message re-enters at step 1.</div>
   </section>
 
   <footer>Simplified shapes of real aider types, not verbatim runtime dumps. All module links pin <span id="sha"></span>.</footer>
