@@ -120,6 +120,26 @@ function render(data) {
   document.getElementById("meta").innerHTML =
     `<a href="${data.repo}" target="_blank" rel="noopener">${data.repo.replace("https://github.com/", "")}</a> @ ${data.sha.slice(0, 7)}`;
   const NS = "http://www.w3.org/2000/svg";
+  // auto-fit: widen boxes whose label/sub text would overflow the fixed width,
+  // keeping each node's center fixed so edge anchors (bottom/top center) don't move
+  (function fitNodes() {
+    const c = document.createElement("canvas").getContext("2d");
+    const labelFont = '600 13px -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif';
+    const subFont = '400 10.5px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace';
+    const TEXT_X = 44, PAD_R = 14; // label/sub start offset + right padding
+    for (const n of data.nodes) {
+      c.font = labelFont;
+      const lw = c.measureText(n.label || "").width;
+      c.font = subFont;
+      const sw = c.measureText((n.sub || "").slice(0, 34)).width;
+      const need = Math.ceil(Math.max(lw, sw)) + TEXT_X + PAD_R;
+      if (need > n.w) {
+        const cx = n.x + n.w / 2;
+        n.w = need;
+        n.x = Math.round(cx - need / 2);
+      }
+    }
+  })();
   const byId = Object.fromEntries(data.nodes.map(n => [n.id, n]));
 
   const defs = document.createElementNS(NS, "defs");
