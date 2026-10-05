@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 804" width="1600" font-family="system-ui, -apple-system, sans-serif">
+<defs><marker id="arrc" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 1 L 9 5 L 0 9 z" fill="#58a6ff"/></marker><marker id="arrr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 1 L 9 5 L 0 9 z" fill="#6e7681"/></marker></defs>
+<text x="77.10843373493975" y="44" font-size="26" font-weight="700" fill="#e6edf3">The approval chain: hooks -&gt; Guardian -&gt; user</text>
+<text x="77.10843373493975" y="74" font-size="15" fill="#8b949e">openai/codex rust-v0.160.0 - per-action, not per-tool-name</text>
+<line x1="198" y1="110" x2="198" y2="746" stroke="#30363d" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="96" y="82" width="202" height="56" rx="10" fill="#161b22" stroke="#30363d" stroke-width="1.5"/>
+<text x="198" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#e6edf3">Tool call</text>
+<line x1="439" y1="110" x2="439" y2="746" stroke="#30363d" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="337" y="82" width="202" height="56" rx="10" fill="#161b22" stroke="#30363d" stroke-width="1.5"/>
+<text x="439" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#e6edf3">ExecPolicy</text>
+<line x1="680" y1="110" x2="680" y2="746" stroke="#30363d" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="578" y="82" width="202" height="56" rx="10" fill="#161b22" stroke="#30363d" stroke-width="1.5"/>
+<text x="680" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#e6edf3">ApprovalService</text>
+<line x1="920" y1="110" x2="920" y2="746" stroke="#30363d" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="819" y="82" width="202" height="56" rx="10" fill="#161b22" stroke="#30363d" stroke-width="1.5"/>
+<text x="920" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#e6edf3">Hooks</text>
+<line x1="1161" y1="110" x2="1161" y2="746" stroke="#30363d" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="1060" y="82" width="202" height="56" rx="10" fill="#161b22" stroke="#30363d" stroke-width="1.5"/>
+<text x="1161" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#e6edf3">Guardian</text>
+<line x1="1402" y1="110" x2="1402" y2="746" stroke="#30363d" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="1301" y="82" width="202" height="56" rx="10" fill="#161b22" stroke="#30363d" stroke-width="1.5"/>
+<text x="1402" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#e6edf3">User</text>
+<line x1="198" y1="162" x2="429" y2="162" stroke="#58a6ff" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="240" cy="148" r="11" fill="#161b22" stroke="#58a6ff" stroke-width="1.5"/>
+<text x="240" y="153" text-anchor="middle" font-size="12" font-weight="700" fill="#e6edf3">1</text>
+<text x="258" y="153" font-size="14" fill="#e6edf3">ApprovalAction::{ExecCommand, ApplyPatch, ...}</text>
+<line x1="439" y1="214" x2="670" y2="214" stroke="#58a6ff" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="481" cy="200" r="11" fill="#161b22" stroke="#58a6ff" stroke-width="1.5"/>
+<text x="481" y="205" text-anchor="middle" font-size="12" font-weight="700" fill="#e6edf3">2</text>
+<text x="499" y="205" font-size="14" fill="#e6edf3">eval -&gt; ExecApprovalRequirement: Skip | NeedsApproval | Forbidden</text>
+<line x1="680" y1="266" x2="910" y2="266" stroke="#58a6ff" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="722" cy="252" r="11" fill="#161b22" stroke="#58a6ff" stroke-width="1.5"/>
+<text x="722" y="257" text-anchor="middle" font-size="12" font-weight="700" fill="#e6edf3">3</text>
+<text x="740" y="257" font-size="14" fill="#e6edf3">request_approval(action, ctx) (:479)</text>
+<line x1="920" y1="318" x2="690" y2="318" stroke="#6e7681" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrr)"/>
+<circle cx="722" cy="304" r="11" fill="#161b22" stroke="#6e7681" stroke-width="1.5"/>
+<text x="722" y="309" text-anchor="middle" font-size="12" font-weight="700" fill="#e6edf3">4</text>
+<text x="740" y="309" font-size="14" fill="#e6edf3">decision | None -&gt; continue</text>
+<rect x="578" y="347" width="925" height="44" rx="8" fill="#1f6feb22" stroke="#1f6feb" stroke-width="1"/>
+<text x="1041" y="374" text-anchor="middle" font-size="14" fill="#e6edf3">Precedence, verbatim: 1. Hooks -&gt; 2. Guardian auto-review -&gt; 3. User</text>
+<line x1="680" y1="432" x2="1151" y2="432" stroke="#58a6ff" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="842" cy="418" r="11" fill="#161b22" stroke="#58a6ff" stroke-width="1.5"/>
+<text x="842" y="423" text-anchor="middle" font-size="12" font-weight="700" fill="#e6edf3">5</text>
+<text x="860" y="423" font-size="14" fill="#e6edf3">Guardian LLM auto-review (strict_auto_review forces)</text>
+<line x1="1161" y1="484" x2="690" y2="484" stroke="#6e7681" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrr)"/>
+<circle cx="842" cy="470" r="11" fill="#161b22" stroke="#6e7681" stroke-width="1.5"/>
+<text x="842" y="475" text-anchor="middle" font-size="12" font-weight="700" fill="#e6edf3">6</text>
+<text x="860" y="475" font-size="14" fill="#e6edf3">verdict | None falls through to user</text>
+<line x1="680" y1="536" x2="1392" y2="536" stroke="#58a6ff" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="963" cy="522" r="11" fill="#161b22" stroke="#58a6ff" stroke-width="1.5"/>
+<text x="963" y="527" text-anchor="middle" font-size="12" font-weight="700" fill="#e6edf3">7</text>
+<text x="981" y="527" font-size="14" fill="#e6edf3">ExecApprovalRequest -&gt; user</text>
+<line x1="1402" y1="588" x2="690" y2="588" stroke="#6e7681" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrr)"/>
+<circle cx="963" cy="574" r="11" fill="#161b22" stroke="#6e7681" stroke-width="1.5"/>
+<text x="963" y="579" text-anchor="middle" font-size="12" font-weight="700" fill="#e6edf3">8</text>
+<text x="981" y="579" font-size="14" fill="#e6edf3">ReviewDecision: Approved | Denied | ApprovedForSession | ...</text>
+<rect x="1060" y="617" width="443" height="44" rx="8" fill="#1f6feb22" stroke="#1f6feb" stroke-width="1"/>
+<text x="1282" y="644" text-anchor="middle" font-size="14" fill="#e6edf3">AskForApproval ladder: UnlessTrusted / OnRequest / Granular / Never</text>
+<rect x="96" y="679" width="1407" height="44" rx="8" fill="#1f6feb22" stroke="#1f6feb" stroke-width="1"/>
+<text x="800" y="706" text-anchor="middle" font-size="14" fill="#e6edf3">Approving &#x27;always allow&#x27; writes Starlark prefix_rule lines to $CODEX_HOME/rules/default.rules</text>
+</svg>

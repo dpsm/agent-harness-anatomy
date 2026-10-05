@@ -94,6 +94,20 @@
     </div>
   </div>
 
+  <div class="article">
+    <h2>#5 &mdash; Codex CLI: the sandbox-first agent that speaks one wire protocol</h2>
+    <p>TUI, exec, and daemon are all clients of a single JSON-RPC app-server &mdash;
+    one protocol, one loop. Three nested turn loops with <em>no</em> max_turns
+    anywhere in the tree; tool calls descend a four-layer sandbox stack
+    (bwrap + landlock + seccomp on Linux) and an approval chain where
+    hooks outrank the user.</p>
+    <div class="links">
+      <a class="primary" href="codex/trace.html">Step through a live turn</a>
+      <a class="secondary" href="diagrams/template.html?data=../codex/diagrams/codex.json">Interactive diagram</a>
+      <a class="secondary" href="codex/">Read the article</a>
+    </div>
+  </div>
+
   <footer>
     Companion to the Substack series ·
     <a href="comparison-matrix.md">Comparison matrix</a> ·
