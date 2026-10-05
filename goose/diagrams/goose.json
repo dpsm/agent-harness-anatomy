@@ -1,0 +1,608 @@
+{
+ "title": "Goose \u2014 one turn through the harness",
+ "repo": "https://github.com/block/goose",
+ "sha": "76da81cb964b21cd096db739302329b40c2998b8",
+ "nodes": [
+  {
+   "id": "input",
+   "label": "CLI input",
+   "sub": "agent.rs:2116",
+   "x": 190,
+   "y": 20,
+   "w": 220,
+   "h": 96,
+   "grade": "verified",
+   "links": [
+    {
+     "label": "agent.rs:2116",
+     "url": "https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/agent.rs#L2116"
+    },
+    {
+     "label": "agent.rs:2210-2229",
+     "url": "https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/agent.rs#L2210-2229"
+    },
+    {
+     "label": "agent.rs:2231",
+     "url": "https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/agent.rs#L2231"
+    }
+   ],
+   "excerpt": "        let user_message = user_message.with_generated_id_if_missing();",
+   "step": 1
+  },
+  {
+   "id": "prompt",
+   "label": "Prompt assembly",
+   "sub": "reply_parts.rs:198",
+   "x": 190,
+   "y": 150,
+   "w": 220,
+   "h": 96,
+   "grade": "verified",
+   "links": [
+    {
+     "label": "reply_parts.rs:198",
+     "url": "https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/reply_parts.rs#L198"
+    },
+    {
+     "label": "agent.rs:845",
+     "url": "https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/agent.rs#L845"
+    },
+    {
+     "label": "reply_parts.rs:219-233",
+     "url": "https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/reply_parts.rs#L219-233"
+    }
+   ],
+   "excerpt": "    pub async fn prepare_tools_and_prompt(\n        &self,\n        session_id: &str,\n        working_dir: &std::path::Path,\n    ) -> Result<(Vec<Tool>, Vec<Tool>, String, ModelConfig)> {",
+   "step": 2
+  },
+  {
+   "id": "model",
+   "label": "Model call",
+   "sub": "reply_parts.rs:392",
+   "x": 190,
+   "y": 280,
+   "w": 220,
+   "h": 96,
+   "grade": "verified",
+   "links": [
+    {
+     "label": "reply_parts.rs:342",
+     "url": "https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/reply_parts.rs#L342"
+    },
+    {
+     "label": "reply_parts.rs:392-398",
+     "url": "https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/reply_parts.rs#L392-398"
+    },
+    {
+     "label": "agent.rs:2828",
+     "url": "https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/agent.rs#L2828"
+    }
+   ],
+   "excerpt": "        Some(session_id.clone()),\n        provider.stream(\n            &model_config,\n            system_prompt.as_str(),",
+   "step": 3
+  },
+  {
+   "id": "parse",
+   "label": "Response parse",
+   "sub": "reply_parts.rs:587",
+   "x": 190,
+   "y": 410,
+   "w": 220,
+   "h": 96,
+   "grade": "verified",
+   "links": [
+    {
+     "label": "reply_parts.rs:587",
+     "url": "https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/reply_parts.rs#L587"
+    },
+    {
+     "label": "reply_parts.rs:587-603",
+     "url": "https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/reply_parts.rs#L587-603"
+    }
+   ],
+   "excerpt": "    pub(crate) fn categorize_tool_requests(\n        &self,\n        response: &Message,\n        tools: &[Tool],\n        toolshim_tools: &[Tool],",
+   "step": 4
+  },
+  {
+   "id": "dispatch",
+   "label": "Tool dispatch",
+   "sub": "agent.rs:1067",
+   "x": 190,
+   "y": 540,
+   "w": 220,
+   "h": 96,
+   "grade": "verified",
+   "links": [
+    {
+     "label": "agent.rs:1067",
+     "url": "https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/agent.rs#L1067"
+    },
+    {
+     "label": "agent.rs:1094-1110",
+     "url": "https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/agent.rs#L1094-1110"
+    },
+    {
+     "label": "agent.rs:1168-1174",
+     "url": "https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/agent.rs#L1168-1174"
+    }
+   ],
+   "excerpt": "    pub async fn dispatch_tool_call(\n        &self,\n        tool_call: CallToolRequestParams,",
+   "step": 5
+  },
+  {
+   "id": "feedback",
+   "label": "Result feedback",
+   "sub": "agent.rs:2873",
+   "x": 190,
+   "y": 670,
+   "w": 220,
+   "h": 96,
+   "grade": "verified",
+   "links": [
+    {
+     "label": "agent.rs:3067-3136",
+     "url": "https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/agent.rs#L3067-3136"
+    },
+    {
+     "label": "large_response_handler.rs:7-13",
+     "url": "https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/large_response_handler.rs#L7-13"
+    }
+   ],
+   "excerpt": "                                    messages_to_add.push(response);",
+   "step": 6
+  },
+  {
+   "id": "loopexit",
+   "label": "Loop or exit",
+   "sub": "agent.rs:2625",
+   "x": 190,
+   "y": 800,
+   "w": 220,
+   "h": 96,
+   "grade": "verified",
+   "links": [
+    {
+     "label": "agent.rs:2625",
+     "url": "https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/agent.rs#L2625"
+    },
+    {
+     "label": "agent.rs:86",
+     "url": "https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/agent.rs#L86"
+    },
+    {
+     "label": "agent.rs:3440-3444",
+     "url": "https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/agent.rs#L3440-3444"
+    }
+   ],
+   "excerpt": "            loop {\n                if is_token_cancelled(&cancel_token) {\n                    break;\n                }\n",
+   "step": 7
+  },
+  {
+   "id": "render",
+   "label": "Rendering",
+   "sub": "agent.rs:2662",
+   "x": 190,
+   "y": 930,
+   "w": 220,
+   "h": 96,
+   "grade": "verified",
+   "links": [
+    {
+     "label": "agent.rs:2660-2663",
+     "url": "https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/agent.rs#L2660-2663"
+    }
+   ],
+   "excerpt": "                if let Some(output) = final_output {\n                    last_assistant_text = output.clone();\n                    let message = Message::assistant()",
+   "step": 8
+  },
+  {
+   "id": "legacy",
+   "label": "Legacy loop (default)",
+   "sub": "agent.rs:2079",
+   "x": -140,
+   "y": 20,
+   "w": 220,
+   "h": 96,
+   "grade": "verified",
+   "links": [
+    {
+     "label": "agent.rs:2079",
+     "url": "https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/agent.rs#L2079"
+    },
+    {
+     "label": "agent.rs:2109",
+     "url": "https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/agent.rs#L2109"
+    },
+    {
+     "label": "agent.rs:2455",
+     "url": "https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/agent.rs#L2455"
+    }
+   ],
+   "excerpt": "    pub async fn reply(\n        &self,\n        user_message: Message,\n        session_config: SessionConfig,\n        use_state_machine: bool,"
+  },
+  {
+   "id": "turnbound",
+   "label": "Turn bound: max_turns",
+   "sub": "agent.rs:86",
+   "x": -140,
+   "y": 150,
+   "w": 220,
+   "h": 96,
+   "grade": "verified",
+   "links": [
+    {
+     "label": "agent.rs:86-89",
+     "url": "https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/agent.rs#L86-89"
+    }
+   ],
+   "excerpt": "const DEFAULT_MAX_TURNS: u32 = 1000;\nconst DEFAULT_STOP_HOOK_BLOCK_CAP: u32 = 8;\nconst COMPACTION_PROGRESS_TEXT: &str = \"goose is compacting the conversation...\";\nconst MAX_EMPTY_TURN_RETRIES: u32 = 3;"
+  },
+  {
+   "id": "statemachine",
+   "label": "State-machine loop",
+   "sub": "state_machine/mod.rs",
+   "x": -140,
+   "y": 280,
+   "w": 220,
+   "h": 96,
+   "grade": "verified",
+   "links": [
+    {
+     "label": "state_machine/mod.rs:1-5",
+     "url": "https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/state_machine/mod.rs#L1-5"
+    },
+    {
+     "label": "state_machine/mod.rs:72-76",
+     "url": "https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/state_machine/mod.rs#L72-76"
+    },
+    {
+     "label": "agent.rs:1687-1766",
+     "url": "https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/agent.rs#L1687-1766"
+    }
+   ],
+   "excerpt": "//! Runs an ordered, re-entrant pipeline over persisted conversation state.\n//!\n//! Callers persist incoming messages, construct `Step`s from their own operations,"
+  },
+  {
+   "id": "retry",
+   "label": "Three-layer retry",
+   "sub": "reply_parts.rs:422",
+   "x": -140,
+   "y": 410,
+   "w": 220,
+   "h": 96,
+   "grade": "verified",
+   "links": [
+    {
+     "label": "reply_parts.rs:422-458",
+     "url": "https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/reply_parts.rs#L422-458"
+    },
+    {
+     "label": "agent.rs:794",
+     "url": "https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/agent.rs#L794"
+    }
+   ],
+   "excerpt": "                        warn!(\n                            \"Provider stream failed before its first item, retrying ({}/{}): {:?}\",\n                            attempts, retry_config.max_retries, error\n                        );\n"
+  },
+  {
+   "id": "approvalpause",
+   "label": "Approval pause",
+   "sub": "tool_execution.rs:149",
+   "x": -140,
+   "y": 540,
+   "w": 220,
+   "h": 96,
+   "grade": "verified",
+   "links": [
+    {
+     "label": "tool_execution.rs:149",
+     "url": "https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/tool_execution.rs#L149"
+    },
+    {
+     "label": "agent.rs:2906-2921",
+     "url": "https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/agent.rs#L2906-2921"
+    },
+    {
+     "label": "agent.rs:1518",
+     "url": "https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/agent.rs#L1518"
+    }
+   ],
+   "excerpt": "    pub(super) fn handle_approval_tool_requests<'a>(\n        &'a self,\n        tool_requests: &'a [ToolRequest],\n        tool_futures: &'a mut Vec<(String, ToolStream)>,\n        request_to_response_map: &'a mut HashMap<String, Message>,"
+  },
+  {
+   "id": "mcp",
+   "label": "MCP extension assembly",
+   "sub": "extension.rs:156",
+   "x": 520,
+   "y": 20,
+   "w": 220,
+   "h": 96,
+   "grade": "verified",
+   "links": [
+    {
+     "label": "extension.rs:156",
+     "url": "https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/extension.rs#L156"
+    },
+    {
+     "label": "extension_manager/mod.rs:470",
+     "url": "https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/extension_manager/mod.rs#L470"
+    },
+    {
+     "label": "extension_manager/mod.rs:244",
+     "url": "https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/extension_manager/mod.rs#L244"
+    }
+   ],
+   "excerpt": "pub enum ExtensionConfig {\n    #[serde(rename = \"stdio\")]\n    Stdio {\n        name: String,\n        #[serde(default)]"
+  },
+  {
+   "id": "approvalmodel",
+   "label": "3-layer approval",
+   "sub": "goose_mode.rs:22",
+   "x": 520,
+   "y": 150,
+   "w": 220,
+   "h": 96,
+   "grade": "verified",
+   "links": [
+    {
+     "label": "goose_mode.rs:22-36",
+     "url": "https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose-provider-types/src/goose_mode.rs#L22-36"
+    },
+    {
+     "label": "permission.rs:16-23",
+     "url": "https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/config/permission.rs#L16-23"
+    },
+    {
+     "label": "agent.rs:777-794",
+     "url": "https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/agent.rs#L777-794"
+    },
+    {
+     "label": "permission_judge.rs:145",
+     "url": "https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/permission/permission_judge.rs#L145"
+    }
+   ],
+   "excerpt": "pub enum GooseMode {\n    #[default]\n    #[strum(message = \"Automatically approve tool calls\")]\n    Auto,\n    #[strum(message = \"Ask before every tool call\")]\n    Approve,"
+  },
+  {
+   "id": "providers",
+   "label": "Providers",
+   "sub": "base.rs:517",
+   "x": 520,
+   "y": 280,
+   "w": 220,
+   "h": 96,
+   "grade": "verified",
+   "links": [
+    {
+     "label": "base.rs:504-522",
+     "url": "https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose-provider-types/src/base.rs#L504-522"
+    },
+    {
+     "label": "init.rs:54-158",
+     "url": "https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose-providers/src/providers/init.rs#L54-158"
+    },
+    {
+     "label": "models_dev.rs:36-49",
+     "url": "https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose-provider-types/src/canonical/models_dev.rs#L36-49"
+    }
+   ],
+   "excerpt": "    /// Primary streaming method that all providers must implement.\n    async fn stream(\n        &self,\n        model_config: &ModelConfig,\n        system: &str,\n        messages: &[Message],"
+  },
+  {
+   "id": "recipes",
+   "label": "Recipes",
+   "sub": "recipe/mod.rs:43",
+   "x": 520,
+   "y": 410,
+   "w": 220,
+   "h": 96,
+   "grade": "verified",
+   "links": [
+    {
+     "label": "recipe/mod.rs:43-87",
+     "url": "https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/recipe/mod.rs#L43-87"
+    },
+    {
+     "label": "recipe/mod.rs:167-170",
+     "url": "https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/recipe/mod.rs#L167-170"
+    }
+   ],
+   "excerpt": "pub struct Recipe {\n    // Required fields\n    #[serde(default = \"default_version\")]\n    pub version: String, // version of the file format, sem ver\n"
+  },
+  {
+   "id": "sessions",
+   "label": "Sessions (SQLite)",
+   "sub": "session_manager.rs:48",
+   "x": 520,
+   "y": 540,
+   "w": 220,
+   "h": 96,
+   "grade": "verified",
+   "links": [
+    {
+     "label": "session_manager.rs:29-30",
+     "url": "https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/session/session_manager.rs#L29-30"
+    },
+    {
+     "label": "session_manager.rs:48-57",
+     "url": "https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/session/session_manager.rs#L48-57"
+    }
+   ],
+   "excerpt": "pub enum SessionType {\n    #[default]\n    User,\n    Scheduled,\n    SubAgent,\n    Hidden,"
+  },
+  {
+   "id": "hooks",
+   "label": "12-event hooks",
+   "sub": "hooks/mod.rs:55",
+   "x": 520,
+   "y": 670,
+   "w": 220,
+   "h": 96,
+   "grade": "verified",
+   "links": [
+    {
+     "label": "hooks/mod.rs:55-68",
+     "url": "https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/hooks/mod.rs#L55-68"
+    },
+    {
+     "label": "hooks/mod.rs:703-706",
+     "url": "https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/hooks/mod.rs#L703-706"
+    }
+   ],
+   "excerpt": "pub enum HookEvent {\n    PreToolUse,\n    PreToolUseResult,\n    PostToolUse,\n    PostToolUseFailure,\n    SessionStart,"
+  },
+  {
+   "id": "subagents",
+   "label": "Sub-agents (summon)",
+   "sub": "summon.rs:779",
+   "x": 520,
+   "y": 800,
+   "w": 220,
+   "h": 96,
+   "grade": "verified",
+   "links": [
+    {
+     "label": "summon.rs:777-794",
+     "url": "https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/platform_extensions/summon.rs#L777-794"
+    },
+    {
+     "label": "subagent_handler.rs:46-62",
+     "url": "https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/subagent_handler.rs#L46-62"
+    },
+    {
+     "label": "summon.rs:1393-1400",
+     "url": "https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/platform_extensions/summon.rs#L1393-1400"
+    }
+   ],
+   "excerpt": "        Tool::new(\n            \"delegate\",\n            \"Delegate a task to a subagent that runs independently with its own context.\\n\\n\\\n             Modes:\\n\\"
+  },
+  {
+   "id": "schedules",
+   "label": "Schedules (cron)",
+   "sub": "scheduler/full.rs:830",
+   "x": 520,
+   "y": 930,
+   "w": 220,
+   "h": 96,
+   "grade": "verified",
+   "links": [
+    {
+     "label": "scheduler/full.rs:830",
+     "url": "https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/scheduler/full.rs#L830"
+    },
+    {
+     "label": "scheduler/full.rs:868-885",
+     "url": "https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/scheduler/full.rs#L868-885"
+    }
+   ],
+   "excerpt": "\n#[allow(clippy::too_many_lines)]\nasync fn execute_job(\n    job: ScheduledJob,"
+  }
+ ],
+ "edges": [
+  {
+   "from": "input",
+   "to": "prompt",
+   "label": "persist"
+  },
+  {
+   "from": "prompt",
+   "to": "model"
+  },
+  {
+   "from": "model",
+   "to": "parse"
+  },
+  {
+   "from": "parse",
+   "to": "dispatch"
+  },
+  {
+   "from": "dispatch",
+   "to": "feedback"
+  },
+  {
+   "from": "feedback",
+   "to": "loopexit"
+  },
+  {
+   "from": "loopexit",
+   "to": "render"
+  },
+  {
+   "from": "feedback",
+   "to": "model",
+   "label": "next"
+  },
+  {
+   "from": "legacy",
+   "to": "input",
+   "label": "reply"
+  },
+  {
+   "from": "input",
+   "to": "statemachine",
+   "label": "env=1"
+  },
+  {
+   "from": "turnbound",
+   "to": "legacy",
+   "label": "bounds"
+  },
+  {
+   "from": "retry",
+   "to": "model",
+   "label": "<=3"
+  },
+  {
+   "from": "dispatch",
+   "to": "approvalpause",
+   "label": "needs"
+  },
+  {
+   "from": "approvalpause",
+   "to": "dispatch"
+  },
+  {
+   "from": "approvalpause",
+   "to": "render",
+   "label": "event"
+  },
+  {
+   "from": "mcp",
+   "to": "prompt",
+   "label": "tools"
+  },
+  {
+   "from": "model",
+   "to": "providers",
+   "label": "stream"
+  },
+  {
+   "from": "dispatch",
+   "to": "approvalmodel",
+   "label": "gate"
+  },
+  {
+   "from": "approvalmodel",
+   "to": "approvalpause",
+   "label": "ask"
+  },
+  {
+   "from": "dispatch",
+   "to": "hooks",
+   "label": "hook"
+  },
+  {
+   "from": "dispatch",
+   "to": "subagents",
+   "label": "deleg"
+  },
+  {
+   "from": "feedback",
+   "to": "sessions"
+  },
+  {
+   "from": "recipes",
+   "to": "prompt"
+  }
+ ]
+}

@@ -1,0 +1,1490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Agent Harness Anatomy #4: Goose — the MCP-native agent that asks a judge</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body {
+    background: #0d1117; color: #e6edf3;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    line-height: 1.7; padding: 48px 24px; margin: 0;
+  }
+  main { max-width: 760px; margin: 0 auto; }
+  a { color: #58a6ff; }
+  h1 { font-size: 1.9rem; letter-spacing: -0.02em; line-height: 1.25; margin-bottom: 16px; }
+  h2 { font-size: 1.4rem; margin: 40px 0 12px; padding-top: 8px; border-top: 1px solid #21262d; }
+  h3 { font-size: 1.1rem; margin: 28px 0 8px; }
+  p, li { margin-bottom: 12px; }
+  blockquote {
+    border-left: 3px solid #3fb950; padding: 4px 16px; margin: 20px 0;
+    color: #8b949e; background: #161b22; border-radius: 0 8px 8px 0;
+  }
+  blockquote p { margin-bottom: 6px; }
+  code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.88em; background: #161b22; padding: 2px 6px; border-radius: 6px;
+  }
+  pre { background: #161b22; border: 1px solid #30363d; border-radius: 8px;
+        padding: 16px; overflow-x: auto; }
+  pre code { background: none; padding: 0; }
+  img { max-width: 100%; height: auto; border: 1px solid #30363d;
+        border-radius: 12px; margin: 20px 0; background: #161b22; }
+  table { border-collapse: collapse; width: 100%; margin: 20px 0; font-size: 0.92rem;
+          display: block; overflow-x: auto; }
+  th, td { border: 1px solid #30363d; padding: 10px 12px; text-align: left;
+           vertical-align: top; }
+  th { background: #161b22; }
+  ul, ol { padding-left: 24px; }
+  hr { border: none; border-top: 1px solid #21262d; margin: 32px 0; }
+  .footnote { font-size: 0.88rem; color: #8b949e; }
+  .footnote hr { margin: 40px 0 16px; }
+  sup a { text-decoration: none; }
+  .topnav { max-width: 760px; margin: 0 auto 32px; font-size: 0.9rem; }
+  .topnav a { color: #8b949e; text-decoration: none; }
+  .topnav a:hover { color: #e6edf3; }
+  .diagram-cta {
+    display: block; text-align: center; margin: 28px 0; padding: 16px;
+    background: #161b22; border: 1px solid #30363d; border-radius: 12px;
+    color: #e6edf3; text-decoration: none; font-weight: 600;
+  }
+  .diagram-cta:hover { border-color: #3fb950; }
+  .diagram-cta span { display: block; font-weight: 400; font-size: 0.88rem;
+                      color: #8b949e; margin-top: 4px; }
+</style>
+</head>
+<body>
+<main>
+  <nav class="topnav"><a href="../">&larr; Agent Harness Anatomy</a></nav>
+<h1 id="agent-harness-anatomy-4-goose-the-mcp-native-agent-that-asks-a-judge">Agent Harness Anatomy #4: Goose — the MCP-native agent that asks a judge</h1>
+<blockquote>
+<p><strong>Series:</strong> Agent Harness Anatomy — top-down dissections of real agent
+harnesses, grounded in verifiable source code. Every behavioral claim
+below carries a footnote to a pinned GitHub permalink; the full evidence
+lives in the endnotes.</p>
+</blockquote>
+<h2 id="version-block">Version block</h2>
+<ul>
+<li><strong>Repo:</strong> <a href="https://github.com/block/goose">block/goose</a></li>
+<li><strong>Pinned:</strong> tag <code>v1.53.0</code> → <code>76da81cb964b21cd096db739302329b40c2998b8</code> (2026-09-30)</li>
+<li><strong>Language:</strong> Rust (cargo workspace) + Electron desktop</li>
+<li><strong>License:</strong> Apache-2.0</li>
+<li><strong>Claim under test:</strong> "your native open source AI agent — desktop app, CLI, and API — for code, workflows, and everything in between"</li>
+<li><strong>Scope:</strong> this teardown covers the <strong>CLI agent</strong> (<code>crates/goose-cli</code> +
+  <code>crates/goose</code>), the series' MCP-native axis. The Electron desktop
+  (<code>ui/desktop/</code>) is noted where it hosts the cron loop; <code>goose-roaming</code>
+  (P2P transport) was mapped but not deep-dived.<sup id="fnref3:1"><a class="footnote-ref" href="#fn:1">1</a></sup></li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>Crate</th>
+<th>Non-test <code>.rs</code></th>
+<th>Role</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>goose</code></td>
+<td>339 files, 176,482 LOC</td>
+<td>THE product crate: agent, extensions, session, config, gateway</td>
+</tr>
+<tr>
+<td><code>goose-cli</code></td>
+<td>51 files, 28,625 LOC</td>
+<td>CLI binary, session REPL, recipes, commands</td>
+</tr>
+<tr>
+<td><code>goose-provider-types</code></td>
+<td>36 files, 30,822 LOC</td>
+<td>Conversation/message types, Provider trait, canonical model registry</td>
+</tr>
+<tr>
+<td><code>goose-providers</code></td>
+<td>26 files, 15,731 LOC</td>
+<td>Provider implementations (34 static + 48 declarative JSON)</td>
+</tr>
+<tr>
+<td><code>goose-local-inference</code></td>
+<td>20 files, 10,347 LOC</td>
+<td>On-device inference (llama.cpp/GGUF + MLX)</td>
+</tr>
+<tr>
+<td><code>goose-mcp</code></td>
+<td>11 files, 6,084 LOC</td>
+<td>MCP client crate + 4 bundled MCP servers</td>
+</tr>
+<tr>
+<td><code>goose-agent</code></td>
+<td>6 files, 1,557 LOC</td>
+<td>Generic state-machine (the NEW loop's skeleton)</td>
+</tr>
+<tr>
+<td><code>goose-context-management</code></td>
+<td>7 files, 1,156 LOC</td>
+<td>Language-agnostic compaction library</td>
+</tr>
+<tr>
+<td><code>goose-sdk</code></td>
+<td>4 files, 2,834 LOC</td>
+<td>Provider decision/bindings (uniffi for Python/Kotlin)</td>
+</tr>
+<tr>
+<td><code>goose-roaming</code></td>
+<td>11 files, 2,197 LOC</td>
+<td>P2P roaming transport (iroh-based; mapped, not deep-dived)</td>
+</tr>
+</tbody>
+</table>
+<p>Entry is the CLI binary at <code>crates/goose-cli/src/main.rs</code> →
+<code>goose_cli::cli::cli()</code>; the agent loop lives at
+<code>crates/goose/src/agents/agent.rs</code> (<code>Agent::reply</code>).<sup id="fnref:1"><a class="footnote-ref" href="#fn:1">1</a></sup></p>
+<p><img alt="Goose architecture" src="figures/goose.svg" /></p>
+<h2 id="the-mental-model">The mental model</h2>
+<p>Goose is an <strong>MCP-native, approval-gated agent runtime in Rust</strong> — and it
+is mid-migration between two agent loops. Every tool the agent sees,
+built-in or third-party, arrives through the MCP client layer: "builtin"
+means <em>in-process MCP over a tokio duplex</em>, not a function call. There is
+no non-MCP tool path at all.<sup id="fnref:2"><a class="footnote-ref" href="#fn:2">2</a></sup> The loop the CLI runs by default is a
+6,382-line legacy <code>agent.rs</code><sup id="fnref:6"><a class="footnote-ref" href="#fn:6">6</a></sup>; the opt-in replacement is an effect-sourced
+state machine enabled by <code>GOOSE_STATE_MACHINE=1</code> — and the repo's own
+AGENTS.md documents the parity burden plainly: "Until the migration is
+complete, changes to agent-loop behavior must be implemented and tested in
+both paths."<sup id="fnref:3"><a class="footnote-ref" href="#fn:3">3</a></sup></p>
+<p>Three inversions against the series so far. Against pi: where pi has 4
+built-in tools and a TypeScript extension API, goose's entire toolset is
+assembled per-session from extension configs — the tool system <em>is</em> the
+extension system. Against aider: where aider negotiates with the model
+through text edit formats and remembers via git, goose speaks native tool
+calls and remembers via SQLite — but keeps aider's model-awareness
+philosophy, with an 8,160-entry model catalog zstd-bundled at build time
+plus substring heuristics.<sup id="fnref:4"><a class="footnote-ref" href="#fn:4">4</a></sup> Against Cline: where Cline's approval model
+is user-driven policy plus diff previews, goose adds a second adaptive
+layer — an <strong>LLM judge</strong> that classifies tool calls as read-only, labeled
+<code>UNTRUSTED TOOL REQUEST DATA</code>, failing closed.<sup id="fnref:5"><a class="footnote-ref" href="#fn:5">5</a></sup></p>
+<p>The governing tradeoff: goose pays Rust-scale engineering (two loops, five
+inspectors, four extension transports) for a harness where the tool
+contract is a <em>protocol</em> (MCP), not an API. If you're building a harness,
+that's goose's thesis in one sentence: make everything a server, and the
+agent becomes a client of its own capabilities.</p>
+<h2 id="package-map">Package map</h2>
+<p>A layered cargo workspace, dependency direction running strictly
+downward:<sup id="fnref2:1"><a class="footnote-ref" href="#fn:1">1</a></sup></p>
+<pre><code>goose-provider-types  Provider trait, Message/Conversation, canonical registry
+        ↑
+goose-providers       34 static + 48 declarative provider impls
+goose-mcp             MCP client + 4 bundled servers
+goose-agent           generic StateMachine: Operation/Inference/Step traits
+goose-context-management  compaction library (summarize, token estimation)
+        ↑
+goose                 Agent, extensions, sessions, recipes, scheduler, gateway, hooks
+        ↑
+goose-cli             REPL session, commands, recipes CLI, schedule CLI
+</code></pre>
+<p><code>crates/goose/src</code> key dirs: <code>agents/</code> (the loop + extensions + platform
+tools), <code>session/</code> (SQLite session manager), <code>recipe/</code>, <code>scheduler/</code>,
+<code>gateway/</code> (Telegram), <code>hooks/</code>, <code>config/</code> (<code>config.yaml</code>,
+<code>permission.yaml</code>), <code>context_mgmt/</code>, <code>permission/</code> (inspectors),
+<code>providers/</code> (registry, OAuth, inventory), <code>conversation/</code> (message types).</p>
+<h2 id="the-core-loop">The core loop</h2>
+<p><strong>Two loops; a migration in progress.</strong> <code>Agent::reply()</code>
+(<code>agent.rs:2079</code>) takes a <code>use_state_machine: bool</code>; the CLI passes
+<code>goose::agents::state_machine::enabled()</code>, which is false unless
+<code>GOOSE_STATE_MACHINE</code> is one of <code>1</code>, <code>true</code>, <code>TRUE</code>, <code>yes</code> — so the
+default is the legacy loop.<sup id="fnref2:3"><a class="footnote-ref" href="#fn:3">3</a></sup></p>
+<h3 id="the-legacy-loop-default">The legacy loop (default)</h3>
+<p><code>Agent::reply</code> → <code>reply_impl</code> (preamble: elicitation interception,
+state-machine dispatch, empty-message short-circuit, <code>SessionStart</code> /
+<code>UserPromptSubmit</code> hooks, slash commands, final-output pre-check,
+auto-compaction gate) → <code>reply_internal</code>, which runs a <strong>plain <code>loop {}</code></strong>
+inside an <code>async_stream::try_stream!</code>:<sup id="fnref2:6"><a class="footnote-ref" href="#fn:6">6</a></sup></p>
+<pre><code class="language-rust">loop {
+    if is_token_cancelled(&amp;cancel_token) {
+        break;
+    }
+
+    if can_drain_pending_steers {
+        for message in self.drain_pending_steers(&amp;session_config.id).await {
+</code></pre>
+<p>A "turn" is one provider round-trip plus tool-drain; <code>turns_taken</code>
+increments per iteration except after empty-turn retries and stop-hook
+denials, which don't consume budget. Termination: <code>max_turns</code> (recipe →
+<code>GOOSE_MAX_TURNS</code> → <strong>1000</strong>, <code>DEFAULT_MAX_TURNS: u32 = 1000</code>) yields
+<code>MAX_TURNS_MESSAGE</code> and breaks; cancellation (three check points);
+provider refusal; credits/auth/network errors; at most 2 recovery
+compactions; at most 3 empty-turn retries; a stop-hook denial cap of 8;
+recipe retry exhaustion.<sup id="fnref:7"><a class="footnote-ref" href="#fn:7">7</a></sup> There is no <code>max_iterations</code> symbol anywhere
+in the agent or CLI crates — the bound is <code>max_turns</code>, full stop.<sup id="fnref2:7"><a class="footnote-ref" href="#fn:7">7</a></sup></p>
+<p><strong>Confirmation plugs in mid-turn.</strong> <code>inspect_tools</code> splits requests into
+<code>approved</code> / <code>needs_approval</code> / <code>denied</code>; for the middle group,
+<code>handle_approval_tool_requests</code> registers a oneshot in the
+<code>ToolConfirmationRouter</code>, yields an <code>ActionRequired</code> event, and <strong><code>await</code>s
+— the loop genuinely pauses mid-iteration</strong> until
+<code>submit_tool_confirmation</code> delivers the verdict.<sup id="fnref:8"><a class="footnote-ref" href="#fn:8">8</a></sup> (<code>handle_confirmation</code>
+is dead — zero non-test callers, superseded by <code>submit_tool_confirmation</code>.
+Providers can also route confirmation natively through the protocol via
+<code>PermissionRouting::ActionRequired</code>.)<sup id="fnref2:8"><a class="footnote-ref" href="#fn:8">8</a></sup></p>
+<p>Retry is three layers: (a) provider pre-first-item retry (≤3, exponential
+backoff 1s→30s, transient-only; auth errors get one credential refresh;
+<strong>mid-stream errors are not retried</strong>); (b) recipe <code>RetryManager</code> (shell
+success checks, an <code>on_failure</code> command, conversation reset to the
+<code>initial_messages</code> snapshot); (c) micro-retries — empty-turn ×3,
+compaction ×2, stop-hook ×8. Tool failures arrive as error <code>ToolResponse</code>
+content, not exceptions.<sup id="fnref:9"><a class="footnote-ref" href="#fn:9">9</a></sup> And one guard is theater: the
+<code>RepetitionInspector</code> doom-loop guard is registered with <code>None</code>, so
+<code>check_tool_call</code> always returns true, and <code>inspect</code> runs on throwaway
+clones. The doom-loop protection readers expect is actually just
+<code>max_turns</code>.<sup id="fnref2:9"><a class="footnote-ref" href="#fn:9">9</a></sup></p>
+<h3 id="the-state-machine-loop-opt-in">The state-machine loop (opt-in)</h3>
+<p>Effect-sourced: every step produces <code>GooseEffect</code>s applied to the
+persisted session by the <code>SessionManager</code> — the machine re-loads the
+session each iteration, "an ordered, re-entrant pipeline over persisted
+conversation state."<sup id="fnref:10"><a class="footnote-ref" href="#fn:10">10</a></sup> The step order is fixed, and the LLM call is
+<strong>dead last</strong>:</p>
+<ol>
+<li><code>EntryHookOperation</code> → 2. <code>SlashCommandOperation</code> → 3. <code>SteerOperation</code>
+   → 4. <code>MaxTurnsOperation</code> → 5. <code>BangShellOperation</code> → 6.
+   <code>CompactionOperation</code> (skipped if the provider <code>manages_own_context</code>)
+   → 7. <code>ToolPairCompactionOperation</code> → 8. <code>ToolApprovalOperation</code> → 9.
+   <code>DoctorOperation</code> → 10. <code>ProjectOperation</code> → 11. <code>SkillOperation</code> → 12.
+   <code>RecipeOperation</code> → 13. <code>ToolExecutionOperation</code> → 14.
+   <code>UnknownToolOperation</code> → 15. <code>RetryOperation</code> → 16. <code>StopHookOperation</code>
+   → 17. <code>ExitOnErrorOperation</code> → <strong>18. <code>Inference</code></strong> — which gathers
+   <code>inference_tools</code>, <code>prompt_parts</code>, and <code>moim_parts</code> from <em>every</em>
+   operation before calling the model.<sup id="fnref2:10"><a class="footnote-ref" href="#fn:10">10</a></sup></li>
+</ol>
+<p>Approval here is modeled as conversation effects: a <code>goose.executable</code>
+boolean patched onto tool-request metadata. Two seams worth naming: the
+legacy loop imports the new path's <code>MAX_TURNS_MESSAGE</code> (the old giant
+leans on the new skeleton), and <code>Permission::Cancel</code> is normalized to
+<code>DenyOnce</code> only in the state-machine path — approval is enforced twice,
+differently, per the migration's parity burden.<sup id="fnref:11"><a class="footnote-ref" href="#fn:11">11</a></sup> One more: the steer
+queue can veto the loop's exit but cannot inject a steer before the first
+provider round-trip.<sup id="fnref:12"><a class="footnote-ref" href="#fn:12">12</a></sup></p>
+<p><img alt="The two loops" src="figures/seq-loops.svg" /></p>
+<h2 id="one-turn-end-to-end">One turn, end to end</h2>
+<p>Trace: the user types <code>list the files in src/ and summarize what this
+project does</code> in the CLI, Auto mode, default extensions.</p>
+<p><strong>① Input.</strong> <code>Agent::reply</code> assigns a message ID; <code>reply_impl</code> finds no
+elicitation content; <code>use_state_machine=false</code> skips the new path;
+<code>SessionStart</code> / <code>UserPromptSubmit</code> hooks fire; <code>execute_command</code> returns
+<code>Ok(None)</code> — not a slash command; the message is persisted via
+<code>session_manager.add_message</code>.<sup id="fnref:13"><a class="footnote-ref" href="#fn:13">13</a></sup></p>
+<p><strong>② Prompt assembly.</strong> <code>reply_internal</code> → <code>prepare_reply_context</code> →
+<code>prepare_tools_and_prompt</code>: tools are collected via <code>list_tools</code> from the
+extension manager (including MCP servers), names are enforced unique, and
+the system prompt is built with <code>PromptManager</code> from extension info plus
+directory hints plus the goose mode. Toolshim vs native tools are split
+per <code>model_config.toolshim</code>. A moim turn-context message (time, working
+dir, compaction status, turn budget) is persisted as an agent-only user
+message before the loop — skipped when the context limit is under 32k.<sup id="fnref:14"><a class="footnote-ref" href="#fn:14">14</a></sup></p>
+<p><strong>③ Model call.</strong> Loop iteration 1: <code>turns_taken</code> → 1; <code>1 &gt; 1000</code> is false.
+<code>stream_response_from_provider</code> → <code>provider.stream(&amp;model_config,
+system_prompt, messages, &amp;tools)</code> — streaming, with pre-first-item
+transient retries (≤3) on rate-limit/5xx/network. Text chunks yield
+<code>AgentEvent::Message</code> live.<sup id="fnref:15"><a class="footnote-ref" href="#fn:15">15</a></sup></p>
+<p><strong>④ Response parse.</strong> <code>categorize_tool_requests</code> extracts the model's
+<code>ToolRequest</code>s (say, a <code>developer__shell</code> call), canonicalizes
+model-mangled names (<code>recover_mangled_tool_name</code>), coerces arguments to
+the advertised JSON schema, and dedupes tool-call IDs. Calls to
+unadvertised tools become <code>invalid_request</code> errors — invalid tool calls
+are <em>data</em>, not exceptions.<sup id="fnref:16"><a class="footnote-ref" href="#fn:16">16</a></sup></p>
+<p><strong>⑤ Tool dispatch.</strong> <code>inspect_tools</code> plus the permission split: a read-only
+<code>ls</code> lands in <code>approved</code> → <code>dispatch_tool_call</code> → <code>PreToolUse</code> hooks fire
+→ <code>extension_manager.dispatch_tool_call</code> runs it → <code>with_post_tool_hook</code>
+wraps it (large-response spill + <code>PostToolUse</code> hooks). A mutating call
+would instead hit <code>handle_approval_tool_requests</code>: a oneshot registered,
+an <code>ActionRequired</code> event yielded, the loop paused until
+<code>submit_tool_confirmation</code> delivers the verdict. Streams drain
+concurrently.<sup id="fnref:17"><a class="footnote-ref" href="#fn:17">17</a></sup></p>
+<p><strong>⑥ Result feedback.</strong> Tool outputs attach as <code>ToolResponse</code> blocks on
+user-role messages; request/response pairs go into <code>messages_to_add</code>,
+persisted per message and appended to the conversation. Thinking blocks
+ride on the first tool-call carrier message; unparseable calls become a
+well-formed <code>"unparseable_tool_call"</code> placeholder so strict providers
+never see malformed history. Large text outputs spill to an owner-only
+temp file (200,000-char default) before feedback.<sup id="fnref:18"><a class="footnote-ref" href="#fn:18">18</a></sup></p>
+<p><strong>⑦ Loop or exit.</strong> Iteration 2: the model answers in text with no further
+tool calls → <code>exit_chat = true</code>; the stop hook allows → <code>break</code>.
+Otherwise the loop continues until <code>turns_taken &gt; 1000</code>, cancellation, an
+error arm, or the stop-hook cap.<sup id="fnref:19"><a class="footnote-ref" href="#fn:19">19</a></sup></p>
+<p><strong>⑧ Rendering.</strong> Nothing is printed by the loop itself — all output is
+<code>AgentEvent</code>s (streamed text, <code>ActionRequired</code> prompts, <code>Usage</code> updates)
+consumed by the CLI, the desktop, and the ACP frontends. Final summary
+text accumulates in <code>last_assistant_text</code>.<sup id="fnref:20"><a class="footnote-ref" href="#fn:20">20</a></sup></p>
+<h2 id="subsystem-inventory">Subsystem inventory</h2>
+<ul>
+<li><strong>MCP + extensions (the signature subsystem).</strong> Configuration is
+  <code>ExtensionConfig</code>, exactly four variants — <code>stdio</code>, <code>builtin</code>,
+  <code>platform</code>, <code>streamable_http</code>. <strong>No SSE</strong>: leftover <code>sse</code> configs only
+  emit a migrate-warning.<sup id="fnref2:21"><a class="footnote-ref" href="#fn:21">21</a></sup> They live under <code>extensions:</code> in
+  <code>~/.config/goose/config.yaml</code> (<code>GOOSE_PATH_ROOT</code> overrides the root).
+  Session startup resolves extensions for the new session, then
+  <code>Agent::add_extensions_bulk</code> → <code>ExtensionManager::add_extension</code>
+  (no-op on unchanged config), resolving secrets and envs against a
+  31-key env denylist, then connecting per type: stdio spawns a subprocess
+  (with an OSV malware check on npx/uvx invocations), builtin servers
+  connect over <strong>in-process tokio duplex</strong>, platform extensions run
+  in-process via the client factory, remote ones get an OAuth step-up
+  wrapper with proactive token refresh.<sup id="fnref2:22"><a class="footnote-ref" href="#fn:22">22</a></sup></li>
+</ul>
+<p>Tools are listed per client and namespaced <code>&lt;ext&gt;__&lt;tool&gt;</code> (unprefixed
+  only for first-class platform tools), owner-tagged in
+  <code>_meta.goose_extension</code> — the <code>__</code> prefix is a display name; true
+  ownership is the <code>_meta</code> tag — cached with version invalidation on
+  <code>tools/list_changed</code>, and dispatched back to the owning client by
+  <code>resolve_tool_with_constraints</code> (with mangled-name recovery for
+  <code>developer.shell</code> / <code>functions.*</code>).<sup id="fnref:23"><a class="footnote-ref" href="#fn:23">23</a></sup> The bundled set in <code>goose-mcp</code>:
+  autovisualiser (8 <code>render_*</code> tools), computercontroller (xlsx/docx/pdf
+  plus a macOS-only <code>computer_control</code>), memory (4 tools), tutorial (1
+  tool). Platform extensions: developer, summon, skills, analyze, tom,
+  extensionmanager, apps, and scheduler default ON; todo, chatrecall,
+  summarize, code_execution, and orchestrator default OFF (scheduler and
+  orchestrator hidden).<sup id="fnref2:23"><a class="footnote-ref" href="#fn:23">23</a></sup></p>
+<p>Discovery is where the docs overreach. <code>servers.json</code> still exists but
+  is consumed <strong>only by the docs website</strong> — no runtime consumer. The
+  repo's AGENTS.md refuses new directory entries pending migration to the
+  official MCP Registry, and <strong>no registry client exists in code</strong>.
+  <code>search_available_extensions</code> is config-local only.<sup id="fnref:24"><a class="footnote-ref" href="#fn:24">24</a></sup> Permissions are
+  keyed on prefixed tool <em>names</em>; <code>ToolInfo.permission</code> is dead code
+  (defined once, referenced nowhere else); <code>manage_extensions</code> always
+  requires approval and is blocked for subagents; an <code>available_tools</code>
+  allowlist is enforced at list and dispatch time; removing an extension
+  strips its per-tool permissions. There is no manifest permission model —
+  restriction is host-side.<sup id="fnref:25"><a class="footnote-ref" href="#fn:25">25</a></sup></p>
+<p>The protocol layer: rmcp 3.4.1 is the protocol SDK; <code>goose-mcp</code> adds the
+  four bundled servers, the spawn-function registry, and subprocess/PATH
+  plumbing; the goose crate's <code>GooseClient</code> adds roots, elicitation
+  (300s timeout, routed to the user), session-context <code>_meta</code> injection,
+  and timeouts/cancellation.<sup id="fnref:26"><a class="footnote-ref" href="#fn:26">26</a></sup> And the docs diverge in four places
+  worth naming: <code>extensions-design.md</code> documents a fictional <code>Extension</code>
+  trait (zero occurrences in code); docs say <code>goose mcp {name}</code> adds a
+  builtin to a session — it runs the server standalone on stdio; docs name
+  an <code>enable_extension</code> tool — the real tool is <code>manage_extensions</code>;
+  "Smart Extension Recommendation" is just a local config listing.<sup id="fnref:27"><a class="footnote-ref" href="#fn:27">27</a></sup></p>
+<p>Contrast the series: Cline wraps MCP servers as native <code>server__tool</code>
+  <code>AgentTool</code>s with per-server config; <strong>goose inverts it — everything is
+  an MCP server</strong>, including builtins, and the agent's entire toolset is
+  extension config. pi has 4 built-ins plus a TS extension API; goose has
+  no non-MCP tool path at all.<sup id="fnref2:2"><a class="footnote-ref" href="#fn:2">2</a></sup></p>
+<p><img alt="MCP extension assembly" src="figures/seq-mcp-assembly.svg" /></p>
+<ul>
+<li><strong>The approval model.</strong> Three cooperating layers:</li>
+</ul>
+<p><strong>1. Modes.</strong> <code>GooseMode ∈ {Auto, Approve, SmartApprove, Chat}</code>,
+  default Auto (<code>GOOSE_MODE</code> config key; <code>/mode</code> switches mid-session).
+  Auto approves, Approve asks on everything, SmartApprove asks only for
+  sensitive calls, Chat runs no tools at all.<sup id="fnref:29"><a class="footnote-ref" href="#fn:29">29</a></sup>
+  <strong>2. Permission levels.</strong> <code>PermissionLevel ∈ {AlwaysAllow, AskBefore,
+  NeverAllow}</code> per tool, persisted in <code>&lt;config_dir&gt;/permission.yaml</code>
+  under <code>user:</code> and <code>smart_approve:</code> namespaces; lookup precedence is
+  <strong>NeverAllow &gt; AlwaysAllow &gt; AskBefore</strong>, keyed by full tool name —
+  removing an extension prunes its entries.<sup id="fnref:30"><a class="footnote-ref" href="#fn:30">30</a></sup>
+  <strong>3. The inspector chain.</strong> Registered in <code>Agent::new</code> in order:
+  Security (malicious patterns), Egress (exfiltration destinations),
+  Adversary (user-defined <code>adversary.md</code>, model-reviewed), Permission
+  (the mode/permission decision table), Repetition (the inert doom-loop
+  guard). Each emits <code>InspectionAction ∈ {Allow, Deny, RequireApproval}</code>.
+  <strong>Security can only escalate, never relax</strong>: a Deny removes the request
+  from approved <em>and</em> needs-approval; an Allow is explicitly a no-op on
+  other inspectors' decisions — "don't override other inspectors'
+  decisions."<sup id="fnref:31"><a class="footnote-ref" href="#fn:31">31</a></sup></p>
+<p><strong>SmartApprove's core is an LLM judge.</strong> For tools with no cached
+  verdict, goose asks the model itself whether each pending tool call is
+  read-only — the requests are labeled <code>UNTRUSTED TOOL REQUEST DATA</code> and
+  sent through a synthetic <code>platform__tool_by_tool_permission</code> tool.
+  Non-read-only verdicts are cached name-wide as <code>AskBefore</code> in the
+  <code>smart_approve:</code> namespace; <strong>judge failure fails closed</strong> (everything
+  prompts). The code acknowledges the fox-guarding-henhouse shape with
+  prompt-injection tests in-tree.<sup id="fnref:32"><a class="footnote-ref" href="#fn:32">32</a></sup></p>
+<p>The user prompt offers Allow / Always Allow / Deny / Cancel — but
+  <strong>"Always Allow" is withheld when a security inspector attached a
+  warning</strong>. <code>AlwaysDeny</code> is never offered in the CLI; its only producer
+  is the Telegram gateway's "deny always" reply. And headless is strict:
+  <code>Auto</code> auto-allows (with a warn log), but <code>Approve</code>/<code>SmartApprove</code> in
+  non-interactive mode is a hard error — "This is an invalid
+  configuration."<sup id="fnref:33"><a class="footnote-ref" href="#fn:33">33</a></sup></p>
+<p>Series comparison: <code>GooseMode</code> ≈ Cline's plan/act modes; per-tool
+  <code>permission.yaml</code> ≈ Cline's per-tool allow-list — but the LLM judge
+  plus the security inspectors are a second adaptive layer Cline doesn't
+  have. Against aider: there is no git-undo safety net at all (verified
+  negative) — safety is approval-gating plus inspectors. Against pi: the
+  analogue of <code>beforeToolCall</code> is <code>HookEvent::PreToolUse</code> (exit code 2 or
+  <code>{"decision":"block"}</code>), evaluated before dispatch in both loops — but
+  plugin-loaded shell commands, not a user hook function.<sup id="fnref:28"><a class="footnote-ref" href="#fn:28">28</a></sup><sup id="fnref2:33"><a class="footnote-ref" href="#fn:33">33</a></sup></p>
+<p><img alt="The approval model" src="figures/seq-approval.svg" /></p>
+<ul>
+<li><strong>Providers.</strong> The <code>Provider</code> trait has exactly one required behavioral
+  method: <code>stream()</code>. <code>complete()</code> defaults to stream-plus-collect; only
+  one provider in-tree overrides it. There is a single <code>Provider</code>
+  trait — grep confirms it.<sup id="fnref2:34"><a class="footnote-ref" href="#fn:34">34</a></sup> The inventory: 34 static registrations
+  (including feature-gated <code>aws_bedrock</code>, <code>sagemaker_tgi</code>, <code>local</code>), 48
+  bundled declarative JSON definitions, and user custom providers from
+  <code>~/.config/goose/custom_providers/</code> — four tiers (Preferred, Builtin,
+  Declarative, Custom), with a selection chain from <code>--provider</code> flag
+  through saved session, recipe, <code>GOOSE_PROVIDER</code> env, and config.<sup id="fnref2:35"><a class="footnote-ref" href="#fn:35">35</a></sup></li>
+</ul>
+<p>The model catalog is <strong>goose's aider-YAML analog at scale</strong>: an
+  8,160-entry models.dev snapshot zstd-bundled at build time, with a
+  background ETag refresh that hot-swaps the registry at runtime. Name
+  resolution is goose's substring-heuristics layer — version-suffix
+  stripping, provider renames, Claude word-order swapping,
+  <code>infer_provider_from_model</code> substring rules — plus hardcoded
+  <code>inferred_thinking_mode</code> for Claude 4.5–5.x and name-regex matchers for
+  reasoning models. <strong>No model-name validation exists anywhere</strong> on the
+  <code>GOOSE_MODEL</code> path; and there is no aider-style hand-written YAML.<sup id="fnref:36"><a class="footnote-ref" href="#fn:36">36</a></sup></p>
+<p>Auth is env-var-first-then-keyring, with no mixing; four auth methods
+  (<code>NoAuth</code>, <code>BearerToken</code>, <code>ApiKey</code>, <code>Custom</code>); OAuth via
+  <code>configure_oauth</code> in six providers with a shared RFC 8628 device-flow
+  helper; command-based auth for custom providers. One naming seam:
+  <code>crates/goose/src/oauth/</code> is <strong>MCP-server OAuth</strong>, not provider auth —
+  provider OAuth lives under <code>providers/oauth*.rs</code>.<sup id="fnref:37"><a class="footnote-ref" href="#fn:37">37</a></sup>
+  <code>goose-local-inference</code> puts llama.cpp/GGUF and MLX on-device inference
+  behind provider name <code>"local"</code> — feature-gated, never default, no
+  auto-activation, with its own tool-emulation (toolshim) and chat
+  templates.<sup id="fnref:38"><a class="footnote-ref" href="#fn:38">38</a></sup></p>
+<p>Message types deserve a line: <code>MessageContentBlock</code> carries
+  Thinking/RedactedThinking blocks (signature-aware stream coalescing);
+  <code>ToolRequest</code> wraps <code>rmcp::model::CallToolRequestParams</code>, so invalid
+  tool calls are <em>data</em>, not errors; harness annotations ride in
+  <code>tool_meta._meta</code>; approval and elicitation are modeled as conversation
+  blocks. Cost is estimated, never authoritative unless provider-reported.<sup id="fnref:39"><a class="footnote-ref" href="#fn:39">39</a></sup></p>
+<p>Philosophy: aider's (big model catalog + heuristics) with per-provider
+  implementations — but unlike Cline's one generic AI-SDK adapter, goose
+  hand-writes 34 provider impls and adds a declarative JSON tier for the
+  long tail.<sup id="fnref2:4"><a class="footnote-ref" href="#fn:4">4</a></sup></p>
+<ul>
+<li>
+<p><strong>Sessions.</strong> SQLite (<code>&lt;data_dir&gt;/sessions/sessions.db</code>), messages as
+  JSON blobs. The session record carries the id, working dir, an
+  LLM-generated name, the session type, timestamps, extension data,
+  usage/accumulated cost, the schedule id, <strong>the full <code>Recipe</code> struct
+  persisted on the session</strong>, user recipe values, the conversation, the
+  goose mode, the parent session id, and the provider/model.
+  <code>SessionType</code> spans <code>User | Scheduled | SubAgent | Hidden | Terminal |
+  Gateway | Acp</code> — resume lists only <code>User</code>. Resume via
+  <code>goose session --resume</code> (by name or id, or the most recent <code>User</code>
+  session); <code>--fork</code> copies messages into a new session. Cross-session
+  recall is explicit — a <code>chatrecall</code> platform tool plus SQL full-text
+  search — never automatic. Every message carries <code>user_visible</code> /
+  <code>agent_visible</code> flags, which compaction and subagent summaries
+  exploit.<sup id="fnref:40"><a class="footnote-ref" href="#fn:40">40</a></sup></p>
+</li>
+<li>
+<p><strong>Context management: compaction, not budgeting.</strong> There is no
+  token-budget allocator — the negative grep is clean. Auto-compaction
+  triggers when <code>session.usage.total_tokens / context_limit &gt; 0.8</code>
+  (overridable via <code>GOOSE_AUTO_COMPACT_THRESHOLD</code>; ≤0 or ≥1 disables it;
+  providers that <code>manages_own_context</code> skip it). The numerator prefers
+  session metadata and falls back to a token-counter estimate — the code
+  labels the source ("session metadata" vs "estimated"). The check runs
+  before each reply in both loops; <code>/compact</code> triggers it manually.
+  <code>compact_messages</code> runs one-shot model summarization, marks all
+  original messages agent-invisible (kept user-visible for the UI),
+  appends one agent-only summary plus a continuation nudge, preserves the
+  latest user text, and persists via <code>replace_conversation</code> plus a
+  <code>HistoryReplaced</code> event. An opt-in tool-pair summarization (default
+  off) replaces the oldest 10 tool request/response pairs past a computed
+  cutoff with per-pair summaries. The <code>goose-context-management</code> crate is
+  a language-agnostic compaction library — and it is wrapped for
+  Python/Kotlin through <code>goose-sdk</code>'s uniffi bindings.<sup id="fnref2:41"><a class="footnote-ref" href="#fn:41">41</a></sup></p>
+</li>
+<li>
+<p><strong>Hooks.</strong> Plugin-loaded lifecycle hooks: <strong>12 events</strong> (<code>PreToolUse</code>,
+  <code>PreToolUseResult</code>, <code>PostToolUse</code>, <code>PostToolUseFailure</code>, <code>SessionStart</code>,
+  <code>SessionEnd</code>, <code>UserPromptSubmit</code>, <code>BeforeReadFile</code>, <code>AfterFileEdit</code>,
+  <code>BeforeShellExecution</code>, <code>AfterShellExecution</code>, <code>Stop</code>). Each enabled
+  plugin contributes a <code>hooks/hooks.json</code>; only <code>command</code> actions are
+  supported; the hook runs as a shell command with JSON-serialized
+  <code>HookContext</code> on stdin and a 30-second default timeout. <strong>Blocking
+  semantics: exit code 2 or <code>{"decision":"block"}</code>; first denial wins.</strong>
+  <code>PreToolUse</code> runs before dispatch in both loops — goose's analogue of
+  pi's <code>beforeToolCall</code>, but plugin-loaded shell commands rather than a
+  user hook function. Hook errors never crash the host. Event-name casing
+  is verified against a real shipped example: PascalCase, matching the
+  <code>HookEvent</code> names exactly.<sup id="fnref2:42"><a class="footnote-ref" href="#fn:42">42</a></sup> One aspirational seam: the config module
+  doc comment advertises "hot reloading of configuration changes," but
+  there is no file watcher and no reload function anywhere in the config
+  crate — the claim exists only in the comment.<sup id="fnref3:42"><a class="footnote-ref" href="#fn:42">42</a></sup></p>
+</li>
+<li>
+<p><strong>Schedules.</strong> In-process cron, not a daemon: a <code>Scheduler</code> wraps
+  <code>tokio-cron-scheduler</code> behind a feature flag; jobs live in
+  <code>&lt;data_dir&gt;/schedule.json</code>, and recipe files are copied (validated, ≤1
+  MiB, mode <code>0o600</code>) into <code>scheduled_recipes/&lt;job-id&gt;.&lt;ext&gt;</code>. The cron
+  dialect is 6-field (seconds first), local timezone, with 5-field
+  auto-prefixing. On fire, the stored recipe copy is built into a
+  <code>SessionType::Scheduled</code> session running <strong>always in <code>GooseMode::Auto</code>
+  — scheduled jobs never prompt</strong>. Validation requires prompt-or-
+  instructions, schema-valid parameters (no <code>user_prompt</code> params — they'd
+  block headless), and a valid response JSON schema. The agent surface is
+  the <code>scheduler__manage_schedule</code> platform tool; the CLI offers
+  <code>goose schedule add|list|remove|sessions|run-now|cron-help</code>. The cron
+  loop lives in the long-lived desktop/ACP process; a CLI <code>goose schedule</code>
+  invocation builds a throwaway <code>Scheduler</code>. One seam: CLI help blesses
+  <code>@hourly</code> shorthands that <code>create_cron_task</code> rejects with
+  <code>CronParseError</code>.<sup id="fnref2:43"><a class="footnote-ref" href="#fn:43">43</a></sup></p>
+</li>
+<li>
+<p><strong>Sub-agents.</strong> The surface is the <code>delegate</code> tool in the <code>summon</code>
+  platform extension (ad-hoc, source-based, and combined modes; <code>async:
+  true</code> runs in the background with a <code>load(taskId)</code> handle). Execution
+  is a full in-process <code>Agent</code> running <code>agent.reply(...)</code> recursively,
+  with its own <code>SessionType::SubAgent</code> session and <code>parent_session_id</code>.
+  <strong>No nested delegation.</strong> <strong>Forced <code>GooseMode::Auto</code></strong> — the comment is
+  explicit: <em>"Subagents must use Auto until get_agent_messages forwards
+  ActionRequired messages to the parent. Until then, any mode that
+  requires approval will hang."</em> Default max 25 turns
+  (<code>GOOSE_SUBAGENT_MAX_TURNS</code>), system prompt from
+  <code>prompts/subagent_system.md</code>, result extraction from the <code>final_output</code>
+  tool output when the recipe has a response schema, else last/all
+  text.<sup id="fnref2:44"><a class="footnote-ref" href="#fn:44">44</a></sup></p>
+</li>
+<li>
+<p><strong>Gateway + ACP.</strong> A remote messaging bridge pairs a messaging-platform
+  user (pairing code) to goose sessions and relays chat ↔ agent,
+  including approval prompts. <strong>Only Telegram exists at this SHA</strong> —
+  <code>create_gateway</code> bails on anything else. The handler keeps per-user
+  <code>SessionType::Gateway</code> sessions, and approvals are answered by chat
+  text (<code>approve</code> / <code>approve always</code> / <code>deny</code> / <code>deny always</code> → <code>Permission</code>
+  variants) — this is the <strong>only producer of <code>AlwaysDeny</code></strong> in the whole
+  codebase.<sup id="fnref2:45"><a class="footnote-ref" href="#fn:45">45</a></sup> Separately, <code>crates/goose/src/acp/</code> hosts an ACP (Agent
+  Client Protocol) server — the desktop app drives the agent through this
+  bridge — with live callers of <code>submit_tool_confirmation</code> at
+  <code>acp/server.rs:1611</code> and <code>:421</code>.<sup id="fnref3:45"><a class="footnote-ref" href="#fn:45">45</a></sup></p>
+</li>
+</ul>
+<h2 id="extension-points">Extension points</h2>
+<p>Goose's extension surface is the broadest of the four harnesses so far —
+and it operates at three altitudes: the protocol (MCP servers), the
+declarative (recipes, schedules, hooks), and the programmatic (the
+<code>Provider</code> trait itself).</p>
+<h3 id="1-extension-configs-mcp-servers">1. Extension configs (MCP servers)</h3>
+<p>The primary axis. Four transports (<code>stdio</code>, <code>builtin</code>, <code>platform</code>,
+<code>streamable_http</code>), declared in <code>config.yaml</code>, hot-added per session,
+tools namespaced <code>&lt;ext&gt;__&lt;tool&gt;</code> with <code>_meta.goose_extension</code> ownership.
+Bundled servers in <code>goose-mcp</code>; platform extensions toggled on/off by
+default lists. The OSV malware check on npx/uvx-spawned servers is the
+closest thing to install-time review in the series.<sup id="fnref:21"><a class="footnote-ref" href="#fn:21">21</a></sup><sup id="fnref:22"><a class="footnote-ref" href="#fn:22">22</a></sup></p>
+<p><strong>Start here:</strong> <code>ExtensionConfig</code> in <code>crates/goose/src/agents/extension.rs</code>,
+then <code>ExtensionManager::add_extension</code> for the connect-per-type logic.</p>
+<h3 id="2-plugin-hooks-hooksjson">2. Plugin hooks (<code>hooks.json</code>)</h3>
+<p>Twelve lifecycle events, shell-command actions, JSON on stdin, exit-2
+blocking. This is pi's <code>beforeToolCall</code> shape with plugin packaging: any
+plugin directory can ship a <code>hooks.json</code> and intercept tool use, file
+reads/edits, shell execution, session start/end, and the stop decision —
+without touching Rust.<sup id="fnref:42"><a class="footnote-ref" href="#fn:42">42</a></sup></p>
+<p><strong>Start here:</strong> the shipped example at
+<code>examples/plugins/hello-hooks/hooks/hooks.json</code>, then the engine in
+<code>crates/goose/src/hooks/mod.rs</code>.</p>
+<h3 id="3-recipes">3. Recipes</h3>
+<p>Declarative YAML task files — goose's most distinctive axis, covered in
+its own section below.<sup id="fnref:46"><a class="footnote-ref" href="#fn:46">46</a></sup></p>
+<h3 id="4-schedules">4. Schedules</h3>
+<p>Cron expressions over recipes: <code>goose schedule add</code> plus the
+<code>scheduler__manage_schedule</code> tool, so the agent can schedule its own
+future runs. Always <code>Auto</code> mode — a scheduled job is headless by
+construction.<sup id="fnref:43"><a class="footnote-ref" href="#fn:43">43</a></sup></p>
+<h3 id="5-sub-agents-summon">5. Sub-agents (<code>summon</code>)</h3>
+<p>The <code>delegate</code> tool with ad-hoc, source-based, and combined modes; async
+background execution with <code>load(taskId)</code>; forced Auto; 25-turn default
+budget; no nesting. Recursive in-process <code>Agent</code> — the child is a full
+agent, not a prompt template.<sup id="fnref:44"><a class="footnote-ref" href="#fn:44">44</a></sup></p>
+<h3 id="6-skills">6. Skills</h3>
+<p>A skills platform extension (plus a state-machine <code>SkillOperation</code>),
+with <code>SKILL.md</code> discovery — the same frontmatter-and-markdown shape pi
+and Cline use.<sup id="fnref3:2"><a class="footnote-ref" href="#fn:2">2</a></sup></p>
+<h3 id="7-custom-providers">7. Custom providers</h3>
+<p>Two tiers below the 34 hand-written impls: 48 bundled declarative JSON
+definitions for the long tail, and user-authored custom providers from
+<code>~/.config/goose/custom_providers/</code> (with command-based auth). Adding a
+provider to the long tail is a JSON file, not a Rust impl.<sup id="fnref:35"><a class="footnote-ref" href="#fn:35">35</a></sup></p>
+<h3 id="8-the-provider-trait">8. The <code>Provider</code> trait</h3>
+<p><code>stream()</code> is the only required method; everything else — <code>complete()</code>,
+model recommendation, OAuth, thinking-effort plumbing, context ownership
+— has defaults. Implementing a provider means implementing a stream.<sup id="fnref:34"><a class="footnote-ref" href="#fn:34">34</a></sup></p>
+<p><strong>Start here:</strong> <code>crates/goose-provider-types/src/base.rs:504</code>, then the
+smallest hand-written impl for the idiom.</p>
+<h3 id="9-slash-commands-and-modes">9. Slash commands and modes</h3>
+<p><code>execute_command</code> intercepts slash input before the loop (<code>/mode</code>
+switches <code>GooseMode</code> mid-session); the state machine models it as an
+explicit <code>SlashCommandOperation</code>, step 2 of 18 — before compaction,
+before approval, before inference.<sup id="fnref2:13"><a class="footnote-ref" href="#fn:13">13</a></sup><sup id="fnref2:29"><a class="footnote-ref" href="#fn:29">29</a></sup></p>
+<h2 id="recipes-prompts-as-programs">Recipes: prompts as programs</h2>
+<p>Recipes clear the new-section bar. They are not a configuration axis and
+not a subsystem of the loop — they are a first-class artifact type with
+their own schema, lifecycle, security model, and scheduling integration,
+and nothing in pi, aider, or Cline is like them.</p>
+<p>A recipe is a declarative YAML (or JSON) task file. The schema requires a
+semver <code>version</code>, a <code>title</code>, and a <code>description</code>; the options carry the
+weight: <code>instructions</code> (injected as a system-prompt extension),
+<code>prompt</code> (the first user message), <code>extensions</code> (a list of
+<code>ExtensionConfig</code> — the recipe brings its own toolset),
+<code>settings</code> (<code>goose_provider</code>, <code>goose_model</code>, <code>temperature</code>,
+<code>max_turns</code> — the recipe picks the model), <code>activities</code>, <code>author</code>,
+<code>parameters</code>, <code>response.json_schema</code> (which <strong>materializes a
+<code>final_output</code> tool</strong> the agent must call), <code>sub_recipes</code> (delegation
+targets for <code>summon</code>'s <code>delegate</code>), and <code>retry</code> configs.<sup id="fnref2:46"><a class="footnote-ref" href="#fn:46">46</a></sup></p>
+<p>Parameters are typed (<code>string | number | boolean | date | file |
+select</code>), <code>required | optional | user_prompt</code>, templated with
+Jinja-style <code>{{ var }}</code> via minijinja — and <code>file</code> parameters cannot have
+defaults, explicitly "to prevent importing sensitive user files."<sup id="fnref3:46"><a class="footnote-ref" href="#fn:46">46</a></sup>
+Execution (<code>goose run --recipe</code>) turns <code>instructions</code> into the system
+prompt and <code>prompt</code> into the first user message; recipe settings override
+the provider and model; the full recipe is <strong>persisted on the session
+record</strong>, so a resumed session replays the same task definition. Every
+parsed recipe is auto-augmented: the <code>analyze</code> platform extension when
+builtin <code>developer</code> is present, and <code>summon</code> when <code>sub_recipes</code>
+exist.<sup id="fnref4:46"><a class="footnote-ref" href="#fn:46">46</a></sup></p>
+<p>The security model is prompt-injection-aware at the file level:
+<code>check_for_security_warnings</code> flags unicode tag characters in
+instructions, prompt, and activities. Validation (for schedules)
+requires prompt-or-instructions, schema-valid parameters, no
+<code>user_prompt</code> params (they'd block headless), and a valid response
+schema.<sup id="fnref5:46"><a class="footnote-ref" href="#fn:46">46</a></sup> The result: prompts become versioned, runnable, shareable,
+schedulable programs — goose's most distinctive product idea, and the
+axis its competitors would have to invent from scratch.</p>
+<p><img alt="Recipe lifecycle" src="figures/seq-recipe.svg" /></p>
+<h2 id="tradeoffs">Tradeoffs</h2>
+<ul>
+<li><strong>MCP-everything vs native-wrap vs TS extensions.</strong> pi wraps each MCP
+  server tool in its own <code>ToolDefinition</code>; Cline mints them as first-class
+  <code>AgentTool</code>s; goose makes <em>everything</em> a server — builtins included, over
+  in-process duplex. The protocol is the extension API. The price: every
+  tool call pays MCP serialization, and the "builtin" set is a config list
+  you can break by editing YAML.<sup id="fnref4:2"><a class="footnote-ref" href="#fn:2">2</a></sup><sup id="fnref3:21"><a class="footnote-ref" href="#fn:21">21</a></sup></li>
+<li><strong>LLM-judge approvals vs user-driven policies vs git-safety.</strong> Cline
+  asks the user constantly and makes asking cheap; aider never asks for
+  chat files and lets git remember; pi hands you the hook. Goose asks an
+  <em>LLM</em> whether the call is read-only, caches the verdict, and fails
+  closed — adaptive where Cline is manual, and fox-guarding-henhouse in
+  exactly the way the in-tree prompt-injection tests admit.<sup id="fnref2:5"><a class="footnote-ref" href="#fn:5">5</a></sup><sup id="fnref2:32"><a class="footnote-ref" href="#fn:32">32</a></sup></li>
+<li><strong>Catalog + heuristics at three scales.</strong> aider: 313-entry hand-written
+  YAML. Cline: ~200k-line generated catalog behind one generic adapter,
+  exact-ID resolution, no heuristics. Goose: 8,160-entry generated
+  snapshot <em>plus</em> aider-style substring heuristics <em>plus</em> 34 hand-written
+  provider impls. Three philosophies of "know your model," and goose
+  picked all of them.<sup id="fnref3:4"><a class="footnote-ref" href="#fn:4">4</a></sup><sup id="fnref2:36"><a class="footnote-ref" href="#fn:36">36</a></sup></li>
+<li><strong>Compaction without budgeting.</strong> Goose never budgets tokens per
+  subsystem — no allocator, no per-tool caps. It just compacts the whole
+  conversation at 0.8 of the context limit and, optionally, summarizes
+  old tool pairs. Simpler than a budget system; cruder too — a single
+  huge tool output can eat the budget that compaction then has to
+  recover.<sup id="fnref:41"><a class="footnote-ref" href="#fn:41">41</a></sup></li>
+<li><strong>Two loops, one env var.</strong> The migration tax is real and documented:
+  every behavior change lands twice until parity is declared. The
+  dividend is a state machine where the LLM call is <em>dead last</em> — every
+  policy, hook, and compaction decision is an ordered operation that runs
+  before inference, auditable as effects on persisted state. The legacy
+  loop can't offer that shape; the new one can't yet be the default.<sup id="fnref3:3"><a class="footnote-ref" href="#fn:3">3</a></sup><sup id="fnref3:10"><a class="footnote-ref" href="#fn:10">10</a></sup></li>
+<li><strong>No undo, by omission.</strong> aider auto-commits every turn; Cline stashes
+  every turn under private refs. Goose has neither — no git safety net of
+  any kind. The safety story is entirely <em>preventive</em> (modes, inspectors,
+  judges, hooks), never <em>restorative</em>. That's a coherent bet, and the
+  starkest contrast in the series.<sup id="fnref2:28"><a class="footnote-ref" href="#fn:28">28</a></sup></li>
+</ul>
+<h2 id="deliberate-omissions">Deliberate omissions</h2>
+<ul>
+<li><strong>No undo safety net.</strong> The negative grep is clean — no git
+  revert/reset/stash as a safety mechanism anywhere. aider's auto-commits
+  and Cline's per-turn stash checkpoints simply don't exist; if the agent
+  breaks your tree, your backups are your own.<sup id="fnref3:28"><a class="footnote-ref" href="#fn:28">28</a></sup></li>
+<li><strong>No automatic repo map.</strong> aider's PageRank-over-tree-sitter signature
+  subsystem is absent — but goose keeps a tree-sitter <strong><code>analyze</code> platform
+  extension</strong> (directory, file, and call-graph views) that the agent
+  invokes on demand. Map-as-tool instead of map-as-context.<sup id="fnref3:23"><a class="footnote-ref" href="#fn:23">23</a></sup></li>
+<li><strong>No SSE transport.</strong> Four extension transports, and SSE isn't one —
+  leftover configs only emit a migrate-warning. Streamable HTTP is the
+  remote story.<sup id="fnref4:21"><a class="footnote-ref" href="#fn:21">21</a></sup></li>
+<li><strong>No MCP registry client.</strong> AGENTS.md refuses new <code>servers.json</code>
+  entries pending the official MCP Registry, but no registry client
+  exists in code; <code>servers.json</code> is consumed only by the docs website.
+  The migration is prose.<sup id="fnref2:24"><a class="footnote-ref" href="#fn:24">24</a></sup></li>
+<li><strong>No model-name validation.</strong> Any string is accepted as a model name;
+  resolution is heuristics and fallbacks all the way down.<sup id="fnref3:36"><a class="footnote-ref" href="#fn:36">36</a></sup></li>
+<li><strong>No command sandbox.</strong> The OSV malware check runs at extension
+  <em>install</em> time; <code>run_commands</code> executes unsandboxed in the user's
+  shell, like Cline, like aider.<sup id="fnref3:22"><a class="footnote-ref" href="#fn:22">22</a></sup></li>
+<li><strong>Telegram is the only gateway.</strong> The gateway abstraction has exactly
+  one implementation; <code>create_gateway</code> bails on anything else.<sup id="fnref:45"><a class="footnote-ref" href="#fn:45">45</a></sup></li>
+</ul>
+<h2 id="comparison-matrix-row">Comparison matrix row</h2>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Dimension</th>
+<th>pi (v1.0.2)</th>
+<th>aider (v0.86.2)</th>
+<th>Cline (v4.1.22)</th>
+<th>Goose (v1.53.0)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>Agent loop</td>
+<td>Event-sourced; inner + outer loops; no iteration cap</td>
+<td>No tool-call loop; parse→apply→reflect; REPL + reflection (≤3) + retry</td>
+<td>Host-independent SDK <code>AgentRuntime.execute</code>; <code>maxIterations: undefined</code> — bound is 5 identical tool calls</td>
+<td><strong>Two loops, migration in progress</strong>: legacy <code>agent.rs</code> plain <code>loop{}</code> (default, <code>max_turns</code>=1000) vs opt-in effect-sourced state machine (<code>GOOSE_STATE_MACHINE=1</code>), LLM call dead last <sup id="fnref4:3"><a class="footnote-ref" href="#fn:3">3</a></sup><sup id="fnref3:6"><a class="footnote-ref" href="#fn:6">6</a></sup><sup id="fnref3:7"><a class="footnote-ref" href="#fn:7">7</a></sup><sup id="fnref4:10"><a class="footnote-ref" href="#fn:10">10</a></sup></td>
+</tr>
+<tr>
+<td>2</td>
+<td>Tool system</td>
+<td>4 built-ins + registry; TypeBox validation; sequential/parallel</td>
+<td>None — model emits SEARCH/REPLACE blocks</td>
+<td>9 built-ins + MCP natives + team tools; sequential default, adjacent-parallel batching</td>
+<td><strong>Entirely MCP-shaped</strong>: every tool is an MCP server (builtins = in-process tokio duplex); <code>ext__tool</code> namespacing; no non-MCP path <sup id="fnref5:2"><a class="footnote-ref" href="#fn:2">2</a></sup><sup id="fnref5:21"><a class="footnote-ref" href="#fn:21">21</a></sup><sup id="fnref4:23"><a class="footnote-ref" href="#fn:23">23</a></sup></td>
+</tr>
+<tr>
+<td>3</td>
+<td>Model providers</td>
+<td>~35 behind one <code>StreamFn</code></td>
+<td>litellm; 313-entry YAML + substring heuristics</td>
+<td>228 providers, one generic Vercel AI SDK adapter; exact-ID resolution</td>
+<td>Single <code>Provider</code> trait (<code>stream()</code> required); 34 static + 48 declarative JSON + custom; 8,160-entry models.dev snapshot (zstd-bundled, ETag hot-swap) + substring heuristics; no name validation <sup id="fnref3:34"><a class="footnote-ref" href="#fn:34">34</a></sup><sup id="fnref3:35"><a class="footnote-ref" href="#fn:35">35</a></sup><sup id="fnref4:36"><a class="footnote-ref" href="#fn:36">36</a></sup></td>
+</tr>
+<tr>
+<td>4</td>
+<td>Prompt construction</td>
+<td>Structured sections, diffed per turn</td>
+<td>Fixed wire order, synthetic user/assistant pairs, cache breakpoints</td>
+<td>Template + placeholder replacement; <code>MessageBuilder</code> normalization</td>
+<td><code>PromptManager</code> from extension info + directory hints + goose mode; toolshim/native split per model; moim agent-only turn-context message <sup id="fnref2:14"><a class="footnote-ref" href="#fn:14">14</a></sup></td>
+</tr>
+<tr>
+<td>5</td>
+<td>Memory/session</td>
+<td>JSONL sessions; compaction</td>
+<td>In-memory cur/done; background summarization; markdown log; git auto-commit</td>
+<td>SQLite + file-backend; versioned whole-file JSON envelopes; manual <code>/compact</code></td>
+<td><strong>SQLite</strong> <code>sessions.db</code> + JSON blobs; full <code>Recipe</code> persisted on session record; explicit cross-session recall (chatrecall + SQL FTS); <code>user_visible</code>/<code>agent_visible</code> flags <sup id="fnref2:40"><a class="footnote-ref" href="#fn:40">40</a></sup></td>
+</tr>
+<tr>
+<td>6</td>
+<td>Reasoning/planning</td>
+<td>Thinking forwarded; no planner/sub-agents</td>
+<td>Architect = sequential delegation with user gate</td>
+<td>plan/act modes (differ by one tool); sub-agents + teams</td>
+<td>GooseMode (Auto/Approve/SmartApprove/Chat); <code>summon</code> sub-agents (forced Auto, 25 turns, no nesting); <strong>recipes</strong> as declarative task programs; in-process cron schedules (always Auto) <sup id="fnref3:29"><a class="footnote-ref" href="#fn:29">29</a></sup><sup id="fnref3:44"><a class="footnote-ref" href="#fn:44">44</a></sup><sup id="fnref6:46"><a class="footnote-ref" href="#fn:46">46</a></sup><sup id="fnref3:43"><a class="footnote-ref" href="#fn:43">43</a></sup></td>
+</tr>
+<tr>
+<td>7</td>
+<td>Extensibility</td>
+<td>TS extensions, hooks, MCP, skills</td>
+<td>42 closed commands; no plugin API/MCP/skills</td>
+<td><code>AgentRuntimePlugin</code>, 7-callback hooks, file hooks, skills, MCP, sub-agents</td>
+<td><strong>Broadest so far</strong>: MCP extension configs (4 transports), 12-event plugin hooks, recipes, schedules, sub-agents, skills, custom providers, the <code>Provider</code> trait <sup id="fnref6:21"><a class="footnote-ref" href="#fn:21">21</a></sup><sup id="fnref4:42"><a class="footnote-ref" href="#fn:42">42</a></sup><sup id="fnref7:46"><a class="footnote-ref" href="#fn:46">46</a></sup><sup id="fnref4:43"><a class="footnote-ref" href="#fn:43">43</a></sup><sup id="fnref4:35"><a class="footnote-ref" href="#fn:35">35</a></sup><sup id="fnref4:34"><a class="footnote-ref" href="#fn:34">34</a></sup></td>
+</tr>
+<tr>
+<td>8</td>
+<td>Interfaces</td>
+<td>TUI / print / RPC / SDK on one event stream</td>
+<td>prompt_toolkit CLI + streamlit GUI</td>
+<td>VS Code webview over proto-bus gRPC (22 svcs/224 RPCs) + CLI host + npm SDK re-export</td>
+<td><strong>Rust CLI REPL</strong> + Electron desktop + <strong>ACP bridge</strong> + Telegram gateway; loop emits <code>AgentEvent</code>s; uniffi Python/Kotlin bindings via <code>goose-sdk</code> <sup id="fnref2:20"><a class="footnote-ref" href="#fn:20">20</a></sup><sup id="fnref4:45"><a class="footnote-ref" href="#fn:45">45</a></sup><sup id="fnref3:41"><a class="footnote-ref" href="#fn:41">41</a></sup></td>
+</tr>
+<tr>
+<td>9</td>
+<td>Failure handling</td>
+<td>Auto-retry, truncation guards, abort; no cap</td>
+<td>Exp-backoff (60s); malformed edits reflected (≤3)</td>
+<td>Provider retry 3×; output-limit recovery 3×; loop detection 3×/5× (reactive); mistake tracker 6; no host iteration cap</td>
+<td>Three-layer retry (provider pre-first-item ≤3, recipe <code>RetryManager</code>, micro-retries); <code>max_turns</code>=1000; <strong>repetition guard inert</strong> (registered <code>None</code>) — the bound is turns, not loops <sup id="fnref4:7"><a class="footnote-ref" href="#fn:7">7</a></sup><sup id="fnref3:9"><a class="footnote-ref" href="#fn:9">9</a></sup></td>
+</tr>
+<tr>
+<td>10</td>
+<td>Security model</td>
+<td>Project trust + extension hooks; no approval UX</td>
+<td>Boundary prompts; git auto-commit + <code>/undo</code>; no sandbox</td>
+<td>Finest-grained: per-tool policies + webview UI + diff previews; commands always prompt; no sandbox; per-turn stash checkpoints</td>
+<td><strong>Modes × <code>permission.yaml</code> × 5-inspector chain</strong> (security can only escalate); <strong>LLM judge</strong> for SmartApprove (UNTRUSTED-labeled, fail-closed); Always-Allow withheld on security warning; strict headless; <strong>no undo</strong> <sup id="fnref4:29"><a class="footnote-ref" href="#fn:29">29</a></sup><sup id="fnref2:30"><a class="footnote-ref" href="#fn:30">30</a></sup><sup id="fnref2:31"><a class="footnote-ref" href="#fn:31">31</a></sup><sup id="fnref3:32"><a class="footnote-ref" href="#fn:32">32</a></sup><sup id="fnref3:33"><a class="footnote-ref" href="#fn:33">33</a></sup><sup id="fnref4:28"><a class="footnote-ref" href="#fn:28">28</a></sup></td>
+</tr>
+</tbody>
+</table>
+<h2 id="endnotes">Endnotes</h2>
+<p>All notes are VERIFIED against <code>v1.53.0</code>
+(<code>76da81cb964b21cd096db739302329b40c2998b8</code>) unless marked DOCS.
+<code>GH</code> = <code>https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/</code>.</p>
+<div class="footnote">
+<hr />
+<ol>
+<li id="fn:1">
+<p>Tag <code>v1.53.0</code>, SHA <code>76da81cb964b21cd096db739302329b40c2998b8</code>,
+committed 2026-09-30 14:19:01 -0400; Apache-2.0 (<code>LICENSE</code>); Rust
+cargo workspace (<code>members = ["crates/*"]</code>). Non-test <code>.rs</code> in
+<code>*/src</code>: <code>goose</code> 339 files / 176,482 LOC, <code>goose-cli</code> 51 / 28,625,
+<code>goose-provider-types</code> 36 / 30,822, <code>goose-providers</code> 26 / 15,731,
+<code>goose-local-inference</code> 20 / 10,347, <code>goose-mcp</code> 11 / 6,084,
+<code>goose-agent</code> 6 / 1,557, <code>goose-context-management</code> 7 / 1,156,
+<code>goose-sdk</code> 4 / 2,834, <code>goose-sdk-types</code> 5 / 3,261,
+<code>goose-roaming</code> 11 / 2,197, <code>goose-download-manager</code> 1 / 690,
+<code>goose-acp-macros</code> 1 / 319. Entry: <code>crates/goose-cli/src/main.rs</code> →
+<code>goose_cli::cli::cli()</code>; the agent at
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/agent.rs">GH…/crates/goose/src/agents/agent.rs</a>.
+Claim under test from <code>README.md</code>: "your native open source AI agent
+— desktop app, CLI, and API — for code, workflows, and everything in
+between." Scope: the CLI agent; the Electron desktop (<code>ui/desktop/</code>)
+is out of scope except as the cron-loop host; <code>goose-roaming</code> was
+mapped but not deep-dived.&#160;<a class="footnote-backref" href="#fnref:1" title="Jump back to footnote 1 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:1" title="Jump back to footnote 1 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:1" title="Jump back to footnote 1 in the text">&#8617;</a></p>
+</li>
+<li id="fn:2">
+<p>"Builtin" means in-process MCP: every tool the agent sees arrives
+through the MCP client layer; builtins connect over in-process tokio
+duplex rather than subprocess stdio (see <sup id="fnref4:22"><a class="footnote-ref" href="#fn:22">22</a></sup>). There is no
+non-MCP tool path — contrast pi's 4 native built-ins plus TS
+extension API.&#160;<a class="footnote-backref" href="#fnref:2" title="Jump back to footnote 2 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:2" title="Jump back to footnote 2 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:2" title="Jump back to footnote 2 in the text">&#8617;</a><a class="footnote-backref" href="#fnref4:2" title="Jump back to footnote 2 in the text">&#8617;</a><a class="footnote-backref" href="#fnref5:2" title="Jump back to footnote 2 in the text">&#8617;</a></p>
+</li>
+<li id="fn:3">
+<p><code>Agent::reply()</code> at
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/agent.rs#L2079">GH…/crates/goose/src/agents/agent.rs#L2079</a>
+takes <code>use_state_machine: bool</code>; the CLI passes
+<code>goose::agents::state_machine::enabled()</code>
+(<code>crates/goose-cli/src/session/mod.rs:1456</code>), which is false unless
+<code>GOOSE_STATE_MACHINE</code> ∈ {<code>1</code>, <code>true</code>, <code>TRUE</code>, <code>yes</code>} at
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/state_machine/mod.rs#L73-L77">GH…/crates/goose/src/agents/state_machine/mod.rs#L73-L77</a>.
+The repo's own <code>AGENTS.md:41-43</code>: "We are replacing the legacy agent
+loop in <code>crates/goose/src/agents/agent.rs</code> with the state machine in
+<code>crates/goose/src/agents/state_machine/</code>. … Until the migration is
+complete, changes to agent-loop behavior must be implemented and
+tested in both paths."&#160;<a class="footnote-backref" href="#fnref:3" title="Jump back to footnote 3 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:3" title="Jump back to footnote 3 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:3" title="Jump back to footnote 3 in the text">&#8617;</a><a class="footnote-backref" href="#fnref4:3" title="Jump back to footnote 3 in the text">&#8617;</a></p>
+</li>
+<li id="fn:4">
+<p>aider's model-compat layer: a 313-entry <code>model-settings.yml</code> plus
+<code>apply_generic_model_settings</code> substring heuristics (Agent Harness
+Anatomy #2). Goose's analog: an 8,160-entry models.dev snapshot
+zstd-bundled at build time plus <code>infer_provider_from_model</code>
+substring rules — see <sup id="fnref5:36"><a class="footnote-ref" href="#fn:36">36</a></sup>.&#160;<a class="footnote-backref" href="#fnref:4" title="Jump back to footnote 4 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:4" title="Jump back to footnote 4 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:4" title="Jump back to footnote 4 in the text">&#8617;</a></p>
+</li>
+<li id="fn:5">
+<p>SmartApprove's read-only classifier: the model judges its own
+pending tool calls, labeled <code>UNTRUSTED TOOL REQUEST DATA</code>, failing
+closed — see <sup id="fnref4:32"><a class="footnote-ref" href="#fn:32">32</a></sup>.&#160;<a class="footnote-backref" href="#fnref:5" title="Jump back to footnote 5 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:5" title="Jump back to footnote 5 in the text">&#8617;</a></p>
+</li>
+<li id="fn:6">
+<p><code>Agent::reply</code> → <code>reply_impl</code> at
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/agent.rs#L2109">GH…/crates/goose/src/agents/agent.rs#L2109</a>
+→ <code>reply_internal</code> at
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/agent.rs#L2455">L2455</a>,
+which runs a plain <code>loop {}</code> inside <code>async_stream::try_stream!</code> at
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/agent.rs#L2625">L2625</a>.
+<code>agent.rs</code> is 6,382 lines at this SHA.&#160;<a class="footnote-backref" href="#fnref:6" title="Jump back to footnote 6 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:6" title="Jump back to footnote 6 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:6" title="Jump back to footnote 6 in the text">&#8617;</a></p>
+</li>
+<li id="fn:7">
+<p><code>DEFAULT_MAX_TURNS: u32 = 1000</code> at
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/agent.rs#L86">GH…/crates/goose/src/agents/agent.rs#L86</a>;
+<code>turns_taken &gt; max_turns</code> yields <code>MAX_TURNS_MESSAGE</code> and breaks.
+Other termination arms: cancellation (three check points), provider
+refusal, credits/auth/network errors, ≤2 recovery compactions, ≤3
+empty-turn retries (<code>MAX_EMPTY_TURN_RETRIES</code> at L89), stop-hook
+denial cap 8 (<code>DEFAULT_STOP_HOOK_BLOCK_CAP</code> at L87), recipe retry
+exhaustion. Negative finding: <code>grep -rln "max_iterations"
+crates/goose/src crates/goose-cli/src</code> → no matches at the pinned
+SHA — the bound is <code>max_turns</code>, full stop.&#160;<a class="footnote-backref" href="#fnref:7" title="Jump back to footnote 7 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:7" title="Jump back to footnote 7 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:7" title="Jump back to footnote 7 in the text">&#8617;</a><a class="footnote-backref" href="#fnref4:7" title="Jump back to footnote 7 in the text">&#8617;</a><a class="footnote-backref" href="#fnref5:7" title="Jump back to footnote 7 in the text">&#8617;</a></p>
+</li>
+<li id="fn:8">
+<p><code>inspect_tools</code> splits requests into approved/needs_approval/denied
+at
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/agent.rs#L2906-L2921">GH…/crates/goose/src/agents/agent.rs#L2906-L2921</a>;
+<code>handle_approval_tool_requests</code> at
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/tool_execution.rs#L149">GH…/crates/goose/src/agents/tool_execution.rs#L149</a>
+registers a oneshot in the <code>ToolConfirmationRouter</code>, yields
+<code>ActionRequired</code>, and awaits; <code>submit_tool_confirmation</code> at
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/agent.rs#L1518">GH…/crates/goose/src/agents/agent.rs#L1518</a>
+delivers the verdict. <code>handle_confirmation</code> at L1616 has zero
+non-test callers — dead, superseded. Providers can route
+confirmation natively via <code>PermissionRouting::ActionRequired</code> at
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose-provider-types/src/base.rs#L341">GH…/crates/goose-provider-types/src/base.rs#L341</a>.&#160;<a class="footnote-backref" href="#fnref:8" title="Jump back to footnote 8 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:8" title="Jump back to footnote 8 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:8" title="Jump back to footnote 8 in the text">&#8617;</a></p>
+</li>
+<li id="fn:9">
+<p>Retry, three layers. (a) Provider pre-first-item: ≤3, exp backoff
+1s→30s, transient-only; auth gets one credential refresh;
+<strong>mid-stream errors are not retried</strong> — at
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/reply_parts.rs#L422-L458">GH…/crates/goose/src/agents/reply_parts.rs#L422-L458</a>.
+(b) Recipe <code>RetryManager</code>: shell success checks, <code>on_failure</code>
+command, conversation reset to the <code>initial_messages</code> snapshot — at
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/recipe/retry.rs#L92-L142">GH…/crates/goose/src/recipe/retry.rs#L92-L142</a>.
+(c) Micro-retries: empty-turn ×3, compaction ×2, stop-hook ×8. Tool
+failures arrive as error <code>ToolResponse</code> content, not exceptions. The
+<code>RepetitionInspector</code> is inert in the legacy path: registered with
+<code>None</code> at
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/agent.rs#L794">GH…/crates/goose/src/agents/agent.rs#L794</a>,
+so <code>check_tool_call</code> always returns true at
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/tool_monitor.rs#L59-L63">GH…/crates/goose/src/tool_monitor.rs#L59-L63</a>,
+and <code>inspect</code> runs on throwaway clones at
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/tool_monitor.rs#L108-L116">L108-L116</a>.&#160;<a class="footnote-backref" href="#fnref:9" title="Jump back to footnote 9 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:9" title="Jump back to footnote 9 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:9" title="Jump back to footnote 9 in the text">&#8617;</a><a class="footnote-backref" href="#fnref4:9" title="Jump back to footnote 9 in the text">&#8617;</a></p>
+</li>
+<li id="fn:10">
+<p>The state machine is effect-sourced: steps produce <code>GooseEffect</code>s
+(<code>crates/goose/src/agents/state_machine/effects.rs</code>) applied to the
+persisted session by <code>SessionManager</code>
+(<code>state_machine/session.rs</code>); the machine re-loads the session each
+iteration — "an ordered, re-entrant pipeline over persisted
+conversation state" at
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/state_machine/mod.rs#L1-L5">GH…/crates/goose/src/agents/state_machine/mod.rs#L1-L5</a>.
+The ~20 operations are wired in <code>Agent::create_state_machine</code>; the
+step order at
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/agent.rs#L1687-L1766">GH…/crates/goose/src/agents/agent.rs#L1687-L1766</a>
+puts <code>Inference</code> last, gathering <code>inference_tools</code>, <code>prompt_parts</code>,
+and <code>moim_parts</code> from every operation before the model call.&#160;<a class="footnote-backref" href="#fnref:10" title="Jump back to footnote 10 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:10" title="Jump back to footnote 10 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:10" title="Jump back to footnote 10 in the text">&#8617;</a><a class="footnote-backref" href="#fnref4:10" title="Jump back to footnote 10 in the text">&#8617;</a></p>
+</li>
+<li id="fn:11">
+<p>Parity-burden seams. The legacy loop imports the new path's
+<code>MAX_TURNS_MESSAGE</code> at
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/agent.rs#L40">GH…/crates/goose/src/agents/agent.rs#L40</a>
+(← <code>state_machine/ops_maxturns.rs:14</code>). <code>Permission::Cancel</code> is
+normalized to <code>DenyOnce</code> only in the state-machine path at
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/agent.rs#L1531-L1532">GH…/crates/goose/src/agents/agent.rs#L1531-L1532</a>.
+Legacy approval blocks on a per-request oneshot router at
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/agent.rs#L2902-L2945">GH…/crates/goose/src/agents/agent.rs#L2902-L2945</a>;
+the state machine patches <code>goose.executable</code> metadata effects
+(<code>TOOL_EXECUTABLE_KEY</code>) at
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/state_machine/ops_tool_approval.rs#L24">GH…/crates/goose/src/agents/state_machine/ops_tool_approval.rs#L24</a>
+and
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/state_machine/ops_tool_approval.rs#L285-L293">L285-L293</a>.&#160;<a class="footnote-backref" href="#fnref:11" title="Jump back to footnote 11 in the text">&#8617;</a></p>
+</li>
+<li id="fn:12">
+<p>The steer queue can veto the loop's exit at
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/agent.rs#L3549-L3551">GH…/crates/goose/src/agents/agent.rs#L3549-L3551</a>,
+but steers cannot inject before the first provider round-trip at
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/agent.rs#L3303">L3303</a>.&#160;<a class="footnote-backref" href="#fnref:12" title="Jump back to footnote 12 in the text">&#8617;</a></p>
+</li>
+<li id="fn:13">
+<p>Trace ①: message ID assigned at
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/agent.rs#L2116">GH…/crates/goose/src/agents/agent.rs#L2116</a>;
+<code>use_state_machine=false</code> skips the new path at
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/agent.rs#L2166">L2166</a>;
+<code>SessionStart</code> / <code>UserPromptSubmit</code> hooks fire at
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/agent.rs#L2210-L2229">L2210-L2229</a>;
+<code>execute_command</code> returns <code>Ok(None)</code> — not a slash command — at
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/agent.rs#L2231">L2231</a>;
+the message is persisted via <code>session_manager.add_message</code> at
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/agent.rs#L2346-L2352">L2346-L2352</a>.&#160;<a class="footnote-backref" href="#fnref:13" title="Jump back to footnote 13 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:13" title="Jump back to footnote 13 in the text">&#8617;</a></p>
+</li>
+<li id="fn:14">
+<p>Trace ②: <code>prepare_reply_context</code> at
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/agent.rs#L845">GH…/crates/goose/src/agents/agent.rs#L845</a>
+→ <code>prepare_tools_and_prompt</code> at
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/reply_parts.rs#L198">GH…/crates/goose/src/agents/reply_parts.rs#L198</a>:
+tools via <code>list_tools</code>, unique-name enforcement, system prompt from
+<code>PromptManager</code> (extension info + directory hints + goose mode) at
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/reply_parts.rs#L219-L233">L219-L233</a>,
+toolshim/native split per <code>model_config.toolshim</code> at
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/reply_parts.rs#L236-L244">L236-L244</a>.
+The moim agent-only turn-context message is persisted before the
+loop at
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/agent.rs#L2602-L2622">GH…/crates/goose/src/agents/agent.rs#L2602-L2622</a>;
+skipped when the context limit is under 32k at
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/moim.rs#L119-L121">GH…/crates/goose/src/agents/moim.rs#L119-L121</a>.&#160;<a class="footnote-backref" href="#fnref:14" title="Jump back to footnote 14 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:14" title="Jump back to footnote 14 in the text">&#8617;</a></p>
+</li>
+<li id="fn:15">
+<p>Trace ③: <code>stream_response_from_provider</code> at
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/reply_parts.rs#L342">GH…/crates/goose/src/agents/reply_parts.rs#L342</a>
+→ <code>provider.stream(&amp;model_config, system_prompt, messages, &amp;tools)</code>
+at
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/reply_parts.rs#L392-L398">L392-L398</a>;
+pre-first-item transient retries (≤3) at <sup id="fnref4:9"><a class="footnote-ref" href="#fn:9">9</a></sup>. Text chunks yield
+<code>AgentEvent::Message</code> live at
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/agent.rs#L2828">GH…/crates/goose/src/agents/agent.rs#L2828</a>.&#160;<a class="footnote-backref" href="#fnref:15" title="Jump back to footnote 15 in the text">&#8617;</a></p>
+</li>
+<li id="fn:16">
+<p>Trace ④: <code>categorize_tool_requests</code> at
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/reply_parts.rs#L587">GH…/crates/goose/src/agents/reply_parts.rs#L587</a>;
+<code>recover_mangled_tool_name</code> at
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/reply_parts.rs#L587-L603">L587-L603</a>;
+arguments coerced to the advertised JSON schema; tool-call IDs
+deduped; calls to unadvertised tools become <code>invalid_request</code> errors
+— invalid tool calls are data, not exceptions.&#160;<a class="footnote-backref" href="#fnref:16" title="Jump back to footnote 16 in the text">&#8617;</a></p>
+</li>
+<li id="fn:17">
+<p>Trace ⑤: <code>handle_approved_and_denied_tools</code> at
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/agent.rs#L900">GH…/crates/goose/src/agents/agent.rs#L900</a>
+→ <code>dispatch_tool_call</code> at
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/agent.rs#L1067">L1067</a>:
+<code>PreToolUse</code> hooks fire at
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/agent.rs#L1094-L1110">L1094-L1110</a>,
+then <code>extension_manager.dispatch_tool_call</code> runs it at
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/agent.rs#L1168-L1174">L1168-L1174</a>,
+wrapped by <code>with_post_tool_hook</code> (large-response spill +
+<code>PostToolUse</code> hooks) at
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/agent.rs#L688-L769">L688-L769</a>.
+The approval path: <code>handle_approval_tool_requests</code> (<sup id="fnref3:8"><a class="footnote-ref" href="#fn:8">8</a></sup>). Streams
+drain concurrently at
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/agent.rs#L2969-L3030">GH…/crates/goose/src/agents/agent.rs#L2969-L3030</a>.&#160;<a class="footnote-backref" href="#fnref:17" title="Jump back to footnote 17 in the text">&#8617;</a></p>
+</li>
+<li id="fn:18">
+<p>Trace ⑥: request/response pairs into <code>messages_to_add</code> at
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/agent.rs#L3067-L3136">GH…/crates/goose/src/agents/agent.rs#L3067-L3136</a>,
+persisted per message at
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/agent.rs#L3501-L3505">L3501-L3505</a>
+and appended to the conversation at
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/agent.rs#L3506">L3506</a>.
+Unparseable calls become a well-formed <code>"unparseable_tool_call"</code>
+placeholder at
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/agent.rs#L3097-L3109">L3097-L3109</a>.
+Large text outputs spill to an owner-only temp file (200,000-char
+default) at
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/large_response_handler.rs#L7-L13">GH…/crates/goose/src/agents/large_response_handler.rs#L7-L13</a>.&#160;<a class="footnote-backref" href="#fnref:18" title="Jump back to footnote 18 in the text">&#8617;</a></p>
+</li>
+<li id="fn:19">
+<p>Trace ⑦: <code>exit_chat = true</code> at
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/agent.rs#L3444">GH…/crates/goose/src/agents/agent.rs#L3444</a>;
+the stop hook allows → <code>break</code>. Otherwise the loop continues until
+<code>turns_taken &gt; 1000</code>, cancellation, an error arm, or the stop-hook
+cap (see <sup id="fnref5:7"><a class="footnote-ref" href="#fn:7">7</a></sup>).&#160;<a class="footnote-backref" href="#fnref:19" title="Jump back to footnote 19 in the text">&#8617;</a></p>
+</li>
+<li id="fn:20">
+<p>Trace ⑧: all output is <code>AgentEvent</code>s consumed by the CLI, the
+desktop, and the ACP frontends. Final summary text accumulates in
+<code>last_assistant_text</code> at
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/agent.rs#L3598-L3606">GH…/crates/goose/src/agents/agent.rs#L3598-L3606</a>.&#160;<a class="footnote-backref" href="#fnref:20" title="Jump back to footnote 20 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:20" title="Jump back to footnote 20 in the text">&#8617;</a></p>
+</li>
+<li id="fn:21">
+<p><code>ExtensionConfig</code> at
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/extension.rs#L156">GH…/crates/goose/src/agents/extension.rs#L156</a>:
+exactly four variants — <code>stdio</code>, <code>builtin</code>, <code>platform</code>,
+<code>streamable_http</code>. Negative finding: <code>grep -rn '"sse"\|Sse'
+crates/goose/src/agents/ crates/goose/src/config/extensions.rs</code> →
+only the migrate-warning and an ACP schema-generator bin — no SSE
+transport at the pinned SHA. Config lives under <code>extensions:</code> in
+<code>~/.config/goose/config.yaml</code> at
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/config/extensions.rs#L13">GH…/crates/goose/src/config/extensions.rs#L13</a>
+(<code>GOOSE_PATH_ROOT</code> overrides at
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/config/paths.rs#L33">GH…/crates/goose/src/config/paths.rs#L33</a>).&#160;<a class="footnote-backref" href="#fnref:21" title="Jump back to footnote 21 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:21" title="Jump back to footnote 21 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:21" title="Jump back to footnote 21 in the text">&#8617;</a><a class="footnote-backref" href="#fnref4:21" title="Jump back to footnote 21 in the text">&#8617;</a><a class="footnote-backref" href="#fnref5:21" title="Jump back to footnote 21 in the text">&#8617;</a><a class="footnote-backref" href="#fnref6:21" title="Jump back to footnote 21 in the text">&#8617;</a></p>
+</li>
+<li id="fn:22">
+<p><code>resolve_extensions_for_new_session</code> at
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/config/extensions.rs#L303">GH…/crates/goose/src/config/extensions.rs#L303</a>
+→ <code>Agent::add_extensions_bulk</code> →
+<code>ExtensionManager::add_extension</code> at
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/extension_manager/mod.rs#L470">GH…/crates/goose/src/agents/extension_manager/mod.rs#L470</a>
+(no-op on unchanged config), resolving secrets/envs against a 31-key
+env denylist, then connecting per type: stdio spawns a subprocess
+with an OSV malware check on npx/uvx at
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/extension_malware_check.rs#L44">GH…/crates/goose/src/extension_malware_check.rs#L44</a>;
+builtin servers connect over in-process tokio duplex at
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/extension_manager/builtin.rs#L10">GH…/crates/goose/src/agents/extension_manager/builtin.rs#L10</a>;
+platform extensions run in-process via the client factory; remote
+ones get an OAuth step-up wrapper with proactive token refresh at
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/extension_manager/streamable_http.rs#L343">GH…/crates/goose/src/agents/extension_manager/streamable_http.rs#L343</a>
+and
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/extension_manager/streamable_http.rs#L657">L657</a>.&#160;<a class="footnote-backref" href="#fnref:22" title="Jump back to footnote 22 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:22" title="Jump back to footnote 22 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:22" title="Jump back to footnote 22 in the text">&#8617;</a><a class="footnote-backref" href="#fnref4:22" title="Jump back to footnote 22 in the text">&#8617;</a></p>
+</li>
+<li id="fn:23">
+<p>Namespacing at
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/extension_manager/mod.rs#L244">GH…/crates/goose/src/agents/extension_manager/mod.rs#L244</a>:
+tools prefixed <code>&lt;ext&gt;__&lt;tool&gt;</code>, owner-tagged in
+<code>_meta.goose_extension</code>, cached with version invalidation on
+<code>tools/list_changed</code>, dispatched by
+<code>resolve_tool_with_constraints</code> at
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/extension_manager/mod.rs#L1140">L1140</a>
+with mangled-name recovery at
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/extension_manager/mod.rs#L262">L262</a>.
+Bundled set at
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose-mcp/src/lib.rs#L80">GH…/crates/goose-mcp/src/lib.rs#L80</a>:
+autovisualiser (8 <code>render_*</code> tools), computercontroller (xlsx/docx/pdf
++ macOS-only <code>computer_control</code>), memory (4 tools), tutorial (1
+tool). Platform extensions default-ON: developer, summon, skills,
+analyze (a tree-sitter directory/file/call-graph tool the agent
+invokes on demand — map-as-tool, not map-as-context), tom,
+extensionmanager, apps, scheduler; default-OFF: todo, chatrecall,
+summarize, code_execution, orchestrator (scheduler and orchestrator
+hidden).&#160;<a class="footnote-backref" href="#fnref:23" title="Jump back to footnote 23 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:23" title="Jump back to footnote 23 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:23" title="Jump back to footnote 23 in the text">&#8617;</a><a class="footnote-backref" href="#fnref4:23" title="Jump back to footnote 23 in the text">&#8617;</a></p>
+</li>
+<li id="fn:24">
+<p><code>servers.json</code> has no runtime consumer: <code>grep -rn
+"servers.json\|fetchMCPServers" crates/ ui/desktop/src
+documentation/</code> → only <code>documentation/src/</code> (the docs website).
+Negative finding: <code>grep -rni "registry" crates/goose/src
+crates/goose-cli/src crates/goose-mcp/src</code> → only
+<code>ActiveRunRegistry</code>, provider registries, <code>BUILTIN_REGISTRY</code>, and
+<code>register_*</code> functions — nothing referencing the official MCP
+Registry. The repo's AGENTS.md refuses new <code>servers.json</code> entries
+pending that migration. <code>search_available_extensions</code> is
+config-local only at
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/ext_manager.rs#L517-L563">GH…/crates/goose/src/agents/ext_manager.rs#L517-L563</a>.&#160;<a class="footnote-backref" href="#fnref:24" title="Jump back to footnote 24 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:24" title="Jump back to footnote 24 in the text">&#8617;</a></p>
+</li>
+<li id="fn:25">
+<p><code>ToolInfo.permission</code> is dead code: defined at
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/extension.rs#L569">GH…/crates/goose/src/agents/extension.rs#L569</a>,
+zero other references repo-wide. <code>manage_extensions</code> always requires
+approval and is blocked for subagents; the <code>available_tools</code>
+allowlist is enforced at list and dispatch time; removing an
+extension prunes its per-tool permissions at
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/config/permission.rs#L233-L251">GH…/crates/goose/src/config/permission.rs#L233-L251</a>.&#160;<a class="footnote-backref" href="#fnref:25" title="Jump back to footnote 25 in the text">&#8617;</a></p>
+</li>
+<li id="fn:26">
+<p>rmcp 3.4.1 is the protocol SDK (workspace <code>Cargo.toml:23</code>);
+<code>goose-mcp</code> adds the four bundled servers, the spawn-function
+registry, <code>mcp_server_runner</code>, and subprocess/PATH plumbing. The
+goose crate's <code>GooseClient</code> (roots, elicitation→user with 300s
+timeout, session-context <code>_meta</code> injection, timeouts/cancellation)
+at
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/mcp_client.rs#L74-L924">GH…/crates/goose/src/agents/mcp_client.rs#L74-L924</a>.&#160;<a class="footnote-backref" href="#fnref:26" title="Jump back to footnote 26 in the text">&#8617;</a></p>
+</li>
+<li id="fn:27">
+<p>Docs-vs-code, all VERIFIED. <code>documentation/docs/goose-architecture/extensions-design.md</code>
+documents an <code>Extension</code> trait — <code>grep -rn "trait Extension"
+crates/goose/src crates/goose-mcp/src</code> → zero hits. Docs say
+<code>goose mcp {name}</code> adds a builtin to a session; it runs the server
+standalone on stdio. Docs name an <code>enable_extension</code> tool; the real
+tool is <code>manage_extensions</code>. "Smart Extension Recommendation" is a
+local config listing.&#160;<a class="footnote-backref" href="#fnref:27" title="Jump back to footnote 27 in the text">&#8617;</a></p>
+</li>
+<li id="fn:28">
+<p>No undo safety net. Negative finding: <code>grep</code> over
+<code>crates/goose/src</code> for <code>git.*(revert|reset|stash)</code> as a safety
+mechanism → nothing at the pinned SHA. aider auto-commits every turn
+and Cline stashes every turn under private refs; goose has neither —
+safety is entirely preventive (modes, inspectors, judges, hooks),
+never restorative.&#160;<a class="footnote-backref" href="#fnref:28" title="Jump back to footnote 28 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:28" title="Jump back to footnote 28 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:28" title="Jump back to footnote 28 in the text">&#8617;</a><a class="footnote-backref" href="#fnref4:28" title="Jump back to footnote 28 in the text">&#8617;</a></p>
+</li>
+<li id="fn:29">
+<p><code>GooseMode</code> at
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose-provider-types/src/goose_mode.rs#L22-L36">GH…/crates/goose-provider-types/src/goose_mode.rs#L22-L36</a>:
+<code>Auto</code> (default; "Automatically approve tool calls"), <code>Approve</code>
+("Ask before every tool call"), <code>SmartApprove</code> ("Ask only for
+sensitive tool calls"), <code>Chat</code> ("Chat only, no tool calls"). Config
+key <code>GOOSE_MODE</code> at
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/config/base.rs#L1263">GH…/crates/goose/src/config/base.rs#L1263</a>;
+<code>/mode</code> switches mid-session at
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose-cli/src/session/input.rs#L229-L295">GH…/crates/goose-cli/src/session/input.rs#L229-L295</a>.&#160;<a class="footnote-backref" href="#fnref:29" title="Jump back to footnote 29 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:29" title="Jump back to footnote 29 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:29" title="Jump back to footnote 29 in the text">&#8617;</a><a class="footnote-backref" href="#fnref4:29" title="Jump back to footnote 29 in the text">&#8617;</a></p>
+</li>
+<li id="fn:30">
+<p><code>PermissionLevel</code> at
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/config/permission.rs#L16-L23">GH…/crates/goose/src/config/permission.rs#L16-L23</a>:
+<code>AlwaysAllow</code> / <code>AskBefore</code> / <code>NeverAllow</code>, persisted in
+<code>&lt;config_dir&gt;/permission.yaml</code> under <code>user:</code> and <code>smart_approve:</code>
+namespaces; lookup precedence <strong>NeverAllow &gt; AlwaysAllow &gt;
+AskBefore</strong> at
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/config/permission.rs#L61-L62">L61-L62</a>
+and
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/config/permission.rs#L137-L160">L137-L160</a>,
+keyed by full tool name.&#160;<a class="footnote-backref" href="#fnref:30" title="Jump back to footnote 30 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:30" title="Jump back to footnote 30 in the text">&#8617;</a></p>
+</li>
+<li id="fn:31">
+<p>Inspectors registered in <code>Agent::new</code> in order at
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/agent.rs#L777-L794">GH…/crates/goose/src/agents/agent.rs#L777-L794</a>:
+Security, Egress, Adversary (<code>adversary.md</code>, model-reviewed),
+Permission (decision table at
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/permission/permission_inspector.rs#L144">GH…/crates/goose/src/permission/permission_inspector.rs#L144</a>),
+Repetition. Each emits <code>InspectionAction ∈ {Allow, Deny,
+RequireApproval}</code> at
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/tool_inspection.rs#L22-L32">GH…/crates/goose/src/tool_inspection.rs#L22-L32</a>.
+Security can only escalate, never relax: a Deny removes the request
+from approved <em>and</em> needs-approval; an Allow is explicitly "don't
+override other inspectors' decisions — if it's already denied or
+needs approval, leave it that way" at
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/tool_inspection.rs#L214-L258">GH…/crates/goose/src/tool_inspection.rs#L214-L258</a>.&#160;<a class="footnote-backref" href="#fnref:31" title="Jump back to footnote 31 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:31" title="Jump back to footnote 31 in the text">&#8617;</a></p>
+</li>
+<li id="fn:32">
+<p>SmartApprove's LLM judge: <code>detect_read_only_requests</code> at
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/permission/permission_judge.rs#L145-L184">GH…/crates/goose/src/permission/permission_judge.rs#L145-L184</a>;
+requests labeled <code>"UNTRUSTED TOOL REQUEST DATA (JSON):\n{requests}"</code>
+at
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/permission/permission_judge.rs#L113">L113</a>,
+judged through a synthetic <code>platform__tool_by_tool_permission</code>
+tool. Non-read-only verdicts are cached name-wide as <code>AskBefore</code> in
+the <code>smart_approve:</code> namespace; judge failure fails closed
+(everything prompts). The fox-guarding-henhouse shape is
+acknowledged with prompt-injection tests in-tree at
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/permission/permission_judge.rs#L95-L130">GH…/crates/goose/src/permission/permission_judge.rs#L95-L130</a>.&#160;<a class="footnote-backref" href="#fnref:32" title="Jump back to footnote 32 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:32" title="Jump back to footnote 32 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:32" title="Jump back to footnote 32 in the text">&#8617;</a><a class="footnote-backref" href="#fnref4:32" title="Jump back to footnote 32 in the text">&#8617;</a></p>
+</li>
+<li id="fn:33">
+<p><code>prompt_tool_confirmation</code> at
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose-cli/src/session/mod.rs#L2165-L2214">GH…/crates/goose-cli/src/session/mod.rs#L2165-L2214</a>
+offers Allow / Always Allow / Deny / Cancel — but "Always Allow" is
+withheld when a security inspector attached a warning at
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose-cli/src/session/mod.rs#L2197-L2203">L2197-L2203</a>.
+<code>AlwaysDeny</code> is never offered in the CLI; its only producer is the
+Telegram gateway's "deny always" reply at
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/gateway/handler.rs#L216-L227">GH…/crates/goose/src/gateway/handler.rs#L216-L227</a>.
+Headless is strict: <code>Auto</code> auto-allows (with a warn log);
+<code>Approve</code>/<code>SmartApprove</code> in non-interactive mode is a hard error —
+"This is an invalid configuration" — at
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose-cli/src/session/mod.rs#L1367-L1392">GH…/crates/goose-cli/src/session/mod.rs#L1367-L1392</a>.&#160;<a class="footnote-backref" href="#fnref:33" title="Jump back to footnote 33 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:33" title="Jump back to footnote 33 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:33" title="Jump back to footnote 33 in the text">&#8617;</a></p>
+</li>
+<li id="fn:34">
+<p>The <code>Provider</code> trait at
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose-provider-types/src/base.rs#L504">GH…/crates/goose-provider-types/src/base.rs#L504</a>:
+<code>stream()</code> is the only required behavioral method; <code>complete()</code>
+defaults to stream-plus-<code>collect_stream</code>, overridden only at
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose-providers/src/githubcopilot.rs#L621">GH…/crates/goose-providers/src/githubcopilot.rs#L621</a>.
+Negative finding: <code>grep "pub trait Provider\b"
+crates/goose-provider-types/src</code> → exactly one hit — a single trait.&#160;<a class="footnote-backref" href="#fnref:34" title="Jump back to footnote 34 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:34" title="Jump back to footnote 34 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:34" title="Jump back to footnote 34 in the text">&#8617;</a><a class="footnote-backref" href="#fnref4:34" title="Jump back to footnote 34 in the text">&#8617;</a></p>
+</li>
+<li id="fn:35">
+<p>34 static registrations at
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose-providers/src/providers/init.rs#L54-L158">GH…/crates/goose-providers/src/providers/init.rs#L54-L158</a>
+(incl. feature-gated <code>aws_bedrock</code>, <code>sagemaker_tgi</code>, <code>local</code>) + 48
+bundled declarative JSON definitions + user custom providers from
+<code>~/.config/goose/custom_providers/</code>. Four tiers
+(Preferred/Builtin/Declarative/Custom); selection chain
+(<code>--provider</code> flag → saved session → recipe → <code>GOOSE_PROVIDER</code> env &gt;
+<code>active_provider</code> config &gt; legacy param) at
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/session/builder.rs#L283-L446">GH…/crates/goose/src/session/builder.rs#L283-L446</a>.&#160;<a class="footnote-backref" href="#fnref:35" title="Jump back to footnote 35 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:35" title="Jump back to footnote 35 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:35" title="Jump back to footnote 35 in the text">&#8617;</a><a class="footnote-backref" href="#fnref4:35" title="Jump back to footnote 35 in the text">&#8617;</a></p>
+</li>
+<li id="fn:36">
+<p>The model catalog: an <strong>8,160-entry models.dev snapshot</strong>
+zstd-bundled at build time at
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose-provider-types/src/canonical/models_dev.rs#L36-L49">GH…/crates/goose-provider-types/src/canonical/models_dev.rs#L36-L49</a>
+(<code>build.rs:1-11</code>), with a background ETag refresh that hot-swaps the
+registry at runtime at
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/model_catalog.rs#L4-L20">GH…/crates/goose/src/model_catalog.rs#L4-L20</a>.
+Name resolution at
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose-provider-types/src/canonical/name_builder.rs#L24-L258">GH…/crates/goose-provider-types/src/canonical/name_builder.rs#L24-L258</a>:
+version-suffix stripping, provider renames, Claude word-order
+swapping, <code>infer_provider_from_model</code> substring rules; hardcoded
+<code>inferred_thinking_mode</code> for Claude 4.5–5.x plus name-regex matchers
+(<code>is_openai_responses_model</code>, <code>is_xai_reasoning_model</code>, glm-5.3 /
+kimi-k3 segment matchers). Negative findings: no model-name
+validation anywhere on the <code>GOOSE_MODEL</code> path (<code>grep -ri "unknown
+model|invalid model|not a known model|unsupported model"
+crates/goose/src crates/goose-cli/src</code> → only dictation/whisper and
+ACP param errors); no aider-style hand-written YAML (<code>*.yaml</code> model
+files under <code>crates/goose-provider-types/src/canonical/</code> and
+<code>crates/goose-providers/src/</code> → none).&#160;<a class="footnote-backref" href="#fnref:36" title="Jump back to footnote 36 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:36" title="Jump back to footnote 36 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:36" title="Jump back to footnote 36 in the text">&#8617;</a><a class="footnote-backref" href="#fnref4:36" title="Jump back to footnote 36 in the text">&#8617;</a><a class="footnote-backref" href="#fnref5:36" title="Jump back to footnote 36 in the text">&#8617;</a></p>
+</li>
+<li id="fn:37">
+<p>Auth: env-var-first-then-keyring, no mixing, at
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/config/base.rs#L912-L941">GH…/crates/goose/src/config/base.rs#L912-L941</a>;
+<code>AuthMethod::{NoAuth, BearerToken, ApiKey, Custom}</code>; <code>configure_oauth</code>
+in six providers (chatgpt_codex, gemini_oauth, githubcopilot,
+kimicode, muse_code, xai_oauth) with a shared RFC 8628 device-flow
+helper; command-based auth for custom providers. Naming seam:
+<code>crates/goose/src/oauth/</code> is <strong>MCP-server OAuth</strong>, not provider auth
+— provider OAuth lives in <code>providers/oauth*.rs</code>.&#160;<a class="footnote-backref" href="#fnref:37" title="Jump back to footnote 37 in the text">&#8617;</a></p>
+</li>
+<li id="fn:38">
+<p><code>goose-local-inference</code>: llama.cpp/GGUF + MLX on-device inference
+behind provider name <code>"local"</code> — feature-gated, never default, no
+auto-activation — with its own tool-emulation (toolshim) and chat
+templates.&#160;<a class="footnote-backref" href="#fnref:38" title="Jump back to footnote 38 in the text">&#8617;</a></p>
+</li>
+<li id="fn:39">
+<p><code>MessageContentBlock</code> carries Thinking/RedactedThinking blocks
+(signature-aware stream coalescing); <code>ToolRequest</code> wraps
+<code>rmcp::model::CallToolRequestParams</code>, so invalid tool calls are
+<em>data</em>, not errors; harness annotations ride in
+<code>tool_meta._meta</code>; approval and elicitation are modeled as
+conversation blocks at
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose-provider-types/src/conversation/message.rs#L133-L330">GH…/crates/goose-provider-types/src/conversation/message.rs#L133-L330</a>.
+Cost is estimated, never authoritative unless provider-reported, at
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/usage_estimator.rs#L11-L19">GH…/crates/goose/src/usage_estimator.rs#L11-L19</a>.&#160;<a class="footnote-backref" href="#fnref:39" title="Jump back to footnote 39 in the text">&#8617;</a></p>
+</li>
+<li id="fn:40">
+<p>SQLite at <code>&lt;data_dir&gt;/sessions/sessions.db</code> —
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/session/session_manager.rs#L29-L30">GH…/crates/goose/src/session/session_manager.rs#L29-L30</a>
+and
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/session/session_manager.rs#L714-L720">L714-L720</a>;
+messages as JSON blobs. The session record at
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/session/session_manager.rs#L63-L99">L63-L99</a>
+carries the id, working dir, LLM-generated name (<code>session_naming.rs</code>),
+<code>SessionType</code>, timestamps, extension data, usage/accumulated cost,
+schedule id, <strong>the full <code>Recipe</code> struct</strong>, user recipe values, the
+conversation, the goose mode, the parent session id, and the
+provider/model. <code>SessionType</code> at
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/session/session_manager.rs#L48-L57">L48-L57</a>:
+<code>User | Scheduled | SubAgent | Hidden | Terminal | Gateway | Acp</code> —
+resume lists only <code>User</code>. Resume/fork at
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose-cli/src/cli.rs#L404-L470">GH…/crates/goose-cli/src/cli.rs#L404-L470</a>
+and
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose-cli/src/cli.rs#L933-L968">L933-L968</a>.
+Cross-session recall is explicit: the <code>chatrecall</code> platform tool
+(loads another session's first/last messages) plus
+<code>chat_history_search.rs</code> (SQL full-text search) — never automatic.
+Every message carries <code>user_visible</code> / <code>agent_visible</code> flags, which
+compaction and subagent summaries exploit.&#160;<a class="footnote-backref" href="#fnref:40" title="Jump back to footnote 40 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:40" title="Jump back to footnote 40 in the text">&#8617;</a></p>
+</li>
+<li id="fn:41">
+<p>No token-budget allocator. Negative finding: <code>grep -i
+"budget|quota|allocat" crates/goose/src/context_mgmt/
+crates/goose-context-management/src/</code> → no matches. Auto-compaction
+triggers when <code>session.usage.total_tokens / context_limit &gt; 0.8</code>:
+<code>DEFAULT_COMPACTION_THRESHOLD: f64 = 0.8</code> at
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose-context-management/src/lib.rs#L32">GH…/crates/goose-context-management/src/lib.rs#L32</a>;
+the check at
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/context_mgmt/mod.rs#L224-L269">GH…/crates/goose/src/context_mgmt/mod.rs#L224-L269</a>
+prefers <code>session.usage.total_tokens</code> ("session metadata") and falls
+back to a token-counter estimate ("estimated"); overridable via
+<code>GOOSE_AUTO_COMPACT_THRESHOLD</code> (≤0 or ≥1 disables); providers with
+<code>manages_own_context</code> skip it. Checked before each reply (legacy at
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/agent.rs#L2365-L2368">GH…/crates/goose/src/agents/agent.rs#L2365-L2368</a>,
+state machine at <code>ops_compaction.rs:197</code>); manual via <code>/compact</code> at
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose-cli/src/session/mod.rs#L1254-L1264">GH…/crates/goose-cli/src/session/mod.rs#L1254-L1264</a>.
+<code>compact_messages</code> at
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/context_mgmt/mod.rs#L70-L222">GH…/crates/goose/src/context_mgmt/mod.rs#L70-L222</a>:
+one-shot model summarization (<code>goose-context-management::summarize</code>),
+all original messages marked agent-invisible (kept user-visible for
+the UI), one agent-only summary appended plus a continuation nudge,
+latest user text preserved, persisted via <code>replace_conversation</code> +
+<code>AgentEvent::HistoryReplaced</code>. Opt-in tool-pair summarization
+(<code>GOOSE_TOOL_PAIR_SUMMARIZATION</code>, default false): oldest 10 tool
+request/response pairs past <code>clamp(3 * (limit*threshold) / 20000, 10,
+500)</code> at
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/context_mgmt/mod.rs#L366-L374">GH…/crates/goose/src/context_mgmt/mod.rs#L366-L374</a>
+replaced by one agent-only summary each. The
+<code>goose-context-management</code> crate is a language-agnostic compaction
+library — cross-language (Python/Kotlin) access is exposed through
+<code>goose-sdk</code>'s uniffi bindings (code comment at
+<code>crates/goose-context-management/src/lib.rs:9-12</code>; <code>goose-sdk</code>
+ships the bindgen binary and <code>bindings.rs</code>).&#160;<a class="footnote-backref" href="#fnref:41" title="Jump back to footnote 41 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:41" title="Jump back to footnote 41 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:41" title="Jump back to footnote 41 in the text">&#8617;</a></p>
+</li>
+<li id="fn:42">
+<p>Twelve hook events at
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/hooks/mod.rs#L55-L68">GH…/crates/goose/src/hooks/mod.rs#L55-L68</a>:
+<code>PreToolUse</code>, <code>PreToolUseResult</code>, <code>PostToolUse</code>,
+<code>PostToolUseFailure</code>, <code>SessionStart</code>, <code>SessionEnd</code>,
+<code>UserPromptSubmit</code>, <code>BeforeReadFile</code>, <code>AfterFileEdit</code>,
+<code>BeforeShellExecution</code>, <code>AfterShellExecution</code>, <code>Stop</code>. Each enabled
+plugin contributes <code>hooks/hooks.json</code> at
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/hooks/mod.rs#L425-L472">L425-L472</a>;
+only <code>command</code> actions are supported; the hook runs as a shell
+command with JSON-serialized <code>HookContext</code> on stdin and a 30-second
+default timeout (<code>DEFAULT_HOOK_TIMEOUT_SECS</code> at L44). <strong>Blocking:
+exit code 2 or <code>{"decision":"block"}</code>; first denial wins</strong>
+(<code>emit_blocking</code> at
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/hooks/mod.rs#L703-L706">L703-L706</a>).
+<code>PreToolUse</code> runs before dispatch in both loops — at
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/agent.rs#L1103">GH…/crates/goose/src/agents/agent.rs#L1103</a>
+and
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/state_machine/ops_toolcalling.rs#L128">GH…/crates/goose/src/agents/state_machine/ops_toolcalling.rs#L128</a>.
+Hook errors never crash the host at
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/hooks/mod.rs#L517-L520">GH…/crates/goose/src/hooks/mod.rs#L517-L520</a>.
+Event-name casing verified against the shipped example at
+<code>examples/plugins/hello-hooks/hooks/hooks.json</code> — PascalCase
+(<code>SessionStart</code>, <code>UserPromptSubmit</code>, <code>PreToolUse</code>), matching
+<code>HookEvent::name()</code> exactly. Aspirational seam: the config module doc
+comment advertises "hot reloading of configuration changes"
+(<code>crates/goose/src/config/base.rs:80</code>), but there is no file watcher
+and no reload function anywhere in <code>crates/goose/src/config/</code> — the
+claim exists only in the comment.&#160;<a class="footnote-backref" href="#fnref:42" title="Jump back to footnote 42 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:42" title="Jump back to footnote 42 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:42" title="Jump back to footnote 42 in the text">&#8617;</a><a class="footnote-backref" href="#fnref4:42" title="Jump back to footnote 42 in the text">&#8617;</a></p>
+</li>
+<li id="fn:43">
+<p>The <code>Scheduler</code> at
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/scheduler/full.rs">GH…/crates/goose/src/scheduler/full.rs</a>
+(behind <code>feature = "scheduler"</code>) wraps <code>tokio-cron-scheduler</code>; jobs
+in <code>&lt;data_dir&gt;/schedule.json</code>; recipe files copied (validated, ≤1
+MiB, mode <code>0o600</code>) to <code>scheduled_recipes/&lt;job-id&gt;.&lt;ext&gt;</code> at
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/scheduler/common.rs#L13">GH…/crates/goose/src/scheduler/common.rs#L13</a>,
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/scheduler/common.rs#L96-L106">L96-L106</a>,
+and
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/scheduler/full.rs#L290-L315">GH…/crates/goose/src/scheduler/full.rs#L290-L315</a>.
+Cron dialect is 6-field (seconds first), local timezone, 5-field
+auto-prefixed at
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/scheduler/full.rs#L138-L165">GH…/crates/goose/src/scheduler/full.rs#L138-L165</a>.
+On fire, <code>execute_job</code> at
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/scheduler/full.rs#L830">L830</a>
+builds the recipe from the stored copy into a
+<code>SessionType::Scheduled</code> session running <strong>always in
+<code>GooseMode::Auto</code></strong> — scheduled jobs never prompt — at
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/scheduler/full.rs#L868-L885">L868-L885</a>.
+Validation at
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/recipe/validate_recipe.rs#L379-L414">GH…/crates/goose/src/recipe/validate_recipe.rs#L379-L414</a>
+requires prompt-or-instructions, schema-valid parameters (no
+<code>user_prompt</code> params — they'd block headless), and a valid response
+JSON schema. Agent surface: the <code>scheduler__manage_schedule</code> platform
+tool at
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/schedule_tool.rs#L76-L116">GH…/crates/goose/src/agents/schedule_tool.rs#L76-L116</a>;
+CLI: <code>goose schedule add|list|remove|sessions|run-now|cron-help</code> at
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose-cli/src/cli.rs#L628-L660">GH…/crates/goose-cli/src/cli.rs#L628-L660</a>.
+The cron loop lives in the long-lived desktop/ACP process at
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/acp/server_factory.rs#L74">GH…/crates/goose/src/acp/server_factory.rs#L74</a>;
+a CLI <code>goose schedule</code> invocation builds a throwaway <code>Scheduler</code>.
+Seam: CLI help blesses <code>@hourly</code> shorthands at
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose-cli/src/cli.rs#L642">GH…/crates/goose-cli/src/cli.rs#L642</a>
+that <code>create_cron_task</code> rejects with <code>CronParseError</code>.&#160;<a class="footnote-backref" href="#fnref:43" title="Jump back to footnote 43 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:43" title="Jump back to footnote 43 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:43" title="Jump back to footnote 43 in the text">&#8617;</a><a class="footnote-backref" href="#fnref4:43" title="Jump back to footnote 43 in the text">&#8617;</a></p>
+</li>
+<li id="fn:44">
+<p>The <code>delegate</code> tool in the <code>summon</code> platform extension at
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/platform_extensions/summon.rs#L777-L794">GH…/crates/goose/src/agents/platform_extensions/summon.rs#L777-L794</a>
+(ad-hoc, source-based, and combined modes; <code>async: true</code> runs in the
+background with a <code>load(taskId)</code> handle). Execution is a full
+in-process <code>Agent</code> running <code>agent.reply(...)</code> recursively at
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/subagent_handler.rs#L46-L62">GH…/crates/goose/src/agents/subagent_handler.rs#L46-L62</a>,
+with its own <code>SessionType::SubAgent</code> session and <code>parent_session_id</code>
+at
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/platform_extensions/summon.rs#L610-L631">GH…/crates/goose/src/agents/platform_extensions/summon.rs#L610-L631</a>.
+<strong>No nested delegation</strong> at
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/platform_extensions/summon.rs#L2155-L2168">GH…/crates/goose/src/agents/platform_extensions/summon.rs#L2155-L2168</a>.
+<strong>Forced <code>GooseMode::Auto</code></strong> at
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/platform_extensions/summon.rs#L1393-L1400">GH…/crates/goose/src/agents/platform_extensions/summon.rs#L1393-L1400</a>:
+<em>"Subagents must use Auto until get_agent_messages forwards
+ActionRequired messages to the parent. Until then, any mode that
+requires approval will hang."</em> Config: <code>TaskConfig</code> at
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/subagent_task_config.rs#L13-L33">GH…/crates/goose/src/agents/subagent_task_config.rs#L13-L33</a>;
+<code>max_turns</code> default <strong>25</strong> (<code>GOOSE_SUBAGENT_MAX_TURNS</code>); system prompt
+from <code>prompts/subagent_system.md</code>; result extraction from the
+<code>final_output</code> tool output when the recipe has a response schema,
+else last/all text, at
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/subagent_handler.rs#L64-L104">GH…/crates/goose/src/agents/subagent_handler.rs#L64-L104</a>
+and
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/subagent_handler.rs#L264-L275">L264-L275</a>.&#160;<a class="footnote-backref" href="#fnref:44" title="Jump back to footnote 44 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:44" title="Jump back to footnote 44 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:44" title="Jump back to footnote 44 in the text">&#8617;</a></p>
+</li>
+<li id="fn:45">
+<p>The gateway at
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/gateway/mod.rs#L14-L100">GH…/crates/goose/src/gateway/mod.rs#L14-L100</a>:
+<strong>only Telegram exists at this SHA</strong> — <code>create_gateway</code> bails on
+anything else at
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/gateway/mod.rs#L95-L100">L95-L100</a>.
+<code>GatewayHandler</code> at
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/gateway/handler.rs#L52">GH…/crates/goose/src/gateway/handler.rs#L52</a>:
+per-user <code>SessionType::Gateway</code> sessions; approvals answered by chat
+text (<code>approve</code> / <code>approve always</code> / <code>deny</code> / <code>deny always</code> →
+<code>Permission</code> variants) at
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/gateway/handler.rs#L216-L227">L216-L227</a>
+— the <strong>only producer of <code>AlwaysDeny</code></strong> in the codebase. The ACP
+bridge at <code>crates/goose/src/acp/</code> hosts an ACP server (the desktop
+app drives the agent through it), with live callers of
+<code>submit_tool_confirmation</code> at
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/acp/server.rs#L1611">GH…/crates/goose/src/acp/server.rs#L1611</a>
+and
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/acp/server.rs#L421">L421</a>.&#160;<a class="footnote-backref" href="#fnref:45" title="Jump back to footnote 45 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:45" title="Jump back to footnote 45 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:45" title="Jump back to footnote 45 in the text">&#8617;</a><a class="footnote-backref" href="#fnref4:45" title="Jump back to footnote 45 in the text">&#8617;</a></p>
+</li>
+<li id="fn:46">
+<p>The <code>Recipe</code> schema at
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/recipe/mod.rs#L43-L87">GH…/crates/goose/src/recipe/mod.rs#L43-L87</a>:
+required semver <code>version</code>, <code>title</code>, <code>description</code>; optional
+<code>instructions</code> (system-prompt extension), <code>prompt</code> (first user
+message), <code>extensions</code> (list of <code>ExtensionConfig</code>),
+<code>settings</code> (<code>goose_provider</code>, <code>goose_model</code>, <code>temperature</code>,
+<code>max_turns</code>), <code>activities</code>, <code>author</code>, <code>parameters</code>,
+<code>response.json_schema</code> (materializes a <code>final_output</code> tool),
+<code>sub_recipes</code>, <code>retry</code>. Parameters are typed (<code>string | number |
+boolean | date | file | select</code>), <code>required | optional |
+user_prompt</code>, templated with Jinja-style <code>{{ var }}</code> via minijinja;
+<code>file</code> parameters cannot have defaults — "to prevent importing
+sensitive user files" — at
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/recipe/mod.rs#L167-L170">L167-L170</a>.
+Execution (<code>goose run --recipe</code>) at
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose-cli/src/recipes/extract_from_cli.rs#L11-L61">GH…/crates/goose-cli/src/recipes/extract_from_cli.rs#L11-L61</a>;
+the full recipe is persisted on the session record at
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/session/builder.rs#L563-L688">GH…/crates/goose/src/session/builder.rs#L563-L688</a>
+and
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/session/builder.rs#L808-L815">L808-L815</a>.
+Auto-augmentation at
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/recipe/mod.rs#L231-L271">GH…/crates/goose/src/recipe/mod.rs#L231-L271</a>
+and
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/recipe/mod.rs#L338-L339">L338-L339</a>
+(the <code>analyze</code> platform extension when builtin <code>developer</code> is
+present; <code>summon</code> when <code>sub_recipes</code> exist). Security:
+<code>check_for_security_warnings</code> flags unicode tag characters
+(prompt-injection markers) in instructions/prompt/activities at
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/recipe/mod.rs#L274-L292">GH…/crates/goose/src/recipe/mod.rs#L274-L292</a>.&#160;<a class="footnote-backref" href="#fnref:46" title="Jump back to footnote 46 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:46" title="Jump back to footnote 46 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:46" title="Jump back to footnote 46 in the text">&#8617;</a><a class="footnote-backref" href="#fnref4:46" title="Jump back to footnote 46 in the text">&#8617;</a><a class="footnote-backref" href="#fnref5:46" title="Jump back to footnote 46 in the text">&#8617;</a><a class="footnote-backref" href="#fnref6:46" title="Jump back to footnote 46 in the text">&#8617;</a><a class="footnote-backref" href="#fnref7:46" title="Jump back to footnote 46 in the text">&#8617;</a></p>
+</li>
+</ol>
+</div>
+  <a class="diagram-cta" href="trace.html">
+    Step through one turn live
+    <span>Play the 8-step trace: the MCP-native tool loop, the approval pause, and source modules</span>
+  </a>
+  <a class="diagram-cta" href="../diagrams/template.html?data=../goose/diagrams/goose.json">
+    Explore the interactive architecture diagram
+    <span>Pan, zoom, and click any node for its source module reference</span>
+  </a>
+</main>
+</body>
+</html>

@@ -1,0 +1,201 @@
+{
+ "title": "Goose \u2014 one turn, end to end",
+ "repo": "https://github.com/block/goose",
+ "sha": "76da81cb964b21cd096db739302329b40c2998b8",
+ "example_input": "list the files in src/ and summarize what this project does",
+ "note": "Auto mode, default extensions. Pinned at v1.53.0.",
+ "steps": [
+  {
+   "step": 1,
+   "node": "input",
+   "title": "Input",
+   "narrative": "The user types 'list the files in src/ and summarize what this project does' in the CLI, Auto mode, default extensions. Agent::reply assigns a message ID; reply_impl finds no elicitation content; use_state_machine=false skips the new path; SessionStart / UserPromptSubmit hooks fire; execute_command returns Ok(None) \u2014 not a slash command; the message is persisted via session_manager.add_message.",
+   "representation": "user text\n  \u2192 Agent::reply()\n  \u2192 reply_impl: hooks, slash-command check\n  \u2192 session_manager.add_message()",
+   "modules": [
+    {
+     "file": "crates/goose/src/agents/agent.rs",
+     "label": "agent.rs:2116",
+     "line": "2116",
+     "url": "https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/agent.rs#L2116"
+    },
+    {
+     "file": "crates/goose/src/agents/agent.rs",
+     "label": "agent.rs:2210",
+     "line": "2210",
+     "url": "https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/agent.rs#L2210"
+    },
+    {
+     "file": "crates/goose/src/agents/agent.rs",
+     "label": "agent.rs:2231",
+     "line": "2231",
+     "url": "https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/agent.rs#L2231"
+    }
+   ]
+  },
+  {
+   "step": 2,
+   "node": "prompt",
+   "title": "Prompt assembly",
+   "narrative": "reply_internal \u2192 prepare_reply_context \u2192 prepare_tools_and_prompt: tools are collected via list_tools from the extension manager, names enforced unique, and the system prompt is built with PromptManager from extension info plus directory hints plus the goose mode. Toolshim vs native tools are split per model_config.toolshim. A moim turn-context message (time, working dir, compaction status, turn budget) is persisted as an agent-only user message before the loop.",
+   "representation": "reply_internal\n  \u2192 prepare_reply_context\n  \u2192 prepare_tools_and_prompt: list_tools + PromptManager\n  \u2192 moim turn-context message persisted",
+   "modules": [
+    {
+     "file": "crates/goose/src/agents/agent.rs",
+     "label": "agent.rs:845",
+     "line": "845",
+     "url": "https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/agent.rs#L845"
+    },
+    {
+     "file": "crates/goose/src/agents/reply_parts.rs",
+     "label": "reply_parts.rs:198",
+     "line": "198",
+     "url": "https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/reply_parts.rs#L198"
+    },
+    {
+     "file": "crates/goose/src/agents/reply_parts.rs",
+     "label": "reply_parts.rs:219",
+     "line": "219",
+     "url": "https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/reply_parts.rs#L219"
+    }
+   ]
+  },
+  {
+   "step": 3,
+   "node": "model",
+   "title": "Model call",
+   "narrative": "Loop iteration 1: turns_taken \u2192 1. stream_response_from_provider \u2192 provider.stream(&model_config, system_prompt, messages, &tools) \u2014 streaming, with pre-first-item transient retries (\u22643, exponential backoff 1s\u219230s; mid-stream errors are not retried). Text chunks yield AgentEvent::Message live.",
+   "representation": "turns_taken \u2192 1\n  \u2192 stream_response_from_provider()\n  \u2192 provider.stream(model_config, system_prompt, messages, tools)\n  \u2192 AgentEvent::Message (live)",
+   "modules": [
+    {
+     "file": "crates/goose/src/agents/reply_parts.rs",
+     "label": "reply_parts.rs:342",
+     "line": "342",
+     "url": "https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/reply_parts.rs#L342"
+    },
+    {
+     "file": "crates/goose/src/agents/reply_parts.rs",
+     "label": "reply_parts.rs:392",
+     "line": "392",
+     "url": "https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/reply_parts.rs#L392"
+    },
+    {
+     "file": "crates/goose/src/agents/agent.rs",
+     "label": "agent.rs:2828",
+     "line": "2828",
+     "url": "https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/agent.rs#L2828"
+    }
+   ]
+  },
+  {
+   "step": 4,
+   "node": "parse",
+   "title": "Response parse",
+   "narrative": "categorize_tool_requests extracts the model's ToolRequests, canonicalizes model-mangled names (recover_mangled_tool_name), coerces arguments to the advertised JSON schema, and dedupes tool-call IDs. Calls to unadvertised tools become invalid_request errors \u2014 invalid tool calls are data, not exceptions.",
+   "representation": "categorize_tool_requests(response)\n  \u2192 recover_mangled_tool_name\n  \u2192 coerce args to advertised JSON schema\n  \u2192 invalid_request for unadvertised tools",
+   "modules": [
+    {
+     "file": "crates/goose/src/agents/reply_parts.rs",
+     "label": "reply_parts.rs:587",
+     "line": "587",
+     "url": "https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/reply_parts.rs#L587"
+    }
+   ]
+  },
+  {
+   "step": 5,
+   "node": "dispatch",
+   "title": "Tool dispatch",
+   "narrative": "inspect_tools splits requests into approved / needs_approval / denied. A read-only call lands in approved \u2192 dispatch_tool_call \u2192 PreToolUse hooks fire \u2192 extension_manager.dispatch_tool_call runs it \u2192 with_post_tool_hook wraps it (large-response spill + PostToolUse hooks). A mutating call would instead hit handle_approval_tool_requests: a oneshot registered in the ToolConfirmationRouter, an ActionRequired event yielded, the loop genuinely paused until submit_tool_confirmation delivers the verdict.",
+   "representation": "inspect_tools \u2192 approved / needs_approval / denied\n  \u2192 PreToolUse hooks \u2192 dispatch_tool_call\n  \u2192 mutating: ActionRequired, loop awaits verdict",
+   "modules": [
+    {
+     "file": "crates/goose/src/agents/agent.rs",
+     "label": "agent.rs:1067",
+     "line": "1067",
+     "url": "https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/agent.rs#L1067"
+    },
+    {
+     "file": "crates/goose/src/agents/agent.rs",
+     "label": "agent.rs:1094",
+     "line": "1094",
+     "url": "https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/agent.rs#L1094"
+    },
+    {
+     "file": "crates/goose/src/agents/tool_execution.rs",
+     "label": "tool_execution.rs:149",
+     "line": "149",
+     "url": "https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/tool_execution.rs#L149"
+    },
+    {
+     "file": "crates/goose/src/agents/agent.rs",
+     "label": "agent.rs:1518",
+     "line": "1518",
+     "url": "https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/agent.rs#L1518"
+    }
+   ]
+  },
+  {
+   "step": 6,
+   "node": "feedback",
+   "title": "Result feedback",
+   "narrative": "Tool outputs attach as ToolResponse blocks on user-role messages; request/response pairs go into messages_to_add, persisted per message and appended to the conversation. Thinking blocks ride on the first tool-call carrier message; unparseable calls become a well-formed \"unparseable_tool_call\" placeholder. Large text outputs spill to an owner-only temp file (200,000-char default) before feedback.",
+   "representation": "ToolResponse blocks on user messages\n  \u2192 messages_to_add \u2192 persisted per message\n  \u2192 large outputs spill to temp file (200k chars)",
+   "modules": [
+    {
+     "file": "crates/goose/src/agents/agent.rs",
+     "label": "agent.rs:3067",
+     "line": "3067",
+     "url": "https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/agent.rs#L3067"
+    },
+    {
+     "file": "crates/goose/src/agents/large_response_handler.rs",
+     "label": "large_response_handler.rs:7",
+     "line": "7",
+     "url": "https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/large_response_handler.rs#L7"
+    }
+   ]
+  },
+  {
+   "step": 7,
+   "node": "loopexit",
+   "title": "Loop or exit",
+   "narrative": "Iteration 2: the model answers in text with no further tool calls \u2192 exit_chat = true; the stop hook allows \u2192 break. Otherwise the loop continues until turns_taken > 1000 (DEFAULT_MAX_TURNS), cancellation, an error arm, or the stop-hook denial cap of 8. There is no max_iterations symbol anywhere \u2014 the bound is max_turns, full stop.",
+   "representation": "no tool calls \u2192 exit_chat = true \u2192 break\n  else \u2192 next iteration\n  turns_taken > 1000 \u2192 MAX_TURNS_MESSAGE, break",
+   "modules": [
+    {
+     "file": "crates/goose/src/agents/agent.rs",
+     "label": "agent.rs:2625",
+     "line": "2625",
+     "url": "https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/agent.rs#L2625"
+    },
+    {
+     "file": "crates/goose/src/agents/agent.rs",
+     "label": "agent.rs:86",
+     "line": "86",
+     "url": "https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/agent.rs#L86"
+    },
+    {
+     "file": "crates/goose/src/agents/agent.rs",
+     "label": "agent.rs:3444",
+     "line": "3444",
+     "url": "https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/agent.rs#L3444"
+    }
+   ]
+  },
+  {
+   "step": 8,
+   "node": "render",
+   "title": "Rendering",
+   "narrative": "Nothing is printed by the loop itself \u2014 all output is AgentEvents (streamed text, ActionRequired prompts, Usage updates) consumed by the CLI, the desktop, and the ACP frontends. Final summary text accumulates in last_assistant_text.",
+   "representation": "AgentEvent stream \u2192 CLI / desktop / ACP\n  \u2192 last_assistant_text accumulates",
+   "modules": [
+    {
+     "file": "crates/goose/src/agents/agent.rs",
+     "label": "agent.rs:2662",
+     "line": "2662",
+     "url": "https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/agent.rs#L2662"
+    }
+   ]
+  }
+ ]
+}
