@@ -100,7 +100,15 @@
   .loopmap { margin-top: 36px; border: 1px solid #2c231b; border-radius: 12px; padding: 24px; }
   .loopmap h3 { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.06em;
     color: #a89880; margin: 0 0 16px; }
-  .flow { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 6px; }
+  .flow { display: flex; flex-direction: column; margin-bottom: 6px; }
+  .vstep { display: flex; gap: 14px; align-items: stretch; }
+  .vrail { display: flex; flex-direction: column; align-items: center; flex: 0 0 16px; }
+  .vdot { width: 10px; height: 10px; border-radius: 50%; border: 2px solid #8a7a66;
+          margin-top: 6px; flex: 0 0 auto; }
+  .vdot.hot { border-color: #d08c4e; background: #d08c4e; }
+  .vline { width: 2px; flex: 1; background: #3a2f26; min-height: 16px; }
+  .vbody { padding: 2px 0 16px; }
+  .vstep:last-child .vbody { padding-bottom: 2px; }
   .chip {
     border: 1px solid #3a2f26; border-radius: 20px; padding: 4px 12px;
     font-size: 0.82rem; background: #1f1a15; white-space: nowrap;
@@ -201,8 +209,12 @@
   function renderFlow(el, steps, hot) {
     el.innerHTML = steps.map(function (n, i) {
       var s = data.steps[n - 1];
+      var last = i === steps.length - 1;
+      var dot = '<span class="vdot' + (n === hot ? ' hot' : '') + '"></span>';
+      var line = last ? '' : '<span class="vline"></span>';
       var chip = '<span class="chip' + (n === hot ? ' hot' : '') + '">' + n + ' &middot; ' + esc(s.title) + '</span>';
-      return i < steps.length - 1 ? chip + '<span class="arrow">&rarr;</span>' : chip;
+      return '<div class="vstep"><div class="vrail">' + dot + line + '</div>' +
+             '<div class="vbody">' + chip + '</div></div>';
     }).join("");
   }
 
