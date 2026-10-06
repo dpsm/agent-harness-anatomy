@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body {
+    background: #161210; color: #ece1d3;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    line-height: 1.7; padding: 48px 24px; margin: 0;
+  }
+  main { max-width: 760px; margin: 0 auto; }
+  a { color: #d08c4e; }
+  h1 { font-size: 1.9rem; letter-spacing: -0.02em; line-height: 1.25; margin-bottom: 16px; }
+  h2 { font-size: 1.4rem; margin: 40px 0 12px; padding-top: 8px; border-top: 1px solid #2c231b; }
+  h3 { font-size: 1.1rem; margin: 28px 0 8px; }
+  p, li { margin-bottom: 12px; }
+  blockquote {
+    border-left: 3px solid #d08c4e; padding: 4px 16px; margin: 20px 0;
+    color: #a89880; background: #1f1a15; border-radius: 0 8px 8px 0;
+  }
+  blockquote p { margin-bottom: 6px; }
+  code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.88em; background: #1f1a15; padding: 2px 6px; border-radius: 6px;
+  }
+  pre { background: #1f1a15; border: 1px solid #3a2f26; border-radius: 8px;
+        padding: 16px; overflow-x: auto; }
+  pre code { background: none; padding: 0; }
+  img { max-width: 100%; height: auto; border: 1px solid #3a2f26;
+        border-radius: 12px; margin: 20px 0; background: #1f1a15; }
+  table { border-collapse: collapse; width: 100%; margin: 20px 0; font-size: 0.92rem;
+          display: block; overflow-x: auto; }
+  th, td { border: 1px solid #3a2f26; padding: 10px 12px; text-align: left;
+           vertical-align: top; }
+  th { background: #1f1a15; }
+  ul, ol { padding-left: 24px; }
+  hr { border: none; border-top: 1px solid #2c231b; margin: 32px 0; }
+  .footnote { font-size: 0.88rem; color: #a89880; }
+  .footnote hr { margin: 40px 0 16px; }
+  sup a { text-decoration: none; }
+  .topnav { max-width: 760px; margin: 0 auto 32px; font-size: 0.9rem; }
+  .topnav a { color: #a89880; text-decoration: none; }
+  .topnav a:hover { color: #ece1d3; }
+  .diagram-cta {
+    display: block; text-align: center; margin: 28px 0; padding: 16px;
+    background: #1f1a15; border: 1px solid #3a2f26; border-radius: 12px;
+    color: #ece1d3; text-decoration: none; font-weight: 600;
+  }
+  .diagram-cta:hover { border-color: #d08c4e; }
+  .diagram-cta span { display: block; font-weight: 400; font-size: 0.88rem;
+                      color: #a89880; margin-top: 4px; }
+</style>
+<title>Agent Harness Anatomy #7: OpenCode — the dual-runtime coding agent</title>
+</head>
+<body>
+<main>
+  <nav class="topnav"><a href="../">&larr; Agent Harness Anatomy</a></nav>
+<h1 id="agent-harness-anatomy-7-opencode-the-dual-runtime-coding-agent">Agent Harness Anatomy #7: OpenCode — the dual-runtime coding agent</h1>
+<blockquote>
+<p><strong>Series:</strong> Agent Harness Anatomy — top-down dissections of real agent
+harnesses, grounded in verifiable source code. Every behavioral claim
+below carries a footnote to a pinned GitHub permalink; the full evidence
+lives in the endnotes.</p>
+</blockquote>
+<h2 id="version-block">Version block</h2>
+<ul>
+<li><strong>Repo:</strong> <a href="https://github.com/anomalyco/opencode">anomalyco/opencode</a></li>
+<li><strong>Pinned:</strong> tag <code>v1.18.34</code> → <code>aec0b9a6d8898f68f923aaf08b7306d931fd9d76</code> (2026-09-30)</li>
+<li><strong>Language:</strong> TypeScript, Bun runtime; Effect-based dependency injection throughout</li>
+<li><strong>License:</strong> MIT</li>
+<li><strong>Claim under test:</strong> "The open source coding agent."</li>
+</ul>
+<p>OpenCode is the fastest-growing harness this series has covered — over
+210,000 stars at the time of analysis — and the first one built on
+<strong>Effect</strong>, the typed functional-effects library for TypeScript.
+That choice shapes everything: services are Effect tags, errors are typed
+values, and the agent loop is an Effect program. The interesting question
+is not whether Effect works here (it does), but what it buys a coding
+agent: cancellation, resource safety, and a permission system built on
+deferred effects rather than callbacks.<sup id="fnref:1"><a class="footnote-ref" href="#fn:1">1</a></sup><sup id="fnref:2"><a class="footnote-ref" href="#fn:2">2</a></sup></p>
+<p><img alt="OpenCode architecture" src="figures/opencode.svg" /></p>
+<h2 id="the-mental-model">The mental model</h2>
+<p>OpenCode is a <strong>dual-runtime coding agent</strong>: one session loop, one
+tool system, one SQLite store — and <em>two</em> LLM transports underneath.
+The default path runs the Vercel AI SDK locally (<code>streamText</code>); an
+opt-in native runtime lowers the same request to OpenCode's own
+<code>@opencode-ai/llm</code> client. Both converge on a single
+<code>LLMEvent</code> stream that the session processor consumes, so the loop
+never knows which transport ran.<sup id="fnref:12"><a class="footnote-ref" href="#fn:12">12</a></sup> The loop itself is almost
+provocatively simple: <code>runLoop</code> spins <code>while (true)</code> and exits
+only when the model stops <em>and</em> there are no pending tool calls
+<em>and</em> the last assistant message is a direct child of the user
+message — a "stop" with tool calls present does not exit, so tool results
+always flow back into the loop.<sup id="fnref:5"><a class="footnote-ref" href="#fn:5">5</a></sup><sup id="fnref:6"><a class="footnote-ref" href="#fn:6">6</a></sup></p>
+<p>The governing tradeoff: OpenCode buys model-adaptivity and transport
+optionality at the cost of indirection. The tool set is rebuilt <em>per
+request</em> for the exact model in play — GPT-family models get
+<code>apply_patch</code> instead of <code>edit</code>+<code>write</code> — and the
+provider catalog is fetched live from a network API rather than vendored,
+so the harness never ships a stale model list but cannot start offline
+with full provider knowledge.<sup id="fnref:9"><a class="footnote-ref" href="#fn:9">9</a></sup><sup id="fnref:15"><a class="footnote-ref" href="#fn:15">15</a></sup></p>
+<h2 id="package-map">Package map</h2>
+<p>A Bun monorepo. Three packages matter:<sup id="fnref:3"><a class="footnote-ref" href="#fn:3">3</a></sup></p>
+<table>
+<thead>
+<tr>
+<th>Package</th>
+<th>Role</th>
+<th>Contents</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>packages/opencode</code></td>
+<td>The harness core</td>
+<td>session loop, tool registry, permission system, LSP, providers, subagents, compaction, MCP, skills</td>
+</tr>
+<tr>
+<td><code>packages/app</code></td>
+<td>The terminal UI</td>
+<td>SolidJS TUI rendering session state from the SQLite store</td>
+</tr>
+<tr>
+<td><code>packages/core</code></td>
+<td>Shared substrate</td>
+<td>database (Drizzle/Effect, WAL), auth, config, logging</td>
+</tr>
+</tbody>
+</table>
+<p>Cross-cutting: every service is an Effect <code>Tag</code>
+(<code>SessionProcessor.tag</code>, <code>LLM.tag</code>,
+<code>Database.tag</code>…), composed through layers — so the entire harness
+is a dependency graph the type checker can see.<sup id="fnref:4"><a class="footnote-ref" href="#fn:4">4</a></sup></p>
+<h2 id="the-core-loop">The core loop</h2>
+<p><code>runLoop</code> (<code>packages/opencode/src/session/prompt.ts:1081</code>) is
+the whole game in ~80 lines. It reads the session's messages fresh each
+iteration — filtering compacted messages, taking
+<code>MessageV2.latest()</code> — and the exit check is a three-part
+conjunction: the last assistant message finished with a non-tool-calls
+reason, there are no pending tool calls, and its <code>parentID</code> is the
+user message.<sup id="fnref2:5"><a class="footnote-ref" href="#fn:5">5</a></sup><sup id="fnref2:6"><a class="footnote-ref" href="#fn:6">6</a></sup> There is no iteration counter anywhere in the
+loop. The only numeric bound is <code>maxSteps</code>, which defaults to
+<code>Infinity</code>; when a configured step limit is reached, OpenCode does
+not kill the loop — it injects <code>MAX_STEPS_PROMPT</code>, telling the
+model to wrap up gracefully.<sup id="fnref:7"><a class="footnote-ref" href="#fn:7">7</a></sup></p>
+<p>Before each model call, the loop drains a task queue: subtasks become
+child sessions, compactions get processed, and context overflow triggers
+<code>compaction.create({ auto: true })</code>.<sup id="fnref:21"><a class="footnote-ref" href="#fn:21">21</a></sup> Entry is through
+<code>prompt()</code>, which creates the user message, touches the session,
+and runs everything inside <code>state.ensureRunning</code> so concurrent
+prompts serialize on the session rather than interleaving.<sup id="fnref:8"><a class="footnote-ref" href="#fn:8">8</a></sup></p>
+<p><img alt="Turn sequence" src="figures/seq-turn.svg" /></p>
+<h2 id="the-dual-llm-runtime">The dual LLM runtime</h2>
+<p>This is OpenCode's most distinctive architectural decision. The boundary
+is documented in <code>packages/opencode/src/session/llm/AGENTS.md</code>: two
+runtimes, one event stream.<sup id="fnref2:12"><a class="footnote-ref" href="#fn:12">12</a></sup></p>
+<ul>
+<li><strong>Default — Vercel AI SDK.</strong> <code>ai-sdk.ts</code> runs
+<code>streamText()</code> locally and adapts <code>fullStream</code> parts into
+<code>LLMEvent</code>s. The SDK executes tools if configured, but OpenCode
+adapts the stream into its own event model and keeps tool execution in
+its own hands.<sup id="fnref:13"><a class="footnote-ref" href="#fn:13">13</a></sup></li>
+<li><strong>Opt-in — native runtime.</strong> Behind
+<code>OPENCODE_EXPERIMENTAL_NATIVE_LLM</code>, the request is lowered to an
+<code>@opencode-ai/llm</code> <code>LLMRequest</code> and executed via
+<code>LLMClient</code>/<code>RequestExecutor</code> — OpenCode's own transport,
+no Vercel SDK in the path.<sup id="fnref:14"><a class="footnote-ref" href="#fn:14">14</a></sup></li>
+</ul>
+<p>Routing is per-request inside <code>LLM.Service</code>, and the processor
+below only ever sees <code>LLMEvent</code>s. The provider catalog feeding
+model selection is not vendored at all: it is fetched from
+<code>https://models.opencode.ai/api.json</code>, cached locally with
+locking, and refreshed periodically — the harness adapts to new models
+without a release.<sup id="fnref2:15"><a class="footnote-ref" href="#fn:15">15</a></sup></p>
+<p><img alt="Dual runtime sequence" src="figures/seq-runtime.svg" /></p>
+<h2 id="model-adaptive-tools">Model-adaptive tools</h2>
+<p><code>ToolRegistry.tools()</code> rebuilds the tool set for the exact
+provider/model/agent on every request. The sharpest edge: when
+<code>usePatch</code> is true (GPT-family models), the registry returns
+<code>apply_patch</code> <em>instead of</em> <code>edit</code> and
+<code>write</code> — the model's editing affordance is swapped wholesale,
+not just re-described.<sup id="fnref2:9"><a class="footnote-ref" href="#fn:9">9</a></sup> The
+<code>tool.definition</code> plugin hook can rewrite any tool's description
+or parameters before the model sees it, and MCP plus plugin tools join
+the built-in registry dynamically.<sup id="fnref:10"><a class="footnote-ref" href="#fn:10">10</a></sup>
+(<code>websearch</code> is gated to the opencode provider only — a quiet
+reminder that the tool set is also a product surface.)<sup id="fnref:11"><a class="footnote-ref" href="#fn:11">11</a></sup></p>
+<h2 id="the-permission-model">The permission model</h2>
+<p>Every tool call passes through <code>Permission.ask</code>. Rules layer —
+session, approved, agent config — and evaluation is
+<strong>last-matching-rule-wins</strong>, with a default of
+<code>ask</code>.<sup id="fnref:16"><a class="footnote-ref" href="#fn:16">16</a></sup> The <code>ask</code> path is
+pure Effect: publish <code>Permission.Asked</code> on the session bus, park on
+a <code>Deferred</code>, and resume when the user replies. Shutdown rejects
+all pending requests closed rather than leaving them hanging.<sup id="fnref:17"><a class="footnote-ref" href="#fn:17">17</a></sup>
+Answering "always" appends the pattern to the approved ruleset, so the
+permission model learns within a session.</p>
+<p><img alt="Permission sequence" src="figures/seq-permission.svg" /></p>
+<h2 id="lsp-feedback">LSP feedback, for free</h2>
+<p>After <code>edit</code> or <code>write</code> applies, the tool touches the file
+in the LSP service, pulls diagnostics, and appends any errors to its own
+output: <em>"Edit applied. LSP errors detected in this file, please fix
+them."</em><sup id="fnref:18"><a class="footnote-ref" href="#fn:18">18</a></sup><sup id="fnref:19"><a class="footnote-ref" href="#fn:19">19</a></sup>
+Only errors are reported (warnings stay silent), capped at 20 per file —
+the compiler feedback loop is closed <em>inside the tool result</em>, so
+the model self-corrects on the next turn without any harness-level retry
+logic.</p>
+<p><img alt="LSP feedback sequence" src="figures/seq-lsp.svg" /></p>
+<h2 id="one-turn-end-to-end">One turn, end to end</h2>
+<p>Trace: the user sends <code>Add a retry loop to the fetch call in src/api.ts</code>
+to a session.</p>
+<p><strong>① Input.</strong> <code>SessionPrompt.prompt()</code>
+(<code>session/prompt.ts:1052</code>) runs <code>revert.cleanup</code>, creates
+the user message, touches the session, and enters <code>loop()</code> — which
+runs the turn inside <code>state.ensureRunning</code> so concurrent prompts
+serialize on the session.<sup id="fnref2:8"><a class="footnote-ref" href="#fn:8">8</a></sup></p>
+<p><strong>② Loop.</strong> <code>runLoop</code> (<code>session/prompt.ts:1081</code>)
+spins <code>while (true)</code>. Each iteration: filter compacted messages,
+take <code>MessageV2.latest()</code>, and run the three-part exit check —
+finished with a non-tool-calls reason, no pending tool calls, and
+<code>parentID</code> equal to the user message. A "stop" with tool calls
+present does <em>not</em> exit. The task queue drains first (subtasks,
+compactions, overflow), then the agent resolves and <code>maxSteps</code>
+(default <code>Infinity</code>) is computed; the final configured step
+injects <code>MAX_STEPS_PROMPT</code> asking the model to wrap up rather
+than hard-killing execution.<sup id="fnref3:5"><a class="footnote-ref" href="#fn:5">5</a></sup><sup id="fnref3:6"><a class="footnote-ref" href="#fn:6">6</a></sup><sup id="fnref2:7"><a class="footnote-ref" href="#fn:7">7</a></sup></p>
+<p><strong>③ Tools.</strong> <code>ToolRegistry.tools()</code>
+(<code>tool/registry.ts:291</code>) builds the tool set for this exact model:
+GPT-family models get <code>apply_patch</code> instead of
+<code>edit</code>+<code>write</code>; the <code>tool.definition</code> plugin
+hook can rewrite any definition; MCP and plugin tools join
+dynamically.<sup id="fnref3:9"><a class="footnote-ref" href="#fn:9">9</a></sup><sup id="fnref2:10"><a class="footnote-ref" href="#fn:10">10</a></sup></p>
+<p><strong>④ Stream.</strong> <code>SessionProcessor.create()</code>
+snapshots the working tree <em>before</em> the model call — because the AI
+SDK may execute tools before emitting events — and builds the
+<code>ProcessorContext</code> (toolcall map, abort flag, compaction
+flag).<sup id="fnref:25"><a class="footnote-ref" href="#fn:25">25</a></sup> <code>handle.process()</code>
+(<code>session/processor.ts:641</code>) then calls <code>LLM.Service</code>
+with the assembled system prompt (environment, instructions, MCP servers,
+skills), the message history, and the resolved tools.<sup id="fnref:26"><a class="footnote-ref" href="#fn:26">26</a></sup><sup id="fnref:27"><a class="footnote-ref" href="#fn:27">27</a></sup></p>
+<p><strong>⑤ Model.</strong> <code>LLM.Service</code> routes per request:
+default is the Vercel AI SDK (<code>streamText</code>, <code>fullStream</code>
+adapted to <code>LLMEvent</code>s); with
+<code>OPENCODE_EXPERIMENTAL_NATIVE_LLM</code> it lowers to the native
+<code>@opencode-ai/llm</code> transport. Both converge on one
+<code>LLMEvent</code> stream, so the processor never knows which transport
+ran. Model and provider resolve against the live ModelsDev
+catalog.<sup id="fnref3:12"><a class="footnote-ref" href="#fn:12">12</a></sup><sup id="fnref2:13"><a class="footnote-ref" href="#fn:13">13</a></sup><sup id="fnref2:14"><a class="footnote-ref" href="#fn:14">14</a></sup><sup id="fnref3:15"><a class="footnote-ref" href="#fn:15">15</a></sup></p>
+<p><strong>⑥ Execute.</strong> Each tool call hits the permission gate:
+<code>evaluate()</code> applies last-matching-rule-wins over the layered
+rulesets, defaulting to <code>ask</code>; a deny fails fast, an ask parks on
+a <code>Deferred</code> until the user replies.<sup id="fnref2:16"><a class="footnote-ref" href="#fn:16">16</a></sup><sup id="fnref2:17"><a class="footnote-ref" href="#fn:17">17</a></sup>
+After <code>edit</code>/<code>write</code>, LSP diagnostics are appended to
+the tool's own output so the model sees compiler errors next
+turn.<sup id="fnref2:18"><a class="footnote-ref" href="#fn:18">18</a></sup></p>
+<p><strong>⑦ Persist.</strong> Every message and part lands in SQLite
+(Drizzle/Effect, WAL mode) via <code>sessions.updateMessage</code> /
+<code>updatePart</code>.<sup id="fnref:20"><a class="footnote-ref" href="#fn:20">20</a></sup> The loop holds no
+conversation state in memory across turns — each iteration re-reads the
+working set, which is what makes interrupt, compaction, and multi-surface
+(TUI / <code>serve</code> / ACP) concurrency safe.</p>
+<p><strong>⑧ Compact.</strong> Each iteration checks
+<code>compaction.isOverflow</code> against the model's context budget; on
+overflow, <code>compaction.create({ auto: true })</code> summarizes the head
+and keeps a token-estimated recent tail. After the loop breaks,
+<code>compaction.prune()</code> runs forked in the background.<sup id="fnref2:21"><a class="footnote-ref" href="#fn:21">21</a></sup>
+Termination itself is model-driven — there is no fixed iteration cap
+unless the agent config sets one.</p>
+<p>The tradeoff visible across all eight steps: OpenCode keeps the loop
+dumb and pushes intelligence into the seams — model-adapted tools,
+deferred permission effects, in-tool LSP feedback — but every seam is
+another per-request computation, and the harness trusts the model to know
+when it is done.</p>
+<p><img alt="Subagent sequence" src="figures/seq-subagent.svg" /></p>
+<h2 id="subsystem-inventory">Subsystem inventory</h2>
+<table>
+<thead>
+<tr>
+<th>Subsystem</th>
+<th>What it does</th>
+<th>Key file</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Session loop</td>
+<td><code>prompt()</code> entry, <code>runLoop</code> <code>while(true)</code>, task queue, model-driven exit</td>
+<td><code>session/prompt.ts</code></td>
+</tr>
+<tr>
+<td>Stream processor</td>
+<td>Pre-capture, <code>ProcessorContext</code>, <code>LLMEvent</code> → part state transitions</td>
+<td><code>session/processor.ts</code></td>
+</tr>
+<tr>
+<td>Dual LLM runtime</td>
+<td>AI SDK default + opt-in native <code>@opencode-ai/llm</code>; one <code>LLMEvent</code> stream</td>
+<td><code>session/llm/</code></td>
+</tr>
+<tr>
+<td>Tool registry</td>
+<td>Per-request, model-adapted tool sets; <code>tool.definition</code> plugin hook</td>
+<td><code>tool/registry.ts</code></td>
+</tr>
+<tr>
+<td>Permissions</td>
+<td>Last-matching-rule-wins; <code>ask</code> via <code>Deferred</code>; shutdown fails closed</td>
+<td><code>permission/index.ts</code></td>
+</tr>
+<tr>
+<td>LSP</td>
+<td>Diagnostics appended to edit/write output; errors only, cap 20/file</td>
+<td><code>lsp/</code>, <code>tool/edit.ts</code></td>
+</tr>
+<tr>
+<td>Subagents</td>
+<td>Child sessions with nested <code>runLoop</code>; background tasks inject synthetic user messages</td>
+<td><code>tool/task.ts</code></td>
+</tr>
+<tr>
+<td>Compaction</td>
+<td>Per-iteration overflow check; summarize head, keep token-budgeted tail</td>
+<td><code>session/compaction.ts</code></td>
+</tr>
+<tr>
+<td>Providers</td>
+<td>Live ModelsDev catalog, cached with locking + periodic refresh</td>
+<td><code>provider/</code></td>
+</tr>
+<tr>
+<td>Storage</td>
+<td>SQLite via Drizzle/Effect; WAL mode; migrations</td>
+<td><code>packages/core/src/database/</code></td>
+</tr>
+<tr>
+<td>Event bus</td>
+<td>Session-scoped pub/sub: <code>Permission.Asked</code>, message/part updates</td>
+<td><code>session/bus.ts</code></td>
+</tr>
+<tr>
+<td>Skills &amp; instructions</td>
+<td>Assembled into the system prompt per turn</td>
+<td><code>skill/</code>, <code>session/instructions.ts</code></td>
+</tr>
+<tr>
+<td>MCP</td>
+<td>Servers contribute tools dynamically to the registry</td>
+<td><code>mcp/</code></td>
+</tr>
+</tbody>
+</table>
+<h2 id="extension-points-in-depth">Extension points in depth</h2>
+<h3>Plugins</h3>
+<p>The <code>tool.definition</code> hook lets plugins rewrite tool
+descriptions and parameters before the model sees them — the tool set is
+a negotiated surface, not a fixed list.<sup id="fnref3:10"><a class="footnote-ref" href="#fn:10">10</a></sup>
+Combined with dynamic MCP and plugin tool registration, OpenCode's
+extension story is: bring your own tools, reshape the builtins, and the
+loop will not notice the difference.</p>
+<h3>Agents</h3>
+<p>Subagents are full child sessions — separate message history, own nested
+<code>runLoop</code>, own SQLite rows — spawned through the <code>task</code>
+tool.<sup id="fnref:22"><a class="footnote-ref" href="#fn:22">22</a></sup> Background tasks fork and
+inject their completion back into the parent as synthetic user messages,
+so async work re-enters the loop through the same door as human
+input.<sup id="fnref:23"><a class="footnote-ref" href="#fn:23">23</a></sup></p>
+<h3>Events</h3>
+<p>The session bus (<code>session/bus.ts</code>) is the coordination spine:
+permission prompts, message and part updates all publish here, and every
+surface — TUI, <code>serve</code>, ACP — subscribes to the same
+events.<sup id="fnref:24"><a class="footnote-ref" href="#fn:24">24</a></sup></p>
+<h2 id="deliberate-omissions">Deliberate omissions</h2>
+<p>This teardown covers the TUI-driven loop, the tool system, permissions,
+LSP, providers, subagents, and compaction. It does not cover the
+<code>opencode serve</code> control plane, the ACP surfaces, or the
+<code>app</code> package's SolidJS rendering — each deserves its own
+pass. The provider catalog's network dependency (offline behavior,
+cache-invalidation edge cases) is noted but not stress-tested.</p>
+<h2 id="comparison-matrix-row">Comparison matrix row</h2>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Dimension</th>
+<th>OpenCode (v1.18.34)</th>
+</tr>
+</thead>
+<tbody>
+<tr><td>1</td><td>Agent loop</td><td><code>runLoop</code> <code>while(true)</code>; model-driven exit (finish reason + no tool calls + parentID); <code>maxSteps</code> defaults <code>Infinity</code>, wrap-up prompt instead of kill</td></tr>
+<tr><td>2</td><td>Tool system</td><td>Per-request model-adapted registry; GPT gets <code>apply_patch</code> instead of <code>edit</code>/<code>write</code>; <code>tool.definition</code> plugin hook; MCP + plugin tools dynamic</td></tr>
+<tr><td>3</td><td>Model providers</td><td>Live ModelsDev catalog (fetched, cached, refreshed); dual runtime — Vercel AI SDK default, opt-in native <code>@opencode-ai/llm</code>; one <code>LLMEvent</code> stream</td></tr>
+<tr><td>4</td><td>Prompt construction</td><td>System prompt assembled per turn: environment + instructions + MCP + skills; working tree pre-captured before the model call</td></tr>
+<tr><td>5</td><td>Memory/session</td><td>SQLite (Drizzle/Effect, WAL); no in-memory conversation state across turns; per-iteration overflow check → summarize head, keep token-budgeted tail</td></tr>
+<tr><td>6</td><td>Reasoning/planning</td><td>Subagents as child sessions with nested loops; background tasks inject synthetic user messages; no separate planner</td></tr>
+<tr><td>7</td><td>Extensibility</td><td>Plugin tool-definition hook, MCP, skills, subagents, permission rulesets; Effect <code>Tag</code> DI throughout</td></tr>
+<tr><td>8</td><td>Interfaces</td><td>TUI (SolidJS) / <code>serve</code> / ACP — all subscribe to the session bus; SQLite as the shared substrate</td></tr>
+<tr><td>9</td><td>Failure handling</td><td>LSP diagnostics in tool output (self-correct next turn); permission deny fails fast; shutdown fails pending asks closed</td></tr>
+<tr><td>10</td><td>Security model</td><td>Permission gate per tool call: last-matching-rule-wins, default <code>ask</code>, deferred user reply; no OS sandbox in the loop</td></tr>
+</tbody>
+</table>
+  <a class="diagram-cta" href="trace.html">
+    Play the 8-step trace
+    <span>Message to loop to model-adapted tools, dual-runtime stream, permission gate, LSP feedback, and compaction</span>
+  </a>
+  <a class="diagram-cta" href="../diagrams/template.html?data=../opencode/diagrams/opencode.json">
+    Explore the interactive architecture diagram
+    <span>21 nodes, 29 edges — pan, zoom, and follow every subsystem link</span>
+  </a>
+<h2 id="endnotes">Endnotes</h2>
+<p>All notes are VERIFIED against <code>v1.18.34</code>
+(<code>aec0b9a6d8898f68f923aaf08b7306d931fd9d76</code>) unless marked otherwise.
+<code>GH</code> = <code>https://github.com/anomalyco/opencode/blob/aec0b9a6d8898f68f923aaf08b7306d931fd9d76/</code>.</p>
+<div class="footnote">
+<hr />
+<ol>
+<li id="fn:1">
+<p>Pin verified via GitHub API 2026-10-06: tag <code>v1.18.34</code> resolves to
+<code>aec0b9a6d8898f68f923aaf08b7306d931fd9d76</code>, committed
+2026-09-30T22:39:32Z.&#160;<a class="footnote-backref" href="#fnref:1" title="Jump back to footnote 1 in the text">&#8617;</a></p>
+</li>
+<li id="fn:2">
+<p>Repo description "The open source coding agent.", 212,009 stars,
+MIT license — GitHub API 2026-10-06.&#160;<a class="footnote-backref" href="#fnref:2" title="Jump back to footnote 2 in the text">&#8617;</a></p>
+</li>
+<li id="fn:3">
+<p>Monorepo layout: <code>packages/opencode</code> (harness core),
+<code>packages/app</code> (TUI), <code>packages/core</code> (shared:
+database, auth, config) — top-level <code>packages/</code> directory at the
+pinned SHA.&#160;<a class="footnote-backref" href="#fnref:3" title="Jump back to footnote 3 in the text">&#8617;</a></p>
+</li>
+<li id="fn:4">
+<p>Effect <code>Tag</code> services: <code>SessionProcessor.tag</code>
+(<a href="https://github.com/anomalyco/opencode/blob/aec0b9a6d8898f68f923aaf08b7306d931fd9d76/packages/opencode/src/session/processor.ts">GH…/session/processor.ts</a>),
+<code>LLM.tag</code> (<a href="https://github.com/anomalyco/opencode/blob/aec0b9a6d8898f68f923aaf08b7306d931fd9d76/packages/opencode/src/session/llm/index.ts">GH…/session/llm/index.ts</a>),
+<code>Database.tag</code>
+(<a href="https://github.com/anomalyco/opencode/blob/aec0b9a6d8898f68f923aaf08b7306d931fd9d76/packages/core/src/database/database.ts">GH…/core/src/database/database.ts</a>).&#160;<a class="footnote-backref" href="#fnref:4" title="Jump back to footnote 4 in the text">&#8617;</a></p>
+</li>
+<li id="fn:5">
+<p><code>runLoop</code> at
+<a href="https://github.com/anomalyco/opencode/blob/aec0b9a6d8898f68f923aaf08b7306d931fd9d76/packages/opencode/src/session/prompt.ts#L1081">GH…/session/prompt.ts#L1081</a>;
+<code>while (true)</code> at L1095.&#160;<a class="footnote-backref" href="#fnref:5" title="Jump back to footnote 5 in the text">&#8617;</a></p>
+</li>
+<li id="fn:6">
+<p>Exit check: last assistant message <code>finish</code> reason is not
+<code>"tool-calls"</code>, no pending tool calls, and
+<code>parentID</code> equals the user message ID —
+<a href="https://github.com/anomalyco/opencode/blob/aec0b9a6d8898f68f923aaf08b7306d931fd9d76/packages/opencode/src/session/prompt.ts#L1100">GH…/session/prompt.ts#L1100</a>.&#160;<a class="footnote-backref" href="#fnref:6" title="Jump back to footnote 6 in the text">&#8617;</a></p>
+</li>
+<li id="fn:7">
+<p><code>maxSteps = agent.steps ?? Infinity</code>; on reaching it,
+<code>MAX_STEPS_PROMPT</code> is injected asking the model to wrap up —
+<a href="https://github.com/anomalyco/opencode/blob/aec0b9a6d8898f68f923aaf08b7306d931fd9d76/packages/opencode/src/session/prompt.ts#L1140">GH…/session/prompt.ts#L1140</a>.&#160;<a class="footnote-backref" href="#fnref:7" title="Jump back to footnote 7 in the text">&#8617;</a></p>
+</li>
+<li id="fn:8">
+<p><code>prompt()</code> at
+<a href="https://github.com/anomalyco/opencode/blob/aec0b9a6d8898f68f923aaf08b7306d931fd9d76/packages/opencode/src/session/prompt.ts#L1052">GH…/session/prompt.ts#L1052</a>:
+<code>revert.cleanup</code>, <code>createUserMessage</code>,
+<code>sessions.touch</code>, then <code>loop()</code> inside
+<code>state.ensureRunning</code>.&#160;<a class="footnote-backref" href="#fnref:8" title="Jump back to footnote 8 in the text">&#8617;</a></p>
+</li>
+<li id="fn:9">
+<p><code>ToolRegistry.tools()</code> at
+<a href="https://github.com/anomalyco/opencode/blob/aec0b9a6d8898f68f923aaf08b7306d931fd9d76/packages/opencode/src/tool/registry.ts#L291">GH…/tool/registry.ts#L291</a>;
+<code>usePatch</code> swaps <code>apply_patch</code> for
+<code>edit</code>+<code>write</code> on GPT-family models.&#160;<a class="footnote-backref" href="#fnref:9" title="Jump back to footnote 9 in the text">&#8617;</a></p>
+</li>
+<li id="fn:10">
+<p><code>tool.definition</code> plugin hook applied in
+<code>ToolRegistry.tools()</code> —
+<a href="https://github.com/anomalyco/opencode/blob/aec0b9a6d8898f68f923aaf08b7306d931fd9d76/packages/opencode/src/tool/registry.ts#L310">GH…/tool/registry.ts#L310</a>;
+MCP and plugin tools registered dynamically.&#160;<a class="footnote-backref" href="#fnref:10" title="Jump back to footnote 10 in the text">&#8617;</a></p>
+</li>
+<li id="fn:11">
+<p><code>websearch</code> gated to the opencode provider —
+<a href="https://github.com/anomalyco/opencode/blob/aec0b9a6d8898f68f923aaf08b7306d931fd9d76/packages/opencode/src/tool/registry.ts#L295">GH…/tool/registry.ts#L295</a>.&#160;<a class="footnote-backref" href="#fnref:11" title="Jump back to footnote 11 in the text">&#8617;</a></p>
+</li>
+<li id="fn:12">
+<p>Dual-runtime boundary documented in
+<a href="https://github.com/anomalyco/opencode/blob/aec0b9a6d8898f68f923aaf08b7306d931fd9d76/packages/opencode/src/session/llm/AGENTS.md">GH…/session/llm/AGENTS.md</a>:
+AI SDK default, native opt-in, one <code>LLMEvent</code> stream.&#160;<a class="footnote-backref" href="#fnref:12" title="Jump back to footnote 12 in the text">&#8617;</a></p>
+</li>
+<li id="fn:13">
+<p>AI SDK path: <code>streamText()</code> with <code>fullStream</code> adapted
+to <code>LLMEvent</code>s —
+<a href="https://github.com/anomalyco/opencode/blob/aec0b9a6d8898f68f923aaf08b7306d931fd9d76/packages/opencode/src/session/llm/ai-sdk.ts">GH…/session/llm/ai-sdk.ts</a>.&#160;<a class="footnote-backref" href="#fnref:13" title="Jump back to footnote 13 in the text">&#8617;</a></p>
+</li>
+<li id="fn:14">
+<p>Native gate: <code>OPENCODE_EXPERIMENTAL_NATIVE_LLM</code> plus
+native-runtime availability; lowers to <code>@opencode-ai/llm</code>
+<code>LLMRequest</code> via <code>LLMClient</code>/<code>RequestExecutor</code> —
+<a href="https://github.com/anomalyco/opencode/blob/aec0b9a6d8898f68f923aaf08b7306d931fd9d76/packages/opencode/src/session/llm/native-runtime.ts">GH…/session/llm/native-runtime.ts</a>.&#160;<a class="footnote-backref" href="#fnref:14" title="Jump back to footnote 14 in the text">&#8617;</a></p>
+</li>
+<li id="fn:15">
+<p>Provider catalog fetched from
+<code>https://models.opencode.ai/api.json</code>, cached locally with
+locking and periodic refresh —
+<a href="https://github.com/anomalyco/opencode/blob/aec0b9a6d8898f68f923aaf08b7306d931fd9d76/packages/opencode/src/provider/models.ts">GH…/provider/models.ts</a>.&#160;<a class="footnote-backref" href="#fnref:15" title="Jump back to footnote 15 in the text">&#8617;</a></p>
+</li>
+<li id="fn:16">
+<p>Permission rules: last-matching-rule-wins, default <code>ask</code> —
+<a href="https://github.com/anomalyco/opencode/blob/aec0b9a6d8898f68f923aaf08b7306d931fd9d76/packages/opencode/src/permission/index.ts#L28">GH…/permission/index.ts#L28</a>.&#160;<a class="footnote-backref" href="#fnref:16" title="Jump back to footnote 16 in the text">&#8617;</a></p>
+</li>
+<li id="fn:17">
+<p><code>ask</code> publishes <code>Permission.Asked</code> and parks on a
+<code>Deferred</code>; shutdown rejects pending requests —
+<a href="https://github.com/anomalyco/opencode/blob/aec0b9a6d8898f68f923aaf08b7306d931fd9d76/packages/opencode/src/permission/index.ts#L67">GH…/permission/index.ts#L67</a>.&#160;<a class="footnote-backref" href="#fnref:17" title="Jump back to footnote 17 in the text">&#8617;</a></p>
+</li>
+<li id="fn:18">
+<p>LSP diagnostics appended in <code>edit</code> —
+<a href="https://github.com/anomalyco/opencode/blob/aec0b9a6d8898f68f923aaf08b7306d931fd9d76/packages/opencode/src/tool/edit.ts#L198">GH…/tool/edit.ts#L198</a>.&#160;<a class="footnote-backref" href="#fnref:18" title="Jump back to footnote 18 in the text">&#8617;</a></p>
+</li>
+<li id="fn:19">
+<p>Same in <code>write</code>
+(<a href="https://github.com/anomalyco/opencode/blob/aec0b9a6d8898f68f923aaf08b7306d931fd9d76/packages/opencode/src/tool/write.ts#L76">GH…/tool/write.ts#L76</a>);
+errors only, capped at 20 per file —
+<a href="https://github.com/anomalyco/opencode/blob/aec0b9a6d8898f68f923aaf08b7306d931fd9d76/packages/opencode/src/lsp/diagnostic.ts#L14">GH…/lsp/diagnostic.ts#L14</a>.&#160;<a class="footnote-backref" href="#fnref:19" title="Jump back to footnote 19 in the text">&#8617;</a></p>
+</li>
+<li id="fn:20">
+<p>SQLite via Drizzle/Effect, WAL mode, <code>synchronous = NORMAL</code> —
+<a href="https://github.com/anomalyco/opencode/blob/aec0b9a6d8898f68f923aaf08b7306d931fd9d76/packages/core/src/database/database.ts#L27">GH…/core/src/database/database.ts#L27</a>.&#160;<a class="footnote-backref" href="#fnref:20" title="Jump back to footnote 20 in the text">&#8617;</a></p>
+</li>
+<li id="fn:21">
+<p>Per-iteration overflow check → <code>compaction.create({ auto: true })</code>;
+<code>compaction.prune()</code> forked in background after the loop —
+<a href="https://github.com/anomalyco/opencode/blob/aec0b9a6d8898f68f923aaf08b7306d931fd9d76/packages/opencode/src/session/compaction.ts#L203">GH…/session/compaction.ts#L203</a>.&#160;<a class="footnote-backref" href="#fnref:21" title="Jump back to footnote 21 in the text">&#8617;</a></p>
+</li>
+<li id="fn:22">
+<p>Subagent = child session with nested <code>runLoop</code> —
+<a href="https://github.com/anomalyco/opencode/blob/aec0b9a6d8898f68f923aaf08b7306d931fd9d76/packages/opencode/src/tool/task.ts">GH…/tool/task.ts</a> and
+<a href="https://github.com/anomalyco/opencode/blob/aec0b9a6d8898f68f923aaf08b7306d931fd9d76/packages/opencode/src/session/prompt.ts#L255">GH…/session/prompt.ts#L255</a>.&#160;<a class="footnote-backref" href="#fnref:22" title="Jump back to footnote 22 in the text">&#8617;</a></p>
+</li>
+<li id="fn:23">
+<p>Background task completion injected as synthetic user messages —
+<a href="https://github.com/anomalyco/opencode/blob/aec0b9a6d8898f68f923aaf08b7306d931fd9d76/packages/opencode/src/session/prompt.ts#L1120">GH…/session/prompt.ts#L1120</a>.&#160;<a class="footnote-backref" href="#fnref:23" title="Jump back to footnote 23 in the text">&#8617;</a></p>
+</li>
+<li id="fn:24">
+<p>Session bus events: <code>Permission.Asked</code>, message/part updates —
+<a href="https://github.com/anomalyco/opencode/blob/aec0b9a6d8898f68f923aaf08b7306d931fd9d76/packages/opencode/src/session/bus.ts">GH…/session/bus.ts</a>.&#160;<a class="footnote-backref" href="#fnref:24" title="Jump back to footnote 24 in the text">&#8617;</a></p>
+</li>
+<li id="fn:25">
+<p><code>SessionProcessor.create()</code> pre-captures the working tree —
+<a href="https://github.com/anomalyco/opencode/blob/aec0b9a6d8898f68f923aaf08b7306d931fd9d76/packages/opencode/src/session/processor.ts#L98">GH…/session/processor.ts#L98</a>.&#160;<a class="footnote-backref" href="#fnref:25" title="Jump back to footnote 25 in the text">&#8617;</a></p>
+</li>
+<li id="fn:26">
+<p><code>handle.process()</code> calls <code>LLM.Service</code> —
+<a href="https://github.com/anomalyco/opencode/blob/aec0b9a6d8898f68f923aaf08b7306d931fd9d76/packages/opencode/src/session/processor.ts#L641">GH…/session/processor.ts#L641</a>.&#160;<a class="footnote-backref" href="#fnref:26" title="Jump back to footnote 26 in the text">&#8617;</a></p>
+</li>
+<li id="fn:27">
+<p>System prompt: environment, instructions, MCP servers, skills —
+<a href="https://github.com/anomalyco/opencode/blob/aec0b9a6d8898f68f923aaf08b7306d931fd9d76/packages/opencode/src/session/system.ts">GH…/session/system.ts</a>.&#160;<a class="footnote-backref" href="#fnref:27" title="Jump back to footnote 27 in the text">&#8617;</a></p>
+</li>
+</ol>
+</div>
+</main>
+</body>
+</html>
