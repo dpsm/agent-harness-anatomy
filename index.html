@@ -36,6 +36,14 @@
   .links a.secondary:hover { border-color: #a89880; }
   footer { margin-top: 48px; color: #a89880; font-size: 0.85rem; }
   footer a { color: #a89880; }
+  .contribute {
+    border: 1px solid #3a2f26; border-left: 3px solid #d08c4e; border-radius: 12px;
+    padding: 24px; margin-bottom: 20px; background: #1f1a15;
+  }
+  .contribute h2 { font-size: 1.25rem; margin-bottom: 6px; }
+  .contribute p { color: #a89880; font-size: 0.95rem; margin-bottom: 12px; }
+  .contribute p:last-child { margin-bottom: 0; }
+  .contribute a { color: #d08c4e; }
 </style>
 </head>
 <body>
@@ -122,6 +130,17 @@
       <a class="secondary" href="diagrams/template.html?data=../openhands/diagrams/openhands.json">Interactive diagram</a>
       <a class="secondary" href="openhands/">Read the article</a>
     </div>
+  </div>
+
+  <div class="contribute">
+    <h2>Found a mistake?</h2>
+    <p>These teardowns live or die on their grounding: every behavioral claim
+    is pinned to a release tag and commit SHA, with a line-level permalink
+    to the source. Pins drift, code gets misread, and claims go stale &mdash;
+    if you spot an error or have a better reading of the source, corrections
+    are welcome as
+    <a href="https://github.com/dpsm/agent-harness-anatomy/pulls">pull requests</a>.
+    A correction with a permalink beats a correction with an opinion.</p>
   </div>
 
   <footer>
