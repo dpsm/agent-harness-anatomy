@@ -82,6 +82,10 @@ is not whether Effect works here (it does), but what it buys a coding
 agent: cancellation, resource safety, and a permission system built on
 deferred effects rather than callbacks.<sup id="fnref:1"><a class="footnote-ref" href="#fn:1">1</a></sup><sup id="fnref:2"><a class="footnote-ref" href="#fn:2">2</a></sup></p>
 <p><img alt="OpenCode architecture" src="figures/opencode.svg" /></p>
+<a class="diagram-cta" href="../diagrams/template.html?data=../opencode/diagrams/opencode.json">
+    Explore the interactive architecture diagram
+    <span>21 nodes, 29 edges — pan, zoom, and follow every subsystem link</span>
+  </a>
 <h2 id="the-mental-model">The mental model</h2>
 <p>OpenCode is a <strong>dual-runtime coding agent</strong>: one session loop, one
 tool system, one SQLite store — and <em>two</em> LLM transports underneath.
@@ -275,6 +279,10 @@ deferred permission effects, in-tool LSP feedback — but every seam is
 another per-request computation, and the harness trusts the model to know
 when it is done.</p>
 <p><img alt="Subagent sequence" src="figures/seq-subagent.svg" /></p>
+<a class="diagram-cta" href="trace.html">
+    Play the 8-step trace
+    <span>Message to loop to model-adapted tools, dual-runtime stream, permission gate, LSP feedback, and compaction</span>
+  </a>
 <h2 id="subsystem-inventory">Subsystem inventory</h2>
 <table>
 <thead>
@@ -401,14 +409,6 @@ cache-invalidation edge cases) is noted but not stress-tested.</p>
 <tr><td>10</td><td>Security model</td><td>Permission gate per tool call: last-matching-rule-wins, default <code>ask</code>, deferred user reply; no OS sandbox in the loop</td></tr>
 </tbody>
 </table>
-  <a class="diagram-cta" href="trace.html">
-    Play the 8-step trace
-    <span>Message to loop to model-adapted tools, dual-runtime stream, permission gate, LSP feedback, and compaction</span>
-  </a>
-  <a class="diagram-cta" href="../diagrams/template.html?data=../opencode/diagrams/opencode.json">
-    Explore the interactive architecture diagram
-    <span>21 nodes, 29 edges — pan, zoom, and follow every subsystem link</span>
-  </a>
 <h2 id="endnotes">Endnotes</h2>
 <p>All notes are VERIFIED against <code>v1.18.34</code>
 (<code>aec0b9a6d8898f68f923aaf08b7306d931fd9d76</code>) unless marked otherwise.
