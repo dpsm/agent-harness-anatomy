@@ -56,7 +56,8 @@
   .node .badge-text { fill: #161210; font-size: 12px; font-weight: 700; }
   .edge { stroke: #8a7a66; stroke-width: 1.5; fill: none; }
   .edge.hl { stroke: #d08c4e; stroke-width: 2; }
-  .edge-label { fill: var(--muted); font-size: 11px; }
+  .edge-label { fill: var(--muted); font-size: 11px; paint-order: stroke;
+                stroke: var(--bg); stroke-width: 4px; stroke-linejoin: round; }
   #tooltip { position: absolute; pointer-events: none; background: var(--panel);
              border: 1px solid var(--border); border-radius: 6px; padding: 8px 10px;
              font-size: 12px; max-width: 300px; display: none; z-index: 10; }
@@ -108,11 +109,79 @@ let vb = { x: 0, y: 0, w: 1200, h: 800 };
 
 function setViewBox() { svg.setAttribute("viewBox", `${vb.x} ${vb.y} ${vb.w} ${vb.h}`); }
 
-function edgePath(a, b) {
-  const x1 = a.x + a.w / 2, y1 = a.y + a.h;
-  const x2 = b.x + b.w / 2, y2 = b.y;
-  const my = (y1 + y2) / 2;
-  return `M ${x1} ${y1} C ${x1} ${my}, ${x2} ${my}, ${x2} ${y2}`;
+function edgeSides(a, b) {
+  const ax = a.x + a.w / 2, ay = a.y + a.h / 2;
+  const bx = b.x + b.w / 2, by = b.y + b.h / 2;
+  const dx = bx - ax, dy = by - ay;
+  if (Math.abs(dx) < 60) return dy > 0 ? ["bottom", "top"] : ["right", "right"];
+  return dx > 0 ? ["right", "left"] : ["left", "right"];
+}
+
+function anchorSlots(nodes, edges) {
+  // Spread multiple edges sharing a node side across that side so hub
+  // attachments don't pile on one point. Returns Map "i:out|in" -> [x, y].
+  const byId = Object.fromEntries(nodes.map(n => [n.id, n]));
+  const groups = new Map(), infos = [];
+  edges.forEach((e, i) => {
+    const a = byId[e.from], b = byId[e.to];
+    const [s1, s2] = edgeSides(a, b);
+    infos.push([s1, s2]);
+    const ax = a.x + a.w / 2, ay = a.y + a.h / 2;
+    const bx = b.x + b.w / 2, by = b.y + b.h / 2;
+    const k1 = (s1 === "left" || s1 === "right") ? ay : ax;
+    const k2 = (s2 === "left" || s2 === "right") ? by : bx;
+    const g1 = e.from + ":" + s1, g2 = e.to + ":" + s2;
+    if (!groups.has(g1)) groups.set(g1, []);
+    if (!groups.has(g2)) groups.set(g2, []);
+    groups.get(g1).push([i, k1, "out"]);
+    groups.get(g2).push([i, k2, "in"]);
+  });
+  const pos = new Map();
+  for (const [key, lst] of groups) {
+    const [nid, side] = key.split(":");
+    const n = byId[nid];
+    lst.sort((p, q) => p[1] - q[1]);
+    lst.forEach(([i, , end], rank) => {
+      const frac = (rank + 1) / (lst.length + 1);
+      let x, y;
+      if (side === "left") { x = n.x; y = n.y + 18 + frac * (n.h - 36); }
+      else if (side === "right") { x = n.x + n.w; y = n.y + 18 + frac * (n.h - 36); }
+      else if (side === "top") { x = n.x + 40 + frac * (n.w - 80); y = n.y; }
+      else { x = n.x + 40 + frac * (n.w - 80); y = n.y + n.h; }
+      pos.set(i + ":" + end, [x, y]);
+    });
+  }
+  return { infos, pos };
+}
+
+function edgePath(a, b, p1, p2, t) {
+  t = (t === undefined) ? 0.5 : t;
+  // Smart anchors: cross-column edges run side-to-side (facing sides) so they
+  // don't swoop across the diagram; same-column forward edges run bottom->top;
+  // same-column back edges loop around the right side into open margin.
+  // p1/p2 are pre-spread anchor points from anchorSlots(); sides come from edgeSides.
+  const [s1, s2] = edgeSides(a, b);
+  const [x1, y1] = p1, [x2, y2] = p2;
+  const horiz = (s1 === "left" || s1 === "right") && (s2 === "left" || s2 === "right");
+  let c1x, c1y, c2x, c2y;
+  if (horiz) {
+    if (s1 === "right" && s2 === "right") {
+      const bulge = 70 + Math.abs(y2 - y1) * 0.09;
+      c1x = x1 + bulge; c1y = y1; c2x = x2 + bulge; c2y = y2;
+    } else {
+      const k = Math.min(140, Math.abs(x2 - x1) / 2 + 40);
+      const sg1 = s1 === "right" ? 1 : -1, sg2 = s2 === "left" ? -1 : 1;
+      c1x = x1 + sg1 * k; c1y = y1; c2x = x2 + sg2 * k; c2y = y2;
+    }
+  } else {
+    const my = (y1 + y2) / 2;
+    c1x = x1; c1y = my; c2x = x2; c2y = my;
+  }
+  // label point at t along the cubic
+  const mt = 1 - t;
+  const lx = mt*mt*mt*x1 + 3*mt*mt*t*c1x + 3*mt*t*t*c2x + t*t*t*x2;
+  const ly = mt*mt*mt*y1 + 3*mt*mt*t*c1y + 3*mt*t*t*c2y + t*t*t*y2;
+  return { d: `M ${x1} ${y1} C ${c1x} ${c1y}, ${c2x} ${c2y}, ${x2} ${y2}`, lx, ly };
 }
 
 function render(data) {
@@ -131,7 +200,7 @@ function render(data) {
       c.font = labelFont;
       const lw = c.measureText(n.label || "").width;
       c.font = subFont;
-      const sw = c.measureText((n.sub || "").slice(0, 34)).width;
+      const sw = c.measureText(n.sub || "").width;
       const need = Math.ceil(Math.max(lw, sw)) + TEXT_X + PAD_R;
       if (need > n.w) {
         const cx = n.x + n.w / 2;
@@ -155,24 +224,55 @@ function render(data) {
   const gN = document.createElementNS(NS, "g");
   svg.appendChild(gE); svg.appendChild(gN);
 
-  for (const e of data.edges) {
+  // Greedy edge-label placement: try positions along each edge, keep the one
+  // with the most clearance from placed labels and node boxes.
+  const labC = document.createElement("canvas").getContext("2d");
+  labC.font = '400 11px -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif';
+  const nodeBoxes = data.nodes.map(n => [n.x - 6, n.y - 6, n.x + n.w + 6, n.y + n.h + 6]);
+  const placedBoxes = [];
+  function boxClear(x, y, w, h) {
+    const b = [x, y - h, x + w, y + 3];
+    let best = 1e9;
+    for (const ob of placedBoxes.concat(nodeBoxes)) {
+      const dx = Math.max(ob[0] - b[2], b[0] - ob[2], 0);
+      const dy = Math.max(ob[1] - b[3], b[1] - ob[3], 0);
+      best = Math.min(best, Math.hypot(dx, dy));
+    }
+    return [best, b];
+  }
+  function placeLabel(a, b, p1, p2, text) {
+    const w = labC.measureText(text).width, h = 13;
+    let best = null, bestB = null;
+    for (const tc of [0.3, 0.7, 0.5, 0.2, 0.8, 0.42, 0.58]) {
+      const ep = edgePath(a, b, p1, p2, tc);
+      const [c, bb] = boxClear(ep.lx + 6, ep.ly - 4, w, h);
+      if (!best || c > best) { best = c; bestB = bb; }
+      if (c > 14) break;
+    }
+    placedBoxes.push(bestB);
+    return bestB;
+  }
+
+  const { pos } = anchorSlots(data.nodes, data.edges);
+  data.edges.forEach((e, ei) => {
     const a = byId[e.from], b = byId[e.to];
-    if (!a || !b) continue;
+    if (!a || !b) return;
+    const p1 = pos.get(ei + ":out"), p2 = pos.get(ei + ":in");
+    const ep = edgePath(a, b, p1, p2, 0.5);
     const p = document.createElementNS(NS, "path");
-    p.setAttribute("d", edgePath(a, b));
+    p.setAttribute("d", ep.d);
     p.setAttribute("class", "edge");
     p.setAttribute("marker-end", "url(#arrow)");
     p.dataset.from = e.from; p.dataset.to = e.to;
     gE.appendChild(p);
     if (e.label) {
+      const bb = placeLabel(a, b, p1, p2, e.label);
       const t = document.createElementNS(NS, "text");
-      const mx = (a.x + a.w / 2 + b.x + b.w / 2) / 2 + 8;
-      const my = (a.y + a.h + b.y) / 2;
-      t.setAttribute("x", mx); t.setAttribute("y", my);
+      t.setAttribute("x", bb[0]); t.setAttribute("y", bb[3] - 3);
       t.setAttribute("class", "edge-label"); t.textContent = e.label;
       gE.appendChild(t);
     }
-  }
+  });
 
   for (const n of data.nodes) {
     const g = document.createElementNS(NS, "g");
@@ -208,7 +308,7 @@ function render(data) {
     const sub = document.createElementNS(NS, "text");
     sub.setAttribute("x", n.x + 44); sub.setAttribute("y", n.y + 46);
     sub.setAttribute("class", "sub");
-    sub.textContent = (n.sub || "").slice(0, 34); g.appendChild(sub);
+    sub.textContent = n.sub || ""; g.appendChild(sub);
 
     const nLinks = document.createElementNS(NS, "text");
     nLinks.setAttribute("x", n.x + 14); nLinks.setAttribute("y", n.y + n.h - 12);
