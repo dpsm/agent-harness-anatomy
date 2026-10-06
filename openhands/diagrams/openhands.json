@@ -1,785 +1,785 @@
 {
- "title": "OpenHands — one turn through the harness",
- "repo": "https://github.com/OpenHands/software-agent-sdk",
- "sha": "54daf056bd863bb46f922a2fe9324dd736b37ff6",
- "nodes": [
-  {
-   "id": "input",
-   "label": "send_message input",
-   "sub": "openhands-sdk/openhands/sdk/conversation/impl/local_conversation.py:1807",
-   "x": 280,
-   "y": 20,
-   "w": 220,
-   "h": 96,
-   "grade": "verified",
-   "links": [
+  "title": "OpenHands \u2014 one turn through the harness",
+  "repo": "https://github.com/OpenHands/software-agent-sdk",
+  "sha": "54daf056bd863bb46f922a2fe9324dd736b37ff6",
+  "nodes": [
     {
-     "label": "local_conversation.py:1807-1818",
-     "url": "https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/conversation/impl/local_conversation.py#L1807-L1818"
+      "id": "input",
+      "label": "send_message input",
+      "sub": "conversation/impl/local_conversation.py:1807",
+      "x": 485,
+      "y": 20,
+      "w": 375,
+      "h": 96,
+      "grade": "verified",
+      "links": [
+        {
+          "label": "local_conversation.py:1807-1818",
+          "url": "https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/conversation/impl/local_conversation.py#L1807-L1818"
+        },
+        {
+          "label": "local_conversation.py:1845",
+          "url": "https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/conversation/impl/local_conversation.py#L1845"
+        }
+      ],
+      "excerpt": "    @observe(name=\"conversation.send_message\")\n    def send_message(self, message: str | Message, sender: str | None = None) -> None:\n        \"\"\"Send a message to the agent.\n\n        Args:\n            message: Either a string (which will be converted to a user message)\n                    or a Message object\n            sender: Optional identifier of the sender. Can be used to track\n                   message origin in multi-agent scenarios. For example, when\n                   one agent delegates to another, the sender can be set to\n                   identify which agent is sending the message.\n        \"\"\"",
+      "step": 1
     },
     {
-     "label": "local_conversation.py:1845",
-     "url": "https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/conversation/impl/local_conversation.py#L1845"
-    }
-   ],
-   "excerpt": "    @observe(name=\"conversation.send_message\")\n    def send_message(self, message: str | Message, sender: str | None = None) -> None:\n        \"\"\"Send a message to the agent.\n\n        Args:\n            message: Either a string (which will be converted to a user message)\n                    or a Message object\n            sender: Optional identifier of the sender. Can be used to track\n                   message origin in multi-agent scenarios. For example, when\n                   one agent delegates to another, the sender can be set to\n                   identify which agent is sending the message.\n        \"\"\"",
-   "step": 1
-  },
-  {
-   "id": "prompt",
-   "label": "prepare_llm_messages",
-   "sub": "openhands-sdk/openhands/sdk/agent/utils.py:564",
-   "x": 280,
-   "y": 150,
-   "w": 220,
-   "h": 96,
-   "grade": "verified",
-   "links": [
-    {
-     "label": "agent/utils.py:564-574",
-     "url": "https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/agent/utils.py#L564-L574"
+      "id": "prompt",
+      "label": "prepare_llm_messages",
+      "sub": "agent/utils.py:564",
+      "x": 548,
+      "y": 150,
+      "w": 249,
+      "h": 96,
+      "grade": "verified",
+      "links": [
+        {
+          "label": "agent/utils.py:564-574",
+          "url": "https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/agent/utils.py#L564-L574"
+        },
+        {
+          "label": "agent_context.py:360-454",
+          "url": "https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/context/agent_context.py#L360-L454"
+        }
+      ],
+      "excerpt": "    \"\"\"Prepare LLM messages from a conversation view.\n\n    This utility function extracts the common logic for preparing conversation\n    context that is shared between agent.step() and ask_agent() methods.\n    It handles condensation internally and calls the callback when needed.\n\n    Callers should pass the cached `ConversationState.view`, which is\n    maintained incrementally as events are appended. This avoids paying the\n    O(n) `View.from_events` (with `enforce_properties`) cost on every step.\n    See https://github.com/OpenHands/software-agent-sdk/issues/3053.\n",
+      "step": 2
     },
     {
-     "label": "agent_context.py:360-454",
-     "url": "https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/context/agent_context.py#L360-L454"
-    }
-   ],
-   "excerpt": "    \"\"\"Prepare LLM messages from a conversation view.\n\n    This utility function extracts the common logic for preparing conversation\n    context that is shared between agent.step() and ask_agent() methods.\n    It handles condensation internally and calls the callback when needed.\n\n    Callers should pass the cached `ConversationState.view`, which is\n    maintained incrementally as events are appended. This avoids paying the\n    O(n) `View.from_events` (with `enforce_properties`) cost on every step.\n    See https://github.com/OpenHands/software-agent-sdk/issues/3053.\n",
-   "step": 2
-  },
-  {
-   "id": "modelcall",
-   "label": "llm.generate (LiteLLM)",
-   "sub": "openhands-sdk/openhands/sdk/llm/llm.py:76",
-   "x": 280,
-   "y": 280,
-   "w": 220,
-   "h": 96,
-   "grade": "verified",
-   "links": [
-    {
-     "label": "llm.py:76-81",
-     "url": "https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/llm/llm.py#L76-L81"
+      "id": "modelcall",
+      "label": "llm.generate (LiteLLM)",
+      "sub": "llm/llm.py:76",
+      "x": 547,
+      "y": 280,
+      "w": 251,
+      "h": 96,
+      "grade": "verified",
+      "links": [
+        {
+          "label": "llm.py:76-81",
+          "url": "https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/llm/llm.py#L76-L81"
+        },
+        {
+          "label": "llm.py:1673",
+          "url": "https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/llm/llm.py#L1673"
+        }
+      ],
+      "excerpt": "from litellm import (\n    ChatCompletionToolParam,\n    ResponseInputParam,\n    acompletion as litellm_acompletion,\n    completion as litellm_completion,\n)",
+      "step": 3
     },
     {
-     "label": "llm.py:1673",
-     "url": "https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/llm/llm.py#L1673"
-    }
-   ],
-   "excerpt": "from litellm import (\n    ChatCompletionToolParam,\n    ResponseInputParam,\n    acompletion as litellm_acompletion,\n    completion as litellm_completion,\n)",
-   "step": 3
-  },
-  {
-   "id": "classify",
-   "label": "classify_response",
-   "sub": "openhands-sdk/openhands/sdk/agent/response_dispatch.py:54",
-   "x": 280,
-   "y": 410,
-   "w": 220,
-   "h": 96,
-   "grade": "verified",
-   "links": [
-    {
-     "label": "response_dispatch.py:54-65",
-     "url": "https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/agent/response_dispatch.py#L54-L65"
-    }
-   ],
-   "excerpt": "def classify_response(message: Message) -> LLMResponseType:\n    \"\"\"Classify an LLM response message into exactly one type.\n\n    Decision priority (first match wins):\n      1. TOOL_CALLS  — message contains tool calls\n      2. CONTENT     — message contains non-blank TextContent\n      3. REASONING_ONLY — message has reasoning but no visible content\n      4. EMPTY       — nothing useful\n\n    This function is pure: no side effects, no logging, no mutation.\n    \"\"\"",
-   "step": 4
-  },
-  {
-   "id": "dispatch",
-   "label": "_handle_tool_calls / _get_action_event",
-   "sub": "openhands-sdk/openhands/sdk/agent/agent.py:1311",
-   "x": 280,
-   "y": 540,
-   "w": 220,
-   "h": 96,
-   "grade": "verified",
-   "links": [
-    {
-     "label": "agent.py:1311-1317",
-     "url": "https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/agent/agent.py#L1311-L1317"
+      "id": "classify",
+      "label": "classify_response",
+      "sub": "agent/response_dispatch.py:54",
+      "x": 534,
+      "y": 410,
+      "w": 276,
+      "h": 96,
+      "grade": "verified",
+      "links": [
+        {
+          "label": "response_dispatch.py:54-65",
+          "url": "https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/agent/response_dispatch.py#L54-L65"
+        }
+      ],
+      "excerpt": "def classify_response(message: Message) -> LLMResponseType:\n    \"\"\"Classify an LLM response message into exactly one type.\n\n    Decision priority (first match wins):\n      1. TOOL_CALLS  \u2014 message contains tool calls\n      2. CONTENT     \u2014 message contains non-blank TextContent\n      3. REASONING_ONLY \u2014 message has reasoning but no visible content\n      4. EMPTY       \u2014 nothing useful\n\n    This function is pure: no side effects, no logging, no mutation.\n    \"\"\"",
+      "step": 4
     },
     {
-     "label": "agent.py:1130",
-     "url": "https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/agent/agent.py#L1130"
-    }
-   ],
-   "excerpt": "        \"\"\"Converts a tool call into an ActionEvent, validating arguments.\n\n        NOTE: state will be mutated in-place.\n        \"\"\"\n        # Track the originally-requested tool name (before normalization) for\n        # error messages when the tool is not found or validation fails.\n        requested_tool_name = tool_call.name",
-   "step": 5
-  },
-  {
-   "id": "exec",
-   "label": "ParallelToolExecutor",
-   "sub": "openhands-sdk/openhands/sdk/agent/parallel_executor.py:52",
-   "x": 280,
-   "y": 670,
-   "w": 220,
-   "h": 96,
-   "grade": "verified",
-   "links": [
-    {
-     "label": "parallel_executor.py:52-57",
-     "url": "https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/agent/parallel_executor.py#L52-L57"
+      "id": "dispatch",
+      "label": "_handle_tool_calls / _get_action_event",
+      "sub": "agent/agent.py:1311",
+      "x": 493,
+      "y": 540,
+      "w": 359,
+      "h": 96,
+      "grade": "verified",
+      "links": [
+        {
+          "label": "agent.py:1311-1317",
+          "url": "https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/agent/agent.py#L1311-L1317"
+        },
+        {
+          "label": "agent.py:1130",
+          "url": "https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/agent/agent.py#L1130"
+        }
+      ],
+      "excerpt": "        \"\"\"Converts a tool call into an ActionEvent, validating arguments.\n\n        NOTE: state will be mutated in-place.\n        \"\"\"\n        # Track the originally-requested tool name (before normalization) for\n        # error messages when the tool is not found or validation fails.\n        requested_tool_name = tool_call.name",
+      "step": 5
     },
     {
-     "label": "agent.py:380-411",
-     "url": "https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/agent/agent.py#L380-L411"
-    }
-   ],
-   "excerpt": "class ParallelToolExecutor:\n    \"\"\"Executes a batch of tool calls concurrently with resource locking.\n\n    Each instance has its own thread pool, concurrency limit, and\n    ``ResourceLockManager``, so nested execution (e.g., subagents) cannot\n    deadlock the parent.\n    \"\"\"",
-   "step": 6
-  },
-  {
-   "id": "terminate",
-   "label": "_ActionBatch.finalize + FinishTool",
-   "sub": "openhands-sdk/openhands/sdk/agent/agent.py:380",
-   "x": 280,
-   "y": 800,
-   "w": 220,
-   "h": 96,
-   "grade": "verified",
-   "links": [
-    {
-     "label": "agent.py:380-387",
-     "url": "https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/agent/agent.py#L380-L387"
+      "id": "exec",
+      "label": "ParallelToolExecutor",
+      "sub": "agent/parallel_executor.py:52",
+      "x": 534,
+      "y": 670,
+      "w": 276,
+      "h": 96,
+      "grade": "verified",
+      "links": [
+        {
+          "label": "parallel_executor.py:52-57",
+          "url": "https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/agent/parallel_executor.py#L52-L57"
+        },
+        {
+          "label": "agent.py:380-411",
+          "url": "https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/agent/agent.py#L380-L411"
+        }
+      ],
+      "excerpt": "class ParallelToolExecutor:\n    \"\"\"Executes a batch of tool calls concurrently with resource locking.\n\n    Each instance has its own thread pool, concurrency limit, and\n    ``ResourceLockManager``, so nested execution (e.g., subagents) cannot\n    deadlock the parent.\n    \"\"\"",
+      "step": 6
     },
     {
-     "label": "agent.py:399",
-     "url": "https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/agent/agent.py#L399"
+      "id": "terminate",
+      "label": "_ActionBatch.finalize + FinishTool",
+      "sub": "agent/agent.py:380",
+      "x": 507,
+      "y": 800,
+      "w": 330,
+      "h": 96,
+      "grade": "verified",
+      "links": [
+        {
+          "label": "agent.py:380-387",
+          "url": "https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/agent/agent.py#L380-L387"
+        },
+        {
+          "label": "agent.py:399",
+          "url": "https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/agent/agent.py#L399"
+        },
+        {
+          "label": "builtins/finish.py",
+          "url": "https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/tool/builtins/finish.py#L19"
+        }
+      ],
+      "excerpt": "        \"\"\"Transition state after FinishTool, or inject iterative-refinement followup.\n\n        Args:\n            on_event: Callback for emitting events.\n            check_iterative_refinement: Returns (should_continue, followup)\n                for a FinishTool action event.\n            mark_finished: Called to set the conversation execution status\n                to FINISHED when the agent is done.\n        \"\"\"",
+      "step": 7
     },
     {
-     "label": "builtins/finish.py",
-     "url": "https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/tool/builtins/finish.py#L19"
-    }
-   ],
-   "excerpt": "        \"\"\"Transition state after FinishTool, or inject iterative-refinement followup.\n\n        Args:\n            on_event: Callback for emitting events.\n            check_iterative_refinement: Returns (should_continue, followup)\n                for a FinishTool action event.\n            mark_finished: Called to set the conversation execution status\n                to FINISHED when the agent is done.\n        \"\"\"",
-   "step": 7
-  },
-  {
-   "id": "render",
-   "label": "EventLog (JSONL)",
-   "sub": "openhands-sdk/openhands/sdk/conversation/event_store.py:34",
-   "x": 280,
-   "y": 930,
-   "w": 220,
-   "h": 96,
-   "grade": "verified",
-   "links": [
-    {
-     "label": "event_store.py:34-40",
-     "url": "https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/conversation/event_store.py#L34-L40"
-    }
-   ],
-   "excerpt": "class EventLog(EventsListBase):\n    \"\"\"Persistent event log with locking for concurrent writes.\n\n    This class provides thread-safe and process-safe event storage using\n    the FileStore's locking mechanism. Events are persisted to disk and\n    can be accessed by index or event ID.\n",
-   "step": 8
-  },
-  {
-   "id": "convstate",
-   "label": "ConversationState event tree",
-   "sub": "openhands-sdk/openhands/sdk/event/types.py:4",
-   "x": 20,
-   "y": 20,
-   "w": 220,
-   "h": 96,
-   "grade": "verified",
-   "links": [
-    {
-     "label": "event/types.py:4-10",
-     "url": "https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/event/types.py#L4-L10"
-    }
-   ],
-   "excerpt": "EventType = Literal[\"action\", \"observation\", \"message\", \"system_prompt\", \"agent_error\"]\nSourceType = Literal[\"agent\", \"user\", \"environment\", \"hook\"]\n\nEventID = str\n\"\"\"Type alias for event IDs.\"\"\"\n\nROOT_PARENT_ID: Final = \"__root__\""
-  },
-  {
-   "id": "stateview",
-   "label": "state.view (cached view)",
-   "sub": "openhands-sdk/openhands/sdk/context/view/view.py:22",
-   "x": 20,
-   "y": 150,
-   "w": 220,
-   "h": 96,
-   "grade": "verified",
-   "links": [
-    {
-     "label": "view.py:22-28",
-     "url": "https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/context/view/view.py#L22-L28"
+      "id": "render",
+      "label": "EventLog (JSONL)",
+      "sub": "conversation/event_store.py:34",
+      "x": 531,
+      "y": 930,
+      "w": 282,
+      "h": 96,
+      "grade": "verified",
+      "links": [
+        {
+          "label": "event_store.py:34-40",
+          "url": "https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/conversation/event_store.py#L34-L40"
+        }
+      ],
+      "excerpt": "class EventLog(EventsListBase):\n    \"\"\"Persistent event log with locking for concurrent writes.\n\n    This class provides thread-safe and process-safe event storage using\n    the FileStore's locking mechanism. Events are persisted to disk and\n    can be accessed by index or event ID.\n",
+      "step": 8
     },
     {
-     "label": "view/properties/",
-     "url": "https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/context/view/properties/"
-    }
-   ],
-   "excerpt": "class View(BaseModel):\n    \"\"\"Linearly ordered view of events.\n\n    Produced by a condenser to indicate the included events are ready to process as LLM\n    input. Also contains fields with information from the condensation process to aid\n    in deciding whether further condensation is needed.\n    \"\"\""
-  },
-  {
-   "id": "hookproc",
-   "label": "HookEventProcessor",
-   "sub": "openhands-sdk/openhands/sdk/hooks/conversation_hooks.py:50",
-   "x": 20,
-   "y": 280,
-   "w": 220,
-   "h": 96,
-   "grade": "verified",
-   "links": [
-    {
-     "label": "conversation_hooks.py:50-56",
-     "url": "https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/hooks/conversation_hooks.py#L50-L56"
-    }
-   ],
-   "excerpt": "class HookEventProcessor:\n    \"\"\"Processes events and runs hooks at appropriate points.\n\n    Call set_conversation_state() after creating Conversation for blocking to work.\n\n    HookExecutionEvent is emitted for each hook execution when emit_hook_events=True,\n    providing full observability into hook execution for clients.\n    \"\"\""
-  },
-  {
-   "id": "prompthooks",
-   "label": "UserPromptSubmit hooks",
-   "sub": "openhands-sdk/openhands/sdk/hooks/conversation_hooks.py:244",
-   "x": 20,
-   "y": 410,
-   "w": 220,
-   "h": 96,
-   "grade": "verified",
-   "links": [
-    {
-     "label": "conversation_hooks.py:244-251",
-     "url": "https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/hooks/conversation_hooks.py#L244-L251"
+      "id": "convstate",
+      "label": "ConversationState event tree",
+      "sub": "event/types.py:4",
+      "x": 57,
+      "y": 20,
+      "w": 301,
+      "h": 96,
+      "grade": "verified",
+      "links": [
+        {
+          "label": "event/types.py:4-10",
+          "url": "https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/event/types.py#L4-L10"
+        }
+      ],
+      "excerpt": "EventType = Literal[\"action\", \"observation\", \"message\", \"system_prompt\", \"agent_error\"]\nSourceType = Literal[\"agent\", \"user\", \"environment\", \"hook\"]\n\nEventID = str\n\"\"\"Type alias for event IDs.\"\"\"\n\nROOT_PARENT_ID: Final = \"__root__\""
     },
     {
-     "label": "conversation_hooks.py:282-288",
-     "url": "https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/hooks/conversation_hooks.py#L282-L288"
-    }
-   ],
-   "excerpt": "    def _handle_user_prompt_submit(self, event: MessageEvent) -> MessageEvent:\n        \"\"\"Handle UserPromptSubmit hooks before processing a user message.\n\n        Returns the (possibly modified) event. If hooks inject additional_context,\n        a new MessageEvent is created with the context appended to extended_content.\n        \"\"\"\n        if not self.hook_manager.has_hooks(HookEventType.USER_PROMPT_SUBMIT):\n            return event"
-  },
-  {
-   "id": "trigger",
-   "label": "Skill trigger matching",
-   "sub": "openhands-sdk/openhands/sdk/skills/trigger.py:19",
-   "x": 20,
-   "y": 540,
-   "w": 220,
-   "h": 96,
-   "grade": "verified",
-   "links": [
-    {
-     "label": "trigger.py:19-27",
-     "url": "https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/skills/trigger.py#L19-L27"
+      "id": "stateview",
+      "label": "state.view (cached view)",
+      "sub": "context/view/view.py:22",
+      "x": 74,
+      "y": 150,
+      "w": 266,
+      "h": 96,
+      "grade": "verified",
+      "links": [
+        {
+          "label": "view.py:22-28",
+          "url": "https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/context/view/view.py#L22-L28"
+        },
+        {
+          "label": "view/properties/",
+          "url": "https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/context/view/properties/"
+        }
+      ],
+      "excerpt": "class View(BaseModel):\n    \"\"\"Linearly ordered view of events.\n\n    Produced by a condenser to indicate the included events are ready to process as LLM\n    input. Also contains fields with information from the condensation process to aid\n    in deciding whether further condensation is needed.\n    \"\"\""
     },
     {
-     "label": "agent_context.py:517",
-     "url": "https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/context/agent_context.py#L517"
-    }
-   ],
-   "excerpt": "class KeywordTrigger(BaseTrigger):\n    \"\"\"Trigger for keyword-based skills.\n\n    These skills are activated when specific keywords appear in the user's query.\n    \"\"\"\n\n    type: Literal[\"keyword\"] = \"keyword\"\n    keywords: list[str]"
-  },
-  {
-   "id": "skills",
-   "label": "Skills (3 activation paths)",
-   "sub": "openhands-sdk/openhands/sdk/skills/skill.py:178",
-   "x": 20,
-   "y": 670,
-   "w": 220,
-   "h": 96,
-   "grade": "verified",
-   "links": [
-    {
-     "label": "skill.py:178-187",
-     "url": "https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/skills/skill.py#L178-L187"
-    }
-   ],
-   "excerpt": "class Skill(BaseModel):\n    \"\"\"A skill provides specialized knowledge or functionality.\n\n    Skill behavior depends on format (is_agentskills_format) and trigger:\n\n    AgentSkills format (SKILL.md files):\n    - Always listed in <available_skills> with name, description, location\n    - Agent reads full content on demand (progressive disclosure)\n    - If has triggers: content is ALSO auto-injected when triggered\n"
-  },
-  {
-   "id": "stophooks",
-   "label": "Stop hook veto",
-   "sub": "openhands-sdk/openhands/sdk/conversation/impl/local_conversation.py:1952",
-   "x": 20,
-   "y": 800,
-   "w": 220,
-   "h": 96,
-   "grade": "verified",
-   "links": [
-    {
-     "label": "local_conversation.py:1952-1957",
-     "url": "https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/conversation/impl/local_conversation.py#L1952-L1957"
-    }
-   ],
-   "excerpt": "                            should_stop, feedback = self._hook_processor.run_stop(\n                                reason=\"agent_finished\"\n                            )\n                            if not should_stop:\n                                logger.info(\"Stop hook denied agent stopping\")"
-  },
-  {
-   "id": "eventsvc",
-   "label": "EventService pub/sub",
-   "sub": "agent_server/event_service.py:202",
-   "x": 20,
-   "y": 930,
-   "w": 220,
-   "h": 96,
-   "grade": "verified",
-   "links": [
-    {
-     "label": "event_service.py:202-206",
-     "url": "https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-agent-server/openhands/agent_server/event_service.py#L202-L206"
-    }
-   ],
-   "excerpt": "class EventService:\n    \"\"\"\n    Event service for a conversation running locally, analogous to a conversation\n    in the SDK. Async mostly for forward compatibility\n    \"\"\""
-  },
-  {
-   "id": "streamctx",
-   "label": "StreamContext",
-   "sub": "openhands-sdk/openhands/sdk/agent/stream_context.py:1",
-   "x": 20,
-   "y": 1060,
-   "w": 220,
-   "h": 96,
-   "grade": "verified",
-   "links": [
-    {
-     "label": "stream_context.py:1-5",
-     "url": "https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/agent/stream_context.py#L1-L5"
-    }
-   ],
-   "excerpt": "\"\"\"Stream identity for one agent step: mint it, stamp the deltas, close it once.\n\nThe durable event is built with the minted id, so a client retires its open\nslot on ``frame.event.id == slot.item_id``.\n"
-  },
-  {
-   "id": "agentstep",
-   "label": "Agent.step",
-   "sub": "openhands-sdk/openhands/sdk/agent/agent.py:693",
-   "x": 540,
-   "y": 20,
-   "w": 220,
-   "h": 96,
-   "grade": "verified",
-   "links": [
-    {
-     "label": "agent.py:693-697",
-     "url": "https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/agent/agent.py#L693-L697"
+      "id": "hookproc",
+      "label": "HookEventProcessor",
+      "sub": "hooks/conversation_hooks.py:50",
+      "x": 66,
+      "y": 280,
+      "w": 282,
+      "h": 96,
+      "grade": "verified",
+      "links": [
+        {
+          "label": "conversation_hooks.py:50-56",
+          "url": "https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/hooks/conversation_hooks.py#L50-L56"
+        }
+      ],
+      "excerpt": "class HookEventProcessor:\n    \"\"\"Processes events and runs hooks at appropriate points.\n\n    Call set_conversation_state() after creating Conversation for blocking to work.\n\n    HookExecutionEvent is emitted for each hook execution when emit_hook_events=True,\n    providing full observability into hook execution for clients.\n    \"\"\""
     },
     {
-     "label": "agent.py:706-713",
-     "url": "https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/agent/agent.py#L706-L713"
-    }
-   ],
-   "excerpt": "    def _step(\n        self,\n        conversation: LocalConversation,\n        on_event: ConversationCallbackType,\n        stream: StreamContext,\n    ) -> None:\n        state = conversation.state\n        # Check for pending actions (implicit confirmation)\n        # and execute them before sampling new actions.\n        pending_actions = ConversationState.get_unmatched_actions(state.active_branch())"
-  },
-  {
-   "id": "condenser",
-   "label": "Condenser",
-   "sub": "openhands-sdk/openhands/sdk/context/condenser/base.py:16",
-   "x": 540,
-   "y": 150,
-   "w": 220,
-   "h": 96,
-   "grade": "verified",
-   "links": [
-    {
-     "label": "condenser/base.py:16-26",
-     "url": "https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/context/condenser/base.py#L16-L26"
+      "id": "prompthooks",
+      "label": "UserPromptSubmit hooks",
+      "sub": "hooks/conversation_hooks.py:244",
+      "x": 63,
+      "y": 410,
+      "w": 289,
+      "h": 96,
+      "grade": "verified",
+      "links": [
+        {
+          "label": "conversation_hooks.py:244-251",
+          "url": "https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/hooks/conversation_hooks.py#L244-L251"
+        },
+        {
+          "label": "conversation_hooks.py:282-288",
+          "url": "https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/hooks/conversation_hooks.py#L282-L288"
+        }
+      ],
+      "excerpt": "    def _handle_user_prompt_submit(self, event: MessageEvent) -> MessageEvent:\n        \"\"\"Handle UserPromptSubmit hooks before processing a user message.\n\n        Returns the (possibly modified) event. If hooks inject additional_context,\n        a new MessageEvent is created with the context appended to extended_content.\n        \"\"\"\n        if not self.hook_manager.has_hooks(HookEventType.USER_PROMPT_SUBMIT):\n            return event"
     },
     {
-     "label": "condenser/base.py:30",
-     "url": "https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/context/condenser/base.py#L30"
-    }
-   ],
-   "excerpt": "class CondenserBase(DiscriminatedUnionMixin, ABC):\n    \"\"\"Abstract condenser interface.\n\n    Condensers take a list of `Event` objects and reduce them into a potentially smaller\n    list.\n\n    Agents can use condensers to reduce the amount of events they need to consider when\n    deciding which action to take. To use a condenser, agents can call the\n    `condensed_history` method on the current `State` being considered and use the\n    results instead of the full history.\n"
-  },
-  {
-   "id": "toolregistry",
-   "label": "Tool registry (spec/resolve)",
-   "sub": "openhands-sdk/openhands/sdk/tool/registry.py:19",
-   "x": 540,
-   "y": 280,
-   "w": 220,
-   "h": 96,
-   "grade": "verified",
-   "links": [
-    {
-     "label": "tool/spec.py:12",
-     "url": "https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/tool/spec.py#L12"
+      "id": "trigger",
+      "label": "Skill trigger matching",
+      "sub": "skills/trigger.py:19",
+      "x": 86,
+      "y": 540,
+      "w": 243,
+      "h": 96,
+      "grade": "verified",
+      "links": [
+        {
+          "label": "trigger.py:19-27",
+          "url": "https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/skills/trigger.py#L19-L27"
+        },
+        {
+          "label": "agent_context.py:517",
+          "url": "https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/context/agent_context.py#L517"
+        }
+      ],
+      "excerpt": "class KeywordTrigger(BaseTrigger):\n    \"\"\"Trigger for keyword-based skills.\n\n    These skills are activated when specific keywords appear in the user's query.\n    \"\"\"\n\n    type: Literal[\"keyword\"] = \"keyword\"\n    keywords: list[str]"
     },
     {
-     "label": "tool/registry.py:19-21",
-     "url": "https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/tool/registry.py#L19-L21"
+      "id": "skills",
+      "label": "Skills (3 activation paths)",
+      "sub": "skills/skill.py:178",
+      "x": 71,
+      "y": 670,
+      "w": 272,
+      "h": 96,
+      "grade": "verified",
+      "links": [
+        {
+          "label": "skill.py:178-187",
+          "url": "https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/skills/skill.py#L178-L187"
+        }
+      ],
+      "excerpt": "class Skill(BaseModel):\n    \"\"\"A skill provides specialized knowledge or functionality.\n\n    Skill behavior depends on format (is_agentskills_format) and trigger:\n\n    AgentSkills format (SKILL.md files):\n    - Always listed in <available_skills> with name, description, location\n    - Agent reads full content on demand (progressive disclosure)\n    - If has triggers: content is ALSO auto-injected when triggered\n"
     },
     {
-     "label": "registry.py:127",
-     "url": "https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/tool/registry.py#L127"
-    }
-   ],
-   "excerpt": "# A resolver produces ToolDefinition instances for given params.\nResolver = Callable[[dict[str, Any], \"ConversationState\"], Sequence[ToolDefinition]]\nUsabilityChecker = Callable[[], bool]"
-  },
-  {
-   "id": "secgate",
-   "label": "Security analyzer + confirmation gate",
-   "sub": "openhands-sdk/openhands/sdk/agent/agent.py:1130",
-   "x": 540,
-   "y": 410,
-   "w": 220,
-   "h": 96,
-   "grade": "verified",
-   "links": [
-    {
-     "label": "agent.py:1130-1139",
-     "url": "https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/agent/agent.py#L1130-L1139"
+      "id": "stophooks",
+      "label": "Stop hook veto",
+      "sub": "conversation/impl/local_conversation.py:1952",
+      "x": 20,
+      "y": 800,
+      "w": 375,
+      "h": 96,
+      "grade": "verified",
+      "links": [
+        {
+          "label": "local_conversation.py:1952-1957",
+          "url": "https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/conversation/impl/local_conversation.py#L1952-L1957"
+        }
+      ],
+      "excerpt": "                            should_stop, feedback = self._hook_processor.run_stop(\n                                reason=\"agent_finished\"\n                            )\n                            if not should_stop:\n                                logger.info(\"Stop hook denied agent stopping\")"
     },
     {
-     "label": "security/analyzer.py:15",
-     "url": "https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/security/analyzer.py#L15"
-    }
-   ],
-   "excerpt": "    def _requires_user_confirmation(\n        self, state: ConversationState, action_events: list[ActionEvent]\n    ) -> bool:\n        \"\"\"\n        Decide whether user confirmation is needed to proceed.\n\n        Rules:\n            1. Confirmation mode is enabled\n            2. Every action requires confirmation\n            3. A single `FinishAction` never requires confirmation\n            4. A single `ThinkAction` never requires confirmation\n        \"\"\""
-  },
-  {
-   "id": "critic",
-   "label": "Critic + iterative refinement",
-   "sub": "openhands-sdk/openhands/sdk/critic/base.py:83",
-   "x": 540,
-   "y": 540,
-   "w": 220,
-   "h": 96,
-   "grade": "verified",
-   "links": [
-    {
-     "label": "critic/base.py:83-87",
-     "url": "https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/critic/base.py#L83-L87"
+      "id": "eventsvc",
+      "label": "EventService pub/sub",
+      "sub": "agent_server/event_service.py:202",
+      "x": 56,
+      "y": 930,
+      "w": 302,
+      "h": 96,
+      "grade": "verified",
+      "links": [
+        {
+          "label": "event_service.py:202-206",
+          "url": "https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-agent-server/openhands/agent_server/event_service.py#L202-L206"
+        }
+      ],
+      "excerpt": "class EventService:\n    \"\"\"\n    Event service for a conversation running locally, analogous to a conversation\n    in the SDK. Async mostly for forward compatibility\n    \"\"\""
     },
     {
-     "label": "agent.py:647-648",
-     "url": "https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/agent/agent.py#L647-L648"
-    }
-   ],
-   "excerpt": "    @abc.abstractmethod\n    def evaluate(\n        self, events: Sequence[\"LLMConvertibleEvent\"], git_patch: str | None = None\n    ) -> CriticResult:\n        pass"
-  },
-  {
-   "id": "router",
-   "label": "RouterLLM",
-   "sub": "openhands-sdk/openhands/sdk/llm/router/base.py:28",
-   "x": 540,
-   "y": 670,
-   "w": 220,
-   "h": 96,
-   "grade": "verified",
-   "links": [
-    {
-     "label": "router/base.py:28-37",
-     "url": "https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/llm/router/base.py#L28-L37"
+      "id": "streamctx",
+      "label": "StreamContext",
+      "sub": "agent/stream_context.py:1",
+      "x": 83,
+      "y": 1060,
+      "w": 249,
+      "h": 96,
+      "grade": "verified",
+      "links": [
+        {
+          "label": "stream_context.py:1-5",
+          "url": "https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/agent/stream_context.py#L1-L5"
+        }
+      ],
+      "excerpt": "\"\"\"Stream identity for one agent step: mint it, stamp the deltas, close it once.\n\nThe durable event is built with the minted id, so a client retires its open\nslot on ``frame.event.id == slot.item_id``.\n"
     },
     {
-     "label": "router/base.py:98",
-     "url": "https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/llm/router/base.py#L98"
-    }
-   ],
-   "excerpt": "class RouterLLM(LLM):\n    \"\"\"\n    Base class for multiple LLM acting as a unified LLM.\n    This class provides a foundation for implementing model routing by\n    inheriting from LLM, allowing routers to work with multiple underlying\n    LLM models while presenting a unified LLM interface to consumers.\n    Key features:\n    - Works with multiple LLMs configured via llms_for_routing\n    - Delegates all other operations/properties to the selected LLM\n    - Provides routing interface through select_llm() method\n    \"\"\""
-  },
-  {
-   "id": "switchllm",
-   "label": "switch_llm builtin",
-   "sub": "openhands-sdk/openhands/sdk/tool/builtins/switch_llm.py:19",
-   "x": 540,
-   "y": 800,
-   "w": 220,
-   "h": 96,
-   "grade": "verified",
-   "links": [
-    {
-     "label": "builtins/switch_llm.py:19-24",
-     "url": "https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/tool/builtins/switch_llm.py#L19-L24"
-    }
-   ],
-   "excerpt": "class SwitchLLMAction(Action):\n    \"\"\"Action for switching this conversation to a saved LLM profile.\"\"\"\n\n    profile_name: str = Field(\n        description=\"Name of the saved LLM profile to use for future agent steps.\"\n    )"
-  },
-  {
-   "id": "subagents",
-   "label": "Sub-agent delegation",
-   "sub": "tools/delegate/impl.py:33",
-   "x": 540,
-   "y": 930,
-   "w": 220,
-   "h": 96,
-   "grade": "verified",
-   "links": [
-    {
-     "label": "tools/delegate/impl.py:33-39",
-     "url": "https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-tools/openhands/tools/delegate/impl.py#L33-L39"
+      "id": "agentstep",
+      "label": "Agent.step",
+      "sub": "agent/agent.py:693",
+      "x": 1021,
+      "y": 20,
+      "w": 220,
+      "h": 96,
+      "grade": "verified",
+      "links": [
+        {
+          "label": "agent.py:693-697",
+          "url": "https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/agent/agent.py#L693-L697"
+        },
+        {
+          "label": "agent.py:706-713",
+          "url": "https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/agent/agent.py#L706-L713"
+        }
+      ],
+      "excerpt": "    def _step(\n        self,\n        conversation: LocalConversation,\n        on_event: ConversationCallbackType,\n        stream: StreamContext,\n    ) -> None:\n        state = conversation.state\n        # Check for pending actions (implicit confirmation)\n        # and execute them before sampling new actions.\n        pending_actions = ConversationState.get_unmatched_actions(state.active_branch())"
     },
     {
-     "label": "subagent/schema.py:198",
-     "url": "https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/subagent/schema.py#L198"
+      "id": "condenser",
+      "label": "Condenser",
+      "sub": "context/condenser/base.py:16",
+      "x": 996,
+      "y": 150,
+      "w": 269,
+      "h": 96,
+      "grade": "verified",
+      "links": [
+        {
+          "label": "condenser/base.py:16-26",
+          "url": "https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/context/condenser/base.py#L16-L26"
+        },
+        {
+          "label": "condenser/base.py:30",
+          "url": "https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/context/condenser/base.py#L30"
+        }
+      ],
+      "excerpt": "class CondenserBase(DiscriminatedUnionMixin, ABC):\n    \"\"\"Abstract condenser interface.\n\n    Condensers take a list of `Event` objects and reduce them into a potentially smaller\n    list.\n\n    Agents can use condensers to reduce the amount of events they need to consider when\n    deciding which action to take. To use a condenser, agents can call the\n    `condensed_history` method on the current `State` being considered and use the\n    results instead of the full history.\n"
     },
     {
-     "label": "subagent/scope.py:25",
-     "url": "https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/subagent/scope.py#L25"
-    }
-   ],
-   "excerpt": "class DelegateExecutor(ToolExecutor):\n    \"\"\"Executor for delegation operations.\n\n    This class handles:\n    - Spawning sub-agents with meaningful string identifiers (e.g., 'refactor_module')\n    - Delegating tasks to sub-agents and waiting for results (blocking)\n    \"\"\""
-  },
-  {
-   "id": "mcp",
-   "label": "MCP servers",
-   "sub": "openhands-sdk/openhands/sdk/mcp/config.py:497",
-   "x": 540,
-   "y": 1060,
-   "w": 220,
-   "h": 96,
-   "grade": "verified",
-   "links": [
-    {
-     "label": "mcp/config.py:497-501",
-     "url": "https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/mcp/config.py#L497-L501"
+      "id": "toolregistry",
+      "label": "Tool registry (spec/resolve)",
+      "sub": "tool/registry.py:19",
+      "x": 989,
+      "y": 280,
+      "w": 284,
+      "h": 96,
+      "grade": "verified",
+      "links": [
+        {
+          "label": "tool/spec.py:12",
+          "url": "https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/tool/spec.py#L12"
+        },
+        {
+          "label": "tool/registry.py:19-21",
+          "url": "https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/tool/registry.py#L19-L21"
+        },
+        {
+          "label": "registry.py:127",
+          "url": "https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/tool/registry.py#L127"
+        }
+      ],
+      "excerpt": "# A resolver produces ToolDefinition instances for given params.\nResolver = Callable[[dict[str, Any], \"ConversationState\"], Sequence[ToolDefinition]]\nUsabilityChecker = Callable[[], bool]"
     },
     {
-     "label": "mcp/utils.py:167",
-     "url": "https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/mcp/utils.py#L167"
-    }
-   ],
-   "excerpt": "class MCPServer(_MCPBaseModel):\n    \"\"\"One MCP server in the settings DataModel.\"\"\"\n\n    model_config = ConfigDict(extra=\"forbid\")\n\n    url: str | None = Field(default=None, min_length=1)"
-  },
-  {
-   "id": "plugins",
-   "label": "Plugins",
-   "sub": "openhands-sdk/openhands/sdk/plugin/plugin.py:36",
-   "x": 540,
-   "y": 1190,
-   "w": 220,
-   "h": 96,
-   "grade": "verified",
-   "links": [
-    {
-     "label": "plugin/plugin.py:36-39",
-     "url": "https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/plugin/plugin.py#L36-L39"
+      "id": "secgate",
+      "label": "Security analyzer + confirmation gate",
+      "sub": "agent/agent.py:1130",
+      "x": 950,
+      "y": 410,
+      "w": 362,
+      "h": 96,
+      "grade": "verified",
+      "links": [
+        {
+          "label": "agent.py:1130-1139",
+          "url": "https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/agent/agent.py#L1130-L1139"
+        },
+        {
+          "label": "security/analyzer.py:15",
+          "url": "https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/security/analyzer.py#L15"
+        }
+      ],
+      "excerpt": "    def _requires_user_confirmation(\n        self, state: ConversationState, action_events: list[ActionEvent]\n    ) -> bool:\n        \"\"\"\n        Decide whether user confirmation is needed to proceed.\n\n        Rules:\n            1. Confirmation mode is enabled\n            2. Every action requires confirmation\n            3. A single `FinishAction` never requires confirmation\n            4. A single `ThinkAction` never requires confirmation\n        \"\"\""
     },
     {
-     "label": "plugin.py:104",
-     "url": "https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/plugin/plugin.py#L104"
-    }
-   ],
-   "excerpt": "class Plugin(BaseModel):\n    \"\"\"A plugin that bundles skills, hooks, MCP config, agents, and commands.\n\n    Plugins follow the Claude Code plugin structure for compatibility:\n"
-  },
-  {
-   "id": "marketplace",
-   "label": "Marketplace registry",
-   "sub": "openhands-sdk/openhands/sdk/marketplace/registry.py:79",
-   "x": 540,
-   "y": 1320,
-   "w": 220,
-   "h": 96,
-   "grade": "verified",
-   "links": [
-    {
-     "label": "marketplace/registry.py:79-82",
-     "url": "https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/marketplace/registry.py#L79-L82"
+      "id": "critic",
+      "label": "Critic + iterative refinement",
+      "sub": "critic/base.py:83",
+      "x": 986,
+      "y": 540,
+      "w": 290,
+      "h": 96,
+      "grade": "verified",
+      "links": [
+        {
+          "label": "critic/base.py:83-87",
+          "url": "https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/critic/base.py#L83-L87"
+        },
+        {
+          "label": "agent.py:647-648",
+          "url": "https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/agent/agent.py#L647-L648"
+        }
+      ],
+      "excerpt": "    @abc.abstractmethod\n    def evaluate(\n        self, events: Sequence[\"LLMConvertibleEvent\"], git_patch: str | None = None\n    ) -> CriticResult:\n        pass"
     },
     {
-     "label": "registry.py:120",
-     "url": "https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/marketplace/registry.py#L120"
-    }
-   ],
-   "excerpt": "class MarketplaceRegistry:\n    \"\"\"Resolve plugin references against registered marketplaces.\"\"\"\n\n    def __init__(self, registrations: list[MarketplaceRegistration] | None = None):"
-  },
-  {
-   "id": "stuck",
-   "label": "Stuck detector",
-   "sub": "openhands-sdk/openhands/sdk/conversation/stuck_detector.py:22",
-   "x": 540,
-   "y": 1450,
-   "w": 220,
-   "h": 96,
-   "grade": "verified",
-   "links": [
+      "id": "router",
+      "label": "RouterLLM",
+      "sub": "llm/router/base.py:28",
+      "x": 1019,
+      "y": 670,
+      "w": 223,
+      "h": 96,
+      "grade": "verified",
+      "links": [
+        {
+          "label": "router/base.py:28-37",
+          "url": "https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/llm/router/base.py#L28-L37"
+        },
+        {
+          "label": "router/base.py:98",
+          "url": "https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/llm/router/base.py#L98"
+        }
+      ],
+      "excerpt": "class RouterLLM(LLM):\n    \"\"\"\n    Base class for multiple LLM acting as a unified LLM.\n    This class provides a foundation for implementing model routing by\n    inheriting from LLM, allowing routers to work with multiple underlying\n    LLM models while presenting a unified LLM interface to consumers.\n    Key features:\n    - Works with multiple LLMs configured via llms_for_routing\n    - Delegates all other operations/properties to the selected LLM\n    - Provides routing interface through select_llm() method\n    \"\"\""
+    },
     {
-     "label": "stuck_detector.py:22-31",
-     "url": "https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/conversation/stuck_detector.py#L22-L31"
-    }
-   ],
-   "excerpt": "class StuckDetector:\n    \"\"\"Detects when an agent is stuck in repetitive or unproductive patterns.\n\n    This detector analyzes the conversation history to identify various stuck patterns:\n    1. Repeating action-observation cycles\n    2. Repeating action-error cycles\n    3. Agent monologue (repeated messages without user input)\n    4. Repeating alternating action-observation patterns\n    5. Context window errors indicating memory issues\n    \"\"\""
-  },
-  {
-   "id": "goalctl",
-   "label": "GoalController",
-   "sub": "openhands-sdk/openhands/sdk/conversation/goal/controller.py:78",
-   "x": 540,
-   "y": 1580,
-   "w": 220,
-   "h": 96,
-   "grade": "verified",
-   "links": [
+      "id": "switchllm",
+      "label": "switch_llm builtin",
+      "sub": "tool/builtins/switch_llm.py:19",
+      "x": 990,
+      "y": 800,
+      "w": 282,
+      "h": 96,
+      "grade": "verified",
+      "links": [
+        {
+          "label": "builtins/switch_llm.py:19-24",
+          "url": "https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/tool/builtins/switch_llm.py#L19-L24"
+        }
+      ],
+      "excerpt": "class SwitchLLMAction(Action):\n    \"\"\"Action for switching this conversation to a saved LLM profile.\"\"\"\n\n    profile_name: str = Field(\n        description=\"Name of the saved LLM profile to use for future agent steps.\"\n    )"
+    },
     {
-     "label": "goal/controller.py:78-84",
-     "url": "https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/conversation/goal/controller.py#L78-L84"
+      "id": "subagents",
+      "label": "Sub-agent delegation",
+      "sub": "tools/delegate/impl.py:33",
+      "x": 1006,
+      "y": 930,
+      "w": 249,
+      "h": 96,
+      "grade": "verified",
+      "links": [
+        {
+          "label": "tools/delegate/impl.py:33-39",
+          "url": "https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-tools/openhands/tools/delegate/impl.py#L33-L39"
+        },
+        {
+          "label": "subagent/schema.py:198",
+          "url": "https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/subagent/schema.py#L198"
+        },
+        {
+          "label": "subagent/scope.py:25",
+          "url": "https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/subagent/scope.py#L25"
+        }
+      ],
+      "excerpt": "class DelegateExecutor(ToolExecutor):\n    \"\"\"Executor for delegation operations.\n\n    This class handles:\n    - Spawning sub-agents with meaningful string identifiers (e.g., 'refactor_module')\n    - Delegating tasks to sub-agents and waiting for results (blocking)\n    \"\"\""
+    },
+    {
+      "id": "mcp",
+      "label": "MCP servers",
+      "sub": "mcp/config.py:497",
+      "x": 1021,
+      "y": 1060,
+      "w": 220,
+      "h": 96,
+      "grade": "verified",
+      "links": [
+        {
+          "label": "mcp/config.py:497-501",
+          "url": "https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/mcp/config.py#L497-L501"
+        },
+        {
+          "label": "mcp/utils.py:167",
+          "url": "https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/mcp/utils.py#L167"
+        }
+      ],
+      "excerpt": "class MCPServer(_MCPBaseModel):\n    \"\"\"One MCP server in the settings DataModel.\"\"\"\n\n    model_config = ConfigDict(extra=\"forbid\")\n\n    url: str | None = Field(default=None, min_length=1)"
+    },
+    {
+      "id": "plugins",
+      "label": "Plugins",
+      "sub": "plugin/plugin.py:36",
+      "x": 1021,
+      "y": 1190,
+      "w": 220,
+      "h": 96,
+      "grade": "verified",
+      "links": [
+        {
+          "label": "plugin/plugin.py:36-39",
+          "url": "https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/plugin/plugin.py#L36-L39"
+        },
+        {
+          "label": "plugin.py:104",
+          "url": "https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/plugin/plugin.py#L104"
+        }
+      ],
+      "excerpt": "class Plugin(BaseModel):\n    \"\"\"A plugin that bundles skills, hooks, MCP config, agents, and commands.\n\n    Plugins follow the Claude Code plugin structure for compatibility:\n"
+    },
+    {
+      "id": "marketplace",
+      "label": "Marketplace registry",
+      "sub": "marketplace/registry.py:79",
+      "x": 1003,
+      "y": 1320,
+      "w": 256,
+      "h": 96,
+      "grade": "verified",
+      "links": [
+        {
+          "label": "marketplace/registry.py:79-82",
+          "url": "https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/marketplace/registry.py#L79-L82"
+        },
+        {
+          "label": "registry.py:120",
+          "url": "https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/marketplace/registry.py#L120"
+        }
+      ],
+      "excerpt": "class MarketplaceRegistry:\n    \"\"\"Resolve plugin references against registered marketplaces.\"\"\"\n\n    def __init__(self, registrations: list[MarketplaceRegistration] | None = None):"
+    },
+    {
+      "id": "stuck",
+      "label": "Stuck detector",
+      "sub": "conversation/stuck_detector.py:22",
+      "x": 980,
+      "y": 1450,
+      "w": 302,
+      "h": 96,
+      "grade": "verified",
+      "links": [
+        {
+          "label": "stuck_detector.py:22-31",
+          "url": "https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/conversation/stuck_detector.py#L22-L31"
+        }
+      ],
+      "excerpt": "class StuckDetector:\n    \"\"\"Detects when an agent is stuck in repetitive or unproductive patterns.\n\n    This detector analyzes the conversation history to identify various stuck patterns:\n    1. Repeating action-observation cycles\n    2. Repeating action-error cycles\n    3. Agent monologue (repeated messages without user input)\n    4. Repeating alternating action-observation patterns\n    5. Context window errors indicating memory issues\n    \"\"\""
+    },
+    {
+      "id": "goalctl",
+      "label": "GoalController",
+      "sub": "conversation/goal/controller.py:78",
+      "x": 976,
+      "y": 1580,
+      "w": 309,
+      "h": 96,
+      "grade": "verified",
+      "links": [
+        {
+          "label": "goal/controller.py:78-84",
+          "url": "https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/conversation/goal/controller.py#L78-L84"
+        }
+      ],
+      "excerpt": "class GoalController:\n    \"\"\"Judges goal completion and decides continue-vs-stop, without doing I/O.\n\n    A driver calls :meth:`start` once to get the first message to send, then\n    calls :meth:`on_run_finished` after every agent run to get the next\n    decision. The controller owns the iteration count and the ``max_iterations``\n    cap, so drivers stay trivial.\n    \"\"\""
     }
-   ],
-   "excerpt": "class GoalController:\n    \"\"\"Judges goal completion and decides continue-vs-stop, without doing I/O.\n\n    A driver calls :meth:`start` once to get the first message to send, then\n    calls :meth:`on_run_finished` after every agent run to get the next\n    decision. The controller owns the iteration count and the ``max_iterations``\n    cap, so drivers stay trivial.\n    \"\"\""
-  }
- ],
- "edges": [
-  {
-   "from": "input",
-   "to": "prompt",
-   "label": "view + skills"
-  },
-  {
-   "from": "prompt",
-   "to": "modelcall",
-   "label": "messages, tools"
-  },
-  {
-   "from": "modelcall",
-   "to": "classify",
-   "label": "Message"
-  },
-  {
-   "from": "classify",
-   "to": "dispatch",
-   "label": "TOOL_CALLS"
-  },
-  {
-   "from": "classify",
-   "to": "terminate",
-   "label": "CONTENT -> FINISHED"
-  },
-  {
-   "from": "dispatch",
-   "to": "exec",
-   "label": "batch"
-  },
-  {
-   "from": "exec",
-   "to": "terminate",
-   "label": "FinishTool"
-  },
-  {
-   "from": "terminate",
-   "to": "render",
-   "label": "events"
-  },
-  {
-   "from": "agentstep",
-   "to": "prompt",
-   "label": "prepare view"
-  },
-  {
-   "from": "agentstep",
-   "to": "modelcall",
-   "label": "generate()"
-  },
-  {
-   "from": "convstate",
-   "to": "stateview",
-   "label": "projects"
-  },
-  {
-   "from": "stateview",
-   "to": "prompt",
-   "label": "cached"
-  },
-  {
-   "from": "hookproc",
-   "to": "input",
-   "label": "wraps on_event"
-  },
-  {
-   "from": "prompthooks",
-   "to": "input",
-   "label": "deny blocks"
-  },
-  {
-   "from": "stophooks",
-   "to": "terminate",
-   "label": "deny -> RUNNING"
-  },
-  {
-   "from": "hookproc",
-   "to": "dispatch",
-   "label": "PreToolUse veto"
-  },
-  {
-   "from": "trigger",
-   "to": "input",
-   "label": "suffix inject"
-  },
-  {
-   "from": "skills",
-   "to": "prompt",
-   "label": "<available_skills>"
-  },
-  {
-   "from": "plugins",
-   "to": "skills",
-   "label": "bundles"
-  },
-  {
-   "from": "marketplace",
-   "to": "plugins",
-   "label": "distributes"
-  },
-  {
-   "from": "toolregistry",
-   "to": "dispatch",
-   "label": "resolve"
-  },
-  {
-   "from": "mcp",
-   "to": "toolregistry",
-   "label": "server tools"
-  },
-  {
-   "from": "secgate",
-   "to": "dispatch",
-   "label": "confirmation gate"
-  },
-  {
-   "from": "critic",
-   "to": "dispatch",
-   "label": "score per call"
-  },
-  {
-   "from": "critic",
-   "to": "terminate",
-   "label": "refinement check"
-  },
-  {
-   "from": "subagents",
-   "to": "dispatch",
-   "label": "delegate"
-  },
-  {
-   "from": "router",
-   "to": "modelcall",
-   "label": "per-completion"
-  },
-  {
-   "from": "switchllm",
-   "to": "agentstep",
-   "label": "mid-run swap"
-  },
-  {
-   "from": "streamctx",
-   "to": "modelcall",
-   "label": "token callback"
-  },
-  {
-   "from": "condenser",
-   "to": "prompt",
-   "label": "condense(view)"
-  },
-  {
-   "from": "stuck",
-   "to": "agentstep",
-   "label": "nudge / STUCK"
-  },
-  {
-   "from": "goalctl",
-   "to": "agentstep",
-   "label": "goal loop"
-  },
-  {
-   "from": "exec",
-   "to": "render",
-   "label": "observations"
-  },
-  {
-   "from": "eventsvc",
-   "to": "render",
-   "label": "pub/sub"
-  }
- ]
+  ],
+  "edges": [
+    {
+      "from": "input",
+      "to": "prompt",
+      "label": "view + skills"
+    },
+    {
+      "from": "prompt",
+      "to": "modelcall",
+      "label": "messages, tools"
+    },
+    {
+      "from": "modelcall",
+      "to": "classify",
+      "label": "Message"
+    },
+    {
+      "from": "classify",
+      "to": "dispatch",
+      "label": "TOOL_CALLS"
+    },
+    {
+      "from": "classify",
+      "to": "terminate",
+      "label": "CONTENT -> FINISHED"
+    },
+    {
+      "from": "dispatch",
+      "to": "exec",
+      "label": "batch"
+    },
+    {
+      "from": "exec",
+      "to": "terminate",
+      "label": "FinishTool"
+    },
+    {
+      "from": "terminate",
+      "to": "render",
+      "label": "events"
+    },
+    {
+      "from": "agentstep",
+      "to": "prompt",
+      "label": "prepare view"
+    },
+    {
+      "from": "agentstep",
+      "to": "modelcall",
+      "label": "generate()"
+    },
+    {
+      "from": "convstate",
+      "to": "stateview",
+      "label": "projects"
+    },
+    {
+      "from": "stateview",
+      "to": "prompt",
+      "label": "cached"
+    },
+    {
+      "from": "hookproc",
+      "to": "input",
+      "label": "wraps on_event"
+    },
+    {
+      "from": "prompthooks",
+      "to": "input",
+      "label": "deny blocks"
+    },
+    {
+      "from": "stophooks",
+      "to": "terminate",
+      "label": "deny -> RUNNING"
+    },
+    {
+      "from": "hookproc",
+      "to": "dispatch",
+      "label": "PreToolUse veto"
+    },
+    {
+      "from": "trigger",
+      "to": "input",
+      "label": "suffix inject"
+    },
+    {
+      "from": "skills",
+      "to": "prompt",
+      "label": "<available_skills>"
+    },
+    {
+      "from": "plugins",
+      "to": "skills",
+      "label": "bundles"
+    },
+    {
+      "from": "marketplace",
+      "to": "plugins",
+      "label": "distributes"
+    },
+    {
+      "from": "toolregistry",
+      "to": "dispatch",
+      "label": "resolve"
+    },
+    {
+      "from": "mcp",
+      "to": "toolregistry",
+      "label": "server tools"
+    },
+    {
+      "from": "secgate",
+      "to": "dispatch",
+      "label": "confirmation gate"
+    },
+    {
+      "from": "critic",
+      "to": "dispatch",
+      "label": "score per call"
+    },
+    {
+      "from": "critic",
+      "to": "terminate",
+      "label": "refinement check"
+    },
+    {
+      "from": "subagents",
+      "to": "dispatch",
+      "label": "delegate"
+    },
+    {
+      "from": "router",
+      "to": "modelcall",
+      "label": "per-completion"
+    },
+    {
+      "from": "switchllm",
+      "to": "agentstep",
+      "label": "mid-run swap"
+    },
+    {
+      "from": "streamctx",
+      "to": "modelcall",
+      "label": "token callback"
+    },
+    {
+      "from": "condenser",
+      "to": "prompt",
+      "label": "condense(view)"
+    },
+    {
+      "from": "stuck",
+      "to": "agentstep",
+      "label": "nudge / STUCK"
+    },
+    {
+      "from": "goalctl",
+      "to": "agentstep",
+      "label": "goal loop"
+    },
+    {
+      "from": "exec",
+      "to": "render",
+      "label": "observations"
+    },
+    {
+      "from": "eventsvc",
+      "to": "render",
+      "label": "pub/sub"
+    }
+  ]
 }
