@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body {
+    background: #161210; color: #ece1d3;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    line-height: 1.7; padding: 48px 24px; margin: 0;
+  }
+  main { max-width: 760px; margin: 0 auto; }
+  a { color: #d08c4e; }
+  h1 { font-size: 1.9rem; letter-spacing: -0.02em; line-height: 1.25; margin-bottom: 16px; }
+  h2 { font-size: 1.4rem; margin: 40px 0 12px; padding-top: 8px; border-top: 1px solid #2c231b; }
+  h3 { font-size: 1.1rem; margin: 28px 0 8px; }
+  p, li { margin-bottom: 12px; }
+  blockquote {
+    border-left: 3px solid #d08c4e; padding: 4px 16px; margin: 20px 0;
+    color: #a89880; background: #1f1a15; border-radius: 0 8px 8px 0;
+  }
+  blockquote p { margin-bottom: 6px; }
+  code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.88em; background: #1f1a15; padding: 2px 6px; border-radius: 6px;
+  }
+  pre { background: #1f1a15; border: 1px solid #3a2f26; border-radius: 8px;
+        padding: 16px; overflow-x: auto; }
+  pre code { background: none; padding: 0; }
+  img { max-width: 100%; height: auto; border: 1px solid #3a2f26;
+        border-radius: 12px; margin: 20px 0; background: #1f1a15; }
+  table { border-collapse: collapse; width: 100%; margin: 20px 0; font-size: 0.92rem;
+          display: block; overflow-x: auto; }
+  th, td { border: 1px solid #3a2f26; padding: 10px 12px; text-align: left;
+           vertical-align: top; }
+  th { background: #1f1a15; }
+  ul, ol { padding-left: 24px; }
+  hr { border: none; border-top: 1px solid #2c231b; margin: 32px 0; }
+  .footnote { font-size: 0.88rem; color: #a89880; }
+  .footnote hr { margin: 40px 0 16px; }
+  sup a { text-decoration: none; }
+  .topnav { max-width: 760px; margin: 0 auto 32px; font-size: 0.9rem; }
+  .topnav a { color: #a89880; text-decoration: none; }
+  .topnav a:hover { color: #ece1d3; }
+  .diagram-cta {
+    display: block; text-align: center; margin: 28px 0; padding: 16px;
+    background: #1f1a15; border: 1px solid #3a2f26; border-radius: 12px;
+    color: #ece1d3; text-decoration: none; font-weight: 600;
+  }
+  .diagram-cta:hover { border-color: #d08c4e; }
+  .diagram-cta span { display: block; font-weight: 400; font-size: 0.88rem;
+                      color: #a89880; margin-top: 4px; }
+</style>
+<title>Agent Harness Anatomy #8: Hermes Agent — the self-improving agent</title>
+</head>
+<body>
+<main>
+  <nav class="topnav"><a href="../">&larr; Agent Harness Anatomy</a></nav>
+<h1 id="agent-harness-anatomy-8-hermes-agent-the-self-improving-agent">Agent Harness Anatomy #8: Hermes Agent — the self-improving agent</h1>
+<blockquote>
+<p><strong>Series:</strong> Agent Harness Anatomy — top-down dissections of real agent
+harnesses, grounded in verifiable source code. Every behavioral claim
+below carries a footnote to a pinned GitHub permalink; the full evidence
+lives in the endnotes.</p>
+</blockquote>
+<h2 id="version-block">Version block</h2>
+<ul>
+<li><strong>Repo:</strong> <a href="https://github.com/NousResearch/hermes-agent">NousResearch/hermes-agent</a></li>
+<li><strong>Pinned:</strong> tag <code>v2026.9.24</code> → <code>f97608f178d1ffeca59860195ab7da295f7c8e5f</code> (2026-09-24)</li>
+<li><strong>Language:</strong> Python (uv-managed); a TypeScript TUI alongside</li>
+<li><strong>License:</strong> MIT</li>
+<li><strong>Claim under test:</strong> "The agent that grows with you" — the self-improving AI agent.</li>
+</ul>
+<p>Hermes Agent is the largest harness this series has covered by star count —
+over 250,000 at the time of analysis — and the first whose headline claim
+is not about how it <em>acts</em> but about how it <em>learns</em>. The README
+promises "the only agent with a built-in learning loop": it creates skills
+from experience, improves them during use, nudges itself to persist
+knowledge, and searches its own past conversations.<sup id="fnref:1"><a class="footnote-ref" href="#fn:1">1</a></sup><sup id="fnref:3"><a class="footnote-ref" href="#fn:3">3</a></sup>
+The interesting question is what "self-improving" means in code. It turns
+out to mean two concrete mechanisms — a post-turn forked review daemon and
+an inactivity-triggered skill curator — wrapped around an otherwise
+conventional synchronous tool-calling loop.<sup id="fnref:9"><a class="footnote-ref" href="#fn:9">9</a></sup><sup id="fnref:11"><a class="footnote-ref" href="#fn:11">11</a></sup></p>
+<p><img alt="Hermes Agent architecture" src="figures/hermes.svg" /></p>
+<h2 id="the-mental-model">The mental model</h2>
+<p>Hermes is a <strong>multi-tenant agent with a learning loop bolted onto a
+synchronous core</strong>. One gateway process multiplexes Telegram,
+Discord, WhatsApp, Slack, and Signal users into session-key namespaces;
+each session runs the same turn loop: take a lease, compact preemptively,
+call the model up to 500 times, dispatch tools through a single funnel,
+persist to SQLite, and then — the distinctive part — fork the agent in a
+background thread to decide what the turn just taught it.<sup id="fnref:5"><a class="footnote-ref" href="#fn:5">5</a></sup><sup id="fnref:6"><a class="footnote-ref" href="#fn:6">6</a></sup><sup id="fnref:20"><a class="footnote-ref" href="#fn:20">20</a></sup>
+A second, slower loop — the curator — wakes on inactivity (default: 7
+days idle) to pin, archive, or consolidate skills. It never deletes;
+archival is recoverable by design.<sup id="fnref:12"><a class="footnote-ref" href="#fn:12">12</a></sup></p>
+<p>The governing tradeoff: Hermes buys long-horizon self-maintenance at the
+cost of running extra agent loops nobody asked for. Every turn potentially
+spawns a second model call (the review fork); every idle week potentially
+spawns a third (the curator). The bet is that an agent which curates its
+own skills compounds — and that the compounding is worth the tokens.</p>
+<h2 id="package-map">Package map</h2>
+<p>The repo is large (~15,000 files at the pinned tag, including docs and
+locales). The harness core is Python at the root and in a handful of
+directories:<sup id="fnref:2"><a class="footnote-ref" href="#fn:2">2</a></sup></p>
+<table>
+<thead>
+<tr>
+<th>Location</th>
+<th>Role</th>
+<th>Size</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>run_agent.py</code>, <code>cli.py</code></td>
+<td>Public facade (<code>AIAgent</code>) and the real CLI<sup id="fnref:4"><a class="footnote-ref" href="#fn:4">4</a></sup></td>
+<td>~1,600 + ~1,800 lines</td>
+</tr>
+<tr>
+<td><code>agent/</code></td>
+<td>The harness core: turn loop, turn phases, tools dispatch support, skills, memory, curator, review</td>
+<td>254 files</td>
+</tr>
+<tr>
+<td><code>tools/</code>, <code>model_tools.py</code>, <code>toolsets.py</code></td>
+<td>Tool registry, dispatch funnel, toolsets, approval</td>
+<td>~120 files</td>
+</tr>
+<tr>
+<td><code>gateway/</code></td>
+<td>Messaging multiplexing: session keys, admit/evict, per-platform adapters</td>
+<td>~40 files</td>
+</tr>
+<tr>
+<td><code>hermes_state*.py</code></td>
+<td><code>SessionDB</code>: ~30 SQLite/WAL mixins — sessions, messages, FTS5, titles, timeline</td>
+<td>30 files</td>
+</tr>
+<tr>
+<td><code>skills/</code>, <code>plugins/</code>, <code>providers/</code></td>
+<td>Bundled skills, plugin catalog, provider profiles (~40 providers as plugins)</td>
+<td>—</td>
+</tr>
+</tbody>
+</table>
+<h2 id="the-core-loop">The core loop</h2>
+<p>Despite the filename, <code>agent/conversation_loop.py::run_conversation</code>
+runs <em>one</em> turn — the loop over turns lives in the gateway and CLI
+session drivers. The in-turn loop is synchronous and explicit:</p>
+<pre><code>while (s.api_call_count &lt; agent.max_iterations
+       and agent.iteration_budget.remaining &gt; 0) \
+        or agent._budget_grace_call:
+    if self._interrupt_requested: break
+    response = client.chat.completions.create(...)
+    ...</code></pre>
+<p><code>max_iterations</code> defaults to 500 and is shared with subagents
+(children get 250).<sup id="fnref:26"><a class="footnote-ref" href="#fn:26">26</a></sup>
+Each phase of an iteration is its own sibling module — <code>turn_preflight</code>,
+<code>turn_request_assembly</code>, <code>turn_tool_round</code>,
+<code>turn_overflow</code>, <code>turn_context_compaction</code>,
+<code>turn_stop_gates</code>, <code>turn_finalizer</code> — so a change to
+overflow handling touches one file, not the loop.<sup id="fnref:7"><a class="footnote-ref" href="#fn:7">7</a></sup>
+Messages are OpenAI-format dicts; reasoning content rides in
+<code>assistant_msg["reasoning"]</code>.</p>
+<p>The loop's load-bearing invariant is <strong>prompt-cache stability</strong>:
+the system prompt is byte-stable for the life of a conversation. The only
+context mutation allowed mid-conversation is compression — anything that
+must inject content (skill invocations, subdirectory hints) rides a user
+message or a tool result, never the system prompt.<sup id="fnref:8"><a class="footnote-ref" href="#fn:8">8</a></sup>
+This is why skill slash commands build a <em>user message</em> rather than
+appending to the system prompt: the prefix cache must never break.</p>
+<p><img alt="Turn sequence" src="figures/seq-turn.svg" /></p>
+<h2 id="the-learning-loop">The learning loop</h2>
+<p>This is the article's center. Two mechanisms, on two timescales:</p>
+<h3>After every turn: the background review</h3>
+<p><code>AIAgent._spawn_background_review</code> may fork the agent in a
+daemon thread that replays the conversation snapshot and asks a single
+question: <em>"should any skill/memory be saved or updated?"</em> Writes go
+straight to the memory and skill stores; the main conversation and its
+prompt cache are never touched. The fork inherits the parent's live
+runtime — provider, model, credentials, cached system prompt — so it hits
+the same prefix cache, and it runs under a dispatch-side tool
+whitelist.<sup id="fnref:10"><a class="footnote-ref" href="#fn:10">10</a></sup>
+There are gates: reviews are settings-gated, never run inside subagents
+(<code>_delegate_depth &gt; 0</code>), and a review whose runtime is the
+managed local model is deferred to machine idle rather than hitting the
+user's GPU mid-session.</p>
+<h3>On inactivity: the curator</h3>
+<p><code>agent/curator.py</code> is a background skill-maintenance
+orchestrator with no cron daemon: when the agent is idle and the last run
+is older than the interval (default 7 days), <code>maybe_run_curator()</code>
+auto-transitions skill lifecycle states and optionally forks an agent that
+may pin, archive, consolidate, or patch skills through
+<code>skill_manage</code>. The invariants are conservative: only
+curator-managed skills are touched; never delete, only archive
+(recoverable); pinned skills bypass all auto-transitions; scheduler state
+persists in <code>.curator_state</code>. The LLM consolidation fork is
+opt-in — the deterministic inactivity prune always runs.</p>
+<p>The write path that closes the loop is the <code>skill_manage</code> tool
+itself: the agent creates, edits, and archives skills at runtime, in the
+agentskills.io-compatible <code>SKILL.md</code> + frontmatter
+format.<sup id="fnref:13"><a class="footnote-ref" href="#fn:13">13</a></sup>
+Review proposes, curator maintains, <code>skill_manage</code> writes —
+that is the entire "self-improving" claim, mechanized.</p>
+<p><img alt="Learning loop sequence" src="figures/seq-learning.svg" /></p>
+<h2 id="the-tool-system">The tool system</h2>
+<p>Tools self-register at import: every <code>tools/*.py</code> calls
+<code>tools.registry.register()</code>, and a <code>ToolEntry</code> binds
+name, toolset, JSON Schema, handler, and guard function. Schemas are
+validated at registration, not at request time. A handful of high-volume agent-native calls (memory, session, delegate, skill) skip the registry entirely and dispatch through an inline executors table.<sup id="fnref:30"><a class="footnote-ref" href="#fn:30">30</a></sup><sup id="fnref:14"><a class="footnote-ref" href="#fn:14">14</a></sup>
+<code>handle_function_call</code> is the single dispatch funnel: Tool Search
+bridge unwrap → connector dispatch → request middleware → plugin
+<code>pre_tool_call</code> hooks → ACP edit approval → execution middleware
+→ <code>registry.dispatch</code> → the <code>transform_tool_result</code>
+hook (fail-open).<sup id="fnref:15"><a class="footnote-ref" href="#fn:15">15</a></sup></p>
+<p>Two decisions stand out. First, the <strong>Tool Search bridge</strong>:
+with 100+ tools, the model sees only <code>tool_search</code>,
+<code>tool_describe</code>, and <code>tool_call</code>; the real catalog
+assembles on demand. The prompt stays small no matter how many tools
+exist.<sup id="fnref:16"><a class="footnote-ref" href="#fn:16">16</a></sup>
+Second, <strong>MCP discovery is deliberately deferred out of
+import</strong> — it once blocked the gateway event loop for up to 120
+seconds on slow servers, so each entry point now runs it at startup, in a
+thread.<sup id="fnref:17"><a class="footnote-ref" href="#fn:17">17</a></sup></p>
+<p>Approvals are per-session: a gateway approval queue with a YOLO-mode
+bypass and a denial breaker that counts refusals per
+session.<sup id="fnref:18"><a class="footnote-ref" href="#fn:18">18</a></sup>
+Toolsets (<code>_HERMES_CORE_TOOLS</code> shared across CLI and all
+platforms) group tools for enable/disable, with webhook payloads restricted
+to a safe subset.<sup id="fnref:19"><a class="footnote-ref" href="#fn:19">19</a></sup></p>
+<p><img alt="Dispatch sequence" src="figures/seq-dispatch.svg" /></p>
+<h2 id="the-gateway">The gateway</h2>
+<p>The gateway is a full multi-tenant multiplexer. Every inbound message
+becomes a <code>SessionSource</code> (platform, user/chat/thread ids,
+profile); <code>_session_key_for_source</code> derives the session key,
+honoring per-user grouping, thread namespaces, and profiles. Per key: agent
+admit/authorize/evict, per-session toolsets and approvals, idle
+eviction.
+Unknown DMs get a pairing-code flow; Telegram forum topics get thread-id
+recovery before key derivation (with a documented footgun where
+<code>/model</code> overrides can miss the recovered key).</p>
+<p><img alt="Gateway sequence" src="figures/seq-gateway.svg" /></p>
+<h2 id="one-turn-end-to-end">One turn, end to end</h2>
+<p>Trace: the user sends <code>Summarize what we decided about the API rate limits yesterday</code>.</p>
+<p><strong>① Input.</strong> From the CLI, <code>fire.Fire(main)</code>
+parses the message; from Telegram, the gateway maps the inbound event to a
+<code>SessionSource</code> and derives the session key. Either way the
+message lands in <code>AIAgent.run_conversation</code>, which stamps the
+turn boundary on every envelope.</p>
+<p><strong>② Lease.</strong> The session turn lease is acquired
+(<code>turn_facade_lease.py</code>) — concurrent prompts against the same
+session serialize on the lease instead of
+interleaving.<sup id="fnref:28"><a class="footnote-ref" href="#fn:28">28</a></sup></p>
+<p><strong>③ Preflight.</strong> Turn-start compaction and compression run
+<em>before</em> any model call: make room first, hope later. Overflow and
+truncation are separate recovery verdicts for later, not
+here.<sup id="fnref:25"><a class="footnote-ref" href="#fn:25">25</a></sup></p>
+<p><strong>④ Prompt assembly.</strong> The system prompt is byte-stable —
+rebuilt never, mid-turn. Tool schemas come from
+<code>get_tool_definitions</code> (memoized, generation-keyed); with a
+large catalog the model sees only the Tool Search bridge and schemas
+assemble on demand.</p>
+<p><strong>⑤ Model call.</strong> The provider profile's transport sends the
+OpenAI-format messages (<code>chat_completions</code> default;
+<code>codex_responses</code> for openai-codex, copilot, and friends).
+Reasoning lands in <code>assistant_msg["reasoning"]</code>. Our question
+needs yesterday, so the model calls
+<code>session_search</code>.<sup id="fnref:24"><a class="footnote-ref" href="#fn:24">24</a></sup></p>
+<p><strong>⑥ Dispatch.</strong> <code>handle_function_call</code> runs the
+funnel — bridge unwrap, middleware, plugin hooks, ACP approval — then the
+gateway approval queue: without approval (or YOLO), the tool waits.
+Approved, <code>session_search</code> runs FTS5 over the message index
+(custom CJK bigram tokenizer included) and returns yesterday's
+thread.<sup id="fnref:22"><a class="footnote-ref" href="#fn:22">22</a></sup><sup id="fnref:29"><a class="footnote-ref" href="#fn:29">29</a></sup></p>
+<p><strong>⑦ Answer.</strong> Guardrails watch for identical-call loops
+between iterations; the interrupt flag is checked every iteration. The
+model answers from the search results with no further tool calls, and the
+API-call loop exits.</p>
+<p><strong>⑧ Learn.</strong> The turn persists to SessionDB (SQLite/WAL),
+then <code>_spawn_background_review</code> forks the agent in a daemon
+thread to replay the turn: <em>should any skill or memory be saved?</em>
+Writes land directly in the memory and skill stores, prompt cache
+untouched. The curator's slower pass — pin, archive, consolidate, never
+delete — waits for idleness.</p>
+<p>The tradeoff visible across all eight steps: Hermes spends model calls to
+save future model calls. The review fork, the curator, the FTS5 index, the
+skill lifecycle — every piece assumes that an agent which maintains
+itself outperforms one that merely remembers.</p>
+<p><img alt="Subagent sequence" src="figures/seq-delegate.svg" /></p>
+<h2 id="subsystem-inventory">Subsystem inventory</h2>
+<table>
+<thead>
+<tr>
+<th>Subsystem</th>
+<th>What it does</th>
+<th>Key file</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Turn loop</td>
+<td>One synchronous turn; <code>max_iterations</code> 500; per-phase sibling modules</td>
+<td><code>agent/conversation_loop.py</code></td>
+</tr>
+<tr>
+<td>Turn lease</td>
+<td>Serializes concurrent prompts per session</td>
+<td><code>agent/turn_facade_lease.py</code></td>
+</tr>
+<tr>
+<td>Background review</td>
+<td>Post-turn forked review daemon; proposes skill/memory writes</td>
+<td><code>agent/background_review.py</code></td>
+</tr>
+<tr>
+<td>Curator</td>
+<td>Inactivity-triggered skill lifecycle; archive-never-delete</td>
+<td><code>agent/curator.py</code></td>
+</tr>
+<tr>
+<td>Tool registry</td>
+<td>Import-time self-registration; schema validated at registration</td>
+<td><code>tools/registry.py</code></td>
+</tr>
+<tr>
+<td>Dispatch funnel</td>
+<td>Bridge unwrap → middleware → hooks → ACP approval → execute</td>
+<td><code>model_tools.py</code></td>
+</tr>
+<tr>
+<td>Tool Search bridge</td>
+<td>Catalog-on-demand for 100+ tools; keeps the prompt small</td>
+<td><code>model_tools.py:219</code></td>
+</tr>
+<tr>
+<td>Approval</td>
+<td>Per-session gateway queue, YOLO bypass, denial breaker</td>
+<td><code>tools/approval.py</code></td>
+</tr>
+<tr>
+<td>Subagents</td>
+<td><code>delegate_task</code>; 250 iterations; tool grant carved from parent<sup id="fnref:27"><a class="footnote-ref" href="#fn:27">27</a></sup></td>
+<td><code>tools/delegate_tool.py</code></td>
+</tr>
+<tr>
+<td>Gateway</td>
+<td>Multi-tenant session-key multiplexing across platforms</td>
+<td><code>gateway/run.py</code></td>
+</tr>
+<tr>
+<td>SessionDB</td>
+<td>SQLite/WAL, ~30 mixins: sessions, messages, titles, timeline</td>
+<td><code>hermes_state.py</code></td>
+</tr>
+<tr>
+<td>FTS5 search</td>
+<td>Custom CJK bigram tokenizer; <code>session_search</code> cross-session recall</td>
+<td><code>hermes_state_fts.py</code></td>
+</tr>
+<tr>
+<td>Memory</td>
+<td>Provider ABC — honcho is a plugin, not a table</td>
+<td><code>agent/memory_provider.py</code></td>
+</tr>
+<tr>
+<td>Providers</td>
+<td>~40 providers as plugins; <code>chat_completions</code> / <code>codex_responses</code></td>
+<td><code>providers/base.py</code></td>
+</tr>
+<tr>
+<td>Compaction</td>
+<td>Turn-start proactive; overflow vs truncation verdict machines</td>
+<td><code>agent/turn_context_compaction.py</code></td>
+</tr>
+<tr>
+<td>Skills</td>
+<td><code>SKILL.md</code> + frontmatter; invoked via user message, never system prompt</td>
+<td><code>skills/</code></td>
+</tr>
+</tbody>
+</table>
+
+<h2 id="extension-points-in-depth">Extension points in depth</h2><h3>Plugins</h3>
+<p>Providers are plugins — adding one is a directory under
+<code>plugins/model-providers/</code>, discovered lazily by the registry.
+The dispatch funnel exposes <code>pre_tool_call</code> plugin hooks and a
+fail-open <code>transform_tool_result</code> hook, so extensions can
+intercept tools without forking the loop.</p>
+<h3>Memory providers</h3>
+<p>Memory is an ABC (<code>prefetch</code>, <code>system_prompt_block</code>,
+<code>get_tool_schemas</code>, <code>handle_tool_call</code>) with builtin,
+honcho, and hindsight implementations. Swapping in a new memory backend
+is a provider, not a schema migration.<sup id="fnref:23"><a class="footnote-ref" href="#fn:23">23</a></sup></p>
+<h3>Skills</h3>
+<p>Skills are <code>SKILL.md</code> + YAML frontmatter, agentskills.io
+compatible, loadable from bundled, config, and external directories with
+platform/env/apps matching. The agent itself can write them at runtime
+through <code>skill_manage</code> — the extension point and the learning
+loop are the same mechanism.</p>
+<h2 id="deliberate-omissions">Deliberate omissions</h2>
+<p>This teardown covers the turn loop, the learning loop, tools, gateway,
+sessions, and providers. It does not cover the TUI, the ACP adapter, the
+cron subsystem's job definitions, or the eval harnesses
+(<code>batch_runner.py</code>, <code>mini_swe_runner.py</code>) beyond
+noting they exist as first-class entry points with JSONL-native
+trajectories. The Tool Gateway's hosted backends (Firecrawl, FAL, Browser
+Use) are product surface, not harness architecture, and are out of
+scope.</p>
+<h2 id="comparison-matrix-row">Comparison matrix row</h2>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Dimension</th>
+<th>Hermes Agent (v2026.9.24)</th>
+</tr>
+</thead>
+<tbody>
+<tr><td>1</td><td>Agent loop</td><td>Synchronous one-turn <code>run_conversation</code>; <code>max_iterations</code> 500 (subagents 250); per-phase sibling modules; interrupt-checked</td></tr>
+<tr><td>2</td><td>Tool system</td><td>Import-time self-registration; single <code>handle_function_call</code> funnel; Tool Search bridge collapses 100+ tools out of the prompt; MCP discovery deferred out of import</td></tr>
+<tr><td>3</td><td>Model providers</td><td>~40 providers as lazily-discovered plugins; <code>ProviderProfile</code> with <code>chat_completions</code> / <code>codex_responses</code> API modes</td></tr>
+<tr><td>4</td><td>Prompt construction</td><td>Byte-stable system prompt (prefix-cache invariant); skill invocations ride user messages; tool schemas memoized per registry generation</td></tr>
+<tr><td>5</td><td>Memory/session</td><td>SQLite/WAL <code>SessionDB</code> (~30 mixins)<sup id="fnref:21"><a class="footnote-ref" href="#fn:21">21</a></sup>; FTS5 with custom CJK bigram tokenizer; <code>session_search</code> cross-session recall; memory as provider ABC</td></tr>
+<tr><td>6</td><td>Reasoning/planning</td><td>No separate planner; subagents via <code>delegate_task</code> with anti-escalation (carved tool grant); background review proposes skill/memory writes after every turn</td></tr>
+<tr><td>7</td><td>Extensibility</td><td>Plugin providers, <code>pre_tool_call</code> / <code>transform_tool_result</code> hooks, memory providers, runtime <code>skill_manage</code> writes</td></tr>
+<tr><td>8</td><td>Interfaces</td><td>CLI + multi-tenant messaging gateway (Telegram/Discord/WhatsApp/Slack/Signal) + TUI + ACP; session-key namespaces per user/thread/profile</td></tr>
+<tr><td>9</td><td>Failure handling</td><td>Overflow vs truncation as separate verdict machines; identical-call guardrails; denial breaker on approvals; curator never deletes, only archives</td></tr>
+<tr><td>10</td><td>Security model</td><td>Per-session gateway approval queue + YOLO bypass; ACP edit approval (ContextVar-bound); subagent tool grants carved from parent, never widened</td></tr>
+</tbody>
+</table>
+  <a class="diagram-cta" href="trace.html">
+    Play the 8-step trace
+    <span>Message to lease to preflight, prompt, model, dispatch, answer — and the post-turn learning fork</span>
+  </a>
+  <a class="diagram-cta" href="../diagrams/template.html?data=../hermes/diagrams/hermes.json">
+    Explore the interactive architecture diagram
+    <span>19 nodes, 19 edges — pan, zoom, and follow every subsystem link</span>
+  </a>
+<h2 id="endnotes">Endnotes</h2>
+<p>All notes are VERIFIED against <code>v2026.9.24</code>
+(<code>f97608f178d1ffeca59860195ab7da295f7c8e5f</code>) unless marked DOCS.
+<code>GH</code> = <code>https://github.com/NousResearch/hermes-agent/blob/f97608f178d1ffeca59860195ab7da295f7c8e5f/</code>.</p>
+<div class="footnote">
+<hr />
+<ol>
+<li id="fn:1">
+<p>Repo description "The agent that grows with you", 251,642 stars, MIT
+license — GitHub API 2026-10-06.&#160;<a class="footnote-backref" href="#fnref:1" title="Jump back to footnote 1 in the text">&#8617;</a></p>
+</li>
+<li id="fn:2">
+<p>Pin verified via GitHub API 2026-10-06: tag <code>v2026.9.24</code>
+resolves to <code>f97608f178d1ffeca59860195ab7da295f7c8e5f</code>,
+committed 2026-09-24T10:08:47Z; ~15,075 files at the tag.&#160;<a class="footnote-backref" href="#fnref:2" title="Jump back to footnote 2 in the text">&#8617;</a></p>
+</li>
+<li id="fn:3">
+<p>"The only agent with a built-in learning loop" —
+<a href="https://github.com/NousResearch/hermes-agent/blob/f97608f178d1ffeca59860195ab7da295f7c8e5f/README.md#L19">GH…/README.md#L19</a>
+(DOCS).&#160;<a class="footnote-backref" href="#fnref:3" title="Jump back to footnote 3 in the text">&#8617;</a></p>
+</li>
+<li id="fn:4">
+<p><code>AIAgent</code> facade —
+<a href="https://github.com/NousResearch/hermes-agent/blob/f97608f178d1ffeca59860195ab7da295f7c8e5f/run_agent.py#L239">GH…/run_agent.py#L239</a>;
+~60 init params per the signature at L293.&#160;<a class="footnote-backref" href="#fnref:4" title="Jump back to footnote 4 in the text">&#8617;</a></p>
+</li>
+<li id="fn:5">
+<p><code>run_conversation</code> runs one turn —
+<a href="https://github.com/NousResearch/hermes-agent/blob/f97608f178d1ffeca59860195ab7da295f7c8e5f/agent/conversation_loop.py#L1605">GH…/agent/conversation_loop.py#L1605</a>.&#160;<a class="footnote-backref" href="#fnref:5" title="Jump back to footnote 5 in the text">&#8617;</a></p>
+</li>
+<li id="fn:6">
+<p>In-turn loop with <code>max_iterations</code> default 500 —
+<a href="https://github.com/NousResearch/hermes-agent/blob/f97608f178d1ffeca59860195ab7da295f7c8e5f/agent/conversation_loop.py#L1546">GH…/agent/conversation_loop.py#L1546</a>.&#160;<a class="footnote-backref" href="#fnref:6" title="Jump back to footnote 6 in the text">&#8617;</a></p>
+</li>
+<li id="fn:7">
+<p>Per-phase sibling modules documented in
+<a href="https://github.com/NousResearch/hermes-agent/blob/f97608f178d1ffeca59860195ab7da295f7c8e5f/agent/AGENTS.md">GH…/agent/AGENTS.md</a>
+(DOCS).&#160;<a class="footnote-backref" href="#fnref:7" title="Jump back to footnote 7 in the text">&#8617;</a></p>
+</li>
+<li id="fn:8">
+<p>Prompt-caching invariant: byte-stable system prompt; injections ride
+user messages or tool results —
+<a href="https://github.com/NousResearch/hermes-agent/blob/f97608f178d1ffeca59860195ab7da295f7c8e5f/agent/AGENTS.md">GH…/agent/AGENTS.md</a>
+(DOCS).&#160;<a class="footnote-backref" href="#fnref:8" title="Jump back to footnote 8 in the text">&#8617;</a></p>
+</li>
+<li id="fn:9">
+<p>Background review: post-turn forked daemon —
+<a href="https://github.com/NousResearch/hermes-agent/blob/f97608f178d1ffeca59860195ab7da295f7c8e5f/agent/background_review.py">GH…/agent/background_review.py</a>
+(module docstring).&#160;<a class="footnote-backref" href="#fnref:9" title="Jump back to footnote 9 in the text">&#8617;</a></p>
+</li>
+<li id="fn:10">
+<p><code>_spawn_background_review</code> gates (settings, subagent depth,
+idle deferral) —
+<a href="https://github.com/NousResearch/hermes-agent/blob/f97608f178d1ffeca59860195ab7da295f7c8e5f/run_agent.py#L787">GH…/run_agent.py#L787</a>.&#160;<a class="footnote-backref" href="#fnref:10" title="Jump back to footnote 10 in the text">&#8617;</a></p>
+</li>
+<li id="fn:11">
+<p>Curator: inactivity-triggered skill maintenance —
+<a href="https://github.com/NousResearch/hermes-agent/blob/f97608f178d1ffeca59860195ab7da295f7c8e5f/agent/curator.py">GH…/agent/curator.py</a>
+(module docstring).&#160;<a class="footnote-backref" href="#fnref:11" title="Jump back to footnote 11 in the text">&#8617;</a></p>
+</li>
+<li id="fn:12">
+<p>Curator defaults: 7-day interval, archive-never-delete, opt-in LLM
+consolidation —
+<a href="https://github.com/NousResearch/hermes-agent/blob/f97608f178d1ffeca59860195ab7da295f7c8e5f/agent/curator.py#L28">GH…/agent/curator.py#L28</a>.&#160;<a class="footnote-backref" href="#fnref:12" title="Jump back to footnote 12 in the text">&#8617;</a></p>
+</li>
+<li id="fn:13">
+<p><code>skill_manage</code> tool —
+<a href="https://github.com/NousResearch/hermes-agent/blob/f97608f178d1ffeca59860195ab7da295f7c8e5f/tools/skill_manager_tool.py#L762">GH…/tools/skill_manager_tool.py#L762</a>.&#160;<a class="footnote-backref" href="#fnref:13" title="Jump back to footnote 13 in the text">&#8617;</a></p>
+</li>
+<li id="fn:14">
+<p>Import-time self-registration; <code>ToolRegistry</code> —
+<a href="https://github.com/NousResearch/hermes-agent/blob/f97608f178d1ffeca59860195ab7da295f7c8e5f/tools/registry.py#L427">GH…/tools/registry.py#L427</a>,
+<code>register()</code> at L662.&#160;<a class="footnote-backref" href="#fnref:14" title="Jump back to footnote 14 in the text">&#8617;</a></p>
+</li>
+<li id="fn:15">
+<p><code>handle_function_call</code> dispatch funnel —
+<a href="https://github.com/NousResearch/hermes-agent/blob/f97608f178d1ffeca59860195ab7da295f7c8e5f/model_tools.py#L872">GH…/model_tools.py#L872</a>.&#160;<a class="footnote-backref" href="#fnref:15" title="Jump back to footnote 15 in the text">&#8617;</a></p>
+</li>
+<li id="fn:16">
+<p>Tool Search bridge —
+<a href="https://github.com/NousResearch/hermes-agent/blob/f97608f178d1ffeca59860195ab7da295f7c8e5f/model_tools.py#L219">GH…/model_tools.py#L219</a>.&#160;<a class="footnote-backref" href="#fnref:16" title="Jump back to footnote 16 in the text">&#8617;</a></p>
+</li>
+<li id="fn:17">
+<p>MCP discovery deliberately deferred out of import —
+<a href="https://github.com/NousResearch/hermes-agent/blob/f97608f178d1ffeca59860195ab7da295f7c8e5f/model_tools.py#L151">GH…/model_tools.py#L151</a>
+(see #16856, 120s gateway heartbeat block).&#160;<a class="footnote-backref" href="#fnref:17" title="Jump back to footnote 17 in the text">&#8617;</a></p>
+</li>
+<li id="fn:18">
+<p>Gateway approval queue —
+<a href="https://github.com/NousResearch/hermes-agent/blob/f97608f178d1ffeca59860195ab7da295f7c8e5f/tools/approval.py#L138">GH…/tools/approval.py#L138</a>.&#160;<a class="footnote-backref" href="#fnref:18" title="Jump back to footnote 18 in the text">&#8617;</a></p>
+</li>
+<li id="fn:19">
+<p>Toolsets; <code>_HERMES_CORE_TOOLS</code> —
+<a href="https://github.com/NousResearch/hermes-agent/blob/f97608f178d1ffeca59860195ab7da295f7c8e5f/toolsets.py#L13">GH…/toolsets.py#L13</a>.&#160;<a class="footnote-backref" href="#fnref:19" title="Jump back to footnote 19 in the text">&#8617;</a></p>
+</li>
+<li id="fn:20">
+<p>Gateway session key derivation —
+<a href="https://github.com/NousResearch/hermes-agent/blob/f97608f178d1ffeca59860195ab7da295f7c8e5f/gateway/run.py#L3933">GH…/gateway/run.py#L3933</a>.&#160;<a class="footnote-backref" href="#fnref:20" title="Jump back to footnote 20 in the text">&#8617;</a></p>
+</li>
+<li id="fn:21">
+<p><code>SessionDB</code> facade —
+<a href="https://github.com/NousResearch/hermes-agent/blob/f97608f178d1ffeca59860195ab7da295f7c8e5f/hermes_state.py">GH…/hermes_state.py</a>.&#160;<a class="footnote-backref" href="#fnref:21" title="Jump back to footnote 21 in the text">&#8617;</a></p>
+</li>
+<li id="fn:22">
+<p>FTS5 with CJK bigram tokenizer —
+<a href="https://github.com/NousResearch/hermes-agent/blob/f97608f178d1ffeca59860195ab7da295f7c8e5f/hermes_state_fts.py#L46">GH…/hermes_state_fts.py#L46</a>.&#160;<a class="footnote-backref" href="#fnref:22" title="Jump back to footnote 22 in the text">&#8617;</a></p>
+</li>
+<li id="fn:23">
+<p><code>MemoryProvider</code> ABC —
+<a href="https://github.com/NousResearch/hermes-agent/blob/f97608f178d1ffeca59860195ab7da295f7c8e5f/agent/memory_provider.py#L84">GH…/agent/memory_provider.py#L84</a>.&#160;<a class="footnote-backref" href="#fnref:23" title="Jump back to footnote 23 in the text">&#8617;</a></p>
+</li>
+<li id="fn:24">
+<p><code>ProviderProfile</code> —
+<a href="https://github.com/NousResearch/hermes-agent/blob/f97608f178d1ffeca59860195ab7da295f7c8e5f/providers/base.py#L42">GH…/providers/base.py#L42</a>.&#160;<a class="footnote-backref" href="#fnref:24" title="Jump back to footnote 24 in the text">&#8617;</a></p>
+</li>
+<li id="fn:25">
+<p>Turn-start compaction —
+<a href="https://github.com/NousResearch/hermes-agent/blob/f97608f178d1ffeca59860195ab7da295f7c8e5f/agent/turn_context_compaction.py#L128">GH…/agent/turn_context_compaction.py#L128</a>.&#160;<a class="footnote-backref" href="#fnref:25" title="Jump back to footnote 25 in the text">&#8617;</a></p>
+</li>
+<li id="fn:26">
+<p><code>delegate_task</code> iterations —
+<a href="https://github.com/NousResearch/hermes-agent/blob/f97608f178d1ffeca59860195ab7da295f7c8e5f/tools/delegate_tool.py#L71">GH…/tools/delegate_tool.py#L71</a>.&#160;<a class="footnote-backref" href="#fnref:26" title="Jump back to footnote 26 in the text">&#8617;</a></p>
+</li>
+<li id="fn:27">
+<p>Subagent tool-grant carving —
+<a href="https://github.com/NousResearch/hermes-agent/blob/f97608f178d1ffeca59860195ab7da295f7c8e5f/model_tools.py#L826">GH…/model_tools.py#L826</a>.&#160;<a class="footnote-backref" href="#fnref:27" title="Jump back to footnote 27 in the text">&#8617;</a></p>
+</li>
+<li id="fn:28">
+<p>Session turn lease —
+<a href="https://github.com/NousResearch/hermes-agent/blob/f97608f178d1ffeca59860195ab7da295f7c8e5f/agent/turn_facade_lease.py#L72">GH…/agent/turn_facade_lease.py#L72</a>.&#160;<a class="footnote-backref" href="#fnref:28" title="Jump back to footnote 28 in the text">&#8617;</a></p>
+</li>
+<li id="fn:29">
+<p><code>session_search</code> tool —
+<a href="https://github.com/NousResearch/hermes-agent/blob/f97608f178d1ffeca59860195ab7da295f7c8e5f/tools/session_search_tool.py#L619">GH…/tools/session_search_tool.py#L619</a>.&#160;<a class="footnote-backref" href="#fnref:29" title="Jump back to footnote 29 in the text">&#8617;</a></p>
+</li>
+<li id="fn:30">
+<p>Inline tool executors table —
+<a href="https://github.com/NousResearch/hermes-agent/blob/f97608f178d1ffeca59860195ab7da295f7c8e5f/agent/inline_tool_executors.py">GH…/agent/inline_tool_executors.py</a>.&#160;<a class="footnote-backref" href="#fnref:30" title="Jump back to footnote 30 in the text">&#8617;</a></p>
+</li>
+</ol>
+</div>
+</main>
+</body>
+</html>
