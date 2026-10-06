@@ -1,0 +1,1384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Agent Harness Anatomy #6: OpenHands — the event-sourced agent SDK</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body {
+    background: #161210; color: #ece1d3;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    line-height: 1.7; padding: 48px 24px; margin: 0;
+  }
+  main { max-width: 760px; margin: 0 auto; }
+  a { color: #d08c4e; }
+  h1 { font-size: 1.9rem; letter-spacing: -0.02em; line-height: 1.25; margin-bottom: 16px; }
+  h2 { font-size: 1.4rem; margin: 40px 0 12px; padding-top: 8px; border-top: 1px solid #2c231b; }
+  h3 { font-size: 1.1rem; margin: 28px 0 8px; }
+  p, li { margin-bottom: 12px; }
+  blockquote {
+    border-left: 3px solid #d08c4e; padding: 4px 16px; margin: 20px 0;
+    color: #a89880; background: #1f1a15; border-radius: 0 8px 8px 0;
+  }
+  blockquote p { margin-bottom: 6px; }
+  code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.88em; background: #1f1a15; padding: 2px 6px; border-radius: 6px;
+  }
+  pre { background: #1f1a15; border: 1px solid #3a2f26; border-radius: 8px;
+        padding: 16px; overflow-x: auto; }
+  pre code { background: none; padding: 0; }
+  img { max-width: 100%; height: auto; border: 1px solid #3a2f26;
+        border-radius: 12px; margin: 20px 0; background: #1f1a15; }
+  table { border-collapse: collapse; width: 100%; margin: 20px 0; font-size: 0.92rem;
+          display: block; overflow-x: auto; }
+  th, td { border: 1px solid #3a2f26; padding: 10px 12px; text-align: left;
+           vertical-align: top; }
+  th { background: #1f1a15; }
+  ul, ol { padding-left: 24px; }
+  hr { border: none; border-top: 1px solid #2c231b; margin: 32px 0; }
+  .footnote { font-size: 0.88rem; color: #a89880; }
+  .footnote hr { margin: 40px 0 16px; }
+  sup a { text-decoration: none; }
+  .topnav { max-width: 760px; margin: 0 auto 32px; font-size: 0.9rem; }
+  .topnav a { color: #a89880; text-decoration: none; }
+  .topnav a:hover { color: #ece1d3; }
+  .diagram-cta {
+    display: block; text-align: center; margin: 28px 0; padding: 16px;
+    background: #1f1a15; border: 1px solid #3a2f26; border-radius: 12px;
+    color: #ece1d3; text-decoration: none; font-weight: 600;
+  }
+  .diagram-cta:hover { border-color: #d08c4e; }
+  .diagram-cta span { display: block; font-weight: 400; font-size: 0.88rem;
+                      color: #a89880; margin-top: 4px; }
+</style>
+</head>
+<body>
+<main>
+  <nav class="topnav"><a href="../">&larr; Agent Harness Anatomy</a></nav>
+<h1 id="agent-harness-anatomy-6-openhands-the-event-sourced-agent-sdk">Agent Harness Anatomy #6: OpenHands — the event-sourced agent SDK</h1>
+<blockquote>
+<p><strong>Series:</strong> Agent Harness Anatomy — top-down dissections of real agent
+harnesses, grounded in verifiable source code. Every behavioral claim
+below carries a footnote to a pinned GitHub permalink; the full evidence
+lives in the endnotes.</p>
+</blockquote>
+<h2 id="version-block">Version block</h2>
+<ul>
+<li><strong>Repo:</strong> <a href="https://github.com/OpenHands/software-agent-sdk">OpenHands/software-agent-sdk</a></li>
+<li><strong>Pinned:</strong> tag <code>v1.53.0</code> → <code>54daf056bd863bb46f922a2fe9324dd736b37ff6</code> (2026-10-05)</li>
+<li><strong>Language:</strong> Python (uv workspace; TypeScript client alongside)</li>
+<li><strong>License:</strong> MIT</li>
+<li><strong>Claim under test:</strong> "a clean, modular SDK for building AI agents with OpenHands V1"</li>
+</ul>
+<p>A scope correction before anything else: if you go looking for the agent at
+<code>OpenHands/OpenHands</code>, you will find <strong>Agent Canvas</strong> — a control center for
+running <em>other</em> agents (Claude Code, Codex, Gemini, ACP agents).<sup id="fnref:1"><a class="footnote-ref" href="#fn:1">1</a></sup> The
+org renamed <code>All-Hands-AI</code> to <code>OpenHands</code>, and the old agent repo pivoted.
+The event-driven harness this series set out to dissect — the event bus,
+the microagents, the loop — moved to <code>software-agent-sdk</code>, released the
+morning of this analysis. Everything below is pinned to that repo.</p>
+<p><img alt="OpenHands architecture" src="figures/openhands.svg" /></p>
+<h2 id="the-mental-model">The mental model</h2>
+<p>OpenHands is not a CLI with a loop bolted on. It is an <strong>event-sourced agent
+SDK</strong>: everything that happens — user messages, tool calls, tool results,
+errors, hook decisions, condensation, interrupts — is a typed event in a
+persistent tree, and the model never sees the raw stream. It sees a cached,
+incrementally maintained <strong>view</strong> with enforced invariants (observation
+uniqueness, tool-call matching, batch atomicity).<sup id="fnref:2"><a class="footnote-ref" href="#fn:2">2</a></sup> The loop itself is
+almost boring: <code>LocalConversation._run</code> → <code>Agent.step</code> → classify the
+response (tool calls? content? reasoning only? empty?) → run the tool batch
+→ feed observations back → repeat until finished.<sup id="fnref:3"><a class="footnote-ref" href="#fn:3">3</a></sup> All the interesting
+machinery attaches to the <em>event stream</em>, not the loop: hooks are an
+event-stream interceptor that wraps the <code>on_event</code> callback,<sup id="fnref:4"><a class="footnote-ref" href="#fn:4">4</a></sup> the critic
+scores events and can veto termination,<sup id="fnref:5"><a class="footnote-ref" href="#fn:5">5</a></sup> the agent-server fans events
+over pub/sub to REST and WebSocket clients.<sup id="fnref:6"><a class="footnote-ref" href="#fn:6">6</a></sup></p>
+<p>The governing tradeoff: OpenHands buys uniformity at the cost of
+indirection. One event type system serves the loop, the hooks, the
+persistence layer, the streaming protocol, and the server fan-out — so
+every subsystem speaks the same language, but nothing is a direct function
+call and the "simple" path through the code always passes through the
+stream. If you're building a harness, that's OpenHands' thesis in one
+sentence: make the event log the substrate, and let the loop be dumb.</p>
+<h2 id="package-map">Package map</h2>
+<p>The repo is a uv-workspace monorepo. Four Python packages matter:<sup id="fnref:7"><a class="footnote-ref" href="#fn:7">7</a></sup></p>
+<table>
+<thead>
+<tr>
+<th>Package</th>
+<th>Role</th>
+<th>Size</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>openhands-sdk</code></td>
+<td>The harness core: loop, events, conversation, LLM, tools, hooks, skills, security, context/condenser, MCP, critic, marketplace, extensions, automation</td>
+<td>303 files, ~77k lines</td>
+</tr>
+<tr>
+<td><code>openhands-tools</code></td>
+<td>Built-in tool implementations (<code>terminal</code>, <code>file_editor</code>, <code>delegate</code>, <code>browser_use</code>, …)</td>
+<td>93 files, ~17k lines</td>
+</tr>
+<tr>
+<td><code>openhands-workspace</code></td>
+<td>Workspace implementations (local/remote/git execution environments)</td>
+<td>14 files, ~3k lines</td>
+</tr>
+<tr>
+<td><code>openhands-agent-server</code></td>
+<td>Server runtime: REST/WebSocket API, conversation orchestration, event service, sandbox lifecycle</td>
+<td>89 files, ~33k lines</td>
+</tr>
+</tbody>
+</table>
+<p>Plus <code>clients/typescript/</code> — a browser-compatible client mirroring the
+agent-server API. Line counts include blanks and comments; they are
+order-of-magnitude, not precision instruments.</p>
+<p>The dependency direction is enforced by design: the SDK never imports
+<code>openhands-tools</code>. A <code>Tool</code> in the SDK is a <em>spec</em> — a wire contract with a
+name and parameters — resolved to implementations at runtime through a
+registry.<sup id="fnref:8"><a class="footnote-ref" href="#fn:8">8</a></sup> The core can be embedded without dragging any tool
+implementation along.</p>
+<h2 id="the-event-bus-and-the-view">The event bus and the view</h2>
+<p>This section is earned: the pi template's "core loop" section cannot hold
+this material, because hooks, streaming, persistence, and the server
+fan-out all attach to the event stream, not the loop.</p>
+<p>There are five event types and nothing else:
+<code>EventType = Literal["action", "observation", "message", "system_prompt", "agent_error"]</code>,
+with sources <code>agent</code>, <code>user</code>, <code>environment</code>, or <code>hook</code>.<sup id="fnref:9"><a class="footnote-ref" href="#fn:9">9</a></sup> Events form a
+tree (<code>parent_id</code>, root sentinel <code>"__root__"</code>).<sup id="fnref:10"><a class="footnote-ref" href="#fn:10">10</a></sup> The base class is
+abstract; <code>LLMConvertibleEvent</code> marks the ones renderable into model
+messages: <code>ActionEvent</code> (a tool call — payload, thought, reasoning, tool
+name, call id, security risk, summary, critic result), <code>MessageEvent</code>,
+<code>ObservationEvent</code> (a tool result; <code>UserRejectObservation</code> when the user or
+a hook denied it; <code>AgentErrorEvent</code> when a tool raised), and
+<code>SystemPromptEvent</code>.<sup id="fnref:11"><a class="footnote-ref" href="#fn:11">11</a></sup> Everything else rides alongside but never reaches
+the model: <code>Condensation</code> / <code>CondensationRequest</code> /
+<code>CondensationSummaryEvent</code>, <code>ConversationStateUpdateEvent</code>,
+<code>HookExecutionEvent</code>, <code>LLMCompletionLogEvent</code>, <code>StreamingDeltaEvent</code>,
+<code>TokenEvent</code>, <code>InterruptEvent</code>, <code>PauseEvent</code>, <code>ACPToolCallEvent</code>.<sup id="fnref:12"><a class="footnote-ref" href="#fn:12">12</a></sup></p>
+<p>Producers and consumers: the agent emits action/message/observation/error
+events through the <code>on_event</code> callback (which persists and broadcasts);
+tools produce observations; hooks produce <code>HookExecutionEvent</code>s; user
+actions produce interrupts and pauses; the condenser produces condensation
+events.<sup id="fnref:13"><a class="footnote-ref" href="#fn:13">13</a></sup> The conversation's <code>state.view</code> incrementally maintains the
+LLM-visible projection of that stream — a cached view object, not a
+re-render, with a code comment referencing the design issue.<sup id="fnref:14"><a class="footnote-ref" href="#fn:14">14</a></sup> View
+<em>properties</em> enforce invariants on what the model is allowed to see:
+observation uniqueness, tool-call matching, batch and tool-loop
+atomicity.<sup id="fnref:15"><a class="footnote-ref" href="#fn:15">15</a></sup></p>
+<p>Two consequences fall out of this design. First, <strong>hooks are stream
+interceptors, not loop gates.</strong> <code>HookEventProcessor</code> wraps <code>on_event</code>, so a
+hook sees every event as it flows and can act on it — <code>PreToolUse</code> fires
+when an <code>ActionEvent</code> passes through; denying marks the action blocked in
+state, and the batch executor partitions it out and emits a
+<code>UserRejectObservation</code> with <code>rejection_source="hook"</code> instead of
+executing.<sup id="fnref:16"><a class="footnote-ref" href="#fn:16">16</a></sup> Second, <strong>streaming is slot-minting.</strong> <code>StreamContext</code>
+mints event IDs for streamed items so clients can retire slots;
+<code>StreamingDeltaEvent</code> carries the deltas; token IDs become <code>TokenEvent</code>s
+when the provider returns them.<sup id="fnref:17"><a class="footnote-ref" href="#fn:17">17</a></sup></p>
+<p>The tradeoff of event-sourcing everything: the log is the single source of
+truth for the loop, the UI, the persistence layer, and the server — but the
+event schema is the de-facto API contract, and every new event type is a
+versioning decision. OpenHands chose the substrate pi only used for
+rendering (pi's <code>AgentEvent</code> stream feeds the TUI; here it feeds the
+<em>loop</em>), and paid for it in indirection.</p>
+<h2 id="the-core-loop">The core loop</h2>
+<p>Two functions, sync and async twins: <code>LocalConversation.run()</code> /
+<code>arun()</code> drive <code>_run()</code> / <code>_arun()</code>, each a <code>while True:</code> loop holding the
+conversation state lock.<sup id="fnref:18"><a class="footnote-ref" href="#fn:18">18</a></sup> The loop body, quoted from <code>_run</code>
+(<code>local_conversation.py:1917</code>):</p>
+<pre><code class="language-python">while True:
+    with self._state:
+        if self._state.execution_status in [PAUSED, STUCK]:
+            break
+        # Handle stop hooks on FINISHED
+        if self._state.execution_status == FINISHED:
+            if self._hook_processor is not None:
+                should_stop, feedback = self._hook_processor.run_stop(
+                    reason=&quot;agent_finished&quot;
+                )
+                if not should_stop:
+                    # ...inject feedback as an environment message...
+                    self._state.execution_status = RUNNING
+                    continue
+            break
+        if self._check_stuck_or_nudge():
+            continue
+        # ...clear WAITING_FOR_CONFIRMATION after user approval...
+        try:
+            self.agent.step(self, on_event=self._on_event, on_token=self._on_token)
+        finally:
+            ...
+        iteration += 1
+        if ... WAITING_FOR_CONFIRMATION: break
+        if budget exceeded: emit MaxBudgetReached; break
+        if iteration &gt;= self.max_iteration_per_run:  # default 500
+            emit ConversationErrorEvent(code=&quot;MaxIterationsReached&quot;); break
+</code></pre>
+<p>Termination conditions, exhaustively: <code>FINISHED</code> (and the stop hooks allow
+it — a Stop hook can deny and flip the status back to <code>RUNNING</code>, with a
+documented race: clients must treat <code>FINISHED</code> as a hint, not a
+guarantee),<sup id="fnref:19"><a class="footnote-ref" href="#fn:19">19</a></sup> <code>PAUSED</code>, <code>STUCK</code>, <code>WAITING_FOR_CONFIRMATION</code>, budget
+exceeded, <code>max_iteration_per_run</code> (default 500) → <code>MaxIterationsReached</code>,
+or an error.<sup id="fnref:20"><a class="footnote-ref" href="#fn:20">20</a></sup> Interrupts cancel the tracked run task; <code>asyncio</code>
+cancellation propagates through the LLM stream into the agent step and out
+to the loop, landing in <code>PAUSED</code> with an <code>InterruptEvent</code>.<sup id="fnref:21"><a class="footnote-ref" href="#fn:21">21</a></sup></p>
+<p><code>Agent.step()</code> (<code>agent.py:693</code>, async twin <code>astep</code> at 898) does one model
+round-trip plus tool execution:<sup id="fnref:22"><a class="footnote-ref" href="#fn:22">22</a></sup></p>
+<ol>
+<li>Pending (unconfirmed) actions execute first — confirmation mode queues
+   actions and the next step runs them (<code>ConversationState.get_unmatched_actions</code>).</li>
+<li>A hook-blocked user message (<code>UserPromptSubmit</code> deny) → <code>FINISHED</code>, skip.</li>
+<li><code>prepare_llm_messages(state.view, condenser, llm)</code> builds the model
+   input from the cached view — never from the raw event list.<sup id="fnref:23"><a class="footnote-ref" href="#fn:23">23</a></sup></li>
+<li><code>Condensation</code> short-circuits; non-multimodal image handling.</li>
+<li><code>llm.generate(...)</code> with <code>add_security_risk_prediction=True</code> — the model
+   is asked to self-label each action's security risk.<sup id="fnref:24"><a class="footnote-ref" href="#fn:24">24</a></sup></li>
+<li>Malformed function call → user-role error <code>MessageEvent</code>, loop
+   continues. Content-policy violation → deterministic nudge, loop
+   continues. <code>LLMMalformedConversationHistoryError</code> → condensation
+   recovery. <code>LLMContextWindowExceedError</code> → <code>CondensationRequest</code> event
+   (if the condenser handles requests) else raise.<sup id="fnref:25"><a class="footnote-ref" href="#fn:25">25</a></sup></li>
+</ol>
+<p>Response dispatch is a <strong>pure function</strong> — no side effects, no logging, no
+mutation:<sup id="fnref:26"><a class="footnote-ref" href="#fn:26">26</a></sup></p>
+<pre><code class="language-python">def classify_response(message: Message) -&gt; LLMResponseType:
+    &quot;&quot;&quot;Decision priority (first match wins):
+      1. TOOL_CALLS  — message contains tool calls
+      2. CONTENT     — message contains non-blank TextContent
+      3. REASONING_ONLY — message has reasoning but no visible content
+      4. EMPTY       — nothing useful
+    &quot;&quot;&quot;
+</code></pre>
+<p><code>TOOL_CALLS</code> → <code>_handle_tool_calls</code>: each call is validated and normalized
+(<code>_get_action_event</code>, <code>agent.py:1311</code>) — argument parsing, tool lookup,
+Pydantic validation, security-risk extraction, critic evaluation — then the
+confirmation gate (<code>_requires_user_confirmation</code>), then <code>_execute_actions</code>.
+The async path runs each tool in its own thread via <code>run_in_executor</code> +
+<code>asyncio.gather</code> (<code>parallel_executor.py</code>, bounded by
+<code>tool_concurrency_limit</code>).<sup id="fnref:27"><a class="footnote-ref" href="#fn:27">27</a></sup> <code>CONTENT</code> → <code>_handle_content_response</code>:
+emit a <code>MessageEvent</code>, status <code>FINISHED</code> ("awaits user input").
+<code>REASONING_ONLY</code> / <code>EMPTY</code> → emit plus a corrective nudge from
+<code>source="environment"</code>.<sup id="fnref:28"><a class="footnote-ref" href="#fn:28">28</a></sup></p>
+<p>Finish semantics live in <code>_ActionBatch.finalize</code> (<code>agent.py:380</code>): a
+<code>FinishTool</code> action truncates the batch (later calls in the same batch are
+discarded), and either the iterative-refinement check injects a followup
+user message (keeping the loop going) or the status flips to
+<code>FINISHED</code>.<sup id="fnref:29"><a class="footnote-ref" href="#fn:29">29</a></sup></p>
+<p>Note the deliberate absence of a turn counter in the pi sense: OpenHands
+<em>does</em> cap iterations (500 per run), unlike pi's trust-the-model design —
+but the cap is generous and the budget is the tighter bound in practice.
+The <code>GoalController</code> (<code>conversation/goal/controller.py:78</code>) is <strong>not</strong> the
+main loop: it is the transport-agnostic brain of the <code>/goal</code> loop — after
+each agent run, an LLM judge (<code>goal/judge.py</code>) scores completion and
+returns <code>GoalContinue</code> (followup prompt) or <code>GoalDone</code> (complete/capped),
+driven by sync <code>run_goal</code> or an async agent-server task.<sup id="fnref:30"><a class="footnote-ref" href="#fn:30">30</a></sup></p>
+<h2 id="the-critic-and-iterative-refinement">The critic and iterative refinement</h2>
+<p>This section is earned: none of the other five harnesses has a post-hoc
+quality judge wired into termination, and it changes what "finish" means.</p>
+<p>A critic scores the quality of the agent's work from its events (plus an
+optional git patch) and returns a <code>CriticResult</code>:
+<code>CriticBase.evaluate(events, git_patch)</code> (<code>critic/base.py:83</code>).<sup id="fnref:31"><a class="footnote-ref" href="#fn:31">31</a></sup> Two
+evaluation modes: <code>finish_and_message</code> (evaluate on <code>FinishAction</code> and
+agent messages; the default) versus <code>all_actions</code> (every action; slow).
+Implementations include <code>AgentFinishedCritic</code>, <code>EmptyPatchCritic</code>,
+<code>PassCritic</code>, and an API critic with a rubric taxonomy
+(<code>critic/impl/api/</code>).<sup id="fnref:32"><a class="footnote-ref" href="#fn:32">32</a></sup> The critic also scores individual tool calls
+during dispatch: <code>_get_action_event</code> calls <code>_evaluate_with_critic</code> when
+<code>_should_evaluate_with_critic(action)</code> (<code>critic_mixin.py</code>), and the result
+rides on the <code>ActionEvent</code> itself.<sup id="fnref:33"><a class="footnote-ref" href="#fn:33">33</a></sup></p>
+<p>The loop integration is the interesting part. With <code>iterative_refinement</code>
+configured, <code>_ActionBatch.finalize</code> calls <code>check_iterative_refinement</code>
+after <code>FinishTool</code>: score below threshold → inject a followup prompt as a
+user-role <code>MessageEvent</code> and keep the loop going <em>instead of</em> setting
+<code>FINISHED</code>.<sup id="fnref:34"><a class="footnote-ref" href="#fn:34">34</a></sup> Termination is no longer "the model said it's done" — it's
+"the model said it's done <em>and the critic agrees</em>." The failure mode this
+invites is obvious: a harsh critic and a compliant model can orbit each
+other indefinitely, bounded only by the iteration cap and the budget. That
+is the price of judging your own homework inside the loop.</p>
+<p><img alt="Critic refinement loop" src="figures/seq-critic.svg" /></p>
+<h2 id="one-turn-end-to-end">One turn, end to end</h2>
+<p>Trace: the user sends <code>fix the failing test in tests/test_auth.py</code> to a
+<code>LocalConversation</code>.</p>
+<p><strong>① Input.</strong> <code>LocalConversation.send_message()</code> (<code>local_conversation.py:1807</code>)
+resets <code>FINISHED</code>/<code>STUCK</code> to <code>IDLE</code>, runs <code>UserPromptSubmit</code> hooks through
+<code>HookEventProcessor.on_event</code> — a deny blocks the message entirely — then
+matches skill triggers (<code>agent_context.get_user_message_suffix</code>; matched
+names recorded in <code>state.activated_knowledge_skills</code>), and emits the user
+<code>MessageEvent</code> before entering <code>run()</code>.<sup id="fnref:35"><a class="footnote-ref" href="#fn:35">35</a></sup> A blocked message surfaces in
+<code>_step</code> via <code>state.pop_blocked_message</code> → <code>FINISHED</code>, skipping processing:
+the hook veto happens before the model is ever consulted.<sup id="fnref:36"><a class="footnote-ref" href="#fn:36">36</a></sup></p>
+<p><strong>② Prompt assembly.</strong> <code>prepare_llm_messages(state.view, condenser, llm)</code>
+(<code>agent/utils.py:564</code>) builds the model input from the cached incremental
+view — the raw event list is never serialized directly.<sup id="fnref:37"><a class="footnote-ref" href="#fn:37">37</a></sup> The system
+prompt carries <code>AgentContext._resolve_dynamic_data()</code> output, including the
+<code>&lt;available_skills&gt;</code> block listing every AgentSkills-format skill (name,
+description truncated to 1024 chars per the AgentSkills spec, location),
+so the model knows what it can read on demand.<sup id="fnref:38"><a class="footnote-ref" href="#fn:38">38</a></sup> Tool declarations come
+from the registry: SDK builtins (<code>finish</code>, <code>think</code>, <code>switch_llm</code>,
+<code>invoke_skill</code>, …) plus the default exec set (<code>terminal</code>, <code>file_editor</code>,
+<code>task_tracker</code>), resolved to implementations at runtime.<sup id="fnref:39"><a class="footnote-ref" href="#fn:39">39</a></sup></p>
+<p><strong>③ Model call.</strong> <code>Agent._step</code> calls <code>llm.generate(messages, tools,
+add_security_risk_prediction=True, on_token=stream.token_callback)</code>.
+<code>LLM</code> is a frozen Pydantic model wrapping LiteLLM
+(<code>litellm.completion</code>/<code>acompletion</code>); it dispatches between Chat
+Completions and the Responses API per model (<code>uses_responses_api</code>).<sup id="fnref:40"><a class="footnote-ref" href="#fn:40">40</a></sup>
+The <code>add_security_risk_prediction</code> flag asks the model to self-label each
+action's security risk — the first of three cooperating safety
+mechanisms.<sup id="fnref:41"><a class="footnote-ref" href="#fn:41">41</a></sup></p>
+<p><strong>④ Response parsing.</strong> <code>classify_response</code> sees tool calls (say,
+<code>terminal</code> to run pytest, <code>file_editor</code> to view the test) →
+<code>TOOL_CALLS</code>.<sup id="fnref2:26"><a class="footnote-ref" href="#fn:26">26</a></sup> Had the model answered in prose, <code>CONTENT</code> would emit a
+<code>MessageEvent</code> and finish the turn ("awaits user input"); reasoning-only or
+empty responses get a corrective nudge from <code>source="environment"</code> and the
+loop continues.<sup id="fnref2:28"><a class="footnote-ref" href="#fn:28">28</a></sup></p>
+<p><strong>⑤ Tool dispatch.</strong> <code>_handle_tool_calls</code> runs each call through
+<code>_get_action_event</code> (<code>agent.py:1311</code>): argument parsing →
+<code>normalize_tool_call</code> (aliasing/terminal fallback) → tool lookup →
+Pydantic validation → security-risk extraction → critic evaluation — then
+emits the <code>ActionEvent</code> via <code>on_event</code>.<sup id="fnref:42"><a class="footnote-ref" href="#fn:42">42</a></sup> As the event flows through
+<code>HookEventProcessor</code>, <code>PreToolUse</code> hooks fire; a deny marks the action
+blocked in state (<code>state.block_action(event.id, reason)</code>).<sup id="fnref:43"><a class="footnote-ref" href="#fn:43">43</a></sup> Then the
+confirmation gate: <code>_requires_user_confirmation</code> (<code>agent.py:1130</code>) checks
+the <code>ConfirmationPolicy</code> (AlwaysConfirm / NeverConfirm /
+ConfirmRisky(threshold)) against per-action risks from the
+<code>SecurityAnalyzerBase</code> — <code>LLMSecurityAnalyzer</code>, <code>PolicyRailSecurityAnalyzer</code>
+(deterministic rails), <code>EnsembleSecurityAnalyzer</code>, or the third-party
+<code>GraySwanAnalyzer</code>.<sup id="fnref:44"><a class="footnote-ref" href="#fn:44">44</a></sup> Without a configured analyzer, risk is always
+<code>UNKNOWN</code> and the model's own <code>security_risk</code> label is ignored — the
+self-label is advisory input to the analyzer, never a decision.<sup id="fnref:45"><a class="footnote-ref" href="#fn:45">45</a></sup> If
+confirmation is required, status becomes <code>WAITING_FOR_CONFIRMATION</code> and the
+loop breaks awaiting the user; the next <code>run()</code> executes the pending
+actions as implicit confirmation.<sup id="fnref:46"><a class="footnote-ref" href="#fn:46">46</a></sup></p>
+<p><strong>⑥ Feedback.</strong> <code>_execute_actions</code> → <code>_ActionBatch.prepare</code>: truncate the
+batch at <code>FinishTool</code> (later calls discarded), partition out hook-blocked
+actions (emitting <code>UserRejectObservation</code> with
+<code>rejection_source="hook"</code>), and execute the rest through
+<code>ParallelToolExecutor</code> bounded by <code>tool_concurrency_limit</code> — the async path
+runs each tool in its own thread (<code>run_in_executor</code> + <code>asyncio.gather</code>).
+<code>ObservationEvent</code>s are emitted in original call order even though
+execution was parallel.<sup id="fnref:47"><a class="footnote-ref" href="#fn:47">47</a></sup> A tool raising <code>ValueError</code> becomes an
+<code>AgentErrorEvent</code> so the model can self-correct; malformed arguments get
+<code>fix_malformed_tool_arguments</code> before validation fails.<sup id="fnref:48"><a class="footnote-ref" href="#fn:48">48</a></sup></p>
+<p><strong>⑦ Termination.</strong> Say the model then calls <code>finish</code>. <code>_ActionBatch.finalize</code>
+(<code>agent.py:380</code>) runs the iterative-refinement check: if the critic scores
+the work below threshold, a followup prompt is injected as a user-role
+message and the loop continues; otherwise status flips to <code>FINISHED</code>.<sup id="fnref2:34"><a class="footnote-ref" href="#fn:34">34</a></sup>
+Back in <code>_run</code>, the Stop hooks get their word — deny flips back to
+<code>RUNNING</code> with the feedback injected as an environment message — and only
+then does the loop break.<sup id="fnref2:19"><a class="footnote-ref" href="#fn:19">19</a></sup></p>
+<p><strong>⑧ Rendering.</strong> Every event emitted through <code>on_event</code> fans out: the
+<code>EventLog</code> appends it as JSONL under the conversation directory
+(thread/process-safe, <code>conversation/event_store.py:34</code>),<sup id="fnref:49"><a class="footnote-ref" href="#fn:49">49</a></sup> and in server
+mode the <code>EventService</code> publishes it over pub/sub to REST/WebSocket
+clients, with <code>StreamContext</code> minting event IDs so streaming slots can be
+retired.<sup id="fnref:50"><a class="footnote-ref" href="#fn:50">50</a></sup> There is no privileged renderer — the TUI, the web client,
+and the TypeScript client all consume the same event stream.</p>
+<p>The tradeoff visible across all eight steps: every stage is observable and
+interceptable <em>because</em> it passes through the stream — but the stream is
+also the only path, so a misbehaving hook or a slow event consumer sits in
+line with the loop itself.</p>
+<h2 id="subsystem-inventory">Subsystem inventory</h2>
+<ul>
+<li>
+<p><strong>Tools.</strong> <code>Tool</code> is a spec, not an implementation (<code>tool/spec.py:12</code>) —
+  a wire contract persisted in settings and resolved to executors at
+  runtime via <code>register_tool</code>/<code>resolve_tool</code> (<code>tool/registry.py</code>).<sup id="fnref2:8"><a class="footnote-ref" href="#fn:8">8</a></sup> SDK
+  builtins: <code>finish</code>, <code>think</code>, <code>switch_llm</code>, <code>classify_and_switch_llm</code>,
+  <code>invoke_skill</code>, <code>vision_inspect</code> (<code>tool/builtins/</code>).<sup id="fnref:51"><a class="footnote-ref" href="#fn:51">51</a></sup> Default exec
+  set: <code>terminal</code>, <code>file_editor</code>, <code>task_tracker</code> (<code>tool/defaults.py:27</code>),
+  optional <code>browser_tool_set</code> (only when <code>enable_browser</code>), <code>task_tool_set</code>
+  for delegation; <code>switch_llm</code> is always appended.<sup id="fnref:52"><a class="footnote-ref" href="#fn:52">52</a></sup> Implementations
+  live in <code>openhands-tools/</code>: terminal, file_editor (view/create/
+  str_replace/insert/<strong>undo_edit</strong>), task_tracker, browser_use, glob, grep,
+  apply_patch, delegate, task, workflow, ask_oracle, tom_consult, gemini,
+  planning_file_editor, preset, utils.<sup id="fnref:53"><a class="footnote-ref" href="#fn:53">53</a></sup> Each tool is a
+  <code>ToolDefinition</code> with a Pydantic <code>action_type</code> and a <code>ToolExecutor</code>
+  returning an <code>Observation</code>; <code>is_usable()</code> environment checks let the
+  registry filter (<code>list_usable_tools</code>).<sup id="fnref:54"><a class="footnote-ref" href="#fn:54">54</a></sup> The SDK never imports
+  <code>openhands-tools</code> — dependency direction enforced by design.<sup id="fnref3:8"><a class="footnote-ref" href="#fn:8">8</a></sup></p>
+</li>
+<li>
+<p><strong>Model providers.</strong> <code>LLM</code> wraps LiteLLM with full model strings at the
+  boundary (<code>openai/gpt-5.6</code>, <code>anthropic/...</code>, <code>bedrock/...</code>); LiteLLM's
+  <code>get_llm_provider</code> parses the provider (<code>utils/litellm_provider.py</code>).<sup id="fnref:55"><a class="footnote-ref" href="#fn:55">55</a></sup>
+  Both Chat Completions and the Responses API are supported, dispatched
+  per model (<code>llm.py:1673</code>).<sup id="fnref2:40"><a class="footnote-ref" href="#fn:40">40</a></sup> Non-native function calling is mixed in
+  for models without tool support (<code>mixins/non_native_fc.py</code>); retries via
+  tenacity (<code>RetryMixin</code>) with hard/idle timeouts inside the attempt; a
+  full error taxonomy (<code>llm/exceptions/</code>: auth, rate limit, context
+  window, content policy, malformed history).<sup id="fnref:56"><a class="footnote-ref" href="#fn:56">56</a></sup> Compare Goose, whose
+  provider trait requires only <code>stream()</code>: OpenHands' LLM is a far richer
+  surface — generate/completion/responses, streaming, retries, routing,
+  telemetry, metrics.<sup id="fnref:57"><a class="footnote-ref" href="#fn:57">57</a></sup></p>
+</li>
+<li>
+<p><strong>Security.</strong> Three cooperating mechanisms, no OS sandbox in the SDK.
+  (1) Per-action security risk: the model self-labels via
+  <code>add_security_risk_prediction</code>, and a <code>SecurityAnalyzerBase</code>
+  (<code>security/analyzer.py:15</code>) computes the authoritative risk — LLM judge,
+  deterministic policy rails (<code>defense_in_depth/policy_rails.py</code>),
+  ensemble, or GraySwan.<sup id="fnref2:44"><a class="footnote-ref" href="#fn:44">44</a></sup> (2) Confirmation policy: AlwaysConfirm /
+  NeverConfirm / ConfirmRisky(threshold); <code>FinishAction</code>/<code>ThinkAction</code>
+  alone never confirm.<sup id="fnref2:46"><a class="footnote-ref" href="#fn:46">46</a></sup> (3) Defense in depth: shell-semantics parsing,
+  pattern rails, plus ToolShield MCP safety experiences.<sup id="fnref:58"><a class="footnote-ref" href="#fn:58">58</a></sup> Execution
+  happens in the workspace (local process) or remote workspaces; the
+  agent-server provisions Docker runtimes (<code>agent_server/docker_runtime/</code>).
+  Contrast Codex's Seatbelt/bubblewrap/Landlock/seccomp stack <em>in the
+  loop</em> — OpenHands' sandbox story lives in deployment, not the
+  harness.<sup id="fnref:59"><a class="footnote-ref" href="#fn:59">59</a></sup></p>
+</li>
+<li>
+<p><strong>Context and sessions.</strong> <code>ConversationState</code> holds the events; the model
+  sees the cached incremental view (<code>context/view/view.py</code>), never the raw
+  list.<sup id="fnref2:37"><a class="footnote-ref" href="#fn:37">37</a></sup> Condensers (<code>context/condenser/</code>): <code>CondenserBase.condense(view,
+  agent_llm) -&gt; View | Condensation</code> with <code>LLMSummarizingCondenser</code>
+  (rolling summary), <code>PipelineCondenser</code>, <code>NoOpCondenser</code> — triggered
+  proactively (<code>handles_condensation_requests</code>) or reactively on
+  <code>LLMContextWindowExceedError</code> / <code>LLMMalformedConversationHistoryError</code>
+  via <code>CondensationRequest</code> events.<sup id="fnref2:60"><a class="footnote-ref" href="#fn:60">60</a></sup> Persistence is a thread/process-safe
+  <code>EventLog</code>: per-event JSONL under the conversation directory
+  (<code>conversation/event_store.py:34</code>); <code>FileStore</code> backends are local,
+  memory, or cache (<code>io/</code>); the agent-server persists
+  <code>meta.json</code>/<code>base_state.json</code>/events under <code>conversations/&lt;id&gt;/</code> and
+  resumes from <code>base_state.json</code>.<sup id="fnref2:49"><a class="footnote-ref" href="#fn:49">49</a></sup> Stuck detection
+  (<code>conversation/stuck_detector.py</code>): repeating action-observation loops,
+  action-error streaks (one corrective nudge), monologues, alternating
+  patterns → <code>STUCK</code>.<sup id="fnref:61"><a class="footnote-ref" href="#fn:61">61</a></sup> Per-run cost budgets → <code>MaxBudgetReached</code>;
+  <code>conversation.interrupt()</code> cancels the run task with <code>InterruptEvent</code> →
+  <code>PAUSED</code>.<sup id="fnref:62"><a class="footnote-ref" href="#fn:62">62</a></sup></p>
+</li>
+<li>
+<p><strong>Sub-agents.</strong> <code>DelegateAction</code>/<code>DelegateExecutor</code>
+  (<code>openhands-tools/.../delegate/</code>) spawns full <code>LocalConversation</code>
+  sub-conversations for <code>AgentDefinition</code>s loaded from markdown frontmatter
+  (<code>sdk/subagent/schema.py:198</code>): own tools, skills, MCP config, hooks,
+  condenser, confirmation policy, permission mode, max iterations and
+  budget caps.<sup id="fnref2:63"><a class="footnote-ref" href="#fn:63">63</a></sup> <code>SubAgentScope</code> (<code>sdk/subagent/scope.py:25</code>) narrows
+  the tool set per delegation; <code>task_tool_set</code> exposes this to the model;
+  <code>TaskManager</code> tracks tasks with resume support.<sup id="fnref2:64"><a class="footnote-ref" href="#fn:64">64</a></sup> The agent-server
+  registers definitions from the catalog
+  (<code>conversation_service.py:_register_agent_definitions</code>).<sup id="fnref:65"><a class="footnote-ref" href="#fn:65">65</a></sup></p>
+</li>
+<li>
+<p><strong>ACP: the harness as host.</strong> <code>ACPAgent</code> (<code>agent/acp_agent.py:1714</code>,
+  ~4,700 lines) is an <code>AgentBase</code> subclass that delegates the <em>entire loop</em>
+  to an external ACP server — Claude Code, Codex, Gemini CLI subprocesses.
+  The SDK becomes host and adapter: this is how Agent Canvas runs
+  third-party agents inside OpenHands conversations.<sup id="fnref2:66"><a class="footnote-ref" href="#fn:66">66</a></sup> It inverts the
+  usual relationship (every other harness in this series <em>is</em> the loop;
+  here the loop is a guest), and it is the clearest evidence of what
+  "SDK, not app" means in practice.</p>
+</li>
+<li>
+<p><strong>Goal loop.</strong> <code>GoalController</code> (<code>conversation/goal/controller.py:78</code>) is
+  the transport-agnostic brain of the <code>/goal</code> loop: after each agent run, an
+  LLM judge (<code>goal/judge.py</code>) scores completion and returns <code>GoalContinue</code>
+  (followup prompt) or <code>GoalDone</code> (complete/capped), driven by sync
+  <code>run_goal</code> (<code>goal/runner.py</code>) or an async agent-server task.<sup id="fnref2:30"><a class="footnote-ref" href="#fn:30">30</a></sup></p>
+</li>
+<li>
+<p><strong>Automation.</strong> The SDK side is observability context — tags and kwargs
+  for automation-dispatched conversations
+  (<code>automation/__init__.py:automation_conversation_kwargs</code>); scheduling
+  and dispatch live in the separate <code>OpenHands/automation</code> repo.<sup id="fnref2:67"><a class="footnote-ref" href="#fn:67">67</a></sup> Goose
+  has recipes-as-programs with a scheduler in the loop; OpenHands keeps
+  scheduling out of the harness entirely.</p>
+</li>
+</ul>
+<h2 id="extension-points-in-depth">Extension points in depth</h2>
+<p>Each axis below is a complete starting kit: what the harness does, the
+exact interaction sequence, and the first file to open. Diagrams use the
+same numbering as the prose steps.</p>
+<h3 id="1-skills-microagents-successor">1. Skills (microagents' successor)</h3>
+<p>Microagents are legacy: <code>~/.openhands/microagents/</code> is scanned only as
+"legacy support" and converted into <code>Skill</code> objects
+(<code>skills/skill.py:_load_legacy_openhands_skill:448</code>).<sup id="fnref:68"><a class="footnote-ref" href="#fn:68">68</a></sup> The successor is
+<strong>Skills</strong> in two formats (<code>skill.py:178</code>): AgentSkills-format
+(<code>SKILL.md</code>, agentskills.io spec) — always listed in <code>&lt;available_skills&gt;</code>
+with progressive disclosure (the agent reads full content on demand), with
+descriptions truncated to 1024 chars per the spec — and legacy OpenHands
+format, which with triggers is listed and trigger-injected, without
+triggers is fully inlined into <code>&lt;REPO_CONTEXT&gt;</code> and always active.<sup id="fnref:69"><a class="footnote-ref" href="#fn:69">69</a></sup>
+Three activation paths: (1) progressive disclosure via
+<code>AgentContext._resolve_dynamic_data()</code> rendering <code>&lt;available_skills&gt;</code> into
+the system-prompt suffix (<code>agent_context.py:360-454</code>); (2) trigger
+injection — <code>send_message</code> matches <code>KeywordTrigger</code> / <code>TaskTrigger</code> /
+<code>PathTrigger</code> (<code>skills/trigger.py:19/29/39</code>) against the user message and
+appends content to the user <code>MessageEvent</code>, recording names in
+<code>state.activated_knowledge_skills</code>; (3) model invocation via the
+<code>invoke_skill</code> builtin tool, which renders content (executing inline
+<code>!command</code>s via <code>skills/execute.py:render_content_with_commands</code>) and
+returns an <code>InvokeSkillObservation</code> — unless <code>disable_model_invocation</code>
+forces trigger-only activation.<sup id="fnref:70"><a class="footnote-ref" href="#fn:70">70</a></sup> Skills load from <code>~/.agents/skills/</code>,
+<code>~/.openhands/skills/</code>, the legacy microagents dir, repo <code>.openhands/skills/</code>
+and <code>.agents/skills/</code>, installed skills, and plugin skills; repo skills can
+bundle MCP servers and declare <code>allowed_tools</code> (pre-approved tools).<sup id="fnref:71"><a class="footnote-ref" href="#fn:71">71</a></sup></p>
+<p><img alt="Skill activation paths" src="figures/seq-skills.svg" /></p>
+<p><strong>Start here:</strong> <code>skills/skill.py:Skill</code>, <code>skills/trigger.py</code>,
+<code>context/agent_context.py:get_system_message_suffix</code>.</p>
+<h3 id="2-hooks">2. Hooks</h3>
+<p>Claude-Code-style lifecycle hooks configured in <code>hooks.json</code>/<code>HookConfig</code>,
+with three executor kinds (<code>hooks/executor.py</code>): <strong>command</strong> (subprocess —
+<code>HookEvent</code> JSON on stdin, JSON decision on stdout), <strong>prompt</strong> (LLM judge
+hook, using the conversation's current LLM via getter so it survives
+<code>switch_llm</code>), and <strong>agent</strong> (a full sub-conversation: fresh <code>Agent</code> +
+<code>LocalConversation</code> with <code>hook_config=None</code> — no recursion — restricted
+tools, its own system prompt; the final response is parsed as the
+decision).<sup id="fnref:72"><a class="footnote-ref" href="#fn:72">72</a></sup> Hook failures <strong>fall open</strong> (default <code>ALLOW</code>,
+<code>executor.py:196-212</code>) — a crashed judge never blocks the loop.<sup id="fnref:73"><a class="footnote-ref" href="#fn:73">73</a></sup> Six
+event types (<code>hooks/types.py:12-17</code>): <code>PreToolUse</code>, <code>PostToolUse</code>,
+<code>UserPromptSubmit</code>, <code>SessionStart</code>, <code>SessionEnd</code>, <code>Stop</code>; decisions are
+allow/deny with exit-code semantics (<code>HookResult.should_continue</code>).<sup id="fnref:74"><a class="footnote-ref" href="#fn:74">74</a></sup>
+<code>HookEventProcessor</code> (<code>hooks/conversation_hooks.py:50</code>) wraps <code>on_event</code>,
+so hooks intercept the stream: <code>PreToolUse</code> deny marks the action blocked
+and the batch emits <code>UserRejectObservation(rejection_source="hook")</code>;
+<code>PostToolUse</code> never blocks; <code>UserPromptSubmit</code> deny blocks the message
+(and can inject <code>additional_context</code>); <code>Stop</code> deny flips <code>FINISHED</code> back
+to <code>RUNNING</code>.<sup id="fnref:75"><a class="footnote-ref" href="#fn:75">75</a></sup> Async hooks in <code>PreToolUse</code> cannot block (warn +
+background).<sup id="fnref:76"><a class="footnote-ref" href="#fn:76">76</a></sup> <code>HookMatcher</code> matches per event type with optional
+tool-name patterns (<code>config.py:121</code>).<sup id="fnref:77"><a class="footnote-ref" href="#fn:77">77</a></sup></p>
+<p><img alt="Hook interception" src="figures/seq-hooks.svg" /></p>
+<p><strong>Start here:</strong> <code>hooks/manager.py:HookManager</code>,
+<code>hooks/conversation_hooks.py:50</code>, <code>hooks/config.py:HookDefinition</code>.</p>
+<h3 id="3-plugins">3. Plugins</h3>
+<p>Claude-Code-compatible bundles: skills + hooks + MCP servers + agents +
+slash commands in one package (<code>plugin/plugin.py:36</code>).<sup id="fnref:78"><a class="footnote-ref" href="#fn:78">78</a></sup> Commands
+become keyword-triggered skills (<code>plugin.py:get_all_skills:104</code>) — there
+is no standalone slash-command dispatcher anywhere in the SDK; <code>/goal</code> is
+a loop driver, not a command registry (verified by absence: <code>commands/</code>
+dirs exist only inside plugins).<sup id="fnref:79"><a class="footnote-ref" href="#fn:79">79</a></sup></p>
+<p><img alt="Plugin lifecycle" src="figures/seq-plugins.svg" /></p>
+<p><strong>Start here:</strong> <code>plugin/plugin.py:Plugin</code>, <code>plugin/loader.py</code>.</p>
+<h3 id="4-mcp-servers">4. MCP servers</h3>
+<p>The SDK owns a flat server map (<code>mcp/config.py:MCPServer:497</code>); FastMCP is
+built only at the FastMCP boundary (<code>mcp/utils.py:_prepare_mcp_config</code>).<sup id="fnref:80"><a class="footnote-ref" href="#fn:80">80</a></sup>
+<code>MCPClient</code> (async) bridges sync/async callers. Servers are configured
+directly, declared by skills (repo skills only), or bundled in plugins;
+<code>.mcp.json</code>'s <code>{"mcpServers": …}</code> wrapper is unwrapped at the v4→v5
+migration boundary.<sup id="fnref:81"><a class="footnote-ref" href="#fn:81">81</a></sup></p>
+<p><img alt="MCP server lifecycle" src="figures/seq-mcp.svg" /></p>
+<p><strong>Start here:</strong> <code>mcp/config.py:MCPServer</code>, <code>mcp/client.py:MCPClient</code>.</p>
+<h3 id="5-sub-agent-definitions">5. Sub-agent definitions</h3>
+<p>Markdown frontmatter defining whole agents: own tools, skills, MCP
+config, hooks, condenser, confirmation policy, permission mode, max
+iterations and budget caps (<code>subagent/schema.py:AgentDefinition:198</code>).<sup id="fnref:63"><a class="footnote-ref" href="#fn:63">63</a></sup>
+Delegation goes through <code>DelegateExecutor</code>, which spawns full
+<code>LocalConversation</code> sub-conversations; <code>SubAgentScope</code>
+(<code>subagent/scope.py:25</code>) narrows the tool set per delegation; the
+<code>task_tool_set</code> exposes delegation to the model; <code>TaskManager</code> tracks tasks
+with resume.<sup id="fnref:64"><a class="footnote-ref" href="#fn:64">64</a></sup></p>
+<p><img alt="Sub-agent delegation" src="figures/seq-subagents.svg" /></p>
+<p><strong>Start here:</strong> <code>subagent/schema.py:AgentDefinition</code>,
+<code>openhands-tools/.../delegate/impl.py:DelegateExecutor</code>.</p>
+<h3 id="6-marketplace">6. Marketplace</h3>
+<p>A registry of plugin marketplaces with resolution and prefetch
+(<code>marketplace/registry.py:MarketplaceRegistry:79</code>) — the distribution
+layer for plugin bundles.<sup id="fnref:82"><a class="footnote-ref" href="#fn:82">82</a></sup></p>
+<p><img alt="Marketplace resolution" src="figures/seq-marketplace.svg" /></p>
+<p><strong>Start here:</strong> <code>marketplace/registry.py:MarketplaceRegistry</code>.</p>
+<h3 id="7-extensions-installation">7. Extensions installation</h3>
+<p>Fetch from local, git, or GitHub sources
+(<code>extensions/fetch.py:parse_extension_source</code>), then the
+install/enable/disable/update lifecycle with a metadata session
+(<code>extensions/installation/manager.py:InstallationManager:29</code>).<sup id="fnref:83"><a class="footnote-ref" href="#fn:83">83</a></sup></p>
+<p><img alt="Extension installation" src="figures/seq-extensions.svg" /></p>
+<p><strong>Start here:</strong> <code>extensions/installation/manager.py:InstallationManager</code>.</p>
+<h3 id="8-automation">8. Automation</h3>
+<p>The SDK side is deliberately thin: observability context — tags and kwargs
+for automation-dispatched conversations
+(<code>automation/__init__.py:automation_conversation_kwargs:126</code>).<sup id="fnref:67"><a class="footnote-ref" href="#fn:67">67</a></sup>
+Scheduling and dispatch live in the separate <code>OpenHands/automation</code> repo.
+If you come from Goose's recipes, recalibrate: OpenHands keeps the
+scheduler out of the harness.</p>
+<p><img alt="Automation dispatch" src="figures/seq-automation.svg" /></p>
+<p><strong>Start here:</strong> <code>sdk/automation/__init__.py</code>.</p>
+<h3 id="9-critic">9. Critic</h3>
+<p>Pluggable quality scoring wired into loop termination — see <a href="#the-critic-and-iterative-refinement">The critic
+and iterative refinement</a> above.
+<code>CriticBase.evaluate(events, git_patch) -&gt; CriticResult</code>
+(<code>critic/base.py:83</code>); per-action scoring during dispatch via
+<code>critic_mixin.py</code>; refinement injected at <code>_ActionBatch.finalize</code>.<sup id="fnref2:31"><a class="footnote-ref" href="#fn:31">31</a></sup><sup id="fnref2:33"><a class="footnote-ref" href="#fn:33">33</a></sup><sup id="fnref3:34"><a class="footnote-ref" href="#fn:34">34</a></sup></p>
+<p><img alt="Critic refinement" src="figures/seq-critic.svg" /></p>
+<p><strong>Start here:</strong> <code>critic/base.py:CriticBase</code>.</p>
+<h3 id="10-condenser">10. Condenser</h3>
+<p>Pluggable context compaction: <code>CondenserBase.condense(view, agent_llm) -&gt;
+View | Condensation</code> (<code>context/condenser/base.py:16</code>) —
+<code>LLMSummarizingCondenser</code> (rolling summary), <code>PipelineCondenser</code>,
+<code>NoOpCondenser</code> — triggered proactively (<code>handles_condensation_requests</code>)
+or reactively on context-window/malformed-history errors via
+<code>CondensationRequest</code> events.<sup id="fnref:60"><a class="footnote-ref" href="#fn:60">60</a></sup></p>
+<p><img alt="Condensation flow" src="figures/seq-condenser.svg" /></p>
+<p><strong>Start here:</strong> <code>context/condenser/base.py:CondenserBase</code>.</p>
+<h3 id="11-llm-router">11. LLM router</h3>
+<p><code>RouterLLM</code> (<code>llm/router/base.py:28</code>) subclasses <code>LLM</code>, holds
+<code>llms_for_routing: dict[str, LLM]</code>, and per completion <code>select_llm(messages)</code>
+picks the active model and delegates (<code>__getattr__</code> falls back to the
+first).<sup id="fnref:84"><a class="footnote-ref" href="#fn:84">84</a></sup> Implementations: <code>MultimodalRouter</code> (image-bearing turns go to
+a vision-capable model), <code>RandomRouter</code>. Route-aware runtime metadata feeds
+the condenser's token thresholds.<sup id="fnref:85"><a class="footnote-ref" href="#fn:85">85</a></sup> Alongside it, the <code>switch_llm</code> /
+<code>classify_and_switch_llm</code> builtin tools let the <em>agent</em> swap its own model
+mid-run — routing by policy, switching by agency.<sup id="fnref:86"><a class="footnote-ref" href="#fn:86">86</a></sup></p>
+<p><img alt="LLM routing" src="figures/seq-router.svg" /></p>
+<p><strong>Start here:</strong> <code>llm/router/base.py:RouterLLM</code>.</p>
+<h3 id="12-agent-server-and-acp">12. Agent server and ACP</h3>
+<p>The agent-server is the deployment substrate: REST/WebSocket API,
+conversation orchestration, <code>EventService</code> pub/sub fan-out, leases,
+Docker runtime provisioning (<code>openhands-agent-server/</code>).<sup id="fnref2:6"><a class="footnote-ref" href="#fn:6">6</a></sup> <code>ACPAgent</code>
+(<code>agent/acp_agent.py:1714</code>, ~4,700 lines) inverts the harness: it hosts an
+external ACP server (Claude Code, Codex, Gemini CLI) <em>as</em> the loop, with
+the SDK as adapter.<sup id="fnref:66"><a class="footnote-ref" href="#fn:66">66</a></sup></p>
+<p><img alt="Agent server and ACP host mode" src="figures/seq-acp.svg" /></p>
+<p><strong>Start here:</strong> <code>agent_server/event_service.py:EventService</code>,
+<code>agent/acp_agent.py:1714</code>.</p>
+<h2 id="deliberate-omissions">Deliberate omissions</h2>
+<p>OpenHands ships no git-level safety net — no auto-commit, no stash, no
+session undo. The <code>git</code> module is read-only helpers plus cached clones
+for extensions; the only undo anywhere is per-file <code>undo_edit</code> in the
+file editor (verified: case-insensitive grep for <code>commit|undo|stash</code> over
+<code>sdk/git/*.py</code> and <code>openhands-tools/**</code> finds only that one).<sup id="fnref:87"><a class="footnote-ref" href="#fn:87">87</a></sup>
+Contrast Aider, whose git auto-commit plus <code>/undo</code> is the safety model.
+There is no OS sandbox in the loop — no Seatbelt, no seccomp, no
+bubblewrap, no Landlock (grep over <code>openhands-sdk/</code> and <code>openhands-tools/</code>
+returns zero hits);<sup id="fnref:88"><a class="footnote-ref" href="#fn:88">88</a></sup> sandboxing is a deployment concern handled by the
+agent-server's Docker runtimes. Contrast Codex, whose four-layer sandbox
+stack sits inside the harness. There is no standalone slash-command
+dispatcher, no recipes-as-programs (Goose), no repo-map (Aider), no
+proto-bus bridge (Cline) — though ACP host mode is arguably the bridge's
+inverse: instead of embedding the harness in the IDE, the harness embeds
+<em>other harnesses</em>.</p>
+<p>Read the omissions as the SDK thesis: OpenHands is infrastructure for
+building agents, not an agent product with opinions. Safety nets, sandboxes,
+and schedulers are the deployer's job — the SDK gives you the stream, the
+hooks, and the confirmation policy to build them with.</p>
+<h2 id="comparison-matrix-row">Comparison matrix row</h2>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Dimension</th>
+<th>OpenHands (v1.53.0)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>Agent loop</td>
+<td>Event-sourced; <code>LocalConversation._run</code> → <code>Agent.step</code> → pure <code>classify_response</code>; <code>max_iteration_per_run</code> 500; stop hooks can veto FINISHED <sup id="fnref2:18"><a class="footnote-ref" href="#fn:18">18</a></sup><sup id="fnref3:19"><a class="footnote-ref" href="#fn:19">19</a></sup><sup id="fnref2:20"><a class="footnote-ref" href="#fn:20">20</a></sup><sup id="fnref3:26"><a class="footnote-ref" href="#fn:26">26</a></sup></td>
+</tr>
+<tr>
+<td>2</td>
+<td>Tool system</td>
+<td>Spec/registry split; SDK never imports <code>openhands-tools</code>; Pydantic validation; parallel batches in original order <sup id="fnref4:8"><a class="footnote-ref" href="#fn:8">8</a></sup><sup id="fnref2:47"><a class="footnote-ref" href="#fn:47">47</a></sup><sup id="fnref2:54"><a class="footnote-ref" href="#fn:54">54</a></sup></td>
+</tr>
+<tr>
+<td>3</td>
+<td>Model providers</td>
+<td>LiteLLM; Chat Completions + Responses API; per-completion <code>RouterLLM</code>; agent self-swaps via <code>switch_llm</code> <sup id="fnref3:40"><a class="footnote-ref" href="#fn:40">40</a></sup><sup id="fnref2:55"><a class="footnote-ref" href="#fn:55">55</a></sup><sup id="fnref2:84"><a class="footnote-ref" href="#fn:84">84</a></sup><sup id="fnref2:86"><a class="footnote-ref" href="#fn:86">86</a></sup></td>
+</tr>
+<tr>
+<td>4</td>
+<td>Prompt construction</td>
+<td>Cached incremental view with enforced invariants; <code>&lt;available_skills&gt;</code> progressive disclosure <sup id="fnref3:37"><a class="footnote-ref" href="#fn:37">37</a></sup><sup id="fnref2:38"><a class="footnote-ref" href="#fn:38">38</a></sup><sup id="fnref2:15"><a class="footnote-ref" href="#fn:15">15</a></sup></td>
+</tr>
+<tr>
+<td>5</td>
+<td>Memory/session</td>
+<td>JSONL <code>EventLog</code> per event; pluggable condensers; server <code>base_state.json</code> resume; no cross-session recall <sup id="fnref3:49"><a class="footnote-ref" href="#fn:49">49</a></sup><sup id="fnref3:60"><a class="footnote-ref" href="#fn:60">60</a></sup></td>
+</tr>
+<tr>
+<td>6</td>
+<td>Reasoning/planning</td>
+<td>Critic + iterative refinement gates termination; <code>/goal</code> LLM judge loop; sub-agent frontmatter defs <sup id="fnref4:34"><a class="footnote-ref" href="#fn:34">34</a></sup><sup id="fnref3:30"><a class="footnote-ref" href="#fn:30">30</a></sup><sup id="fnref3:63"><a class="footnote-ref" href="#fn:63">63</a></sup></td>
+</tr>
+<tr>
+<td>7</td>
+<td>Extensibility</td>
+<td>Skills, 3-kind hooks, plugins, MCP, sub-agents, marketplace, extensions, condenser, router, critic — 12 axes <sup id="fnref2:70"><a class="footnote-ref" href="#fn:70">70</a></sup><sup id="fnref2:72"><a class="footnote-ref" href="#fn:72">72</a></sup><sup id="fnref2:78"><a class="footnote-ref" href="#fn:78">78</a></sup></td>
+</tr>
+<tr>
+<td>8</td>
+<td>Interfaces</td>
+<td>SDK / agent-server REST+WS / ACP host mode / TS client; all consume the event stream <sup id="fnref3:6"><a class="footnote-ref" href="#fn:6">6</a></sup><sup id="fnref3:66"><a class="footnote-ref" href="#fn:66">66</a></sup></td>
+</tr>
+<tr>
+<td>9</td>
+<td>Failure handling</td>
+<td>Tenacity retries; condensation recovery; stuck detector; corrective nudges; hook fail-open <sup id="fnref2:56"><a class="footnote-ref" href="#fn:56">56</a></sup><sup id="fnref4:60"><a class="footnote-ref" href="#fn:60">60</a></sup><sup id="fnref2:61"><a class="footnote-ref" href="#fn:61">61</a></sup><sup id="fnref2:73"><a class="footnote-ref" href="#fn:73">73</a></sup></td>
+</tr>
+<tr>
+<td>10</td>
+<td>Security model</td>
+<td>Risk labels + confirmation policy + defense-in-depth rails; no OS sandbox in the loop <sup id="fnref3:44"><a class="footnote-ref" href="#fn:44">44</a></sup><sup id="fnref2:58"><a class="footnote-ref" href="#fn:58">58</a></sup><sup id="fnref2:88"><a class="footnote-ref" href="#fn:88">88</a></sup></td>
+</tr>
+</tbody>
+</table>
+<h2 id="endnotes">Endnotes</h2>
+<p>All notes are VERIFIED against <code>v1.53.0</code>
+(<code>54daf056bd863bb46f922a2fe9324dd736b37ff6</code>) unless marked DOCS.
+<code>GH</code> = <code>https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/</code>.</p>
+<div class="footnote">
+<hr />
+<ol>
+<li id="fn:1">
+<p>Scope correction, VERIFIED via GitHub API 2026-10-05:
+<code>OpenHands/OpenHands</code> at tag <code>v1.24.0</code> resolves to the same SHA
+(<code>7dc6805406ea3c76cb4a3ce407c3c72d481b0ac6</code>) as <code>All-Hands-AI/OpenHands</code>
+(org rename), and its README describes "Agent Canvas — the self-hosted
+developer control center for coding agents and automations. Run
+OpenHands, Claude Code, Codex, Gemini, or any ACP-compatible agent."
+The agent harness under analysis is <code>OpenHands/software-agent-sdk</code>
+("A clean, modular SDK for building AI agents with OpenHands V1"),
+tag <code>v1.53.0</code>, released 2026-10-05.&#160;<a class="footnote-backref" href="#fnref:1" title="Jump back to footnote 1 in the text">&#8617;</a></p>
+</li>
+<li id="fn:2">
+<p><code>ConversationState</code> holds events; the model input comes from a cached,
+incrementally maintained view — see
+<a href="https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/context/view/view.py">GH…/sdk/context/view/view.py</a>
+and <code>prepare_llm_messages(state.view, condenser, llm)</code> in
+<a href="https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/agent/utils.py#L564">GH…/sdk/agent/utils.py#L564</a>.&#160;<a class="footnote-backref" href="#fnref:2" title="Jump back to footnote 2 in the text">&#8617;</a></p>
+</li>
+<li id="fn:3">
+<p>Loop: <code>LocalConversation._run</code>
+(<a href="https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/conversation/impl/local_conversation.py#L1917">GH…/conversation/impl/local_conversation.py#L1917</a>,
+<code>while True:</code> at L1935) → <code>Agent.step</code>
+(<a href="https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/agent/agent.py#L693">GH…/sdk/agent/agent.py#L693</a>)
+→ <code>classify_response</code>
+(<a href="https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/agent/response_dispatch.py#L54">GH…/sdk/agent/response_dispatch.py#L54</a>).&#160;<a class="footnote-backref" href="#fnref:3" title="Jump back to footnote 3 in the text">&#8617;</a></p>
+</li>
+<li id="fn:4">
+<p><code>HookEventProcessor</code>
+(<a href="https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/hooks/conversation_hooks.py#L50">GH…/sdk/hooks/conversation_hooks.py#L50</a>)
+wraps the <code>on_event</code> callback; hooks are an event-stream interceptor.&#160;<a class="footnote-backref" href="#fnref:4" title="Jump back to footnote 4 in the text">&#8617;</a></p>
+</li>
+<li id="fn:5">
+<p><code>CriticBase.evaluate(events, git_patch) -&gt; CriticResult</code>
+(<a href="https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/critic/base.py#L83">GH…/sdk/critic/base.py#L83</a>);
+iterative refinement at
+<a href="https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/agent/agent.py#L399">GH…/sdk/agent/agent.py#L399</a>
+and L647-L648.&#160;<a class="footnote-backref" href="#fnref:5" title="Jump back to footnote 5 in the text">&#8617;</a></p>
+</li>
+<li id="fn:6">
+<p>Agent-server: REST/WebSocket API, conversation orchestration, event
+service with pub/sub fan-out, leases, Docker runtime provisioning — see
+<code>openhands-agent-server/</code>
+(<a href="https://github.com/OpenHands/software-agent-sdk/tree/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-agent-server">GH… tree</a>),
+<code>EventService</code> in
+<a href="https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-agent-server/openhands/agent_server/event_service.py">GH…/event_service.py</a>.&#160;<a class="footnote-backref" href="#fnref:6" title="Jump back to footnote 6 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:6" title="Jump back to footnote 6 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:6" title="Jump back to footnote 6 in the text">&#8617;</a></p>
+</li>
+<li id="fn:7">
+<p>Monorepo layout and per-package sizes (Python lines incl.
+blanks/comments, measured 2026-10-05 at the pinned SHA):
+<code>openhands-sdk/</code> 303 files / ~77k lines, <code>openhands-tools/</code> 93 /
+~17k, <code>openhands-workspace/</code> 14 / ~3k, <code>openhands-agent-server/</code> 89 /
+~33k.&#160;<a class="footnote-backref" href="#fnref:7" title="Jump back to footnote 7 in the text">&#8617;</a></p>
+</li>
+<li id="fn:8">
+<p><code>Tool</code> as a wire-contract spec:
+<a href="https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/tool/spec.py#L12">GH…/sdk/tool/spec.py#L12</a>
+(<code>class Tool(BaseModel)</code>); runtime resolution via
+<a href="https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/tool/registry.py">GH…/sdk/tool/registry.py</a>
+(<code>register_tool</code>, <code>resolve_tool</code>); the SDK package never imports
+<code>openhands-tools</code> (dependency direction enforced by design, per the
+<code>tool/defaults.py</code> docstring).&#160;<a class="footnote-backref" href="#fnref:8" title="Jump back to footnote 8 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:8" title="Jump back to footnote 8 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:8" title="Jump back to footnote 8 in the text">&#8617;</a><a class="footnote-backref" href="#fnref4:8" title="Jump back to footnote 8 in the text">&#8617;</a></p>
+</li>
+<li id="fn:9">
+<p><code>EventType</code>
+(<a href="https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/event/types.py#L4">GH…/sdk/event/types.py#L4</a>);
+<code>SourceType</code> at
+<a href="https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/event/types.py#L8">L8</a>.&#160;<a class="footnote-backref" href="#fnref:9" title="Jump back to footnote 9 in the text">&#8617;</a></p>
+</li>
+<li id="fn:10">
+<p>Event tree: <code>parent_id</code>, <code>ROOT_PARENT_ID = "__root__"</code>
+(<a href="https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/event/types.py#L10">GH…/sdk/event/types.py#L10</a>).&#160;<a class="footnote-backref" href="#fnref:10" title="Jump back to footnote 10 in the text">&#8617;</a></p>
+</li>
+<li id="fn:11">
+<p><code>Event</code> base
+(<a href="https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/event/base.py#L20">GH…/sdk/event/base.py#L20</a>);
+<code>LLMConvertibleEvent</code> at
+<a href="https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/event/base.py#L75">L75</a>;
+<code>ActionEvent</code>
+(<a href="https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/event/llm_convertible/action.py#L24">GH…/llm_convertible/action.py#L24</a>,
+fields include <code>security_risk</code> and <code>critic_result</code>);
+<code>MessageEvent</code>
+(<a href="https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/event/llm_convertible/message.py#L25">GH…/llm_convertible/message.py#L25</a>);
+<code>ObservationBaseEvent</code> / <code>ObservationEvent</code>
+(<a href="https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/event/llm_convertible/observation.py#L17">GH…/llm_convertible/observation.py#L17</a>
+/ <a href="https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/event/llm_convertible/observation.py#L32">L32</a>),
+<code>UserRejectObservation</code> at L86, <code>AgentErrorEvent</code> at L138;
+<code>SystemPromptEvent</code>
+(<a href="https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/event/llm_convertible/system.py#L12">GH…/llm_convertible/system.py#L12</a>).&#160;<a class="footnote-backref" href="#fnref:11" title="Jump back to footnote 11 in the text">&#8617;</a></p>
+</li>
+<li id="fn:12">
+<p>Non-LLM events: <code>Condensation</code> / <code>CondensationRequest</code> /
+<code>CondensationSummaryEvent</code>
+(<a href="https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/event/condenser.py">GH…/sdk/event/condenser.py</a>);
+<code>ConversationStateUpdateEvent</code>
+(<a href="https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/event/conversation_state.py">GH…/sdk/event/conversation_state.py</a>);
+<code>HookExecutionEvent</code>
+(<a href="https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/event/hook_execution.py">GH…/sdk/event/hook_execution.py</a>);
+<code>LLMCompletionLogEvent</code>, <code>StreamingDeltaEvent</code>
+(<a href="https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/event/streaming_delta.py">GH…/sdk/event/streaming_delta.py</a>),
+<code>TokenEvent</code>
+(<a href="https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/event/token.py">GH…/sdk/event/token.py</a>),
+<code>InterruptEvent</code> / <code>PauseEvent</code>
+(<a href="https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/event/user_action.py">GH…/sdk/event/user_action.py</a>),
+<code>ACPToolCallEvent</code>
+(<a href="https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/event/acp_tool_call.py">GH…/sdk/event/acp_tool_call.py</a>).&#160;<a class="footnote-backref" href="#fnref:12" title="Jump back to footnote 12 in the text">&#8617;</a></p>
+</li>
+<li id="fn:13">
+<p>Producers: agent emits via <code>on_event</code>; tools produce observations;
+hooks produce <code>HookExecutionEvent</code>s; user actions produce
+interrupt/pause; the condenser produces condensation events — see the
+trace in <code>Agent._step</code>
+(<a href="https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/agent/agent.py#L706">GH…/sdk/agent/agent.py#L706</a>)
+and <code>LocalConversation._on_event</code>.&#160;<a class="footnote-backref" href="#fnref:13" title="Jump back to footnote 13 in the text">&#8617;</a></p>
+</li>
+<li id="fn:14">
+<p>Cached incremental view: <code>prepare_llm_messages(state.view, condenser,
+llm)</code> at
+<a href="https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/agent/utils.py#L564">GH…/sdk/agent/utils.py#L564</a>
+(overloads L573/L581); design comment referencing issue #3053 in the
+view code.&#160;<a class="footnote-backref" href="#fnref:14" title="Jump back to footnote 14 in the text">&#8617;</a></p>
+</li>
+<li id="fn:15">
+<p>View invariants: observation uniqueness, tool-call matching,
+batch/tool-loop atomicity — enforced by view properties in
+<a href="https://github.com/OpenHands/software-agent-sdk/tree/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/context/view/properties">GH…/sdk/context/view/properties/</a>.&#160;<a class="footnote-backref" href="#fnref:15" title="Jump back to footnote 15 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:15" title="Jump back to footnote 15 in the text">&#8617;</a></p>
+</li>
+<li id="fn:16">
+<p>PreToolUse interception: deny marks the action blocked via
+<code>state.block_action(event.id, reason)</code>; <code>_ActionBatch.prepare</code>
+partitions it out and emits <code>UserRejectObservation</code> with
+<code>rejection_source="hook"</code> instead of executing — see
+<a href="https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/hooks/conversation_hooks.py#L50">GH…/sdk/hooks/conversation_hooks.py#L50</a>
+and <code>_ActionBatch</code> in
+<a href="https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/agent/agent.py#L380">GH…/sdk/agent/agent.py#L380</a>.&#160;<a class="footnote-backref" href="#fnref:16" title="Jump back to footnote 16 in the text">&#8617;</a></p>
+</li>
+<li id="fn:17">
+<p><code>StreamContext</code>
+(<a href="https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/agent/stream_context.py">GH…/sdk/agent/stream_context.py</a>)
+mints event IDs for streamed items; <code>_maybe_emit_vllm_tokens</code> emits
+<code>TokenEvent</code> when the provider returns token IDs (<code>return_token_ids</code>
+in litellm_extra_body).&#160;<a class="footnote-backref" href="#fnref:17" title="Jump back to footnote 17 in the text">&#8617;</a></p>
+</li>
+<li id="fn:18">
+<p><code>LocalConversation.run</code> / <code>arun</code>
+(<a href="https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/conversation/impl/local_conversation.py#L1902">GH…/conversation/impl/local_conversation.py#L1902</a>
+/ <a href="https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/conversation/impl/local_conversation.py#L2093">L2093</a>);
+<code>_run</code> / <code>_arun</code> at
+<a href="https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/conversation/impl/local_conversation.py#L1917">L1917</a>
+/ L2114; <code>while True:</code> at L1935 / L2157.&#160;<a class="footnote-backref" href="#fnref:18" title="Jump back to footnote 18 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:18" title="Jump back to footnote 18 in the text">&#8617;</a></p>
+</li>
+<li id="fn:19">
+<p>Stop-hook veto on FINISHED:
+<a href="https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/conversation/impl/local_conversation.py#L1952-L1975">GH…/local_conversation.py#L1952-L1975</a>
+(deny → <code>logger.info("Stop hook denied agent stopping")</code>, feedback
+injected as environment message with <code>ACP_STOP_HOOK_FEEDBACK_PREFIX</code>,
+status flipped back to RUNNING); documented WS-FINISHED race in the
+repo AGENTS.md: clients must treat FINISHED as a hint.&#160;<a class="footnote-backref" href="#fnref:19" title="Jump back to footnote 19 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:19" title="Jump back to footnote 19 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:19" title="Jump back to footnote 19 in the text">&#8617;</a></p>
+</li>
+<li id="fn:20">
+<p>Termination conditions: PAUSED/STUCK break at
+<a href="https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/conversation/impl/local_conversation.py#L1938-L1943">GH…/local_conversation.py#L1938-L1943</a>;
+WAITING_FOR_CONFIRMATION break at L2011-L2016; budget
+(<code>_budget_exceeded_detail</code> → <code>MaxBudgetReached</code>) at L2018-L2023;
+<code>max_iteration_per_run</code> (default 500 at L219) →
+<code>ConversationErrorEvent(code="MaxIterationsReached")</code> at L2024-L2045.&#160;<a class="footnote-backref" href="#fnref:20" title="Jump back to footnote 20 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:20" title="Jump back to footnote 20 in the text">&#8617;</a></p>
+</li>
+<li id="fn:21">
+<p><code>conversation.interrupt()</code> cancels the tracked <code>_arun_task</code>;
+<code>asyncio.CancelledError</code> propagates through the LLM stream → agent
+step → loop; status → PAUSED with <code>InterruptEvent</code> (policy text in
+repo AGENTS.md).&#160;<a class="footnote-backref" href="#fnref:21" title="Jump back to footnote 21 in the text">&#8617;</a></p>
+</li>
+<li id="fn:22">
+<p><code>Agent.step</code> / <code>astep</code>
+(<a href="https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/agent/agent.py#L693">GH…/sdk/agent/agent.py#L693</a>
+/ <a href="https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/agent/agent.py#L898">L898</a>);
+internal <code>_step</code> at L706.&#160;<a class="footnote-backref" href="#fnref:22" title="Jump back to footnote 22 in the text">&#8617;</a></p>
+</li>
+<li id="fn:23">
+<p><code>prepare_llm_messages(state.view, condenser, llm)</code>
+(<a href="https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/agent/utils.py#L564">GH…/sdk/agent/utils.py#L564</a>).&#160;<a class="footnote-backref" href="#fnref:23" title="Jump back to footnote 23 in the text">&#8617;</a></p>
+</li>
+<li id="fn:24">
+<p><code>llm.generate(..., add_security_risk_prediction=True)</code> in
+<code>Agent._step</code>
+(<a href="https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/agent/agent.py#L706">GH…/sdk/agent/agent.py#L706</a>).&#160;<a class="footnote-backref" href="#fnref:24" title="Jump back to footnote 24 in the text">&#8617;</a></p>
+</li>
+<li id="fn:25">
+<p>Error paths in <code>_step</code>: malformed function call → user-role error
+<code>MessageEvent</code>; content-policy violation → deterministic nudge;
+<code>LLMMalformedConversationHistoryError</code> → condensation recovery;
+<code>LLMContextWindowExceedError</code> → <code>CondensationRequest</code> event (if the
+condenser handles requests) else raise.&#160;<a class="footnote-backref" href="#fnref:25" title="Jump back to footnote 25 in the text">&#8617;</a></p>
+</li>
+<li id="fn:26">
+<p><code>classify_response</code> — pure function, decision priority TOOL_CALLS &gt;
+CONTENT &gt; REASONING_ONLY &gt; EMPTY:
+<a href="https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/agent/response_dispatch.py#L54">GH…/sdk/agent/response_dispatch.py#L54</a>
+(priority documented L54-L66; "pure: no side effects, no logging, no
+mutation").&#160;<a class="footnote-backref" href="#fnref:26" title="Jump back to footnote 26 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:26" title="Jump back to footnote 26 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:26" title="Jump back to footnote 26 in the text">&#8617;</a></p>
+</li>
+<li id="fn:27">
+<p><code>_handle_tool_calls</code> → per-call <code>_get_action_event</code>
+(<a href="https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/agent/agent.py#L1311">GH…/sdk/agent/agent.py#L1311</a>);
+parallel execution via <code>ParallelToolExecutor</code>
+(<a href="https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/agent/parallel_executor.py">GH…/sdk/agent/parallel_executor.py</a>,
+<code>tool_concurrency_limit</code>); async path runs each tool in its own
+thread (<code>run_in_executor</code> + <code>asyncio.gather</code>).&#160;<a class="footnote-backref" href="#fnref:27" title="Jump back to footnote 27 in the text">&#8617;</a></p>
+</li>
+<li id="fn:28">
+<p><code>CONTENT</code> → <code>_handle_content_response</code> (emit <code>MessageEvent</code>,
+status=FINISHED, "awaits user input"); <code>REASONING_ONLY</code>/<code>EMPTY</code> →
+corrective nudge with <code>source="environment"</code> — see
+<a href="https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/agent/response_dispatch.py">GH…/sdk/agent/response_dispatch.py</a>.&#160;<a class="footnote-backref" href="#fnref:28" title="Jump back to footnote 28 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:28" title="Jump back to footnote 28 in the text">&#8617;</a></p>
+</li>
+<li id="fn:29">
+<p><code>_ActionBatch.finalize</code>
+(<a href="https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/agent/agent.py#L380">GH…/sdk/agent/agent.py#L380</a>):
+<code>FinishTool</code> truncates the batch; iterative-refinement check at
+L399/L647-L648 injects a followup user message instead of FINISHED.&#160;<a class="footnote-backref" href="#fnref:29" title="Jump back to footnote 29 in the text">&#8617;</a></p>
+</li>
+<li id="fn:30">
+<p><code>GoalController</code>
+(<a href="https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/conversation/goal/controller.py#L78">GH…/sdk/conversation/goal/controller.py#L78</a>);
+LLM judge at
+<a href="https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/conversation/goal/judge.py">GH…/sdk/conversation/goal/judge.py</a>;
+drivers: sync <code>run_goal</code>
+(<a href="https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/conversation/goal/runner.py">GH…/sdk/conversation/goal/runner.py</a>)
+or async agent-server task.&#160;<a class="footnote-backref" href="#fnref:30" title="Jump back to footnote 30 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:30" title="Jump back to footnote 30 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:30" title="Jump back to footnote 30 in the text">&#8617;</a><a class="footnote-backref" href="#fnref4:30" title="Jump back to footnote 30 in the text">&#8617;</a></p>
+</li>
+<li id="fn:31">
+<p><code>CriticBase.evaluate(events, git_patch) -&gt; CriticResult</code>
+(<a href="https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/critic/base.py#L83">GH…/sdk/critic/base.py#L83</a>);
+modes <code>finish_and_message</code> (default) vs <code>all_actions</code>.&#160;<a class="footnote-backref" href="#fnref:31" title="Jump back to footnote 31 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:31" title="Jump back to footnote 31 in the text">&#8617;</a></p>
+</li>
+<li id="fn:32">
+<p>Implementations: <code>AgentFinishedCritic</code>, <code>EmptyPatchCritic</code>,
+<code>PassCritic</code>, and the API critic with rubric taxonomy in
+<a href="https://github.com/OpenHands/software-agent-sdk/tree/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/critic/impl/api">GH…/sdk/critic/impl/api/</a>.&#160;<a class="footnote-backref" href="#fnref:32" title="Jump back to footnote 32 in the text">&#8617;</a></p>
+</li>
+<li id="fn:33">
+<p>Per-action critic scoring during dispatch: <code>_get_action_event</code>
+calls <code>_evaluate_with_critic</code> when <code>_should_evaluate_with_critic(action)</code>
+(<a href="https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/agent/critic_mixin.py#L34">GH…/sdk/agent/critic_mixin.py</a>);
+the result rides on the <code>ActionEvent.critic_result</code> field
+(<a href="https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/event/llm_convertible/action.py#L24">GH…/sdk/event/llm_convertible/action.py#L24</a>).&#160;<a class="footnote-backref" href="#fnref:33" title="Jump back to footnote 33 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:33" title="Jump back to footnote 33 in the text">&#8617;</a></p>
+</li>
+<li id="fn:34">
+<p>Iterative refinement at finalize:
+<a href="https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/agent/agent.py#L399">GH…/sdk/agent/agent.py#L399</a>
+(<code>should_continue, followup = check_iterative_refinement(...)</code>) and
+L647-L648 (the check itself); score below threshold → followup
+user-role <code>MessageEvent</code> injected, loop continues instead of
+FINISHED.&#160;<a class="footnote-backref" href="#fnref:34" title="Jump back to footnote 34 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:34" title="Jump back to footnote 34 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:34" title="Jump back to footnote 34 in the text">&#8617;</a><a class="footnote-backref" href="#fnref4:34" title="Jump back to footnote 34 in the text">&#8617;</a></p>
+</li>
+<li id="fn:35">
+<p><code>LocalConversation.send_message</code>
+(<a href="https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/conversation/impl/local_conversation.py#L1807">GH…/conversation/impl/local_conversation.py#L1807</a>):
+resets FINISHED/STUCK to IDLE; <code>UserPromptSubmit</code> hooks via
+<code>HookEventProcessor.on_event</code>; skill-trigger matching via
+<code>agent_context.get_user_message_suffix</code>
+(<a href="https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/conversation/impl/local_conversation.py#L1845">L1845</a>),
+names recorded in <code>state.activated_knowledge_skills</code> (L1848).&#160;<a class="footnote-backref" href="#fnref:35" title="Jump back to footnote 35 in the text">&#8617;</a></p>
+</li>
+<li id="fn:36">
+<p>Blocked-message handling in <code>_step</code>: <code>state.pop_blocked_message</code> →
+FINISHED, skip processing — the hook veto lands before any model call.&#160;<a class="footnote-backref" href="#fnref:36" title="Jump back to footnote 36 in the text">&#8617;</a></p>
+</li>
+<li id="fn:37">
+<p><code>prepare_llm_messages(state.view, condenser, llm)</code>:
+<a href="https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/agent/utils.py#L564">GH…/sdk/agent/utils.py#L564</a>.&#160;<a class="footnote-backref" href="#fnref:37" title="Jump back to footnote 37 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:37" title="Jump back to footnote 37 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:37" title="Jump back to footnote 37 in the text">&#8617;</a></p>
+</li>
+<li id="fn:38">
+<p><code>AgentContext._resolve_dynamic_data()</code> renders <code>&lt;available_skills&gt;</code>
+into the system-prompt suffix
+(<a href="https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/context/agent_context.py#L360-L454">GH…/sdk/context/agent_context.py#L360-L454</a>);
+AgentSkills descriptions truncated to 1024 chars per spec
+(<a href="https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/skills/skill.py#L234-L235">GH…/sdk/skills/skill.py#L234-L235</a>,
+<code>MAX_DESCRIPTION_LENGTH = 1024</code>).&#160;<a class="footnote-backref" href="#fnref:38" title="Jump back to footnote 38 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:38" title="Jump back to footnote 38 in the text">&#8617;</a></p>
+</li>
+<li id="fn:39">
+<p>SDK builtins (<code>finish</code>, <code>think</code>, <code>switch_llm</code>,
+<code>classify_and_switch_llm</code>, <code>invoke_skill</code>, <code>vision_inspect</code>) in
+<a href="https://github.com/OpenHands/software-agent-sdk/tree/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/tool/builtins">GH…/sdk/tool/builtins/</a>;
+default exec set (<code>terminal</code>, <code>file_editor</code>, <code>task_tracker</code>) at
+<a href="https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/tool/defaults.py#L27">GH…/sdk/tool/defaults.py#L27</a>.&#160;<a class="footnote-backref" href="#fnref:39" title="Jump back to footnote 39 in the text">&#8617;</a></p>
+</li>
+<li id="fn:40">
+<p><code>LLM</code> wraps <code>litellm.completion</code> / <code>litellm.acompletion</code>
+(<a href="https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/llm/llm.py#L76-L80">GH…/sdk/llm/llm.py#L76-L80</a>);
+Chat Completions vs Responses API dispatch at
+<a href="https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/llm/llm.py#L1673">L1673</a>
+(<code>uses_responses_api()</code>).&#160;<a class="footnote-backref" href="#fnref:40" title="Jump back to footnote 40 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:40" title="Jump back to footnote 40 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:40" title="Jump back to footnote 40 in the text">&#8617;</a></p>
+</li>
+<li id="fn:41">
+<p><code>add_security_risk_prediction=True</code> in the <code>llm.generate</code> call
+inside <code>Agent._step</code>
+(<a href="https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/agent/agent.py#L706">GH…/sdk/agent/agent.py#L706</a>).&#160;<a class="footnote-backref" href="#fnref:41" title="Jump back to footnote 41 in the text">&#8617;</a></p>
+</li>
+<li id="fn:42">
+<p><code>_get_action_event</code>
+(<a href="https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/agent/agent.py#L1311">GH…/sdk/agent/agent.py#L1311</a>):
+argument parsing → <code>normalize_tool_call</code> → tool lookup → Pydantic
+validation → security-risk extraction → critic evaluation →
+<code>ActionEvent</code> emitted via <code>on_event</code>.&#160;<a class="footnote-backref" href="#fnref:42" title="Jump back to footnote 42 in the text">&#8617;</a></p>
+</li>
+<li id="fn:43">
+<p><code>state.block_action(event.id, reason)</code> on PreToolUse deny; see
+<a href="https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/hooks/conversation_hooks.py#L50">GH…/sdk/hooks/conversation_hooks.py#L50</a>.&#160;<a class="footnote-backref" href="#fnref:43" title="Jump back to footnote 43 in the text">&#8617;</a></p>
+</li>
+<li id="fn:44">
+<p><code>_requires_user_confirmation</code>
+(<a href="https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/agent/agent.py#L1130">GH…/sdk/agent/agent.py#L1130</a>);
+<code>ConfirmationPolicy</code> (AlwaysConfirm / NeverConfirm /
+ConfirmRisky(threshold)) at
+<a href="https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/security/confirmation_policy.py">GH…/sdk/security/confirmation_policy.py</a>;
+<code>SecurityAnalyzerBase</code>
+(<a href="https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/security/analyzer.py#L15">GH…/sdk/security/analyzer.py#L15</a>)
+with <code>LLMSecurityAnalyzer</code>, <code>PolicyRailSecurityAnalyzer</code>
+(<a href="https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/security/defense_in_depth/policy_rails.py">GH…/sdk/security/defense_in_depth/policy_rails.py</a>),
+<code>EnsembleSecurityAnalyzer</code>, <code>GraySwanAnalyzer</code>
+(<a href="https://github.com/OpenHands/software-agent-sdk/tree/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/security/grayswan">GH…/sdk/security/grayswan/</a>).&#160;<a class="footnote-backref" href="#fnref:44" title="Jump back to footnote 44 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:44" title="Jump back to footnote 44 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:44" title="Jump back to footnote 44 in the text">&#8617;</a></p>
+</li>
+<li id="fn:45">
+<p>Without a configured analyzer, risk is always UNKNOWN and the LLM's
+own <code>security_risk</code> field is ignored:
+<a href="https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/agent/agent.py#L1173-L1198">GH…/sdk/agent/agent.py#L1173-L1198</a>.&#160;<a class="footnote-backref" href="#fnref:45" title="Jump back to footnote 45 in the text">&#8617;</a></p>
+</li>
+<li id="fn:46">
+<p>Confirmation gate → <code>WAITING_FOR_CONFIRMATION</code>; next <code>run()</code>
+executes pending actions as implicit confirmation
+(<a href="https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/conversation/impl/local_conversation.py#L1985-L1990">GH…/sdk/conversation/impl/local_conversation.py#L1985-L1990</a>);
+<code>FinishAction</code>/<code>ThinkAction</code> alone never confirm.&#160;<a class="footnote-backref" href="#fnref:46" title="Jump back to footnote 46 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:46" title="Jump back to footnote 46 in the text">&#8617;</a></p>
+</li>
+<li id="fn:47">
+<p><code>_execute_actions</code> / <code>_aexecute_actions</code> -&gt; <code>_ActionBatch.prepare</code>
+(truncate at <code>FinishTool</code>; partition hook-blocked into
+<code>UserRejectObservation(rejection_source="hook")</code>; execute the rest via
+<code>ParallelToolExecutor</code> bounded by <code>tool_concurrency_limit</code>;
+<code>ObservationEvent</code>s emitted in original call order) — see
+<a href="https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/agent/agent.py#L380-L411">GH…/sdk/agent/agent.py#L380-L411</a>
+and
+<a href="https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/agent/parallel_executor.py">GH…/sdk/agent/parallel_executor.py</a>.&#160;<a class="footnote-backref" href="#fnref:47" title="Jump back to footnote 47 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:47" title="Jump back to footnote 47 in the text">&#8617;</a></p>
+</li>
+<li id="fn:48">
+<p>Tool errors become <code>AgentErrorEvent</code> (tool raised <code>ValueError</code>);
+<code>fix_malformed_tool_arguments</code> repairs malformed args before
+validation fails — see <code>Agent._execute_action_event</code>
+(<a href="https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/agent/agent.py#L1468">GH…/sdk/agent/agent.py#L1468</a>).&#160;<a class="footnote-backref" href="#fnref:48" title="Jump back to footnote 48 in the text">&#8617;</a></p>
+</li>
+<li id="fn:49">
+<p><code>EventLog</code> — thread/process-safe, per-event JSONL under the
+conversation directory:
+<a href="https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/conversation/event_store.py#L34">GH…/sdk/conversation/event_store.py#L34</a>;
+<code>FileStore</code> backends (local/memory/cache) in
+<a href="https://github.com/OpenHands/software-agent-sdk/tree/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/io">GH…/sdk/io/</a>;
+agent-server persists <code>meta.json</code> / <code>base_state.json</code> / events under
+<code>conversations/&lt;id&gt;/</code> and resumes from <code>base_state.json</code>.&#160;<a class="footnote-backref" href="#fnref:49" title="Jump back to footnote 49 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:49" title="Jump back to footnote 49 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:49" title="Jump back to footnote 49 in the text">&#8617;</a></p>
+</li>
+<li id="fn:50">
+<p><code>EventService</code> pub/sub fan-out to REST/WebSocket clients — see
+<code>openhands-agent-server/</code>
+(<a href="https://github.com/OpenHands/software-agent-sdk/tree/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-agent-server">GH… tree</a>);
+<code>StreamContext</code> slot-minting:
+<a href="https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/agent/stream_context.py">GH…/sdk/agent/stream_context.py</a>.&#160;<a class="footnote-backref" href="#fnref:50" title="Jump back to footnote 50 in the text">&#8617;</a></p>
+</li>
+<li id="fn:51">
+<p>SDK builtins in
+<a href="https://github.com/OpenHands/software-agent-sdk/tree/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/tool/builtins">GH…/sdk/tool/builtins/</a>
+(<code>finish.py</code>, <code>think.py</code>, <code>switch_llm.py</code>,
+<code>classify_and_switch_llm.py</code>, <code>invoke_skill.py</code>,
+<code>vision_inspect.py</code>).&#160;<a class="footnote-backref" href="#fnref:51" title="Jump back to footnote 51 in the text">&#8617;</a></p>
+</li>
+<li id="fn:52">
+<p>Default exec tools at
+<a href="https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/tool/defaults.py#L27">GH…/sdk/tool/defaults.py#L27</a>
+(<code>terminal</code>, <code>file_editor</code>, <code>task_tracker</code>); <code>browser_tool_set</code>
+optional on <code>enable_browser</code>; <code>task_tool_set</code> for delegation;
+<code>switch_llm</code> always appended.&#160;<a class="footnote-backref" href="#fnref:52" title="Jump back to footnote 52 in the text">&#8617;</a></p>
+</li>
+<li id="fn:53">
+<p>Tool implementations in
+<a href="https://github.com/OpenHands/software-agent-sdk/tree/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-tools/openhands/tools">GH… tree openhands-tools/</a>:
+terminal, file_editor, task_tracker, browser_use, glob, grep,
+apply_patch, delegate, task, workflow, ask_oracle, tom_consult,
+gemini, planning_file_editor, preset, utils.&#160;<a class="footnote-backref" href="#fnref:53" title="Jump back to footnote 53 in the text">&#8617;</a></p>
+</li>
+<li id="fn:54">
+<p><code>ToolDefinition</code> with Pydantic <code>action_type</code> and <code>ToolExecutor</code>
+returning an <code>Observation</code>; <code>is_usable()</code> environment checks filtered
+via <code>list_usable_tools</code> — see
+<a href="https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/tool/registry.py">GH…/sdk/tool/registry.py</a>.&#160;<a class="footnote-backref" href="#fnref:54" title="Jump back to footnote 54 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:54" title="Jump back to footnote 54 in the text">&#8617;</a></p>
+</li>
+<li id="fn:55">
+<p>Full model strings at the boundary; <code>get_llm_provider</code> parsing in
+<a href="https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/llm/utils/litellm_provider.py">GH…/sdk/llm/utils/litellm_provider.py</a>
+(<code>LLMProvider</code>).&#160;<a class="footnote-backref" href="#fnref:55" title="Jump back to footnote 55 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:55" title="Jump back to footnote 55 in the text">&#8617;</a></p>
+</li>
+<li id="fn:56">
+<p>Non-native function-calling mixin:
+<a href="https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/llm/mixins/non_native_fc.py">GH…/sdk/llm/mixins/non_native_fc.py</a>;
+tenacity retries (<code>RetryMixin</code>) with hard/idle timeouts inside the
+attempt; error taxonomy in
+<a href="https://github.com/OpenHands/software-agent-sdk/tree/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/llm/exceptions">GH…/sdk/llm/exceptions/</a>.&#160;<a class="footnote-backref" href="#fnref:56" title="Jump back to footnote 56 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:56" title="Jump back to footnote 56 in the text">&#8617;</a></p>
+</li>
+<li id="fn:57">
+<p>Series-internal comparison: Goose's provider trait requires only
+<code>stream()</code> (see the Goose installment); OpenHands' <code>LLM</code> surface
+(generate/completion/responses, streaming, retries, routing,
+telemetry, metrics) is strictly richer — graded as a comparative
+observation across two pinned trees, not a single-source claim.&#160;<a class="footnote-backref" href="#fnref:57" title="Jump back to footnote 57 in the text">&#8617;</a></p>
+</li>
+<li id="fn:58">
+<p>Defense in depth: shell-semantics parsing and pattern rails in
+<a href="https://github.com/OpenHands/software-agent-sdk/tree/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/security/defense_in_depth">GH…/sdk/security/defense_in_depth/</a>;
+ToolShield MCP safety experiences via
+<a href="https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/security/toolshield_helpers.py">GH…/sdk/security/toolshield_helpers.py</a>.&#160;<a class="footnote-backref" href="#fnref:58" title="Jump back to footnote 58 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:58" title="Jump back to footnote 58 in the text">&#8617;</a></p>
+</li>
+<li id="fn:59">
+<p>Sandbox-as-deployment: Docker runtime provisioning in
+<a href="https://github.com/OpenHands/software-agent-sdk/tree/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-agent-server/openhands/agent_server/docker_runtime">GH…/openhands-agent-server/openhands/agent_server/docker_runtime/</a>;
+no sandbox in the SDK loop itself (see <sup id="fnref3:88"><a class="footnote-ref" href="#fn:88">88</a></sup>).&#160;<a class="footnote-backref" href="#fnref:59" title="Jump back to footnote 59 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:59" title="Jump back to footnote 59 in the text">&#8617;</a></p>
+</li>
+<li id="fn:60">
+<p><code>CondenserBase.condense(view, agent_llm) -&gt; View | Condensation</code>
+(<a href="https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/context/condenser/base.py#L16">GH…/sdk/context/condenser/base.py#L16</a>);
+<code>LLMSummarizingCondenser</code>, <code>PipelineCondenser</code>, <code>NoOpCondenser</code> in
+<a href="https://github.com/OpenHands/software-agent-sdk/tree/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/context/condenser">GH…/sdk/context/condenser/</a>;
+proactive via <code>handles_condensation_requests</code>, reactive via
+<code>CondensationRequest</code> on <code>LLMContextWindowExceedError</code> /
+<code>LLMMalformedConversationHistoryError</code>.&#160;<a class="footnote-backref" href="#fnref:60" title="Jump back to footnote 60 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:60" title="Jump back to footnote 60 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:60" title="Jump back to footnote 60 in the text">&#8617;</a><a class="footnote-backref" href="#fnref4:60" title="Jump back to footnote 60 in the text">&#8617;</a></p>
+</li>
+<li id="fn:61">
+<p>Stuck detection:
+<a href="https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/conversation/stuck_detector.py">GH…/sdk/conversation/stuck_detector.py</a>
+(repeating action-observation loops, action-error streaks with one
+corrective nudge, monologues, alternating patterns → STUCK).&#160;<a class="footnote-backref" href="#fnref:61" title="Jump back to footnote 61 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:61" title="Jump back to footnote 61 in the text">&#8617;</a></p>
+</li>
+<li id="fn:62">
+<p>Per-run cost budget: <code>_budget_exceeded_detail()</code> →
+<code>MaxBudgetReached</code>
+(<a href="https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/conversation/impl/local_conversation.py#L2018-L2023">GH…/sdk/conversation/impl/local_conversation.py#L2018-L2023</a>);
+<code>conversation.interrupt()</code> cancels the run task →
+<code>InterruptEvent</code>, status PAUSED.&#160;<a class="footnote-backref" href="#fnref:62" title="Jump back to footnote 62 in the text">&#8617;</a></p>
+</li>
+<li id="fn:63">
+<p><code>AgentDefinition</code>
+(<a href="https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/subagent/schema.py#L198">GH…/sdk/subagent/schema.py#L198</a>):
+tools, skills, MCP config, hooks, condenser, confirmation policy,
+permission mode, max iterations/budget caps — loaded from markdown
+frontmatter; <code>DelegateAction</code> /
+<code>DelegateExecutor</code>
+(<a href="https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-tools/openhands/tools/delegate/definition.py#L16">GH…/tools/delegate/definition.py#L16</a>
+/
+<a href="https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-tools/openhands/tools/delegate/impl.py#L33">GH…/tools/delegate/impl.py#L33</a>)
+spawn full <code>LocalConversation</code> sub-conversations.&#160;<a class="footnote-backref" href="#fnref:63" title="Jump back to footnote 63 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:63" title="Jump back to footnote 63 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:63" title="Jump back to footnote 63 in the text">&#8617;</a></p>
+</li>
+<li id="fn:64">
+<p><code>SubAgentScope</code>
+(<a href="https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/subagent/scope.py#L25">GH…/sdk/subagent/scope.py#L25</a>);
+<code>task_tool_set</code> exposes delegation to the model; <code>TaskManager</code> (in
+<code>openhands-tools/.../task/manager.py</code>) tracks tasks with resume.&#160;<a class="footnote-backref" href="#fnref:64" title="Jump back to footnote 64 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:64" title="Jump back to footnote 64 in the text">&#8617;</a></p>
+</li>
+<li id="fn:65">
+<p>Agent-server catalog registration:
+<code>conversation_service.py:_register_agent_definitions</code>
+(<a href="https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-agent-server/openhands/agent_server/conversation_service.py#L382">GH…/openhands-agent-server/openhands/agent_server/conversation_service.py#L382</a>).&#160;<a class="footnote-backref" href="#fnref:65" title="Jump back to footnote 65 in the text">&#8617;</a></p>
+</li>
+<li id="fn:66">
+<p><code>ACPAgent</code>
+(<a href="https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/agent/acp_agent.py#L1714">GH…/sdk/agent/acp_agent.py#L1714</a>,
+4,681 lines): <code>AgentBase</code> subclass delegating the whole loop to an
+external ACP server (Claude Code / Codex / Gemini CLI subprocesses).&#160;<a class="footnote-backref" href="#fnref:66" title="Jump back to footnote 66 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:66" title="Jump back to footnote 66 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:66" title="Jump back to footnote 66 in the text">&#8617;</a></p>
+</li>
+<li id="fn:67">
+<p><code>automation_conversation_kwargs</code>
+(<a href="https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/automation/__init__.py#L126">GH…/sdk/automation/<strong>init</strong>.py#L126</a>):
+tags/kwargs for automation-dispatched conversations; scheduling and
+dispatch live in the separate <code>OpenHands/automation</code> repo.&#160;<a class="footnote-backref" href="#fnref:67" title="Jump back to footnote 67 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:67" title="Jump back to footnote 67 in the text">&#8617;</a></p>
+</li>
+<li id="fn:68">
+<p>Legacy microagent support:
+<a href="https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/skills/skill.py#L960">GH…/sdk/skills/skill.py#L960</a>
+(<code>~/.openhands/microagents/</code> scanned as legacy);
+<code>_load_legacy_openhands_skill</code> at
+<a href="https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/skills/skill.py#L448">L448</a>;
+legacy reference in
+<a href="https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/context/agent_context.py#L97">GH…/sdk/context/agent_context.py#L97</a>.&#160;<a class="footnote-backref" href="#fnref:68" title="Jump back to footnote 68 in the text">&#8617;</a></p>
+</li>
+<li id="fn:69">
+<p>Skill formats (<code>skill.py:178</code>): AgentSkills-format always listed in
+<code>&lt;available_skills&gt;</code> with progressive disclosure; legacy OpenHands
+format — with triggers listed + trigger-injected, without triggers
+fully inlined into <code>&lt;REPO_CONTEXT&gt;</code> and always active. See
+<a href="https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/skills/skill.py#L178">GH…/sdk/skills/skill.py#L178</a>
+and
+<a href="https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/context/agent_context.py#L339-L346">GH…/sdk/context/agent_context.py#L339-L346</a>.&#160;<a class="footnote-backref" href="#fnref:69" title="Jump back to footnote 69 in the text">&#8617;</a></p>
+</li>
+<li id="fn:70">
+<p>Three activation paths: (1) progressive disclosure via
+<code>AgentContext._resolve_dynamic_data()</code>
+(<a href="https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/context/agent_context.py#L360-L454">GH…/sdk/context/agent_context.py#L360-L454</a>);
+(2) trigger injection — <code>KeywordTrigger</code> / <code>TaskTrigger</code> /
+<code>PathTrigger</code>
+(<a href="https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/skills/trigger.py#L19">GH…/sdk/skills/trigger.py#L19</a>
+/ <a href="https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/skills/trigger.py#L29">L29</a>
+/ <a href="https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/skills/trigger.py#L39">L39</a>);
+(3) <code>invoke_skill</code> builtin tool
+(<a href="https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/tool/builtins/invoke_skill.py#L60">GH…/sdk/tool/builtins/invoke_skill.py#L60</a>)
+rendering content with inline <code>!command</code> execution
+(<a href="https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/skills/execute.py">GH…/sdk/skills/execute.py</a>
+<code>render_content_with_commands</code>); <code>disable_model_invocation=True</code>
+forces trigger-only activation.&#160;<a class="footnote-backref" href="#fnref:70" title="Jump back to footnote 70 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:70" title="Jump back to footnote 70 in the text">&#8617;</a></p>
+</li>
+<li id="fn:71">
+<p>Skill loading dirs (<code>~/.agents/skills/</code>, <code>~/.openhands/skills/</code>,
+legacy <code>~/.openhands/microagents/</code>, repo <code>.openhands/skills/</code> and
+<code>.agents/skills/</code>, installed skills, plugin skills) — see
+<a href="https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/skills/skill.py#L960">GH…/sdk/skills/skill.py#L960</a>;
+repo skills may bundle MCP servers (<code>Skill.mcp_tools</code>) and declare
+<code>allowed_tools</code>.&#160;<a class="footnote-backref" href="#fnref:71" title="Jump back to footnote 71 in the text">&#8617;</a></p>
+</li>
+<li id="fn:72">
+<p>Hook executor kinds — command / prompt / agent:
+<a href="https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/hooks/executor.py">GH…/sdk/hooks/executor.py</a>;
+prompt hooks use the conversation's current LLM via getter (survives
+<code>switch_llm</code>); agent hooks spin up a fresh <code>Agent</code> +
+<code>LocalConversation</code> with <code>hook_config=None</code> (no recursion),
+restricted tools, own system prompt — final response parsed as the
+decision.&#160;<a class="footnote-backref" href="#fnref:72" title="Jump back to footnote 72 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:72" title="Jump back to footnote 72 in the text">&#8617;</a></p>
+</li>
+<li id="fn:73">
+<p>Fail-open: <code>_fall_open</code>
+(<a href="https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/hooks/executor.py#L196-L212">GH…/sdk/hooks/executor.py#L196-L212</a>,
+default <code>HookDecision.ALLOW</code>); "detectable as <code>decision == ALLOW and
+not success</code>" at L48.&#160;<a class="footnote-backref" href="#fnref:73" title="Jump back to footnote 73 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:73" title="Jump back to footnote 73 in the text">&#8617;</a></p>
+</li>
+<li id="fn:74">
+<p>Six hook event types:
+<a href="https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/hooks/types.py#L12-L17">GH…/sdk/hooks/types.py#L12-L17</a>
+(<code>PRE_TOOL_USE</code>, <code>POST_TOOL_USE</code>, <code>USER_PROMPT_SUBMIT</code>,
+<code>SESSION_START</code>, <code>SESSION_END</code>, <code>STOP</code>); allow/deny exit-code
+semantics, <code>HookResult.should_continue</code>
+(<a href="https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/hooks/executor.py#L63">GH…/sdk/hooks/executor.py#L63</a>).&#160;<a class="footnote-backref" href="#fnref:74" title="Jump back to footnote 74 in the text">&#8617;</a></p>
+</li>
+<li id="fn:75">
+<p><code>HookEventProcessor</code>
+(<a href="https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/hooks/conversation_hooks.py#L50">GH…/sdk/hooks/conversation_hooks.py#L50</a>):
+PreToolUse at L127 (deny → <code>state.block_action</code>), PostToolUse at
+L179 (never blocks), UserPromptSubmit at L244 (deny blocks message,
+can inject <code>additional_context</code>), SessionStart/End at L325/L341, Stop
+via <code>run_stop</code> (deny flips FINISHED → RUNNING).&#160;<a class="footnote-backref" href="#fnref:75" title="Jump back to footnote 75 in the text">&#8617;</a></p>
+</li>
+<li id="fn:76">
+<p>Async hooks in PreToolUse cannot block — warn + background:
+<a href="https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/hooks/manager.py#L83-L88">GH…/sdk/hooks/manager.py#L83-L88</a>
+("async hook(s) that will run in background").&#160;<a class="footnote-backref" href="#fnref:76" title="Jump back to footnote 76 in the text">&#8617;</a></p>
+</li>
+<li id="fn:77">
+<p><code>HookMatcher</code> per event type with optional tool-name patterns:
+<a href="https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/hooks/config.py#L121">GH…/sdk/hooks/config.py#L121</a>.&#160;<a class="footnote-backref" href="#fnref:77" title="Jump back to footnote 77 in the text">&#8617;</a></p>
+</li>
+<li id="fn:78">
+<p><code>Plugin</code>
+(<a href="https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/plugin/plugin.py#L36">GH…/sdk/plugin/plugin.py#L36</a>):
+Claude-Code-compatible bundles of skills + hooks + MCP servers +
+agents + commands; loader at
+<a href="https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/plugin/loader.py">GH…/sdk/plugin/loader.py</a>.&#160;<a class="footnote-backref" href="#fnref:78" title="Jump back to footnote 78 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:78" title="Jump back to footnote 78 in the text">&#8617;</a></p>
+</li>
+<li id="fn:79">
+<p>Commands become keyword-triggered skills:
+<code>plugin.py:get_all_skills</code>
+(<a href="https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/plugin/plugin.py#L104">GH…/sdk/plugin/plugin.py#L104</a>).
+Negative finding: no standalone slash-command dispatcher in the SDK —
+<code>commands/</code> dirs exist only inside plugins; <code>/goal</code> is a loop driver
+(<sup id="fnref4:30"><a class="footnote-ref" href="#fn:30">30</a></sup>), not a command registry. Search scope: <code>openhands-sdk/</code>
+for <code>register_command|CommandRegistry|slash</code> (case-insensitive):
+hits only in plugin code.&#160;<a class="footnote-backref" href="#fnref:79" title="Jump back to footnote 79 in the text">&#8617;</a></p>
+</li>
+<li id="fn:80">
+<p><code>MCPServer</code>
+(<a href="https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/mcp/config.py#L497">GH…/sdk/mcp/config.py#L497</a>);
+flat SDK-owned server map; FastMCP built only at the boundary —
+<code>_prepare_mcp_config</code>
+(<a href="https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/mcp/utils.py#L167">GH…/sdk/mcp/utils.py#L167</a>).&#160;<a class="footnote-backref" href="#fnref:80" title="Jump back to footnote 80 in the text">&#8617;</a></p>
+</li>
+<li id="fn:81">
+<p><code>MCPClient</code> (async) with sync/async bridges:
+<a href="https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/mcp/client.py">GH…/sdk/mcp/client.py</a>;
+<code>.mcp.json</code> <code>{"mcpServers": …}</code> unwrapped at the v4→v5 migration
+boundary (repo AGENTS.md).&#160;<a class="footnote-backref" href="#fnref:81" title="Jump back to footnote 81 in the text">&#8617;</a></p>
+</li>
+<li id="fn:82">
+<p><code>MarketplaceRegistry</code>
+(<a href="https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/marketplace/registry.py#L79">GH…/sdk/marketplace/registry.py#L79</a>):
+plugin marketplace registry, resolution, prefetch.&#160;<a class="footnote-backref" href="#fnref:82" title="Jump back to footnote 82 in the text">&#8617;</a></p>
+</li>
+<li id="fn:83">
+<p><code>InstallationManager</code>
+(<a href="https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/extensions/installation/manager.py#L29">GH…/sdk/extensions/installation/manager.py#L29</a>):
+install/enable/disable/update lifecycle with metadata session;
+<code>parse_extension_source</code>
+(<a href="https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/extensions/fetch.py">GH…/sdk/extensions/fetch.py</a>)
+handles local/git/github sources.&#160;<a class="footnote-backref" href="#fnref:83" title="Jump back to footnote 83 in the text">&#8617;</a></p>
+</li>
+<li id="fn:84">
+<p><code>RouterLLM</code>
+(<a href="https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/llm/router/base.py#L28">GH…/sdk/llm/router/base.py#L28</a>):
+subclasses <code>LLM</code>, holds <code>llms_for_routing: dict[str, LLM]</code>;
+per-completion <code>select_llm(messages)</code>; <code>__getattr__</code> falls back to
+the first LLM.&#160;<a class="footnote-backref" href="#fnref:84" title="Jump back to footnote 84 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:84" title="Jump back to footnote 84 in the text">&#8617;</a></p>
+</li>
+<li id="fn:85">
+<p><code>MultimodalRouter</code>
+(<a href="https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/llm/router/impl/multimodal.py#L13">GH…/sdk/llm/router/impl/multimodal.py#L13</a>)
+routes image-bearing turns to a vision-capable model;
+<code>RandomRouter</code>
+(<a href="https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/llm/router/impl/random.py#L11">GH…/sdk/llm/router/impl/random.py#L11</a>);
+route-aware runtime metadata feeds condenser token thresholds
+(<code>agent.py: resolve_runtime_metadata</code>).&#160;<a class="footnote-backref" href="#fnref:85" title="Jump back to footnote 85 in the text">&#8617;</a></p>
+</li>
+<li id="fn:86">
+<p><code>switch_llm</code> / <code>classify_and_switch_llm</code> builtin tools:
+<a href="https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/tool/builtins/switch_llm.py">GH…/sdk/tool/builtins/switch_llm.py</a>
+and <code>classify_and_switch_llm.py</code> — the agent swaps its own model
+mid-run.&#160;<a class="footnote-backref" href="#fnref:86" title="Jump back to footnote 86 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:86" title="Jump back to footnote 86 in the text">&#8617;</a></p>
+</li>
+<li id="fn:87">
+<p>No git-level safety net. Search scope (2026-10-05, pinned SHA):
+case-insensitive grep for <code>commit|undo|stash</code> over
+<code>openhands-sdk/openhands/sdk/git/*.py</code> and
+<code>openhands-tools/openhands/tools/**/</code>: only <code>undo_edit</code> in
+<code>tools/file_editor/definition.py:26</code>; <code>git_commits.py</code> holds
+read-only history helpers; commit guidance appears only as a static
+prompt section
+(<a href="https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/context/prompts/sections/static.py#L227">GH…/sdk/context/prompts/sections/static.py#L227</a>).&#160;<a class="footnote-backref" href="#fnref:87" title="Jump back to footnote 87 in the text">&#8617;</a></p>
+</li>
+<li id="fn:88">
+<p>No OS sandbox in the SDK. Search scope (2026-10-05, pinned SHA):
+grep for <code>seatbelt|seccomp|bubblewrap|landlock</code> (case-insensitive)
+across <code>openhands-sdk/</code> and <code>openhands-tools/</code>: zero hits.
+<code>openhands-sdk/openhands/sdk/security/</code> contains analyzers and
+policy rails only. Sandboxing lives in deployment (agent-server
+Docker runtimes, <sup id="fnref2:59"><a class="footnote-ref" href="#fn:59">59</a></sup>).&#160;<a class="footnote-backref" href="#fnref:88" title="Jump back to footnote 88 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:88" title="Jump back to footnote 88 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:88" title="Jump back to footnote 88 in the text">&#8617;</a></p>
+</li>
+</ol>
+</div>  <a class="diagram-cta" href="trace.html">
+    Step through one turn live
+    <span>Play the 8-step trace: message to event stream to view-built prompt, classify, tool batch, and critic-gated finish</span>
+  </a>
+  <a class="diagram-cta" href="../diagrams/template.html?data=../openhands/diagrams/openhands.json">
+    Explore the interactive architecture diagram
+    <span>Pan, zoom, and click any node for its source module reference</span>
+  </a>
+</main>
+</body>
+</html>
