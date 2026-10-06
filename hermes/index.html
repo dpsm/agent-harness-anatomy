@@ -84,6 +84,10 @@ out to mean two concrete mechanisms — a post-turn forked review daemon and
 an inactivity-triggered skill curator — wrapped around an otherwise
 conventional synchronous tool-calling loop.<sup id="fnref:9"><a class="footnote-ref" href="#fn:9">9</a></sup><sup id="fnref:11"><a class="footnote-ref" href="#fn:11">11</a></sup></p>
 <p><img alt="Hermes Agent architecture" src="figures/hermes.svg" /></p>
+<a class="diagram-cta" href="../diagrams/template.html?data=../hermes/diagrams/hermes.json">
+    Explore the interactive architecture diagram
+    <span>19 nodes, 19 edges — pan, zoom, and follow every subsystem link</span>
+  </a>
 <h2 id="the-mental-model">The mental model</h2>
 <p>Hermes is a <strong>multi-tenant agent with a learning loop bolted onto a
 synchronous core</strong>. One gateway process multiplexes Telegram,
@@ -289,6 +293,10 @@ save future model calls. The review fork, the curator, the FTS5 index, the
 skill lifecycle — every piece assumes that an agent which maintains
 itself outperforms one that merely remembers.</p>
 <p><img alt="Subagent sequence" src="figures/seq-delegate.svg" /></p>
+<a class="diagram-cta" href="trace.html">
+    Play the 8-step trace
+    <span>Message to lease to preflight, prompt, model, dispatch, answer — and the post-turn learning fork</span>
+  </a>
 <h2 id="subsystem-inventory">Subsystem inventory</h2>
 <table>
 <thead>
@@ -430,14 +438,6 @@ scope.</p>
 <tr><td>10</td><td>Security model</td><td>Per-session gateway approval queue + YOLO bypass; ACP edit approval (ContextVar-bound); subagent tool grants carved from parent, never widened</td></tr>
 </tbody>
 </table>
-  <a class="diagram-cta" href="trace.html">
-    Play the 8-step trace
-    <span>Message to lease to preflight, prompt, model, dispatch, answer — and the post-turn learning fork</span>
-  </a>
-  <a class="diagram-cta" href="../diagrams/template.html?data=../hermes/diagrams/hermes.json">
-    Explore the interactive architecture diagram
-    <span>19 nodes, 19 edges — pan, zoom, and follow every subsystem link</span>
-  </a>
 <h2 id="endnotes">Endnotes</h2>
 <p>All notes are VERIFIED against <code>v2026.9.24</code>
 (<code>f97608f178d1ffeca59860195ab7da295f7c8e5f</code>) unless marked DOCS.
