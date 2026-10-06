@@ -1,0 +1,100 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-20 -70 1620 1006" width="1600" height="993" font-family="system-ui, -apple-system, sans-serif">
+<defs>
+<marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 1 L 9 5 L 0 9 z" fill="#8a7a66"/></marker>
+<marker id="arrowHl" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 1 L 9 5 L 0 9 z" fill="#d08c4e"/></marker>
+</defs>
+<text x="-20" y="-36" font-size="26" font-weight="700" fill="#ece1d3">Hermes Agent architecture</text>
+<text x="-20" y="-10" font-size="15" fill="#a89880">NousResearch/hermes-agent @ f97608f</text>
+<g>
+<path d="M 210.0 116.0 C 210.0 133.0, 210.0 133.0, 210.0 150.0" fill="none" stroke="#8a7a66" stroke-width="1.5" marker-end="url(#arrow)"/>
+<text x="216.0" y="137.6" font-size="11" fill="#a89880">chat / oneshot</text>
+<path d="M 210.0 246.0 C 210.0 263.0, 210.0 263.0, 210.0 280.0" fill="none" stroke="#8a7a66" stroke-width="1.5" marker-end="url(#arrow)"/>
+<text x="216.0" y="267.6" font-size="11" fill="#a89880">run_conversation</text>
+<path d="M 400.0 458.0 C 483.6 458.0, 483.6 306.6, 400.0 306.6" fill="none" stroke="#8a7a66" stroke-width="1.5" marker-end="url(#arrow)"/>
+<text x="467.1" y="396.3" font-size="11" fill="#a89880">session key → turn</text>
+<path d="M 135.0 376.0 C 135.0 458.0, 210.0 458.0, 210.0 540.0" fill="none" stroke="#8a7a66" stroke-width="1.5" marker-end="url(#arrow)"/>
+<path d="M 210.0 376.0 C 210.0 523.0, 210.0 523.0, 210.0 670.0" fill="none" stroke="#8a7a66" stroke-width="1.5" marker-end="url(#arrow)"/>
+<path d="M 285.0 376.0 C 285.0 588.0, 210.0 588.0, 210.0 800.0" fill="none" stroke="#8a7a66" stroke-width="1.5" marker-end="url(#arrow)"/>
+<path d="M 400.0 315.1 C 475.0 315.1, 395.0 68.0, 470.0 68.0" fill="none" stroke="#8a7a66" stroke-width="1.5" marker-end="url(#arrow)"/>
+<text x="440.0" y="257.8" font-size="11" fill="#a89880">tool calls</text>
+<path d="M 570.0 116.0 C 570.0 133.0, 660.0 133.0, 660.0 150.0" fill="none" stroke="#8a7a66" stroke-width="1.5" marker-end="url(#arrow)"/>
+<path d="M 630.0 116.0 C 630.0 198.0, 660.0 198.0, 660.0 280.0" fill="none" stroke="#8a7a66" stroke-width="1.5" marker-end="url(#arrow)"/>
+<path d="M 690.0 116.0 C 690.0 263.0, 660.0 263.0, 660.0 410.0" fill="none" stroke="#8a7a66" stroke-width="1.5" marker-end="url(#arrow)"/>
+<path d="M 750.0 116.0 C 750.0 328.0, 660.0 328.0, 660.0 540.0" fill="none" stroke="#8a7a66" stroke-width="1.5" marker-end="url(#arrow)"/>
+<path d="M 470.0 588.0 C 395.0 588.0, 475.0 323.7, 400.0 323.7" fill="none" stroke="#8a7a66" stroke-width="1.5" marker-end="url(#arrow)"/>
+<text x="442.0" y="526.9" font-size="11" fill="#a89880">child turn</text>
+<path d="M 400.0 332.3 C 540.0 332.3, 780.0 198.0, 920.0 198.0" fill="none" stroke="#8a7a66" stroke-width="1.5" marker-end="url(#arrow)"/>
+<path d="M 1110.0 116.0 C 1110.0 198.0, 1060.0 198.0, 1060.0 280.0" fill="none" stroke="#8a7a66" stroke-width="1.5" marker-end="url(#arrow)"/>
+<path d="M 1060.0 246.0 C 1060.0 263.0, 1160.0 263.0, 1160.0 280.0" fill="none" stroke="#8a7a66" stroke-width="1.5" marker-end="url(#arrow)"/>
+<text x="1155.6" y="267.6" font-size="11" fill="#a89880">propose writes</text>
+<path d="M 1110.0 376.0 C 1110.0 393.0, 1110.0 393.0, 1110.0 410.0" fill="none" stroke="#8a7a66" stroke-width="1.5" marker-end="url(#arrow)"/>
+<text x="1116.0" y="397.6" font-size="11" fill="#a89880">create / edit</text>
+<path d="M 1160.0 246.0 C 1160.0 393.0, 1110.0 393.0, 1110.0 540.0" fill="none" stroke="#8a7a66" stroke-width="1.5" marker-end="url(#arrow)"/>
+<path d="M 400.0 340.9 C 540.0 340.9, 780.0 718.0, 920.0 718.0" fill="none" stroke="#8a7a66" stroke-width="1.5" marker-end="url(#arrow)"/>
+<text x="666.0" y="525.4" font-size="11" fill="#a89880">prefetch + prompt block</text>
+<path d="M 400.0 349.4 C 540.0 349.4, 780.0 848.0, 920.0 848.0" fill="none" stroke="#8a7a66" stroke-width="1.5" marker-end="url(#arrow)"/>
+<text x="778.4" y="736.3" font-size="11" fill="#a89880">transport</text>
+</g><g>
+<rect x="20" y="20" width="380" height="96" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/><rect x="20" y="20" width="5" height="96" rx="2" fill="#d08c4e"/>
+<text x="64" y="48" font-size="13" font-weight="600" fill="#ece1d3">CLI entry</text><text x="64" y="66" font-size="10.5" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" fill="#a89880">cli.py:1647</text>
+<text x="34" y="104" font-size="11" fill="#a89880">1 source link — click</text>
+<rect x="20" y="150" width="380" height="96" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/><rect x="20" y="150" width="5" height="96" rx="2" fill="#d08c4e"/>
+<text x="64" y="178" font-size="13" font-weight="600" fill="#ece1d3">AIAgent facade</text><text x="64" y="196" font-size="10.5" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" fill="#a89880">run_agent.py:239</text>
+<text x="34" y="234" font-size="11" fill="#a89880">1 source link — click</text>
+<rect x="20" y="280" width="380" height="96" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/><rect x="20" y="280" width="5" height="96" rx="2" fill="#d08c4e"/>
+<text x="64" y="308" font-size="13" font-weight="600" fill="#ece1d3">run_conversation</text><text x="64" y="326" font-size="10.5" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" fill="#a89880">agent/conversation_loop.py:1605</text>
+<text x="34" y="364" font-size="11" fill="#a89880">1 source link — click</text>
+<rect x="20" y="410" width="380" height="96" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/><rect x="20" y="410" width="5" height="96" rx="2" fill="#d08c4e"/>
+<text x="64" y="438" font-size="13" font-weight="600" fill="#ece1d3">Messaging gateway</text><text x="64" y="456" font-size="10.5" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" fill="#a89880">gateway/run.py:5794</text>
+<text x="34" y="494" font-size="11" fill="#a89880">1 source link — click</text>
+<rect x="20" y="540" width="380" height="96" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/><rect x="20" y="540" width="5" height="96" rx="2" fill="#d08c4e"/>
+<text x="64" y="568" font-size="13" font-weight="600" fill="#ece1d3">Turn phases</text><text x="64" y="586" font-size="10.5" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" fill="#a89880">agent/turn_*.py</text>
+<text x="34" y="624" font-size="11" fill="#a89880">1 source link — click</text>
+<rect x="20" y="670" width="380" height="96" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/><rect x="20" y="670" width="5" height="96" rx="2" fill="#7c8aa0"/>
+<text x="64" y="698" font-size="13" font-weight="600" fill="#ece1d3">Session turn lease</text><text x="64" y="716" font-size="10.5" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" fill="#a89880">agent/turn_facade_lease.py</text>
+<text x="34" y="754" font-size="11" fill="#a89880">1 source link — click</text>
+<rect x="20" y="800" width="380" height="96" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/><rect x="20" y="800" width="5" height="96" rx="2" fill="#d08c4e"/>
+<text x="64" y="828" font-size="13" font-weight="600" fill="#ece1d3">Turn-start compaction</text><text x="64" y="846" font-size="10.5" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" fill="#a89880">agent/turn_context_compaction.py:128</text>
+<text x="34" y="884" font-size="11" fill="#a89880">1 source link — click</text>
+<rect x="470" y="20" width="380" height="96" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/><rect x="470" y="20" width="5" height="96" rx="2" fill="#d08c4e"/>
+<text x="514" y="48" font-size="13" font-weight="600" fill="#ece1d3">handle_function_call</text><text x="514" y="66" font-size="10.5" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" fill="#a89880">model_tools.py:872</text>
+<text x="484" y="104" font-size="11" fill="#a89880">1 source link — click</text>
+<rect x="470" y="150" width="380" height="96" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/><rect x="470" y="150" width="5" height="96" rx="2" fill="#d08c4e"/>
+<text x="514" y="178" font-size="13" font-weight="600" fill="#ece1d3">ToolRegistry</text><text x="514" y="196" font-size="10.5" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" fill="#a89880">tools/registry.py:427</text>
+<text x="484" y="234" font-size="11" fill="#a89880">1 source link — click</text>
+<rect x="470" y="280" width="380" height="96" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/><rect x="470" y="280" width="5" height="96" rx="2" fill="#d08c4e"/>
+<text x="514" y="308" font-size="13" font-weight="600" fill="#ece1d3">Tool Search bridge</text><text x="514" y="326" font-size="10.5" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" fill="#a89880">model_tools.py:219</text>
+<text x="484" y="364" font-size="11" fill="#a89880">1 source link — click</text>
+<rect x="470" y="410" width="380" height="96" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/><rect x="470" y="410" width="5" height="96" rx="2" fill="#d08c4e"/>
+<text x="514" y="438" font-size="13" font-weight="600" fill="#ece1d3">Approval queue</text><text x="514" y="456" font-size="10.5" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" fill="#a89880">tools/approval.py:138</text>
+<text x="484" y="494" font-size="11" fill="#a89880">1 source link — click</text>
+<rect x="470" y="540" width="380" height="96" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/><rect x="470" y="540" width="5" height="96" rx="2" fill="#d08c4e"/>
+<text x="514" y="568" font-size="13" font-weight="600" fill="#ece1d3">delegate_task</text><text x="514" y="586" font-size="10.5" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" fill="#a89880">tools/delegate_tool.py:71</text>
+<text x="484" y="624" font-size="11" fill="#a89880">1 source link — click</text>
+<rect x="920" y="20" width="380" height="96" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/><rect x="920" y="20" width="5" height="96" rx="2" fill="#d08c4e"/>
+<text x="964" y="48" font-size="13" font-weight="600" fill="#ece1d3">Curator</text><text x="964" y="66" font-size="10.5" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" fill="#a89880">agent/curator.py:1150</text>
+<text x="934" y="104" font-size="11" fill="#a89880">1 source link — click</text>
+<rect x="920" y="150" width="380" height="96" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/><rect x="920" y="150" width="5" height="96" rx="2" fill="#d08c4e"/>
+<text x="964" y="178" font-size="13" font-weight="600" fill="#ece1d3">Background review</text><text x="964" y="196" font-size="10.5" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" fill="#a89880">agent/background_review.py</text>
+<text x="934" y="234" font-size="11" fill="#a89880">1 source link — click</text>
+<rect x="920" y="280" width="380" height="96" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/><rect x="920" y="280" width="5" height="96" rx="2" fill="#d08c4e"/>
+<text x="964" y="308" font-size="13" font-weight="600" fill="#ece1d3">skill_manage tool</text><text x="964" y="326" font-size="10.5" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" fill="#a89880">tools/skill_manager_tool.py:762</text>
+<text x="934" y="364" font-size="11" fill="#a89880">1 source link — click</text>
+<rect x="920" y="410" width="380" height="96" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/><rect x="920" y="410" width="5" height="96" rx="2" fill="#7c8aa0"/>
+<text x="964" y="438" font-size="13" font-weight="600" fill="#ece1d3">Skill library</text><text x="964" y="456" font-size="10.5" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" fill="#a89880">skills/</text>
+<text x="934" y="494" font-size="11" fill="#a89880">1 source link — click</text>
+<rect x="920" y="540" width="380" height="96" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/><rect x="920" y="540" width="5" height="96" rx="2" fill="#d08c4e"/>
+<text x="964" y="568" font-size="13" font-weight="600" fill="#ece1d3">SessionDB</text><text x="964" y="586" font-size="10.5" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" fill="#a89880">hermes_state.py</text>
+<text x="934" y="624" font-size="11" fill="#a89880">1 source link — click</text>
+<rect x="920" y="670" width="380" height="96" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/><rect x="920" y="670" width="5" height="96" rx="2" fill="#d08c4e"/>
+<text x="964" y="698" font-size="13" font-weight="600" fill="#ece1d3">MemoryProvider</text><text x="964" y="716" font-size="10.5" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" fill="#a89880">agent/memory_provider.py:84</text>
+<text x="934" y="754" font-size="11" fill="#a89880">1 source link — click</text>
+<rect x="920" y="800" width="380" height="96" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/><rect x="920" y="800" width="5" height="96" rx="2" fill="#d08c4e"/>
+<text x="964" y="828" font-size="13" font-weight="600" fill="#ece1d3">Provider profiles</text><text x="964" y="846" font-size="10.5" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" fill="#a89880">providers/base.py:42</text>
+<text x="934" y="884" font-size="11" fill="#a89880">1 source link — click</text>
+</g>
+<g font-size="12" fill="#a89880">
+<rect x="1270" y="901" width="12" height="12" rx="2" fill="#d08c4e"/><text x="1287" y="912">verified</text>
+<rect x="1375" y="901" width="12" height="12" rx="2" fill="#7c8aa0"/><text x="1392" y="912">docs</text>
+<rect x="1480" y="901" width="12" height="12" rx="2" fill="#8a7a66"/><text x="1497" y="912">inferred</text>
+</g></svg>
