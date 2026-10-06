@@ -1,0 +1,510 @@
+{
+  "edges": [
+    {
+      "from": "prompt",
+      "label": "user message",
+      "to": "runloop"
+    },
+    {
+      "from": "runloop",
+      "label": "exit check",
+      "to": "processor"
+    },
+    {
+      "from": "runloop",
+      "label": "tools",
+      "to": "registry"
+    },
+    {
+      "from": "registry",
+      "label": "Tool.Def[]",
+      "to": "processor"
+    },
+    {
+      "from": "processor",
+      "label": "LLMEvent stream",
+      "to": "llm"
+    },
+    {
+      "from": "llm",
+      "label": "native? AI SDK?",
+      "to": "aisdk"
+    },
+    {
+      "from": "llm",
+      "label": "opt-in",
+      "to": "native"
+    },
+    {
+      "from": "processor",
+      "label": "tool calls",
+      "to": "toolexec"
+    },
+    {
+      "from": "toolexec",
+      "label": "ask?",
+      "to": "permission"
+    },
+    {
+      "from": "permission",
+      "label": "allow/deny/ask",
+      "to": "toolexec"
+    },
+    {
+      "from": "toolexec",
+      "label": "parts",
+      "to": "storage"
+    },
+    {
+      "from": "runloop",
+      "label": "overflow?",
+      "to": "compaction"
+    },
+    {
+      "from": "compaction",
+      "label": "summarize",
+      "to": "runloop"
+    },
+    {
+      "from": "runloop",
+      "label": "subtask",
+      "to": "tasktool"
+    },
+    {
+      "from": "tasktool",
+      "label": "child session",
+      "to": "prompt"
+    },
+    {
+      "from": "edit",
+      "label": "diagnostics",
+      "to": "lsp"
+    },
+    {
+      "from": "lsp",
+      "label": "errors -> fix",
+      "to": "edit"
+    },
+    {
+      "from": "modelsdev",
+      "label": "providers",
+      "to": "provider"
+    },
+    {
+      "from": "provider",
+      "label": "model",
+      "to": "llm"
+    },
+    {
+      "from": "runloop",
+      "label": "agent?",
+      "to": "agent"
+    },
+    {
+      "from": "agent",
+      "label": "steps budget",
+      "to": "runloop"
+    },
+    {
+      "from": "registry",
+      "label": "MCP tools",
+      "to": "mcp"
+    },
+    {
+      "from": "mcp",
+      "label": "defs",
+      "to": "registry"
+    },
+    {
+      "from": "registry",
+      "label": "plugin hook",
+      "to": "plugin"
+    },
+    {
+      "from": "plugin",
+      "label": "rewrite",
+      "to": "registry"
+    },
+    {
+      "from": "processor",
+      "label": "events",
+      "to": "bus"
+    },
+    {
+      "from": "permission",
+      "label": "Asked",
+      "to": "bus"
+    },
+    {
+      "from": "runloop",
+      "label": "skills",
+      "to": "skills"
+    },
+    {
+      "from": "skills",
+      "label": "system prompt",
+      "to": "processor"
+    }
+  ],
+  "nodes": [
+    {
+      "grade": "verified",
+      "h": 96,
+      "id": "prompt",
+      "label": "prompt() entry",
+      "links": [
+        {
+          "label": "prompt.ts:1052",
+          "url": "https://github.com/anomalyco/opencode/blob/aec0b9a6d8898f68f923aaf08b7306d931fd9d76/packages/opencode/src/session/prompt.ts#L1052"
+        }
+      ],
+      "step": 1,
+      "sub": "session/prompt.ts:1052",
+      "w": 280,
+      "x": 485,
+      "y": 20
+    },
+    {
+      "grade": "verified",
+      "h": 96,
+      "id": "runloop",
+      "label": "runLoop (while true)",
+      "links": [
+        {
+          "label": "prompt.ts:1081-1090",
+          "url": "https://github.com/anomalyco/opencode/blob/aec0b9a6d8898f68f923aaf08b7306d931fd9d76/packages/opencode/src/session/prompt.ts#L1081-L1090"
+        }
+      ],
+      "step": 2,
+      "sub": "session/prompt.ts:1081",
+      "w": 280,
+      "x": 485,
+      "y": 150
+    },
+    {
+      "grade": "verified",
+      "h": 96,
+      "id": "registry",
+      "label": "ToolRegistry.tools()",
+      "links": [
+        {
+          "label": "registry.ts:291",
+          "url": "https://github.com/anomalyco/opencode/blob/aec0b9a6d8898f68f923aaf08b7306d931fd9d76/packages/opencode/src/tool/registry.ts#L291"
+        }
+      ],
+      "step": 3,
+      "sub": "tool/registry.ts:291",
+      "w": 280,
+      "x": 485,
+      "y": 280
+    },
+    {
+      "grade": "verified",
+      "h": 96,
+      "id": "processor",
+      "label": "SessionProcessor",
+      "links": [
+        {
+          "label": "processor.ts:98",
+          "url": "https://github.com/anomalyco/opencode/blob/aec0b9a6d8898f68f923aaf08b7306d931fd9d76/packages/opencode/src/session/processor.ts#L98"
+        },
+        {
+          "label": "processor.ts:641",
+          "url": "https://github.com/anomalyco/opencode/blob/aec0b9a6d8898f68f923aaf08b7306d931fd9d76/packages/opencode/src/session/processor.ts#L641"
+        }
+      ],
+      "step": 4,
+      "sub": "session/processor.ts:98",
+      "w": 280,
+      "x": 485,
+      "y": 410
+    },
+    {
+      "grade": "verified",
+      "h": 96,
+      "id": "llm",
+      "label": "LLM.Service (dual runtime)",
+      "links": [
+        {
+          "label": "session/llm/AGENTS.md",
+          "url": "https://github.com/anomalyco/opencode/blob/aec0b9a6d8898f68f923aaf08b7306d931fd9d76/packages/opencode/src/session/llm/AGENTS.md"
+        }
+      ],
+      "step": 5,
+      "sub": "session/llm.ts",
+      "w": 280,
+      "x": 485,
+      "y": 540
+    },
+    {
+      "grade": "verified",
+      "h": 96,
+      "id": "toolexec",
+      "label": "Tool.execute",
+      "links": [
+        {
+          "label": "tool/tool.ts",
+          "url": "https://github.com/anomalyco/opencode/blob/aec0b9a6d8898f68f923aaf08b7306d931fd9d76/packages/opencode/src/tool/tool.ts"
+        }
+      ],
+      "step": 6,
+      "sub": "tool/tool.ts",
+      "w": 280,
+      "x": 485,
+      "y": 670
+    },
+    {
+      "grade": "verified",
+      "h": 96,
+      "id": "storage",
+      "label": "SQLite (drizzle, WAL)",
+      "links": [
+        {
+          "label": "database.ts",
+          "url": "https://github.com/anomalyco/opencode/blob/aec0b9a6d8898f68f923aaf08b7306d931fd9d76/packages/core/src/database/database.ts"
+        }
+      ],
+      "step": 7,
+      "sub": "core/src/database/database.ts",
+      "w": 280,
+      "x": 485,
+      "y": 800
+    },
+    {
+      "grade": "verified",
+      "h": 96,
+      "id": "compaction",
+      "label": "Compaction",
+      "links": [
+        {
+          "label": "compaction.ts:203",
+          "url": "https://github.com/anomalyco/opencode/blob/aec0b9a6d8898f68f923aaf08b7306d931fd9d76/packages/opencode/src/session/compaction.ts#L203"
+        }
+      ],
+      "step": 8,
+      "sub": "session/compaction.ts:203",
+      "w": 280,
+      "x": 485,
+      "y": 930
+    },
+    {
+      "grade": "verified",
+      "h": 96,
+      "id": "permission",
+      "label": "Permission (ask/allow/deny)",
+      "links": [
+        {
+          "label": "permission/index.ts:28",
+          "url": "https://github.com/anomalyco/opencode/blob/aec0b9a6d8898f68f923aaf08b7306d931fd9d76/packages/opencode/src/permission/index.ts#L28"
+        },
+        {
+          "label": "permission/index.ts:67",
+          "url": "https://github.com/anomalyco/opencode/blob/aec0b9a6d8898f68f923aaf08b7306d931fd9d76/packages/opencode/src/permission/index.ts#L67"
+        }
+      ],
+      "sub": "permission/index.ts:28",
+      "w": 280,
+      "x": 20,
+      "y": 20
+    },
+    {
+      "grade": "verified",
+      "h": 96,
+      "id": "modelsdev",
+      "label": "ModelsDev catalog",
+      "links": [
+        {
+          "label": "models-dev.ts:150",
+          "url": "https://github.com/anomalyco/opencode/blob/aec0b9a6d8898f68f923aaf08b7306d931fd9d76/packages/core/src/models-dev.ts#L150"
+        }
+      ],
+      "sub": "core/src/models-dev.ts:150",
+      "w": 280,
+      "x": 20,
+      "y": 150
+    },
+    {
+      "grade": "verified",
+      "h": 96,
+      "id": "lsp",
+      "label": "LSP service",
+      "links": [
+        {
+          "label": "lsp/lsp.ts",
+          "url": "https://github.com/anomalyco/opencode/blob/aec0b9a6d8898f68f923aaf08b7306d931fd9d76/packages/opencode/src/lsp/lsp.ts"
+        },
+        {
+          "label": "diagnostic.ts:14",
+          "url": "https://github.com/anomalyco/opencode/blob/aec0b9a6d8898f68f923aaf08b7306d931fd9d76/packages/opencode/src/lsp/diagnostic.ts#L14"
+        }
+      ],
+      "sub": "lsp/lsp.ts",
+      "w": 280,
+      "x": 20,
+      "y": 280
+    },
+    {
+      "grade": "verified",
+      "h": 96,
+      "id": "edit",
+      "label": "edit / write tools",
+      "links": [
+        {
+          "label": "edit.ts:198",
+          "url": "https://github.com/anomalyco/opencode/blob/aec0b9a6d8898f68f923aaf08b7306d931fd9d76/packages/opencode/src/tool/edit.ts#L198"
+        }
+      ],
+      "sub": "tool/edit.ts:198",
+      "w": 280,
+      "x": 20,
+      "y": 410
+    },
+    {
+      "grade": "docs",
+      "h": 96,
+      "id": "bus",
+      "label": "EventV2Bridge (event bus)",
+      "links": [
+        {
+          "label": "event-v2-bridge.ts",
+          "url": "https://github.com/anomalyco/opencode/blob/aec0b9a6d8898f68f923aaf08b7306d931fd9d76/packages/opencode/src/event-v2-bridge.ts"
+        }
+      ],
+      "sub": "event-v2-bridge.ts",
+      "w": 280,
+      "x": 20,
+      "y": 540
+    },
+    {
+      "grade": "docs",
+      "h": 96,
+      "id": "plugin",
+      "label": "Plugin system",
+      "links": [
+        {
+          "label": "plugin/",
+          "url": "https://github.com/anomalyco/opencode/blob/aec0b9a6d8898f68f923aaf08b7306d931fd9d76/packages/opencode/src/plugin"
+        }
+      ],
+      "sub": "plugin/",
+      "w": 280,
+      "x": 20,
+      "y": 670
+    },
+    {
+      "grade": "verified",
+      "h": 96,
+      "id": "agent",
+      "label": "Agent.Service",
+      "links": [
+        {
+          "label": "agent/agent.ts",
+          "url": "https://github.com/anomalyco/opencode/blob/aec0b9a6d8898f68f923aaf08b7306d931fd9d76/packages/opencode/src/agent/agent.ts"
+        }
+      ],
+      "sub": "agent/agent.ts",
+      "w": 280,
+      "x": 950,
+      "y": 20
+    },
+    {
+      "grade": "verified",
+      "h": 96,
+      "id": "tasktool",
+      "label": "TaskTool (subagents)",
+      "links": [
+        {
+          "label": "task.ts:202",
+          "url": "https://github.com/anomalyco/opencode/blob/aec0b9a6d8898f68f923aaf08b7306d931fd9d76/packages/opencode/src/tool/task.ts#L202"
+        }
+      ],
+      "sub": "tool/task.ts:202",
+      "w": 280,
+      "x": 950,
+      "y": 150
+    },
+    {
+      "grade": "verified",
+      "h": 96,
+      "id": "provider",
+      "label": "Provider resolution",
+      "links": [
+        {
+          "label": "provider/provider.ts",
+          "url": "https://github.com/anomalyco/opencode/blob/aec0b9a6d8898f68f923aaf08b7306d931fd9d76/packages/opencode/src/provider/provider.ts"
+        }
+      ],
+      "sub": "provider/provider.ts",
+      "w": 280,
+      "x": 950,
+      "y": 280
+    },
+    {
+      "grade": "verified",
+      "h": 96,
+      "id": "aisdk",
+      "label": "AI SDK runtime (default)",
+      "links": [
+        {
+          "label": "llm/ai-sdk.ts",
+          "url": "https://github.com/anomalyco/opencode/blob/aec0b9a6d8898f68f923aaf08b7306d931fd9d76/packages/opencode/src/session/llm/ai-sdk.ts"
+        }
+      ],
+      "sub": "session/llm/ai-sdk.ts",
+      "w": 280,
+      "x": 950,
+      "y": 410
+    },
+    {
+      "grade": "verified",
+      "h": 96,
+      "id": "native",
+      "label": "Native runtime (opt-in)",
+      "links": [
+        {
+          "label": "llm/native-runtime.ts",
+          "url": "https://github.com/anomalyco/opencode/blob/aec0b9a6d8898f68f923aaf08b7306d931fd9d76/packages/opencode/src/session/llm/native-runtime.ts"
+        }
+      ],
+      "sub": "session/llm/native-runtime.ts",
+      "w": 280,
+      "x": 950,
+      "y": 540
+    },
+    {
+      "grade": "docs",
+      "h": 96,
+      "id": "mcp",
+      "label": "MCP client",
+      "links": [
+        {
+          "label": "mcp/",
+          "url": "https://github.com/anomalyco/opencode/blob/aec0b9a6d8898f68f923aaf08b7306d931fd9d76/packages/opencode/src/mcp"
+        }
+      ],
+      "sub": "mcp/",
+      "w": 280,
+      "x": 950,
+      "y": 670
+    },
+    {
+      "grade": "docs",
+      "h": 96,
+      "id": "skills",
+      "label": "Skills",
+      "links": [
+        {
+          "label": "skill/",
+          "url": "https://github.com/anomalyco/opencode/blob/aec0b9a6d8898f68f923aaf08b7306d931fd9d76/packages/opencode/src/skill"
+        }
+      ],
+      "sub": "skill/",
+      "w": 280,
+      "x": 950,
+      "y": 800
+    }
+  ],
+  "repo": "https://github.com/anomalyco/opencode",
+  "sha": "aec0b9a6d8898f68f923aaf08b7306d931fd9d76",
+  "title": "OpenCode \u2014 one turn through the harness"
+}

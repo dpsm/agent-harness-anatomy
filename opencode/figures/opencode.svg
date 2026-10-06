@@ -1,0 +1,144 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-25 -70 1555 1136" width="1600" height="1168" font-family="system-ui, -apple-system, sans-serif">
+<defs>
+<marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 1 L 9 5 L 0 9 z" fill="#8a7a66"/></marker>
+<marker id="arrowHl" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 1 L 9 5 L 0 9 z" fill="#d08c4e"/></marker>
+</defs>
+<text x="-25" y="-36" font-size="26" font-weight="700" fill="#ece1d3">OpenCode — one turn through the harness</text>
+<text x="-25" y="-10" font-size="15" fill="#a89880">anomalyco/opencode @ aec0b9a</text>
+<g>
+<path d="M 625.0 116.0 C 625.0 133.0, 625.0 133.0, 625.0 150.0" fill="none" stroke="#8a7a66" stroke-width="1.5" marker-end="url(#arrow)"/>
+<text x="631.0" y="137.6" font-size="11" fill="#a89880">user message</text>
+<path d="M 575.0 246.0 C 575.0 328.0, 591.7 328.0, 591.7 410.0" fill="none" stroke="#8a7a66" stroke-width="1.5" marker-end="url(#arrow)"/>
+<text x="584.6" y="298.1" font-size="11" fill="#a89880">exit check</text>
+<path d="M 625.0 246.0 C 625.0 263.0, 625.0 263.0, 625.0 280.0" fill="none" stroke="#8a7a66" stroke-width="1.5" marker-end="url(#arrow)"/>
+<text x="631.0" y="267.6" font-size="11" fill="#a89880">tools</text>
+<path d="M 625.0 376.0 C 625.0 393.0, 658.3 393.0, 658.3 410.0" fill="none" stroke="#8a7a66" stroke-width="1.5" marker-end="url(#arrow)"/>
+<text x="660.9" y="397.6" font-size="11" fill="#a89880">Tool.Def[]</text>
+<path d="M 591.7 506.0 C 591.7 523.0, 625.5 523.0, 625.5 540.0" fill="none" stroke="#8a7a66" stroke-width="1.5" marker-end="url(#arrow)"/>
+<text x="628.0" y="527.6" font-size="11" fill="#a89880">LLMEvent stream</text>
+<path d="M 767.0 573.0 C 898.5 573.0, 818.5 458.0, 950.0 458.0" fill="none" stroke="#8a7a66" stroke-width="1.5" marker-end="url(#arrow)"/>
+<text x="829.9" y="557.0" font-size="11" fill="#a89880">native? AI SDK?</text>
+<path d="M 767.0 588.0 C 898.5 588.0, 818.5 588.0, 950.0 588.0" fill="none" stroke="#8a7a66" stroke-width="1.5" marker-end="url(#arrow)"/>
+<text x="858.1" y="584.0" font-size="11" fill="#a89880">opt-in</text>
+<path d="M 658.3 506.0 C 658.3 588.0, 625.0 588.0, 625.0 670.0" fill="none" stroke="#8a7a66" stroke-width="1.5" marker-end="url(#arrow)"/>
+<text x="657.1" y="558.1" font-size="11" fill="#a89880">tool calls</text>
+<path d="M 485.0 708.0 C 355.0 708.0, 435.0 58.0, 305.0 58.0" fill="none" stroke="#8a7a66" stroke-width="1.5" marker-end="url(#arrow)"/>
+<text x="419.4" y="563.6" font-size="11" fill="#a89880">ask?</text>
+<path d="M 305.0 78.0 C 435.0 78.0, 355.0 728.0, 485.0 728.0" fill="none" stroke="#8a7a66" stroke-width="1.5" marker-end="url(#arrow)"/>
+<text x="382.6" y="214.4" font-size="11" fill="#a89880">allow/deny/ask</text>
+<path d="M 625.0 766.0 C 625.0 783.0, 625.0 783.0, 625.0 800.0" fill="none" stroke="#8a7a66" stroke-width="1.5" marker-end="url(#arrow)"/>
+<text x="631.0" y="787.6" font-size="11" fill="#a89880">parts</text>
+<path d="M 675.0 246.0 C 675.0 588.0, 625.0 588.0, 625.0 930.0" fill="none" stroke="#8a7a66" stroke-width="1.5" marker-end="url(#arrow)"/>
+<text x="670.2" y="475.9" font-size="11" fill="#a89880">overflow?</text>
+<path d="M 765.0 978.0 C 907.0 978.0, 907.0 178.0, 765.0 178.0" fill="none" stroke="#8a7a66" stroke-width="1.5" marker-end="url(#arrow)"/>
+<text x="860.5" y="801.2" font-size="11" fill="#a89880">summarize</text>
+<path d="M 765.0 188.0 C 897.5 188.0, 817.5 188.0, 950.0 188.0" fill="none" stroke="#8a7a66" stroke-width="1.5" marker-end="url(#arrow)"/>
+<text x="844.3" y="184.0" font-size="11" fill="#a89880">subtask</text>
+<path d="M 950.0 208.0 C 817.5 208.0, 897.5 68.0, 765.0 68.0" fill="none" stroke="#8a7a66" stroke-width="1.5" marker-end="url(#arrow)"/>
+<text x="844.3" y="94.2" font-size="11" fill="#a89880">child session</text>
+<path d="M 300.0 458.0 C 381.7 458.0, 381.7 328.0, 300.0 328.0" fill="none" stroke="#8a7a66" stroke-width="1.5" marker-end="url(#arrow)"/>
+<text x="357.5" y="425.9" font-size="11" fill="#a89880">diagnostics</text>
+<path d="M 160.0 376.0 C 160.0 393.0, 160.0 393.0, 160.0 410.0" fill="none" stroke="#8a7a66" stroke-width="1.5" marker-end="url(#arrow)"/>
+<text x="166.0" y="397.6" font-size="11" fill="#a89880">errors -&gt; fix</text>
+<path d="M 300.0 198.0 C 440.0 198.0, 810.0 318.0, 950.0 318.0" fill="none" stroke="#8a7a66" stroke-width="1.5" marker-end="url(#arrow)"/>
+<text x="848.1" y="301.5" font-size="11" fill="#a89880">providers</text>
+<path d="M 950.0 338.0 C 818.5 338.0, 898.5 603.0, 767.0 603.0" fill="none" stroke="#8a7a66" stroke-width="1.5" marker-end="url(#arrow)"/>
+<text x="883.3" y="391.2" font-size="11" fill="#a89880">model</text>
+<path d="M 765.0 198.0 C 897.5 198.0, 817.5 58.0, 950.0 58.0" fill="none" stroke="#8a7a66" stroke-width="1.5" marker-end="url(#arrow)"/>
+<text x="857.0" y="140.7" font-size="11" fill="#a89880">agent?</text>
+<path d="M 950.0 78.0 C 817.5 78.0, 897.5 208.0, 765.0 208.0" fill="none" stroke="#8a7a66" stroke-width="1.5" marker-end="url(#arrow)"/>
+<text x="870.0" y="123.5" font-size="11" fill="#a89880">steps budget</text>
+<path d="M 765.0 318.0 C 897.5 318.0, 817.5 708.0, 950.0 708.0" fill="none" stroke="#8a7a66" stroke-width="1.5" marker-end="url(#arrow)"/>
+<text x="863.5" y="509.0" font-size="11" fill="#a89880">MCP tools</text>
+<path d="M 950.0 728.0 C 817.5 728.0, 897.5 338.0, 765.0 338.0" fill="none" stroke="#8a7a66" stroke-width="1.5" marker-end="url(#arrow)"/>
+<text x="882.6" y="639.8" font-size="11" fill="#a89880">defs</text>
+<path d="M 485.0 318.0 C 352.5 318.0, 432.5 708.0, 300.0 708.0" fill="none" stroke="#8a7a66" stroke-width="1.5" marker-end="url(#arrow)"/>
+<text x="379.4" y="619.8" font-size="11" fill="#a89880">plugin hook</text>
+<path d="M 300.0 728.0 C 432.5 728.0, 352.5 338.0, 485.0 338.0" fill="none" stroke="#8a7a66" stroke-width="1.5" marker-end="url(#arrow)"/>
+<text x="398.5" y="529.0" font-size="11" fill="#a89880">rewrite</text>
+<path d="M 485.0 458.0 C 353.0 458.0, 433.0 588.0, 301.0 588.0" fill="none" stroke="#8a7a66" stroke-width="1.5" marker-end="url(#arrow)"/>
+<text x="418.0" y="482.1" font-size="11" fill="#a89880">events</text>
+<path d="M 160.0 116.0 C 160.0 328.0, 160.5 328.0, 160.5 540.0" fill="none" stroke="#8a7a66" stroke-width="1.5" marker-end="url(#arrow)"/>
+<text x="166.1" y="257.0" font-size="11" fill="#a89880">Asked</text>
+<path d="M 765.0 218.0 C 897.5 218.0, 817.5 838.0, 950.0 838.0" fill="none" stroke="#8a7a66" stroke-width="1.5" marker-end="url(#arrow)"/>
+<text x="844.3" y="347.9" font-size="11" fill="#a89880">skills</text>
+<path d="M 950.0 858.0 C 817.5 858.0, 897.5 458.0, 765.0 458.0" fill="none" stroke="#8a7a66" stroke-width="1.5" marker-end="url(#arrow)"/>
+<text x="857.0" y="606.4" font-size="11" fill="#a89880">system prompt</text>
+</g><g>
+<rect x="485" y="20" width="280" height="96" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/><rect x="485" y="20" width="5" height="96" rx="2" fill="#d08c4e"/>
+<circle cx="507" cy="42" r="13" fill="#d08c4e"/><text x="507" y="47" text-anchor="middle" font-size="12" font-weight="700" fill="#161210">1</text>
+<text x="529" y="48" font-size="13" font-weight="600" fill="#ece1d3">prompt() entry</text><text x="529" y="66" font-size="10.5" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" fill="#a89880">session/prompt.ts:1052</text>
+<text x="499" y="104" font-size="11" fill="#a89880">1 source link — click</text>
+<rect x="485" y="150" width="280" height="96" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/><rect x="485" y="150" width="5" height="96" rx="2" fill="#d08c4e"/>
+<circle cx="507" cy="172" r="13" fill="#d08c4e"/><text x="507" y="177" text-anchor="middle" font-size="12" font-weight="700" fill="#161210">2</text>
+<text x="529" y="178" font-size="13" font-weight="600" fill="#ece1d3">runLoop (while true)</text><text x="529" y="196" font-size="10.5" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" fill="#a89880">session/prompt.ts:1081</text>
+<text x="499" y="234" font-size="11" fill="#a89880">1 source link — click</text>
+<rect x="485" y="280" width="280" height="96" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/><rect x="485" y="280" width="5" height="96" rx="2" fill="#d08c4e"/>
+<circle cx="507" cy="302" r="13" fill="#d08c4e"/><text x="507" y="307" text-anchor="middle" font-size="12" font-weight="700" fill="#161210">3</text>
+<text x="529" y="308" font-size="13" font-weight="600" fill="#ece1d3">ToolRegistry.tools()</text><text x="529" y="326" font-size="10.5" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" fill="#a89880">tool/registry.ts:291</text>
+<text x="499" y="364" font-size="11" fill="#a89880">1 source link — click</text>
+<rect x="485" y="410" width="280" height="96" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/><rect x="485" y="410" width="5" height="96" rx="2" fill="#d08c4e"/>
+<circle cx="507" cy="432" r="13" fill="#d08c4e"/><text x="507" y="437" text-anchor="middle" font-size="12" font-weight="700" fill="#161210">4</text>
+<text x="529" y="438" font-size="13" font-weight="600" fill="#ece1d3">SessionProcessor</text><text x="529" y="456" font-size="10.5" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" fill="#a89880">session/processor.ts:98</text>
+<text x="499" y="494" font-size="11" fill="#a89880">2 source links — click</text>
+<rect x="484" y="540" width="283" height="96" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/><rect x="484" y="540" width="5" height="96" rx="2" fill="#d08c4e"/>
+<circle cx="506" cy="562" r="13" fill="#d08c4e"/><text x="506" y="567" text-anchor="middle" font-size="12" font-weight="700" fill="#161210">5</text>
+<text x="528" y="568" font-size="13" font-weight="600" fill="#ece1d3">LLM.Service (dual runtime)</text><text x="528" y="586" font-size="10.5" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" fill="#a89880">session/llm.ts</text>
+<text x="498" y="624" font-size="11" fill="#a89880">1 source link — click</text>
+<rect x="485" y="670" width="280" height="96" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/><rect x="485" y="670" width="5" height="96" rx="2" fill="#d08c4e"/>
+<circle cx="507" cy="692" r="13" fill="#d08c4e"/><text x="507" y="697" text-anchor="middle" font-size="12" font-weight="700" fill="#161210">6</text>
+<text x="529" y="698" font-size="13" font-weight="600" fill="#ece1d3">Tool.execute</text><text x="529" y="716" font-size="10.5" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" fill="#a89880">tool/tool.ts</text>
+<text x="499" y="754" font-size="11" fill="#a89880">1 source link — click</text>
+<rect x="485" y="800" width="280" height="96" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/><rect x="485" y="800" width="5" height="96" rx="2" fill="#d08c4e"/>
+<circle cx="507" cy="822" r="13" fill="#d08c4e"/><text x="507" y="827" text-anchor="middle" font-size="12" font-weight="700" fill="#161210">7</text>
+<text x="529" y="828" font-size="13" font-weight="600" fill="#ece1d3">SQLite (drizzle, WAL)</text><text x="529" y="846" font-size="10.5" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" fill="#a89880">core/src/database/database.ts</text>
+<text x="499" y="884" font-size="11" fill="#a89880">1 source link — click</text>
+<rect x="485" y="930" width="280" height="96" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/><rect x="485" y="930" width="5" height="96" rx="2" fill="#d08c4e"/>
+<circle cx="507" cy="952" r="13" fill="#d08c4e"/><text x="507" y="957" text-anchor="middle" font-size="12" font-weight="700" fill="#161210">8</text>
+<text x="529" y="958" font-size="13" font-weight="600" fill="#ece1d3">Compaction</text><text x="529" y="976" font-size="10.5" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" fill="#a89880">session/compaction.ts:203</text>
+<text x="499" y="1014" font-size="11" fill="#a89880">1 source link — click</text>
+<rect x="15" y="20" width="290" height="96" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/><rect x="15" y="20" width="5" height="96" rx="2" fill="#d08c4e"/>
+<text x="59" y="48" font-size="13" font-weight="600" fill="#ece1d3">Permission (ask/allow/deny)</text><text x="59" y="66" font-size="10.5" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" fill="#a89880">permission/index.ts:28</text>
+<text x="29" y="104" font-size="11" fill="#a89880">2 source links — click</text>
+<rect x="20" y="150" width="280" height="96" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/><rect x="20" y="150" width="5" height="96" rx="2" fill="#d08c4e"/>
+<text x="64" y="178" font-size="13" font-weight="600" fill="#ece1d3">ModelsDev catalog</text><text x="64" y="196" font-size="10.5" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" fill="#a89880">core/src/models-dev.ts:150</text>
+<text x="34" y="234" font-size="11" fill="#a89880">1 source link — click</text>
+<rect x="20" y="280" width="280" height="96" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/><rect x="20" y="280" width="5" height="96" rx="2" fill="#d08c4e"/>
+<text x="64" y="308" font-size="13" font-weight="600" fill="#ece1d3">LSP service</text><text x="64" y="326" font-size="10.5" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" fill="#a89880">lsp/lsp.ts</text>
+<text x="34" y="364" font-size="11" fill="#a89880">2 source links — click</text>
+<rect x="20" y="410" width="280" height="96" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/><rect x="20" y="410" width="5" height="96" rx="2" fill="#d08c4e"/>
+<text x="64" y="438" font-size="13" font-weight="600" fill="#ece1d3">edit / write tools</text><text x="64" y="456" font-size="10.5" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" fill="#a89880">tool/edit.ts:198</text>
+<text x="34" y="494" font-size="11" fill="#a89880">1 source link — click</text>
+<rect x="20" y="540" width="281" height="96" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/><rect x="20" y="540" width="5" height="96" rx="2" fill="#7c8aa0"/>
+<text x="64" y="568" font-size="13" font-weight="600" fill="#ece1d3">EventV2Bridge (event bus)</text><text x="64" y="586" font-size="10.5" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" fill="#a89880">event-v2-bridge.ts</text>
+<text x="34" y="624" font-size="11" fill="#a89880">1 source link — click</text>
+<rect x="20" y="670" width="280" height="96" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/><rect x="20" y="670" width="5" height="96" rx="2" fill="#7c8aa0"/>
+<text x="64" y="698" font-size="13" font-weight="600" fill="#ece1d3">Plugin system</text><text x="64" y="716" font-size="10.5" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" fill="#a89880">plugin/</text>
+<text x="34" y="754" font-size="11" fill="#a89880">1 source link — click</text>
+<rect x="950" y="20" width="280" height="96" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/><rect x="950" y="20" width="5" height="96" rx="2" fill="#d08c4e"/>
+<text x="994" y="48" font-size="13" font-weight="600" fill="#ece1d3">Agent.Service</text><text x="994" y="66" font-size="10.5" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" fill="#a89880">agent/agent.ts</text>
+<text x="964" y="104" font-size="11" fill="#a89880">1 source link — click</text>
+<rect x="950" y="150" width="280" height="96" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/><rect x="950" y="150" width="5" height="96" rx="2" fill="#d08c4e"/>
+<text x="994" y="178" font-size="13" font-weight="600" fill="#ece1d3">TaskTool (subagents)</text><text x="994" y="196" font-size="10.5" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" fill="#a89880">tool/task.ts:202</text>
+<text x="964" y="234" font-size="11" fill="#a89880">1 source link — click</text>
+<rect x="950" y="280" width="280" height="96" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/><rect x="950" y="280" width="5" height="96" rx="2" fill="#d08c4e"/>
+<text x="994" y="308" font-size="13" font-weight="600" fill="#ece1d3">Provider resolution</text><text x="994" y="326" font-size="10.5" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" fill="#a89880">provider/provider.ts</text>
+<text x="964" y="364" font-size="11" fill="#a89880">1 source link — click</text>
+<rect x="950" y="410" width="280" height="96" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/><rect x="950" y="410" width="5" height="96" rx="2" fill="#d08c4e"/>
+<text x="994" y="438" font-size="13" font-weight="600" fill="#ece1d3">AI SDK runtime (default)</text><text x="994" y="456" font-size="10.5" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" fill="#a89880">session/llm/ai-sdk.ts</text>
+<text x="964" y="494" font-size="11" fill="#a89880">1 source link — click</text>
+<rect x="950" y="540" width="280" height="96" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/><rect x="950" y="540" width="5" height="96" rx="2" fill="#d08c4e"/>
+<text x="994" y="568" font-size="13" font-weight="600" fill="#ece1d3">Native runtime (opt-in)</text><text x="994" y="586" font-size="10.5" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" fill="#a89880">session/llm/native-runtime.ts</text>
+<text x="964" y="624" font-size="11" fill="#a89880">1 source link — click</text>
+<rect x="950" y="670" width="280" height="96" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/><rect x="950" y="670" width="5" height="96" rx="2" fill="#7c8aa0"/>
+<text x="994" y="698" font-size="13" font-weight="600" fill="#ece1d3">MCP client</text><text x="994" y="716" font-size="10.5" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" fill="#a89880">mcp/</text>
+<text x="964" y="754" font-size="11" fill="#a89880">1 source link — click</text>
+<rect x="950" y="800" width="280" height="96" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/><rect x="950" y="800" width="5" height="96" rx="2" fill="#7c8aa0"/>
+<text x="994" y="828" font-size="13" font-weight="600" fill="#ece1d3">Skills</text><text x="994" y="846" font-size="10.5" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" fill="#a89880">skill/</text>
+<text x="964" y="884" font-size="11" fill="#a89880">1 source link — click</text>
+</g>
+<g font-size="12" fill="#a89880">
+<rect x="1200" y="1031" width="12" height="12" rx="2" fill="#d08c4e"/><text x="1217" y="1042">verified</text>
+<rect x="1305" y="1031" width="12" height="12" rx="2" fill="#7c8aa0"/><text x="1322" y="1042">docs</text>
+<rect x="1410" y="1031" width="12" height="12" rx="2" fill="#8a7a66"/><text x="1427" y="1042">inferred</text>
+</g></svg>
