@@ -46,7 +46,7 @@
 <text x="1006" y="672" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">9</text>
 <text x="1024" y="672" font-size="14" fill="#000000">OutputItemDone -&gt; ToolRouter::build_tool_call</text>
 <rect x="397" y="715" width="1089" height="44" rx="8" fill="#d08c4e22" stroke="#d08c4e" stroke-width="1"/>
-<text x="942" y="747" text-anchor="middle" font-size="14" fill="#000000">No max_turns / max_iterations / max_steps in non-test code (155 crates) - termination is condition-driven</text>
+<text x="942" y="747" text-anchor="middle" font-size="14" fill="#000000">No max_turns / max_iterations / max_steps in non-test code (154 crates) - termination is condition-driven</text>
 <rect x="800" y="792" width="68" height="39" rx="6" fill="none" stroke="#d08c4e" stroke-width="2"/>
 <text x="884" y="815" font-size="14" fill="#000000">needs_follow_up ? continue (:725) : break (:653)</text>
 <line x1="800" y1="876" x2="526" y2="876" stroke="#8a7a66" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrr)"/>

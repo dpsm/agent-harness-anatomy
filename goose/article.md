@@ -17,12 +17,12 @@
   (`ui/desktop/`) is noted where it hosts the cron loop; `goose-roaming`
   (P2P transport) was mapped but not deep-dived.[^1]
 
-| Crate | Non-test `.rs` | Role |
+| Crate | `.rs` under `src/` | Role |
 |---|---|---|
 | `goose` | 339 files, 176,482 LOC | THE product crate: agent, extensions, session, config, gateway |
 | `goose-cli` | 51 files, 28,625 LOC | CLI binary, session REPL, recipes, commands |
 | `goose-provider-types` | 36 files, 30,822 LOC | Conversation/message types, Provider trait, canonical model registry |
-| `goose-providers` | 26 files, 15,731 LOC | Provider implementations (34 static + 48 declarative JSON) |
+| `goose-providers` | 26 files, 15,731 LOC | Provider implementations (36 static registrations + 48 declarative JSON) |
 | `goose-local-inference` | 20 files, 10,347 LOC | On-device inference (llama.cpp/GGUF + MLX) |
 | `goose-mcp` | 11 files, 6,084 LOC | MCP client crate + 4 bundled MCP servers |
 | `goose-agent` | 6 files, 1,557 LOC | Generic state-machine (the NEW loop's skeleton) |
@@ -49,8 +49,8 @@ AGENTS.md documents the parity burden plainly: "Until the migration is
 complete, changes to agent-loop behavior must be implemented and tested in
 both paths."[^3]
 
-Three inversions against the series so far. Against pi: where pi has 4
-built-in tools and a TypeScript extension API, goose's entire toolset is
+Three inversions against the series so far. Against pi: where pi has 8
+built-in tools (4 on by default) and a TypeScript extension API, goose's entire toolset is
 assembled per-session from extension configs — the tool system *is* the
 extension system. Against aider: where aider negotiates with the model
 through text edit formats and remembers via git, goose speaks native tool
@@ -75,7 +75,7 @@ downward:[^1]
 ```
 goose-provider-types  Provider trait, Message/Conversation, canonical registry
         ↑
-goose-providers       34 static + 48 declarative provider impls
+goose-providers       36 static + 48 declarative provider registrations
 goose-mcp             MCP client + 4 bundled servers
 goose-agent           generic StateMachine: Operation/Inference/Step traits
 goose-context-management  compaction library (summarize, token estimation)
@@ -206,7 +206,8 @@ transient retries (≤3) on rate-limit/5xx/network. Text chunks yield
 `AgentEvent::Message` live.[^15]
 
 **④ Response parse.** `categorize_tool_requests` extracts the model's
-`ToolRequest`s (say, a `developer__shell` call), canonicalizes
+`ToolRequest`s (say, a `shell` call — the developer extension's tools
+are unprefixed), canonicalizes
 model-mangled names (`recover_mangled_tool_name`), coerces arguments to
 the advertised JSON schema, and dedupes tool-call IDs. Calls to
 unadvertised tools become `invalid_request` errors — invalid tool calls
@@ -295,7 +296,7 @@ text accumulates in `last_assistant_text`.[^20]
   Contrast the series: Cline wraps MCP servers as native `server__tool`
   `AgentTool`s with per-server config; **goose inverts it — everything is
   an MCP server**, including builtins, and the agent's entire toolset is
-  extension config. pi has 4 built-ins plus a TS extension API; goose has
+  extension config. pi has 8 built-ins (4 on by default) plus a TS extension API; goose has
   no non-MCP tool path at all.[^2]
 
 ![MCP extension assembly](figures/seq-mcp-assembly.svg)
@@ -352,7 +353,7 @@ text accumulates in `last_assistant_text`.[^20]
 - **Providers.** The `Provider` trait has exactly one required behavioral
   method: `stream()`. `complete()` defaults to stream-plus-collect; only
   one provider in-tree overrides it. There is a single `Provider`
-  trait — grep confirms it.[^34] The inventory: 34 static registrations
+  trait — grep confirms it.[^34] The inventory: 36 static registrations
   (including feature-gated `aws_bedrock`, `sagemaker_tgi`, `local`), 48
   bundled declarative JSON definitions, and user custom providers from
   `~/.config/goose/custom_providers/` — four tiers (Preferred, Builtin,
@@ -389,7 +390,7 @@ text accumulates in `last_assistant_text`.[^20]
 
   Philosophy: aider's (big model catalog + heuristics) with per-provider
   implementations — but unlike Cline's one generic AI-SDK adapter, goose
-  hand-writes 34 provider impls and adds a declarative JSON tier for the
+  statically registers 36 providers and adds a declarative JSON tier for the
   long tail.[^4]
 
 - **Sessions.** SQLite (`<data_dir>/sessions/sessions.db`), messages as
@@ -565,7 +566,7 @@ and loaded on demand, never eagerly injected.
 
 ### 7. Custom providers
 
-Two tiers below the 34 hand-written impls: 48 bundled declarative JSON
+Two tiers below the 36 statically registered providers: 48 bundled declarative JSON
 definitions for the long tail, and user-authored custom providers from
 `~/.config/goose/custom_providers/` (with command-based auth). Adding a
 provider to the long tail is a JSON file, not a Rust impl.[^35]
@@ -653,8 +654,8 @@ axis its competitors would have to invent from scratch.
 - **Catalog + heuristics at three scales.** aider: 313-entry hand-written
   YAML. Cline: ~200k-line generated catalog behind one generic adapter,
   exact-ID resolution, no heuristics. Goose: 8,160-entry generated
-  snapshot *plus* aider-style substring heuristics *plus* 34 hand-written
-  provider impls. Three philosophies of "know your model," and goose
+  snapshot *plus* aider-style substring heuristics *plus* 36 statically
+  registered providers. Three philosophies of "know your model," and goose
   picked all of them.[^4][^36]
 - **Compaction without budgeting.** Goose never budgets tokens per
   subsystem — no allocator, no per-tool caps. It just compacts the whole
@@ -693,9 +694,11 @@ axis its competitors would have to invent from scratch.
   The migration is prose.[^24]
 - **No model-name validation.** Any string is accepted as a model name;
   resolution is heuristics and fallbacks all the way down.[^36]
-- **No command sandbox.** The OSV malware check runs at extension
-  *install* time; `run_commands` executes unsandboxed in the user's
-  shell, like Cline, like aider.[^22]
+- **No command sandbox.** The OSV malware check runs when an
+  npx/uvx extension is spawned (and fails open for unknown ecosystems);
+  the developer extension's `shell` tool executes unsandboxed in the
+  user's shell, like Cline, like aider — inside a Flatpak build it even
+  routes commands to the host.[^22]
 - **Telegram is the only gateway.** The gateway abstraction has exactly
   one implementation; `create_gateway` bails on anything else.[^45]
 
@@ -704,26 +707,27 @@ axis its competitors would have to invent from scratch.
 | # | Dimension | pi (v1.0.2) | aider (v0.86.2) | Cline (v4.1.22) | Goose (v1.53.0) |
 |---|---|---|---|---|---|
 | 1 | Agent loop | Event-sourced; inner + outer loops; no iteration cap | No tool-call loop; parse→apply→reflect; REPL + reflection (≤3) + retry | Host-independent SDK `AgentRuntime.execute`; `maxIterations: undefined` — bound is 5 identical tool calls | **Two loops, migration in progress**: legacy `agent.rs` plain `loop{}` (default, `max_turns`=1000) vs opt-in effect-sourced state machine (`GOOSE_STATE_MACHINE=1`), LLM call dead last [^3][^6][^7][^10] |
-| 2 | Tool system | 4 built-ins + registry; TypeBox validation; sequential/parallel | None — model emits SEARCH/REPLACE blocks | 9 built-ins + MCP natives + team tools; sequential default, adjacent-parallel batching | **Entirely MCP-shaped**: every tool is an MCP server (builtins = in-process tokio duplex); `ext__tool` namespacing; no non-MCP path [^2][^21][^23] |
-| 3 | Model providers | ~35 behind one `StreamFn` | litellm; 313-entry YAML + substring heuristics | 228 providers, one generic Vercel AI SDK adapter; exact-ID resolution | Single `Provider` trait (`stream()` required); 34 static + 48 declarative JSON + custom; 8,160-entry models.dev snapshot (zstd-bundled, ETag hot-swap) + substring heuristics; no name validation [^34][^35][^36] |
+| 2 | Tool system | 8 built-ins (4 active by default) + registry; TypeBox validation; sequential/parallel | None — model emits SEARCH/REPLACE blocks | 9 built-ins (7 active in VS Code act mode) + MCP natives + team tools (SDK/CLI); sequential default, adjacent-parallel batching | **Entirely MCP-shaped**: every tool is an MCP server (builtins = in-process tokio duplex); `ext__tool` namespacing; no non-MCP path [^2][^21][^23] |
+| 3 | Model providers | ~42 behind one `StreamFn` | litellm; 313-entry YAML + substring heuristics | 228 providers, one generic Vercel AI SDK adapter; exact-ID resolution | Single `Provider` trait (`stream()` required); 36 static + 48 declarative JSON + custom; 8,160-entry models.dev snapshot (zstd-bundled, ETag hot-swap) + substring heuristics; no name validation [^34][^35][^36] |
 | 4 | Prompt construction | Structured sections, diffed per turn | Fixed wire order, synthetic user/assistant pairs, cache breakpoints | Template + placeholder replacement; `MessageBuilder` normalization | `PromptManager` from extension info + directory hints + goose mode; toolshim/native split per model; moim agent-only turn-context message [^14] |
-| 5 | Memory/session | JSONL sessions; compaction | In-memory cur/done; background summarization; markdown log; git auto-commit | SQLite + file-backend; versioned whole-file JSON envelopes; manual `/compact` | **SQLite** `sessions.db` + JSON blobs; full `Recipe` persisted on session record; explicit cross-session recall (chatrecall + SQL FTS); `user_visible`/`agent_visible` flags [^40] |
-| 6 | Reasoning/planning | Thinking forwarded; no planner/sub-agents | Architect = sequential delegation with user gate | plan/act modes (differ by one tool); sub-agents + teams | GooseMode (Auto/Approve/SmartApprove/Chat); `summon` sub-agents (forced Auto, 25 turns, no nesting); **recipes** as declarative task programs; in-process cron schedules (always Auto) [^29][^44][^46][^43] |
+| 5 | Memory/session | JSONL sessions; compaction | In-memory cur/done; background summarization; markdown log; git auto-commit | SQLite + file-backend; versioned whole-file JSON envelopes; auto + manual compaction | **SQLite** `sessions.db` + JSON blobs; full `Recipe` persisted on session record; explicit cross-session recall (chatrecall + SQL FTS); `user_visible`/`agent_visible` flags [^40] |
+| 6 | Reasoning/planning | Thinking forwarded; no planner/sub-agents | Architect = sequential delegation with user gate | plan/act modes (differ by one tool); sub-agents + teams (SDK/CLI only) | GooseMode (Auto/Approve/SmartApprove/Chat); `summon` sub-agents (forced Auto, 25 turns, no nesting); **recipes** as declarative task programs; in-process cron schedules (always Auto) [^29][^44][^46][^43] |
 | 7 | Extensibility | TS extensions, hooks, MCP, skills | 42 closed commands; no plugin API/MCP/skills | `AgentRuntimePlugin`, 7-callback hooks, file hooks, skills, MCP, sub-agents | **Broadest so far**: MCP extension configs (4 transports), 12-event plugin hooks, recipes, schedules, sub-agents, skills, custom providers, the `Provider` trait [^21][^42][^46][^43][^35][^34] |
 | 8 | Interfaces | TUI / print / RPC / SDK on one event stream | prompt_toolkit CLI + streamlit GUI | VS Code webview over proto-bus gRPC (22 svcs/224 RPCs) + CLI host + npm SDK re-export | **Rust CLI REPL** + Electron desktop + **ACP bridge** + Telegram gateway; loop emits `AgentEvent`s; uniffi Python/Kotlin bindings via `goose-sdk` [^20][^45][^41] |
 | 9 | Failure handling | Auto-retry, truncation guards, abort; no cap | Exp-backoff (60s); malformed edits reflected (≤3) | Provider retry 3×; output-limit recovery 3×; loop detection 3×/5× (reactive); mistake tracker 6; no host iteration cap | Three-layer retry (provider pre-first-item ≤3, recipe `RetryManager`, micro-retries); `max_turns`=1000; **repetition guard inert** (registered `None`) — the bound is turns, not loops [^7][^9] |
-| 10 | Security model | Project trust + extension hooks; no approval UX | Boundary prompts; git auto-commit + `/undo`; no sandbox | Finest-grained: per-tool policies + webview UI + diff previews; commands always prompt; no sandbox; per-turn stash checkpoints | **Modes × `permission.yaml` × 5-inspector chain** (security can only escalate); **LLM judge** for SmartApprove (UNTRUSTED-labeled, fail-closed); Always-Allow withheld on security warning; strict headless; **no undo** [^29][^30][^31][^32][^33][^28] |
+| 10 | Security model | Project trust + extension hooks; no approval UX | Boundary prompts; git auto-commit + `/undo`; no sandbox | Finest-grained: per-tool policies + webview UI + diff previews; commands prompt by default; no sandbox; per-turn stash checkpoints | **Modes × `permission.yaml` × 5-inspector chain** (security can only escalate); **LLM judge** for SmartApprove (UNTRUSTED-labeled, fail-closed); Always-Allow withheld on security warning; strict headless; **no undo** [^29][^30][^31][^32][^33][^28] |
 
 ## Endnotes
 
 All notes are VERIFIED against `v1.53.0`
-(`76da81cb964b21cd096db739302329b40c2998b8`) unless marked DOCS.
+(`76da81cb964b21cd096db739302329b40c2998b8`) unless marked DOCS; line
+anchors and file paths re-checked on 2026-10-07.
 `GH` = `https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/`.
 
 [^1]: Tag `v1.53.0`, SHA `76da81cb964b21cd096db739302329b40c2998b8`,
     committed 2026-09-30 14:19:01 -0400; Apache-2.0 (`LICENSE`); Rust
-    cargo workspace (`members = ["crates/*"]`). Non-test `.rs` in
-    `*/src`: `goose` 339 files / 176,482 LOC, `goose-cli` 51 / 28,625,
+    cargo workspace (`members = ["crates/*"]`). All `.rs` files under
+    `*/src` (in-tree test modules included): `goose` 339 files / 176,482 LOC, `goose-cli` 51 / 28,625,
     `goose-provider-types` 36 / 30,822, `goose-providers` 26 / 15,731,
     `goose-local-inference` 20 / 10,347, `goose-mcp` 11 / 6,084,
     `goose-agent` 6 / 1,557, `goose-context-management` 7 / 1,156,
@@ -740,7 +744,7 @@ All notes are VERIFIED against `v1.53.0`
 [^2]: "Builtin" means in-process MCP: every tool the agent sees arrives
     through the MCP client layer; builtins connect over in-process tokio
     duplex rather than subprocess stdio (see [^22]). There is no
-    non-MCP tool path — contrast pi's 4 native built-ins plus TS
+    non-MCP tool path — contrast pi's 8 native built-ins plus TS
     extension API.
 [^3]: `Agent::reply()` at
     [GH…/crates/goose/src/agents/agent.rs#L2079](https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/agent.rs#L2079)
@@ -748,7 +752,7 @@ All notes are VERIFIED against `v1.53.0`
     `goose::agents::state_machine::enabled()`
     (`crates/goose-cli/src/session/mod.rs:1456`), which is false unless
     `GOOSE_STATE_MACHINE` ∈ {`1`, `true`, `TRUE`, `yes`} at
-    [GH…/crates/goose/src/agents/state_machine/mod.rs#L73-L77](https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/state_machine/mod.rs#L73-L77).
+    [GH…/crates/goose/src/agents/state_machine/mod.rs#L72-L76](https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/state_machine/mod.rs#L72-L76).
     The repo's own `AGENTS.md:41-43`: "We are replacing the legacy agent
     loop in `crates/goose/src/agents/agent.rs` with the state machine in
     `crates/goose/src/agents/state_machine/`. … Until the migration is
@@ -797,7 +801,7 @@ All notes are VERIFIED against `v1.53.0`
     [GH…/crates/goose/src/agents/reply_parts.rs#L422-L458](https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/reply_parts.rs#L422-L458).
     (b) Recipe `RetryManager`: shell success checks, `on_failure`
     command, conversation reset to the `initial_messages` snapshot — at
-    [GH…/crates/goose/src/recipe/retry.rs#L92-L142](https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/recipe/retry.rs#L92-L142).
+    [GH…/crates/goose/src/agents/retry.rs#L92-L144](https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/retry.rs#L92-L144).
     (c) Micro-retries: empty-turn ×3, compaction ×2, stop-hook ×8. Tool
     failures arrive as error `ToolResponse` content, not exceptions. The
     `RepetitionInspector` is inert in the legacy path: registered with
@@ -929,7 +933,7 @@ All notes are VERIFIED against `v1.53.0`
     (no-op on unchanged config), resolving secrets/envs against a 31-key
     env denylist, then connecting per type: stdio spawns a subprocess
     with an OSV malware check on npx/uvx at
-    [GH…/crates/goose/src/extension_malware_check.rs#L44](https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/extension_malware_check.rs#L44);
+    [GH…/crates/goose/src/agents/extension_malware_check.rs#L44](https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/extension_malware_check.rs#L44);
     builtin servers connect over in-process tokio duplex at
     [GH…/crates/goose/src/agents/extension_manager/builtin.rs#L10](https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/extension_manager/builtin.rs#L10);
     platform extensions run in-process via the client factory; remote
@@ -966,7 +970,7 @@ All notes are VERIFIED against `v1.53.0`
     Registry. The repo's AGENTS.md refuses new `servers.json` entries
     pending that migration. `search_available_extensions` is
     config-local only at
-    [GH…/crates/goose/src/agents/ext_manager.rs#L517-L563](https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/ext_manager.rs#L517-L563).
+    [GH…/crates/goose/src/agents/platform_extensions/ext_manager.rs#L107-L124](https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/platform_extensions/ext_manager.rs#L107-L124).
 [^25]: `ToolInfo.permission` is dead code: defined at
     [GH…/crates/goose/src/agents/extension.rs#L569](https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/extension.rs#L569),
     zero other references repo-wide. `manage_extensions` always requires
@@ -995,7 +999,7 @@ All notes are VERIFIED against `v1.53.0`
     safety is entirely preventive (modes, inspectors, judges, hooks),
     never restorative.
 [^29]: `GooseMode` at
-    [GH…/crates/goose-provider-types/src/goose_mode.rs#L22-L36](https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose-provider-types/src/goose_mode.rs#L22-L36):
+    [GH…/crates/goose-provider-types/src/goose_mode.rs#L22-L32](https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose-provider-types/src/goose_mode.rs#L22-L32):
     `Auto` (default; "Automatically approve tool calls"), `Approve`
     ("Ask before every tool call"), `SmartApprove` ("Ask only for
     sensitive tool calls"), `Chat` ("Chat only, no tool calls"). Config
@@ -1053,18 +1057,19 @@ All notes are VERIFIED against `v1.53.0`
     [GH…/crates/goose-provider-types/src/base.rs#L504](https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose-provider-types/src/base.rs#L504):
     `stream()` is the only required behavioral method; `complete()`
     defaults to stream-plus-`collect_stream`, overridden only at
-    [GH…/crates/goose-providers/src/githubcopilot.rs#L621](https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose-providers/src/githubcopilot.rs#L621).
+    [GH…/crates/goose/src/providers/githubcopilot.rs#L621](https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/providers/githubcopilot.rs#L621).
     Negative finding: `grep "pub trait Provider\b"
     crates/goose-provider-types/src` → exactly one hit — a single trait.
-[^35]: 34 static registrations at
-    [GH…/crates/goose-providers/src/providers/init.rs#L54-L158](https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose-providers/src/providers/init.rs#L54-L158)
+[^35]: 36 static registrations (unique `register::<…>` /
+    `register_with_inventory::<…>` calls in `init_registry`) at
+    [GH…/crates/goose/src/providers/init.rs#L58-L231](https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/providers/init.rs#L58-L231)
     (incl. feature-gated `aws_bedrock`, `sagemaker_tgi`, `local`) + 48
     bundled declarative JSON definitions + user custom providers from
     `~/.config/goose/custom_providers/`. Four tiers
     (Preferred/Builtin/Declarative/Custom); selection chain
     (`--provider` flag → saved session → recipe → `GOOSE_PROVIDER` env >
     `active_provider` config > legacy param) at
-    [GH…/crates/goose/src/session/builder.rs#L283-L446](https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/session/builder.rs#L283-L446).
+    [GH…/crates/goose-cli/src/session/builder.rs#L291-L447](https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose-cli/src/session/builder.rs#L291-L447).
 [^36]: The model catalog: an **8,160-entry models.dev snapshot**
     zstd-bundled at build time at
     [GH…/crates/goose-provider-types/src/canonical/models_dev.rs#L36-L49](https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose-provider-types/src/canonical/models_dev.rs#L36-L49)
@@ -1104,7 +1109,7 @@ All notes are VERIFIED against `v1.53.0`
     conversation blocks at
     [GH…/crates/goose-provider-types/src/conversation/message.rs#L133-L330](https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose-provider-types/src/conversation/message.rs#L133-L330).
     Cost is estimated, never authoritative unless provider-reported, at
-    [GH…/crates/goose/src/usage_estimator.rs#L11-L19](https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/usage_estimator.rs#L11-L19).
+    [GH…/crates/goose/src/providers/usage_estimator.rs#L9-L20](https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/providers/usage_estimator.rs#L9-L20).
 [^40]: SQLite at `<data_dir>/sessions/sessions.db` —
     [GH…/crates/goose/src/session/session_manager.rs#L29-L30](https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/session/session_manager.rs#L29-L30)
     and
@@ -1279,9 +1284,7 @@ All notes are VERIFIED against `v1.53.0`
     Execution (`goose run --recipe`) at
     [GH…/crates/goose-cli/src/recipes/extract_from_cli.rs#L11-L61](https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose-cli/src/recipes/extract_from_cli.rs#L11-L61);
     the full recipe is persisted on the session record at
-    [GH…/crates/goose/src/session/builder.rs#L563-L688](https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/session/builder.rs#L563-L688)
-    and
-    [L808-L815](https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/session/builder.rs#L808-L815).
+    [GH…/crates/goose-cli/src/session/builder.rs#L808-L815](https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose-cli/src/session/builder.rs#L808-L815).
     Auto-augmentation at
     [GH…/crates/goose/src/recipe/mod.rs#L231-L271](https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/recipe/mod.rs#L231-L271)
     and

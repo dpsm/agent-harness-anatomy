@@ -69,7 +69,7 @@ lives in the endnotes.</p>
 <ul>
 <li><strong>Repo:</strong> <a href="https://github.com/openai/codex">openai/codex</a></li>
 <li><strong>Pinned:</strong> tag <code>rust-v0.160.0</code> → <code>a956835d020762cb2b570053af06f643a11c0ecc</code> (2026-10-01)</li>
-<li><strong>Language:</strong> Rust (cargo workspace <code>codex-rs/</code>, 155 members)</li>
+<li><strong>Language:</strong> Rust (cargo workspace <code>codex-rs/</code>, 154 members)</li>
 <li><strong>License:</strong> Apache-2.0</li>
 <li><strong>Claim under test:</strong> "a local, extensible, open source AI agent"</li>
 <li><strong>Scope:</strong> this teardown covers the <strong>Rust CLI</strong> (<code>codex-rs/</code>), the
@@ -92,7 +92,7 @@ lives in the endnotes.</p>
 </tr>
 <tr>
 <td><code>tui</code></td>
-<td>698 files, 321,410 LOC</td>
+<td>660 files, 271,033 LOC</td>
 <td>Interactive terminal UI (Ratatui; genuinely large, no generated bulk)</td>
 </tr>
 <tr>
@@ -128,7 +128,7 @@ lives in the endnotes.</p>
 <tr>
 <td><code>hooks</code></td>
 <td>28 files, 11,657 LOC</td>
-<td>Hook system (10 lifecycle events)</td>
+<td>Hook system (12 lifecycle events)</td>
 </tr>
 <tr>
 <td><code>rollout</code></td>
@@ -167,7 +167,8 @@ lives in the endnotes.</p>
 </tr>
 </tbody>
 </table>
-<p>Workspace total: 3,058 non-test <code>.rs</code> files under <code>codex-rs/*/src</code>.
+<p>Workspace total: 3,017 non-test <code>.rs</code> files under the workspace crates' <code>src/</code>
+directories (excluding <code>*tests.rs</code> and <code>tests/</code>).
 Entry is the CLI binary at <code>codex-rs/cli/src/main.rs</code> → <code>cli_main</code>;
 bare <code>codex</code> launches the TUI; the agent loop is <code>run_turn</code> at
 <code>codex-rs/core/src/session/turn.rs</code>.<sup id="fnref:1"><a class="footnote-ref" href="#fn:1">1</a></sup></p>
@@ -243,7 +244,7 @@ control), <code>elicitation.rs</code>.</p>
 </code></pre>
 <p>It returns the last agent message. The loop is <strong>condition-driven</strong>
 (<code>loop {}</code> + <code>break</code>/<code>continue</code>), not counter-driven — there is no
-iteration counter anywhere in the 155 crates.<sup id="fnref:7"><a class="footnote-ref" href="#fn:7">7</a></sup></p>
+iteration counter anywhere in the 154 crates.<sup id="fnref:7"><a class="footnote-ref" href="#fn:7">7</a></sup></p>
 <p>Loop-body stages per iteration (<code>turn.rs:426-838</code>): drain pending user
 input → prompt-hook inspection → step-context capture (re-resolves tools,
 permissions, environments) → time reminder + world state → prompt build
@@ -255,7 +256,7 @@ post-turn compaction) → <code>continue</code>/<code>break</code> → error arm
 (<code>Op::Interrupt</code> → <code>abort_all_tasks(Interrupted)</code> → <code>TurnAborted</code> at
 every await point); or the server's <code>end_turn: false</code> absent with no tool
 calls.<sup id="fnref:8"><a class="footnote-ref" href="#fn:8">8</a></sup> <strong>No <code>max_turns</code>, <code>max_iterations</code>, or step cap exists in
-non-test code</strong> — an exhaustive grep across all 155 crates finds only
+non-test code</strong> — an exhaustive grep across all 154 crates finds only
 unrelated caps (a guardian token budget, a tool-search byte cap, TUI
 history-read limits).<sup id="fnref2:7"><a class="footnote-ref" href="#fn:7">7</a></sup> The doom-loop guard is a retry budget plus
 compaction-once-per-step plus the user interrupt — reactive, like
@@ -290,7 +291,7 @@ RPC client:<sup id="fnref:13"><a class="footnote-ref" href="#fn:13">13</a></sup>
    sandbox-policy and permission overrides resolved from config.</li>
 <li><strong>Route to core.</strong> <code>turn_processor.rs:630</code> →
    <code>thread.start_or_steer_turn(...)</code> → <code>Op::TurnInput</code>
-   (<code>protocol/src/protocol.rs:622</code>) → <code>session/handlers.rs:485</code> →
+   (<code>protocol/src/protocol.rs:625</code>) → <code>session/handlers.rs:485</code> →
    <code>turn_input::handle</code>. The op enum is the entire vocabulary the
    server speaks to core.<sup id="fnref2:13"><a class="footnote-ref" href="#fn:13">13</a></sup></li>
 <li><strong>Start task.</strong> No active turn → <code>spawn_task</code> (<code>turn_input.rs:365</code>) →
@@ -332,11 +333,11 @@ RPC client:<sup id="fnref:13"><a class="footnote-ref" href="#fn:13">13</a></sup>
     Denials become failure tool results, not loop breaks.<sup id="fnref2:11"><a class="footnote-ref" href="#fn:11">11</a></sup></li>
 <li><strong>Loop or stop.</strong> <code>drain_in_flight</code> records every
     <code>FunctionCallOutput</code> envelope into history (<code>turn.rs:2466-2492</code>).
-    <code>needs_follow_up = true</code> → <code>continue</code> (<code>turn.rs:725</code>): iteration 2
+    <code>needs_follow_up = true</code> → <code>continue</code> (<code>turn.rs:757</code>): iteration 2
     rebuilds the prompt from history now containing tool results. The
     model replies with only an assistant message →
     <code>!needs_follow_up</code> → stop hooks → post-turn compaction check →
-    <code>break</code> (<code>turn.rs:653-723</code>). <code>run_turn</code> returns
+    <code>break</code> (<code>turn.rs:653-755</code>). <code>run_turn</code> returns
     <code>Ok(last_agent_message)</code> (<code>:839</code>); <code>TurnCompleted</code> is emitted and
     the TUI renders from the streamed events.<sup id="fnref6:5"><a class="footnote-ref" href="#fn:5">5</a></sup><sup id="fnref2:8"><a class="footnote-ref" href="#fn:8">8</a></sup></li>
 </ol>
@@ -357,7 +358,7 @@ and then trusts them. Codex constrains the blast radius in the OS.</p>
 <p><strong>Layer 1 — the exec-policy language.</strong> A Starlark per-command policy
 language (<code>codex-execpolicy</code> crate) that decides <strong>allow / prompt /
 forbid</strong> before anything runs. Exactly three builtins
-(<code>execpolicy/src/parser.rs:329-473</code>): <code>prefix_rule</code> (argv-prefix
+(<code>execpolicy/src/parser.rs:347-473</code>): <code>prefix_rule</code> (argv-prefix
 matching, first token keys the lookup; <code>match</code>/<code>not_match</code> examples
 validated at parse time), <code>network_rule</code> (wildcards forbidden at parse,
 <code>rule.rs:196-200</code>), <code>host_executable</code> (a PATH-spoofing defense).
@@ -383,7 +384,7 @@ default <code>ReadOnly</code>) with a compatibility shim both ways — two polic
 models, one name, and the runtime authority is the profile.<sup id="fnref:16"><a class="footnote-ref" href="#fn:16">16</a></sup></p>
 <p><strong>Layer 3 — the platform backends.</strong> The OS <em>how</em>
 (<code>codex-sandboxing</code> crate + helpers), selected per platform by
-<code>get_platform_sandbox()</code> (<code>sandboxing/src/policy_transforms.rs:646</code>):
+<code>get_platform_sandbox()</code> (<code>sandboxing/src/manager.rs:49</code>):
 - <strong>macOS:</strong> Seatbelt via <code>/usr/bin/sandbox-exec</code> with embedded
   <code>.sbpl</code> templates, starting from <code>(deny default)</code>. The network
   block is binary on/off — fine-grained domains need Layer 4.
@@ -429,7 +430,7 @@ the tree is <code>linux-sandbox/README.md</code>, Linux only.<sup id="fnref:20">
 <h2 id="subsystem-inventory">Subsystem inventory</h2>
 <h3 id="1-the-approval-model-policyux-half">1. The approval model (policy/UX half)</h3>
 <p>Approvals in Codex are <strong>per-action, not per-tool-name</strong>. The sealed
-<code>ApprovalAction</code> enum (<code>tools/approvals.rs:66</code>) enumerates exactly what
+<code>ApprovalAction</code> enum (<code>tools/approvals.rs:67</code>) enumerates exactly what
 can be approved: <code>ExecCommand</code>, <code>WriteStdin</code>, <code>Execve</code>, <code>ApplyPatch</code>,
 <code>McpToolCall</code>, <code>NetworkAccess</code>, <code>RequestPermissions</code>. There is no
 generic "approve tool X" primitive — <code>write_stdin</code> is an
@@ -535,10 +536,11 @@ machinery of the four.</p>
   fragments injected into the turn. Plus implicit invocation when a
   shell command matches a skill's. Same shape as pi and Cline —
   skills ride the prompt, never the tool registry.<sup id="fnref2:27"><a class="footnote-ref" href="#fn:27">27</a></sup></li>
-<li><strong>Hooks</strong>: 10 lifecycle events (<code>session_start</code>,
+<li><strong>Hooks</strong>: 12 lifecycle events (<code>session_start</code>,
   <code>user_prompt_submit</code>, <code>pre_tool_use</code>, <code>permission_request</code>,
   <code>post_tool_use</code>, <code>stop</code>, <code>interrupt</code>, <code>pre/post_compact</code>,
-  <code>session_end</code>) plus the legacy <code>after_agent</code>. Hooks are shell
+  <code>subagent_start</code>, <code>subagent_stop</code>, <code>session_end</code>) plus the legacy
+  <code>after_agent</code>. Hooks are shell
   commands or MCP servers; they can block, rewrite tool input,
   inject context, or force approval decisions — and they sit at
   precedence #1 in the approval chain, ahead of the Guardian and
@@ -578,7 +580,7 @@ the retry counter; <code>UnboundedConnectionRetries</code> retries
 connection failures forever on a 5s→60s backoff.<sup id="fnref2:3"><a class="footnote-ref" href="#fn:3">3</a></sup><sup id="fnref:31"><a class="footnote-ref" href="#fn:31">31</a></sup></p>
 <p>Five built-in providers: <code>openai</code> (default), <code>amazon-bedrock</code>,
 <code>amazon-bedrock-runtime</code>, <code>ollama</code> (localhost:11434), <code>lmstudio</code>
-(localhost:1234) (<code>model-provider-info/src/lib.rs:653-686</code>) — and
+(localhost:1234) (<code>model-provider-info/src/lib.rs:652-684</code>) — and
 the repo comment explicitly refuses third-party bundling; users
 add <code>model_providers</code> in config.toml. The <code>ModelProvider</code> trait
 (<code>model-provider/src/provider.rs:141</code>) exposes <code>info()</code>,
@@ -611,7 +613,7 @@ cap.<sup id="fnref2:32"><a class="footnote-ref" href="#fn:32">32</a></sup></p>
 <h3 id="9-sessions">9. Sessions</h3>
 <p>Rollout JSONL at
 <code>~/.codex/sessions/YYYY/MM/DD/rollout-&lt;ts&gt;-&lt;uuid&gt;.jsonl</code>
-(<code>rollout/src/list.rs:438</code>); 14 <code>RolloutItem</code> variants
+(<code>rollout/src/list.rs:438</code>); 12 <code>RolloutItem</code> variants
 (<code>history/src/lib.rs:201</code>) — <code>SessionMeta</code>, <code>ResponseItem</code>,
 <code>InterAgentCommunication</code>, <code>Compacted</code>, <code>TurnContext</code>,
 <code>TokenUsageRecord</code>, <code>WorldState</code>, <code>SecurityRiskScore</code>,
@@ -653,8 +655,10 @@ archive | unarchive | delete | queue</code>.<sup id="fnref:34"><a class="footnot
 <p>A <strong>9-layer stack</strong>
 (<code>config/src/config_layer_source.rs:6</code>): PackagedDefaults → Mdm
 → System → EnterpriseManaged → User (<code>~/.codex/config.toml</code> +
-named profiles) → Project (<code>.codex/</code>) → SessionFlags → CLI
-<code>--config</code> overrides. Key settings: <code>model</code>,
+named profiles) → Project (<code>.codex/</code>) → SessionFlags (session
+overrides, including CLI <code>--config</code>), plus two legacy
+managed-config layers (<code>LegacyManagedConfigTomlFromFile</code>,
+<code>LegacyManagedConfigTomlFromMdm</code>). Key settings: <code>model</code>,
 <code>model_provider(s)</code>, <code>approval_policy</code>, <code>sandbox_mode</code>,
 <code>instructions</code>, <code>profile</code>, <code>otel</code>, <code>memories</code>,
 <code>project_doc_max_bytes</code>. The schema is emitted to
@@ -697,7 +701,7 @@ not tools.<sup id="fnref:27"><a class="footnote-ref" href="#fn:27">27</a></sup><
 <p><strong>Start here:</strong> <code>collect_explicit_skill_mentions</code> in
 <code>core/src/</code>, then the <code>skills</code> crate for discovery.</p>
 <h3 id="4-hooks">4. Hooks</h3>
-<p>10 lifecycle events + legacy <code>after_agent</code>; shell commands or
+<p>12 lifecycle events + legacy <code>after_agent</code>; shell commands or
 MCP servers; can block, rewrite tool input, inject context, or
 force approval decisions — precedence #1 in the approval chain,
 ahead of the Guardian and the user.<sup id="fnref:28"><a class="footnote-ref" href="#fn:28">28</a></sup></p>
@@ -780,7 +784,7 @@ not a fork.<sup id="fnref2:35"><a class="footnote-ref" href="#fn:35">35</a></sup
   sandbox sees everything; a native <code>read_file</code> would bypass
   Layer 1's Starlark policy entirely. The missing tool is the
   sandbox's load-bearing wall.<sup id="fnref2:24"><a class="footnote-ref" href="#fn:24">24</a></sup><sup id="fnref2:15"><a class="footnote-ref" href="#fn:15">15</a></sup></li>
-<li><strong>Unbounded by construction.</strong> No <code>max_turns</code> anywhere in 155
+<li><strong>Unbounded by construction.</strong> No <code>max_turns</code> anywhere in 154
   crates — the loop ends when the model stops calling tools, a hook
   says stop, or the user interrupts. Against Goose's 1000-turn
   budget and Cline's 5-identical-call tripwire, Codex trusts the
@@ -849,24 +853,24 @@ not a fork.<sup id="fnref2:35"><a class="footnote-ref" href="#fn:35">35</a></sup
 <td>No tool-call loop; parse→apply→reflect; REPL + reflection (≤3) + retry</td>
 <td>Host-independent SDK <code>AgentRuntime.execute</code>; <code>maxIterations: undefined</code> — bound is 5 identical tool calls</td>
 <td>Two loops, migration in progress: legacy <code>agent.rs</code> plain <code>loop{}</code> (default, <code>max_turns</code>=1000) vs opt-in effect-sourced state machine, LLM call dead last</td>
-<td><strong>Three nested</strong>: <code>RegularTask::run</code> → <code>run_turn</code> <code>loop{}</code> (one sampling request/iter) → stream-consumer + retry; condition-driven; <strong>no max_turns anywhere in 155 crates</strong> — bound is retry budget + compaction-once-per-step + user interrupt <sup id="fnref7:5"><a class="footnote-ref" href="#fn:5">5</a></sup><sup id="fnref4:7"><a class="footnote-ref" href="#fn:7">7</a></sup><sup id="fnref3:9"><a class="footnote-ref" href="#fn:9">9</a></sup></td>
+<td><strong>Three nested</strong>: <code>RegularTask::run</code> → <code>run_turn</code> <code>loop{}</code> (one sampling request/iter) → stream-consumer + retry; condition-driven; <strong>no max_turns anywhere in 154 crates</strong> — bound is retry budget + compaction-once-per-step + user interrupt <sup id="fnref7:5"><a class="footnote-ref" href="#fn:5">5</a></sup><sup id="fnref4:7"><a class="footnote-ref" href="#fn:7">7</a></sup><sup id="fnref3:9"><a class="footnote-ref" href="#fn:9">9</a></sup></td>
 </tr>
 <tr>
 <td>2</td>
 <td>Tool system</td>
-<td>4 built-ins + registry; TypeBox validation; sequential/parallel</td>
+<td>8 built-ins (4 active by default) + registry; TypeBox validation; sequential/parallel</td>
 <td>None — model emits SEARCH/REPLACE blocks</td>
-<td>9 built-ins + MCP natives + team tools; sequential default, adjacent-parallel batching</td>
+<td>9 built-ins (7 active in VS Code act mode) + MCP natives + team tools (SDK/CLI); sequential default, adjacent-parallel batching</td>
 <td>Entirely MCP-shaped: every tool is an MCP server (builtins = in-process tokio duplex); <code>ext__tool</code> namespacing; no non-MCP path</td>
 <td>Responses API function tools; <code>ToolRegistry</code> (<code>IndexMap</code>) + <code>ToolExecutor</code> trait; <code>ToolExposure</code> (<code>Deferred</code> + <code>tool_search</code>); concurrent dispatch (<code>FuturesOrdered</code>); <strong>no built-in read_file/write_file/edit</strong> — reads via <code>exec_command</code>, edits via <code>apply_patch</code> <sup id="fnref3:10"><a class="footnote-ref" href="#fn:10">10</a></sup><sup id="fnref4:23"><a class="footnote-ref" href="#fn:23">23</a></sup><sup id="fnref4:24"><a class="footnote-ref" href="#fn:24">24</a></sup><sup id="fnref2:25"><a class="footnote-ref" href="#fn:25">25</a></sup></td>
 </tr>
 <tr>
 <td>3</td>
 <td>Model providers</td>
-<td>~35 behind one <code>StreamFn</code></td>
+<td>~42 behind one <code>StreamFn</code></td>
 <td>litellm; 313-entry YAML + substring heuristics</td>
 <td>228 providers, one generic Vercel AI SDK adapter; exact-ID resolution</td>
-<td>Single <code>Provider</code> trait (<code>stream()</code> required); 34 static + 48 declarative JSON + custom; 8,160-entry models.dev snapshot + heuristics</td>
+<td>Single <code>Provider</code> trait (<code>stream()</code> required); 36 static + 48 declarative JSON + custom; 8,160-entry models.dev snapshot + heuristics</td>
 <td><strong>Responses-API-only</strong> (<code>WireApi</code> single variant; <code>"chat"</code> rejected); 5 built-in providers (openai, 2× Bedrock, ollama, lmstudio); <strong>8 auth modes</strong>; <code>ModelProvider</code> trait; WS-first + HTTP/SSE fallback to <code>/responses</code>; retries 5 (cap 100) <sup id="fnref6:3"><a class="footnote-ref" href="#fn:3">3</a></sup><sup id="fnref5:31"><a class="footnote-ref" href="#fn:31">31</a></sup></td>
 </tr>
 <tr>
@@ -883,7 +887,7 @@ not a fork.<sup id="fnref2:35"><a class="footnote-ref" href="#fn:35">35</a></sup
 <td>Memory/session</td>
 <td>JSONL sessions; compaction</td>
 <td>In-memory cur/done; background summarization; markdown log; git auto-commit</td>
-<td>SQLite + file-backend; versioned whole-file JSON envelopes; manual <code>/compact</code></td>
+<td>SQLite + file-backend; versioned whole-file JSON envelopes; auto + manual compaction</td>
 <td>SQLite <code>sessions.db</code> + JSON blobs; full <code>Recipe</code> persisted; explicit cross-session recall; <code>user_visible</code>/<code>agent_visible</code> flags</td>
 <td><strong>Rollout JSONL</strong> <code>~/.codex/sessions/YYYY/MM/DD/</code> (14 <code>RolloutItem</code> variants) + SQLite index; fork 3 modes (<code>Copied</code>/<code>CopiedDeferred</code>/<code>Referenced</code>); <strong>cross-session LLM memory extraction</strong> (<code>$CODEX_HOME/memories</code>); resume = client-side rebuild <sup id="fnref3:33"><a class="footnote-ref" href="#fn:33">33</a></sup><sup id="fnref2:34"><a class="footnote-ref" href="#fn:34">34</a></sup></td>
 </tr>
@@ -892,7 +896,7 @@ not a fork.<sup id="fnref2:35"><a class="footnote-ref" href="#fn:35">35</a></sup
 <td>Reasoning/planning</td>
 <td>Thinking forwarded; no planner/sub-agents</td>
 <td>Architect = sequential delegation with user gate</td>
-<td>plan/act modes (differ by one tool); sub-agents + teams</td>
+<td>plan/act modes (differ by one tool); sub-agents + teams (SDK/CLI only)</td>
 <td>GooseMode (Auto/Approve/SmartApprove/Chat); <code>summon</code> sub-agents (forced Auto, 25 turns, no nesting); recipes; in-process cron</td>
 <td><strong>Sub-agents, two generations</strong> (V1 <code>multi_agent_v1.*</code>, V2 plain names) via <code>multi_agent_version</code>, <code>agent_max_depth</code>; <code>update_plan</code> tool; <strong>Guardian LLM auto-reviewer</strong> in the approval chain <sup id="fnref3:30"><a class="footnote-ref" href="#fn:30">30</a></sup><sup id="fnref2:22"><a class="footnote-ref" href="#fn:22">22</a></sup><sup id="fnref5:23"><a class="footnote-ref" href="#fn:23">23</a></sup></td>
 </tr>
@@ -903,7 +907,7 @@ not a fork.<sup id="fnref2:35"><a class="footnote-ref" href="#fn:35">35</a></sup
 <td>42 closed commands; no plugin API/MCP/skills</td>
 <td><code>AgentRuntimePlugin</code>, 7-callback hooks, file hooks, skills, MCP, sub-agents</td>
 <td>Broadest so far: MCP configs (4 transports), 12-event hooks, recipes, schedules, sub-agents, skills, custom providers, <code>Provider</code> trait</td>
-<td><code>ToolExecutor</code> trait + <code>ToolContributor</code>; <strong>MCP wrapped</strong> (<code>McpHandler</code>, client-only); skills = prompt injection; hooks (10 events, precedence #1 in approvals); plugins (manifest); <strong>closed TUI slash commands</strong>; user-declared providers <sup id="fnref6:23"><a class="footnote-ref" href="#fn:23">23</a></sup><sup id="fnref3:26"><a class="footnote-ref" href="#fn:26">26</a></sup><sup id="fnref3:27"><a class="footnote-ref" href="#fn:27">27</a></sup><sup id="fnref3:28"><a class="footnote-ref" href="#fn:28">28</a></sup><sup id="fnref5:29"><a class="footnote-ref" href="#fn:29">29</a></sup><sup id="fnref6:31"><a class="footnote-ref" href="#fn:31">31</a></sup></td>
+<td><code>ToolExecutor</code> trait + <code>ToolContributor</code>; <strong>MCP wrapped</strong> (<code>McpHandler</code>, client-only); skills = prompt injection; hooks (12 events, precedence #1 in approvals); plugins (manifest); <strong>closed TUI slash commands</strong>; user-declared providers <sup id="fnref6:23"><a class="footnote-ref" href="#fn:23">23</a></sup><sup id="fnref3:26"><a class="footnote-ref" href="#fn:26">26</a></sup><sup id="fnref3:27"><a class="footnote-ref" href="#fn:27">27</a></sup><sup id="fnref3:28"><a class="footnote-ref" href="#fn:28">28</a></sup><sup id="fnref5:29"><a class="footnote-ref" href="#fn:29">29</a></sup><sup id="fnref6:31"><a class="footnote-ref" href="#fn:31">31</a></sup></td>
 </tr>
 <tr>
 <td>8</td>
@@ -928,7 +932,7 @@ not a fork.<sup id="fnref2:35"><a class="footnote-ref" href="#fn:35">35</a></sup
 <td>Security model</td>
 <td>Project trust + extension hooks; no approval UX</td>
 <td>Boundary prompts; git auto-commit + <code>/undo</code>; no sandbox</td>
-<td>Finest-grained: per-tool policies + webview UI + diff previews; commands always prompt; no sandbox; per-turn stash checkpoints</td>
+<td>Finest-grained: per-tool policies + webview UI + diff previews; commands prompt by default; no sandbox; per-turn stash checkpoints</td>
 <td>Modes × <code>permission.yaml</code> × 5-inspector chain; LLM judge for SmartApprove; no undo</td>
 <td><strong>Strongest: 4-layer sandbox</strong> (Starlark exec-policy → <code>PermissionProfile</code> → OS backends: Seatbelt / bwrap+landlock+seccomp / Windows PSEC → MITM network proxy); <strong>per-action approvals</strong> (sealed enum); hooks → Guardian → user; <code>AskForApproval</code> 4-mode ladder; <strong>no undo</strong> <sup id="fnref3:4"><a class="footnote-ref" href="#fn:4">4</a></sup><sup id="fnref4:15"><a class="footnote-ref" href="#fn:15">15</a></sup><sup id="fnref3:16"><a class="footnote-ref" href="#fn:16">16</a></sup><sup id="fnref3:17"><a class="footnote-ref" href="#fn:17">17</a></sup><sup id="fnref3:18"><a class="footnote-ref" href="#fn:18">18</a></sup><sup id="fnref4:21"><a class="footnote-ref" href="#fn:21">21</a></sup><sup id="fnref3:22"><a class="footnote-ref" href="#fn:22">22</a></sup></td>
 </tr>
@@ -936,7 +940,8 @@ not a fork.<sup id="fnref2:35"><a class="footnote-ref" href="#fn:35">35</a></sup
 </table>
 <h2 id="endnotes">Endnotes</h2>
 <p>All notes are VERIFIED against <code>rust-v0.160.0</code>
-(<code>a956835d020762cb2b570053af06f643a11c0ecc</code>) unless marked DOCS.
+(<code>a956835d020762cb2b570053af06f643a11c0ecc</code>) unless marked DOCS; line
+anchors and file paths re-checked on 2026-10-07.
 <code>GH</code> = <code>https://github.com/openai/codex/blob/a956835d020762cb2b570053af06f643a11c0ecc/</code>.</p>
 <div class="footnote">
 <hr />
@@ -945,8 +950,9 @@ not a fork.<sup id="fnref2:35"><a class="footnote-ref" href="#fn:35">35</a></sup
 <p>Tag <code>rust-v0.160.0</code>, SHA
 <code>a956835d020762cb2b570053af06f643a11c0ecc</code>, committed 2026-10-01
 17:13:37 +0000; Apache-2.0 (<code>LICENSE</code>); Rust cargo workspace
-<code>codex-rs/</code> (155 members per <code>Cargo.toml</code>). Non-test <code>.rs</code> in
-<code>*/src</code>: <code>core</code> 409 files / 123,071 LOC, <code>tui</code> 698 / 321,410,
+<code>codex-rs/</code> (154 members per <code>Cargo.toml</code>). Non-test <code>.rs</code> in
+<code>*/src</code> (excluding <code>*tests.rs</code> and <code>tests/</code> dirs): <code>core</code> 409
+files / 123,071 LOC, <code>tui</code> 660 / 271,033,
 <code>app-server</code> 119 / 50,602, <code>exec-server</code> 89 / 33,513, <code>cli</code> 50 /
 27,788, <code>protocol</code> 56 / 28,203, <code>config</code> 64 / 21,549,
 <code>codex-mcp</code> 36 / 13,081, <code>hooks</code> 28 / 11,657, <code>rollout</code> 22 /
@@ -990,7 +996,8 @@ failures forever (5s→60s backoff).&#160;<a class="footnote-backref" href="#fnr
 (<code>codex-rs/execpolicy/</code>), the declarative <code>PermissionProfile</code>
 (<a href="https://github.com/openai/codex/blob/a956835d020762cb2b570053af06f643a11c0ecc/codex-rs/protocol/src/models.rs#L422">GH…/codex-rs/protocol/src/models.rs#L422</a>),
 the OS backends (<code>codex-rs/sandboxing/</code> + helpers), and the
-local MITM network proxy (<code>codex-rs/codex-network-proxy/</code>).&#160;<a class="footnote-backref" href="#fnref:4" title="Jump back to footnote 4 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:4" title="Jump back to footnote 4 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:4" title="Jump back to footnote 4 in the text">&#8617;</a></p>
+local MITM network proxy (crate <code>codex-network-proxy</code> in
+<code>codex-rs/network-proxy/</code>).&#160;<a class="footnote-backref" href="#fnref:4" title="Jump back to footnote 4 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:4" title="Jump back to footnote 4 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:4" title="Jump back to footnote 4 in the text">&#8617;</a></p>
 </li>
 <li id="fn:5">
 <p>Three nested loops: <code>RegularTask::run</code>
@@ -1017,7 +1024,7 @@ Returns the last agent message (<code>Ok(last_agent_message)</code> at
 <li id="fn:7">
 <p>No <code>max_turns</code> / <code>max_iterations</code> / <code>max_steps</code> in non-test
 code: <code>grep -rniE "max_turns|max_iterations|max_steps|
-max_tool_calls" codex-rs --include="*.rs"</code> across all 155
+max_tool_calls" codex-rs --include="*.rs"</code> across all 154
 crates, excluding tests/snapshots → only
 <code>RECAP_HISTORY_MAX_TURNS</code> (a TUI display cap,
 <code>tui/src/app/recap_history.rs:13</code>); second sweep
@@ -1119,7 +1126,7 @@ shim both ways.&#160;<a class="footnote-backref" href="#fnref:16" title="Jump ba
 </li>
 <li id="fn:17">
 <p>Backend selection via <code>get_platform_sandbox()</code>
-(<code>sandboxing/src/policy_transforms.rs:646</code>). macOS:
+(<code>sandboxing/src/manager.rs:49</code>). macOS:
 Seatbelt via <code>/usr/bin/sandbox-exec</code> (deny-default
 <code>.sbpl</code>). Linux: bubblewrap + landlock + seccomp through
 the <code>codex-linux-sandbox</code> helper — the <code>codex-exec</code> binary
@@ -1137,7 +1144,7 @@ reconcile them. <code>mod bwrap</code> is <code>#[cfg(target_os =
 requests are a hard error.&#160;<a class="footnote-backref" href="#fnref:17" title="Jump back to footnote 17 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:17" title="Jump back to footnote 17 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:17" title="Jump back to footnote 17 in the text">&#8617;</a></p>
 </li>
 <li id="fn:18">
-<p><a href="https://github.com/openai/codex/blob/a956835d020762cb2b570053af06f643a11c0ecc/codex-rs/codex-network-proxy/">GH…/codex-network-proxy/</a>
+<p><a href="https://github.com/openai/codex/tree/a956835d020762cb2b570053af06f643a11c0ecc/codex-rs/network-proxy">GH…/codex-rs/network-proxy/</a>
 — a local MITM-capable forward proxy, the only path to the
 internet in restricted modes. Linux gets net namespace + proxy
 bridge + domain policy; macOS Seatbelt's network block is
@@ -1252,10 +1259,11 @@ into the turn; implicit invocation when a shell command
 matches a skill.&#160;<a class="footnote-backref" href="#fnref:27" title="Jump back to footnote 27 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:27" title="Jump back to footnote 27 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:27" title="Jump back to footnote 27 in the text">&#8617;</a></p>
 </li>
 <li id="fn:28">
-<p>10 hook events (<code>session_start</code>,
-<code>user_prompt_submit</code>, <code>pre_tool_use</code>,
+<p>12 hook events (<code>HookEventName</code> at <code>protocol/src/protocol.rs:1579</code>:
+<code>session_start</code>, <code>user_prompt_submit</code>, <code>pre_tool_use</code>,
 <code>permission_request</code>, <code>post_tool_use</code>, <code>stop</code>, <code>interrupt</code>,
-<code>pre/post_compact</code>, <code>session_end</code>) + legacy
+<code>pre/post_compact</code>, <code>subagent_start</code>, <code>subagent_stop</code>,
+<code>session_end</code>) + legacy
 <code>after_agent</code>; shell commands or MCP servers; precedence</p>
 <h1 id="1-in-the-approval-chain">1 in the approval chain</h1>
 <p>(<a href="https://github.com/openai/codex/blob/a956835d020762cb2b570053af06f643a11c0ecc/codex-rs/core/src/tools/approvals.rs#L506">GH…/core/src/tools/approvals.rs#L506</a>),
@@ -1315,7 +1323,7 @@ nothing over 10K tokens, every fragment hard-capped.&#160;<a class="footnote-bac
 <p>Rollout JSONL at
 <code>~/.codex/sessions/YYYY/MM/DD/rollout-&lt;ts&gt;-&lt;uuid&gt;.jsonl</code>
 (<a href="https://github.com/openai/codex/blob/a956835d020762cb2b570053af06f643a11c0ecc/codex-rs/rollout/src/list.rs#L438">GH…/codex-rs/rollout/src/list.rs#L438</a>);
-14 <code>RolloutItem</code> variants (<code>history/src/lib.rs:201</code>).
+12 <code>RolloutItem</code> variants (<code>history/src/lib.rs:201</code>).
 <code>codex-state</code> mirrors metadata into SQLite;
 <code>thread-store</code> keeps a session index. Fork via
 <code>thread/fork</code>: <code>Copied | CopiedDeferred | Referenced</code>.
@@ -1336,7 +1344,8 @@ queue</code>.&#160;<a class="footnote-backref" href="#fnref:34" title="Jump back
 (<a href="https://github.com/openai/codex/blob/a956835d020762cb2b570053af06f643a11c0ecc/codex-rs/config/src/config_layer_source.rs#L6">GH…/codex-rs/config/src/config_layer_source.rs#L6</a>):
 PackagedDefaults → Mdm → System → EnterpriseManaged →
 User (<code>~/.codex/config.toml</code> + named profiles) → Project
-(<code>.codex/</code>) → SessionFlags → CLI <code>--config</code> overrides.
+(<code>.codex/</code>) → SessionFlags (incl. CLI <code>--config</code>) →
+<code>LegacyManagedConfigTomlFromFile</code> / <code>…FromMdm</code>.
 Schema emitted to <code>core/config.schema.json</code>.&#160;<a class="footnote-backref" href="#fnref:35" title="Jump back to footnote 35 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:35" title="Jump back to footnote 35 in the text">&#8617;</a></p>
 </li>
 <li id="fn:36">
