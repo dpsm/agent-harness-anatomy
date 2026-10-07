@@ -9,7 +9,7 @@
 
 - **Repo:** [openai/codex](https://github.com/openai/codex)
 - **Pinned:** tag `rust-v0.160.0` → `a956835d020762cb2b570053af06f643a11c0ecc` (2026-10-01)
-- **Language:** Rust (cargo workspace `codex-rs/`, 155 members)
+- **Language:** Rust (cargo workspace `codex-rs/`, 154 members)
 - **License:** Apache-2.0
 - **Claim under test:** "a local, extensible, open source AI agent"
 - **Scope:** this teardown covers the **Rust CLI** (`codex-rs/`), the
@@ -19,14 +19,14 @@
 | Crate | Non-test `.rs` | Role |
 |---|---|---|
 | `core` | 409 files, 123,071 LOC | THE product crate: turn loop, tools, sandboxing, sessions |
-| `tui` | 698 files, 321,410 LOC | Interactive terminal UI (Ratatui; genuinely large, no generated bulk) |
+| `tui` | 660 files, 271,033 LOC | Interactive terminal UI (Ratatui; genuinely large, no generated bulk) |
 | `app-server` | 119 files, 50,602 LOC | JSON-RPC v2 substrate — the real interface layer |
 | `exec-server` | 89 files, 33,513 LOC | Standalone remote/foreign-OS exec service |
 | `cli` | 50 files, 27,788 LOC | CLI binary, ~25 subcommands |
 | `protocol` | 56 files, 28,203 LOC | Shared protocol types (incl. `PermissionProfile`) |
 | `config` | 64 files, 21,549 LOC | 9-layer config stack |
 | `codex-mcp` | 36 files, 13,081 LOC | MCP client runtime |
-| `hooks` | 28 files, 11,657 LOC | Hook system (10 lifecycle events) |
+| `hooks` | 28 files, 11,657 LOC | Hook system (12 lifecycle events) |
 | `rollout` | 22 files, 9,423 LOC | Session persistence (JSONL) |
 | `model-provider` | 20 files, 6,442 LOC | Provider abstraction |
 | `apply-patch` | 9 files, 4,828 LOC | Codex's own patch format + application |
@@ -35,7 +35,8 @@
 | `execpolicy` | 11 files, 1,954 LOC | Starlark exec-policy language |
 | `skills` | 9 files, 1,493 LOC | SKILL.md discovery/injection |
 
-Workspace total: 3,058 non-test `.rs` files under `codex-rs/*/src`.
+Workspace total: 3,017 non-test `.rs` files under the workspace crates' `src/`
+directories (excluding `*tests.rs` and `tests/`).
 Entry is the CLI binary at `codex-rs/cli/src/main.rs` → `cli_main`;
 bare `codex` launches the TUI; the agent loop is `run_turn` at
 `codex-rs/core/src/session/turn.rs`.[^1]
@@ -125,7 +126,7 @@ pub(crate) async fn run_turn(
 
 It returns the last agent message. The loop is **condition-driven**
 (`loop {}` + `break`/`continue`), not counter-driven — there is no
-iteration counter anywhere in the 155 crates.[^7]
+iteration counter anywhere in the 154 crates.[^7]
 
 Loop-body stages per iteration (`turn.rs:426-838`): drain pending user
 input → prompt-hook inspection → step-context capture (re-resolves tools,
@@ -139,7 +140,7 @@ post-turn compaction) → `continue`/`break` → error arms.[^5]
 (`Op::Interrupt` → `abort_all_tasks(Interrupted)` → `TurnAborted` at
 every await point); or the server's `end_turn: false` absent with no tool
 calls.[^8] **No `max_turns`, `max_iterations`, or step cap exists in
-non-test code** — an exhaustive grep across all 155 crates finds only
+non-test code** — an exhaustive grep across all 154 crates finds only
 unrelated caps (a guardian token budget, a tool-search byte cap, TUI
 history-read limits).[^7] The doom-loop guard is a retry budget plus
 compaction-once-per-step plus the user interrupt — reactive, like
@@ -180,7 +181,7 @@ RPC client:[^13]
    sandbox-policy and permission overrides resolved from config.
 2. **Route to core.** `turn_processor.rs:630` →
    `thread.start_or_steer_turn(...)` → `Op::TurnInput`
-   (`protocol/src/protocol.rs:622`) → `session/handlers.rs:485` →
+   (`protocol/src/protocol.rs:625`) → `session/handlers.rs:485` →
    `turn_input::handle`. The op enum is the entire vocabulary the
    server speaks to core.[^13]
 3. **Start task.** No active turn → `spawn_task` (`turn_input.rs:365`) →
@@ -222,11 +223,11 @@ RPC client:[^13]
     Denials become failure tool results, not loop breaks.[^11]
 12. **Loop or stop.** `drain_in_flight` records every
     `FunctionCallOutput` envelope into history (`turn.rs:2466-2492`).
-    `needs_follow_up = true` → `continue` (`turn.rs:725`): iteration 2
+    `needs_follow_up = true` → `continue` (`turn.rs:757`): iteration 2
     rebuilds the prompt from history now containing tool results. The
     model replies with only an assistant message →
     `!needs_follow_up` → stop hooks → post-turn compaction check →
-    `break` (`turn.rs:653-723`). `run_turn` returns
+    `break` (`turn.rs:653-755`). `run_turn` returns
     `Ok(last_agent_message)` (`:839`); `TurnCompleted` is emitted and
     the TUI renders from the streamed events.[^5][^8]
 
@@ -250,7 +251,7 @@ and then trusts them. Codex constrains the blast radius in the OS.
 **Layer 1 — the exec-policy language.** A Starlark per-command policy
 language (`codex-execpolicy` crate) that decides **allow / prompt /
 forbid** before anything runs. Exactly three builtins
-(`execpolicy/src/parser.rs:329-473`): `prefix_rule` (argv-prefix
+(`execpolicy/src/parser.rs:347-473`): `prefix_rule` (argv-prefix
 matching, first token keys the lookup; `match`/`not_match` examples
 validated at parse time), `network_rule` (wildcards forbidden at parse,
 `rule.rs:196-200`), `host_executable` (a PATH-spoofing defense).
@@ -278,7 +279,7 @@ models, one name, and the runtime authority is the profile.[^16]
 
 **Layer 3 — the platform backends.** The OS *how*
 (`codex-sandboxing` crate + helpers), selected per platform by
-`get_platform_sandbox()` (`sandboxing/src/policy_transforms.rs:646`):
+`get_platform_sandbox()` (`sandboxing/src/manager.rs:49`):
 - **macOS:** Seatbelt via `/usr/bin/sandbox-exec` with embedded
   `.sbpl` templates, starting from `(deny default)`. The network
   block is binary on/off — fine-grained domains need Layer 4.
@@ -331,7 +332,7 @@ the tree is `linux-sandbox/README.md`, Linux only.[^20]
 ### 1. The approval model (policy/UX half)
 
 Approvals in Codex are **per-action, not per-tool-name**. The sealed
-`ApprovalAction` enum (`tools/approvals.rs:66`) enumerates exactly what
+`ApprovalAction` enum (`tools/approvals.rs:67`) enumerates exactly what
 can be approved: `ExecCommand`, `WriteStdin`, `Execve`, `ApplyPatch`,
 `McpToolCall`, `NetworkAccess`, `RequestPermissions`. There is no
 generic "approve tool X" primitive — `write_stdin` is an
@@ -453,10 +454,11 @@ machinery of the four.
   fragments injected into the turn. Plus implicit invocation when a
   shell command matches a skill's. Same shape as pi and Cline —
   skills ride the prompt, never the tool registry.[^27]
-- **Hooks**: 10 lifecycle events (`session_start`,
+- **Hooks**: 12 lifecycle events (`session_start`,
   `user_prompt_submit`, `pre_tool_use`, `permission_request`,
   `post_tool_use`, `stop`, `interrupt`, `pre/post_compact`,
-  `session_end`) plus the legacy `after_agent`. Hooks are shell
+  `subagent_start`, `subagent_stop`, `session_end`) plus the legacy
+  `after_agent`. Hooks are shell
   commands or MCP servers; they can block, rewrite tool input,
   inject context, or force approval decisions — and they sit at
   precedence #1 in the approval chain, ahead of the Guardian and
@@ -500,7 +502,7 @@ connection failures forever on a 5s→60s backoff.[^3][^31]
 
 Five built-in providers: `openai` (default), `amazon-bedrock`,
 `amazon-bedrock-runtime`, `ollama` (localhost:11434), `lmstudio`
-(localhost:1234) (`model-provider-info/src/lib.rs:653-686`) — and
+(localhost:1234) (`model-provider-info/src/lib.rs:652-684`) — and
 the repo comment explicitly refuses third-party bundling; users
 add `model_providers` in config.toml. The `ModelProvider` trait
 (`model-provider/src/provider.rs:141`) exposes `info()`,
@@ -538,7 +540,7 @@ cap.[^32]
 
 Rollout JSONL at
 `~/.codex/sessions/YYYY/MM/DD/rollout-<ts>-<uuid>.jsonl`
-(`rollout/src/list.rs:438`); 14 `RolloutItem` variants
+(`rollout/src/list.rs:438`); 12 `RolloutItem` variants
 (`history/src/lib.rs:201`) — `SessionMeta`, `ResponseItem`,
 `InterAgentCommunication`, `Compacted`, `TurnContext`,
 `TokenUsageRecord`, `WorldState`, `SecurityRiskScore`,
@@ -584,8 +586,10 @@ archive | unarchive | delete | queue`.[^34]
 A **9-layer stack**
 (`config/src/config_layer_source.rs:6`): PackagedDefaults → Mdm
 → System → EnterpriseManaged → User (`~/.codex/config.toml` +
-named profiles) → Project (`.codex/`) → SessionFlags → CLI
-`--config` overrides. Key settings: `model`,
+named profiles) → Project (`.codex/`) → SessionFlags (session
+overrides, including CLI `--config`), plus two legacy
+managed-config layers (`LegacyManagedConfigTomlFromFile`,
+`LegacyManagedConfigTomlFromMdm`). Key settings: `model`,
 `model_provider(s)`, `approval_policy`, `sandbox_mode`,
 `instructions`, `profile`, `otel`, `memories`,
 `project_doc_max_bytes`. The schema is emitted to
@@ -643,7 +647,7 @@ not tools.[^27]
 
 ### 4. Hooks
 
-10 lifecycle events + legacy `after_agent`; shell commands or
+12 lifecycle events + legacy `after_agent`; shell commands or
 MCP servers; can block, rewrite tool input, inject context, or
 force approval decisions — precedence #1 in the approval chain,
 ahead of the Guardian and the user.[^28]
@@ -742,7 +746,7 @@ not a fork.[^35]
   sandbox sees everything; a native `read_file` would bypass
   Layer 1's Starlark policy entirely. The missing tool is the
   sandbox's load-bearing wall.[^24][^15]
-- **Unbounded by construction.** No `max_turns` anywhere in 155
+- **Unbounded by construction.** No `max_turns` anywhere in 154
   crates — the loop ends when the model stops calling tools, a hook
   says stop, or the user interrupts. Against Goose's 1000-turn
   budget and Cline's 5-identical-call tripwire, Codex trusts the
@@ -794,28 +798,30 @@ not a fork.[^35]
 
 | # | Dimension | pi (v1.0.2) | aider (v0.86.2) | Cline (v4.1.22) | Goose (v1.53.0) | Codex (rust-v0.160.0) |
 |---|---|---|---|---|---|---|
-| 1 | Agent loop | Event-sourced; inner + outer loops; no iteration cap | No tool-call loop; parse→apply→reflect; REPL + reflection (≤3) + retry | Host-independent SDK `AgentRuntime.execute`; `maxIterations: undefined` — bound is 5 identical tool calls | Two loops, migration in progress: legacy `agent.rs` plain `loop{}` (default, `max_turns`=1000) vs opt-in effect-sourced state machine, LLM call dead last | **Three nested**: `RegularTask::run` → `run_turn` `loop{}` (one sampling request/iter) → stream-consumer + retry; condition-driven; **no max_turns anywhere in 155 crates** — bound is retry budget + compaction-once-per-step + user interrupt [^5][^7][^9] |
-| 2 | Tool system | 4 built-ins + registry; TypeBox validation; sequential/parallel | None — model emits SEARCH/REPLACE blocks | 9 built-ins + MCP natives + team tools; sequential default, adjacent-parallel batching | Entirely MCP-shaped: every tool is an MCP server (builtins = in-process tokio duplex); `ext__tool` namespacing; no non-MCP path | Responses API function tools; `ToolRegistry` (`IndexMap`) + `ToolExecutor` trait; `ToolExposure` (`Deferred` + `tool_search`); concurrent dispatch (`FuturesOrdered`); **no built-in read_file/write_file/edit** — reads via `exec_command`, edits via `apply_patch` [^10][^23][^24][^25] |
-| 3 | Model providers | ~35 behind one `StreamFn` | litellm; 313-entry YAML + substring heuristics | 228 providers, one generic Vercel AI SDK adapter; exact-ID resolution | Single `Provider` trait (`stream()` required); 34 static + 48 declarative JSON + custom; 8,160-entry models.dev snapshot + heuristics | **Responses-API-only** (`WireApi` single variant; `"chat"` rejected); 5 built-in providers (openai, 2× Bedrock, ollama, lmstudio); **8 auth modes**; `ModelProvider` trait; WS-first + HTTP/SSE fallback to `/responses`; retries 5 (cap 100) [^3][^31] |
+| 1 | Agent loop | Event-sourced; inner + outer loops; no iteration cap | No tool-call loop; parse→apply→reflect; REPL + reflection (≤3) + retry | Host-independent SDK `AgentRuntime.execute`; `maxIterations: undefined` — bound is 5 identical tool calls | Two loops, migration in progress: legacy `agent.rs` plain `loop{}` (default, `max_turns`=1000) vs opt-in effect-sourced state machine, LLM call dead last | **Three nested**: `RegularTask::run` → `run_turn` `loop{}` (one sampling request/iter) → stream-consumer + retry; condition-driven; **no max_turns anywhere in 154 crates** — bound is retry budget + compaction-once-per-step + user interrupt [^5][^7][^9] |
+| 2 | Tool system | 8 built-ins (4 active by default) + registry; TypeBox validation; sequential/parallel | None — model emits SEARCH/REPLACE blocks | 9 built-ins (7 active in VS Code act mode) + MCP natives + team tools (SDK/CLI); sequential default, adjacent-parallel batching | Entirely MCP-shaped: every tool is an MCP server (builtins = in-process tokio duplex); `ext__tool` namespacing; no non-MCP path | Responses API function tools; `ToolRegistry` (`IndexMap`) + `ToolExecutor` trait; `ToolExposure` (`Deferred` + `tool_search`); concurrent dispatch (`FuturesOrdered`); **no built-in read_file/write_file/edit** — reads via `exec_command`, edits via `apply_patch` [^10][^23][^24][^25] |
+| 3 | Model providers | ~42 behind one `StreamFn` | litellm; 313-entry YAML + substring heuristics | 228 providers, one generic Vercel AI SDK adapter; exact-ID resolution | Single `Provider` trait (`stream()` required); 36 static + 48 declarative JSON + custom; 8,160-entry models.dev snapshot + heuristics | **Responses-API-only** (`WireApi` single variant; `"chat"` rejected); 5 built-in providers (openai, 2× Bedrock, ollama, lmstudio); **8 auth modes**; `ModelProvider` trait; WS-first + HTTP/SSE fallback to `/responses`; retries 5 (cap 100) [^3][^31] |
 | 4 | Prompt construction | Structured sections, diffed per turn | Fixed wire order, synthetic user/assistant pairs, cache breakpoints | Template + placeholder replacement; `MessageBuilder` normalization | `PromptManager` from extension info + directory hints + goose mode; toolshim/native split per model | `Prompt` → `ResponsesApiRequest` (`store: false`, `stream: true`, thread `prompt_cache_key`); **responses-lite** shape (UUIDv5 prefix-cache IDs); assembly base→developer→user; fragments hard-capped (AGENTS.md ≤10K) [^14][^32] |
-| 5 | Memory/session | JSONL sessions; compaction | In-memory cur/done; background summarization; markdown log; git auto-commit | SQLite + file-backend; versioned whole-file JSON envelopes; manual `/compact` | SQLite `sessions.db` + JSON blobs; full `Recipe` persisted; explicit cross-session recall; `user_visible`/`agent_visible` flags | **Rollout JSONL** `~/.codex/sessions/YYYY/MM/DD/` (14 `RolloutItem` variants) + SQLite index; fork 3 modes (`Copied`/`CopiedDeferred`/`Referenced`); **cross-session LLM memory extraction** (`$CODEX_HOME/memories`); resume = client-side rebuild [^33][^34] |
-| 6 | Reasoning/planning | Thinking forwarded; no planner/sub-agents | Architect = sequential delegation with user gate | plan/act modes (differ by one tool); sub-agents + teams | GooseMode (Auto/Approve/SmartApprove/Chat); `summon` sub-agents (forced Auto, 25 turns, no nesting); recipes; in-process cron | **Sub-agents, two generations** (V1 `multi_agent_v1.*`, V2 plain names) via `multi_agent_version`, `agent_max_depth`; `update_plan` tool; **Guardian LLM auto-reviewer** in the approval chain [^30][^22][^23] |
-| 7 | Extensibility | TS extensions, hooks, MCP, skills | 42 closed commands; no plugin API/MCP/skills | `AgentRuntimePlugin`, 7-callback hooks, file hooks, skills, MCP, sub-agents | Broadest so far: MCP configs (4 transports), 12-event hooks, recipes, schedules, sub-agents, skills, custom providers, `Provider` trait | `ToolExecutor` trait + `ToolContributor`; **MCP wrapped** (`McpHandler`, client-only); skills = prompt injection; hooks (10 events, precedence #1 in approvals); plugins (manifest); **closed TUI slash commands**; user-declared providers [^23][^26][^27][^28][^29][^31] |
+| 5 | Memory/session | JSONL sessions; compaction | In-memory cur/done; background summarization; markdown log; git auto-commit | SQLite + file-backend; versioned whole-file JSON envelopes; auto + manual compaction | SQLite `sessions.db` + JSON blobs; full `Recipe` persisted; explicit cross-session recall; `user_visible`/`agent_visible` flags | **Rollout JSONL** `~/.codex/sessions/YYYY/MM/DD/` (14 `RolloutItem` variants) + SQLite index; fork 3 modes (`Copied`/`CopiedDeferred`/`Referenced`); **cross-session LLM memory extraction** (`$CODEX_HOME/memories`); resume = client-side rebuild [^33][^34] |
+| 6 | Reasoning/planning | Thinking forwarded; no planner/sub-agents | Architect = sequential delegation with user gate | plan/act modes (differ by one tool); sub-agents + teams (SDK/CLI only) | GooseMode (Auto/Approve/SmartApprove/Chat); `summon` sub-agents (forced Auto, 25 turns, no nesting); recipes; in-process cron | **Sub-agents, two generations** (V1 `multi_agent_v1.*`, V2 plain names) via `multi_agent_version`, `agent_max_depth`; `update_plan` tool; **Guardian LLM auto-reviewer** in the approval chain [^30][^22][^23] |
+| 7 | Extensibility | TS extensions, hooks, MCP, skills | 42 closed commands; no plugin API/MCP/skills | `AgentRuntimePlugin`, 7-callback hooks, file hooks, skills, MCP, sub-agents | Broadest so far: MCP configs (4 transports), 12-event hooks, recipes, schedules, sub-agents, skills, custom providers, `Provider` trait | `ToolExecutor` trait + `ToolContributor`; **MCP wrapped** (`McpHandler`, client-only); skills = prompt injection; hooks (12 events, precedence #1 in approvals); plugins (manifest); **closed TUI slash commands**; user-declared providers [^23][^26][^27][^28][^29][^31] |
 | 8 | Interfaces | TUI / print / RPC / SDK on one event stream | prompt_toolkit CLI + streamlit GUI | VS Code webview over proto-bus gRPC (22 svcs/224 RPCs) + CLI host + npm SDK re-export | Rust CLI REPL + Electron desktop + ACP bridge + Telegram gateway; `AgentEvent`s; uniffi bindings | **All RPC**: TUI + `exec` + daemon are **app-server (JSON-RPC v2) clients**; `exec` is in-process; separate `exec-server` for remote/foreign-OS [^2] |
 | 9 | Failure handling | Auto-retry, truncation guards, abort; no cap | Exp-backoff (60s); malformed edits reflected (≤3) | Provider retry 3×; output-limit recovery 3×; loop detection 3×/5× (reactive); mistake tracker 6; no host iteration cap | Three-layer retry; `max_turns`=1000; repetition guard inert — the bound is turns, not loops | Stream retries 5 (cap 100); WS→HTTP fallback resets counter; **unbounded connection retries** (5s→60s); **no loop detection by design**; tool errors become failure results, never break the loop [^3][^9][^10] |
-| 10 | Security model | Project trust + extension hooks; no approval UX | Boundary prompts; git auto-commit + `/undo`; no sandbox | Finest-grained: per-tool policies + webview UI + diff previews; commands always prompt; no sandbox; per-turn stash checkpoints | Modes × `permission.yaml` × 5-inspector chain; LLM judge for SmartApprove; no undo | **Strongest: 4-layer sandbox** (Starlark exec-policy → `PermissionProfile` → OS backends: Seatbelt / bwrap+landlock+seccomp / Windows PSEC → MITM network proxy); **per-action approvals** (sealed enum); hooks → Guardian → user; `AskForApproval` 4-mode ladder; **no undo** [^4][^15][^16][^17][^18][^21][^22] |
+| 10 | Security model | Project trust + extension hooks; no approval UX | Boundary prompts; git auto-commit + `/undo`; no sandbox | Finest-grained: per-tool policies + webview UI + diff previews; commands prompt by default; no sandbox; per-turn stash checkpoints | Modes × `permission.yaml` × 5-inspector chain; LLM judge for SmartApprove; no undo | **Strongest: 4-layer sandbox** (Starlark exec-policy → `PermissionProfile` → OS backends: Seatbelt / bwrap+landlock+seccomp / Windows PSEC → MITM network proxy); **per-action approvals** (sealed enum); hooks → Guardian → user; `AskForApproval` 4-mode ladder; **no undo** [^4][^15][^16][^17][^18][^21][^22] |
 
 ## Endnotes
 
 All notes are VERIFIED against `rust-v0.160.0`
-(`a956835d020762cb2b570053af06f643a11c0ecc`) unless marked DOCS.
+(`a956835d020762cb2b570053af06f643a11c0ecc`) unless marked DOCS; line
+anchors and file paths re-checked on 2026-10-07.
 `GH` = `https://github.com/openai/codex/blob/a956835d020762cb2b570053af06f643a11c0ecc/`.
 
 [^1]: Tag `rust-v0.160.0`, SHA
     `a956835d020762cb2b570053af06f643a11c0ecc`, committed 2026-10-01
     17:13:37 +0000; Apache-2.0 (`LICENSE`); Rust cargo workspace
-    `codex-rs/` (155 members per `Cargo.toml`). Non-test `.rs` in
-    `*/src`: `core` 409 files / 123,071 LOC, `tui` 698 / 321,410,
+    `codex-rs/` (154 members per `Cargo.toml`). Non-test `.rs` in
+    `*/src` (excluding `*tests.rs` and `tests/` dirs): `core` 409
+    files / 123,071 LOC, `tui` 660 / 271,033,
     `app-server` 119 / 50,602, `exec-server` 89 / 33,513, `cli` 50 /
     27,788, `protocol` 56 / 28,203, `config` 64 / 21,549,
     `codex-mcp` 36 / 13,081, `hooks` 28 / 11,657, `rollout` 22 /
@@ -853,7 +859,8 @@ All notes are VERIFIED against `rust-v0.160.0`
     (`codex-rs/execpolicy/`), the declarative `PermissionProfile`
     ([GH…/codex-rs/protocol/src/models.rs#L422](https://github.com/openai/codex/blob/a956835d020762cb2b570053af06f643a11c0ecc/codex-rs/protocol/src/models.rs#L422)),
     the OS backends (`codex-rs/sandboxing/` + helpers), and the
-    local MITM network proxy (`codex-rs/codex-network-proxy/`).
+    local MITM network proxy (crate `codex-network-proxy` in
+    `codex-rs/network-proxy/`).
 [^5]: Three nested loops: `RegularTask::run`
     ([GH…/codex-rs/core/src/tasks/regular.rs#L40](https://github.com/openai/codex/blob/a956835d020762cb2b570053af06f643a11c0ecc/codex-rs/core/src/tasks/regular.rs#L40),
     `loop {}` at `:104`, `run_turn` called at `:105`) →
@@ -874,7 +881,7 @@ All notes are VERIFIED against `rust-v0.160.0`
     `:839`).
 [^7]: No `max_turns` / `max_iterations` / `max_steps` in non-test
     code: `grep -rniE "max_turns|max_iterations|max_steps|
-    max_tool_calls" codex-rs --include="*.rs"` across all 155
+    max_tool_calls" codex-rs --include="*.rs"` across all 154
     crates, excluding tests/snapshots → only
     `RECAP_HISTORY_MAX_TURNS` (a TUI display cap,
     `tui/src/app/recap_history.rs:13`); second sweep
@@ -956,7 +963,7 @@ All notes are VERIFIED against `rust-v0.160.0`
     remains the user-facing config knob with a compatibility
     shim both ways.
 [^17]: Backend selection via `get_platform_sandbox()`
-    (`sandboxing/src/policy_transforms.rs:646`). macOS:
+    (`sandboxing/src/manager.rs:49`). macOS:
     Seatbelt via `/usr/bin/sandbox-exec` (deny-default
     `.sbpl`). Linux: bubblewrap + landlock + seccomp through
     the `codex-linux-sandbox` helper — the `codex-exec` binary
@@ -972,7 +979,7 @@ All notes are VERIFIED against `rust-v0.160.0`
     "linux")]`, `pub mod seatbelt` is `#[cfg(target_os =
     "macos")]` (`sandboxing/src/lib.rs`); off-platform
     requests are a hard error.
-[^18]: [GH…/codex-network-proxy/](https://github.com/openai/codex/blob/a956835d020762cb2b570053af06f643a11c0ecc/codex-rs/codex-network-proxy/)
+[^18]: [GH…/codex-rs/network-proxy/](https://github.com/openai/codex/tree/a956835d020762cb2b570053af06f643a11c0ecc/codex-rs/network-proxy)
     — a local MITM-capable forward proxy, the only path to the
     internet in restricted modes. Linux gets net namespace + proxy
     bridge + domain policy; macOS Seatbelt's network block is
@@ -1067,10 +1074,11 @@ All notes are VERIFIED against `rust-v0.160.0`
     `collect_explicit_skill_mentions` → fragments injected
     into the turn; implicit invocation when a shell command
     matches a skill.
-[^28]: 10 hook events (`session_start`,
-    `user_prompt_submit`, `pre_tool_use`,
+[^28]: 12 hook events (`HookEventName` at `protocol/src/protocol.rs:1579`:
+    `session_start`, `user_prompt_submit`, `pre_tool_use`,
     `permission_request`, `post_tool_use`, `stop`, `interrupt`,
-    `pre/post_compact`, `session_end`) + legacy
+    `pre/post_compact`, `subagent_start`, `subagent_stop`,
+    `session_end`) + legacy
     `after_agent`; shell commands or MCP servers; precedence
     #1 in the approval chain
     ([GH…/core/src/tools/approvals.rs#L506](https://github.com/openai/codex/blob/a956835d020762cb2b570053af06f643a11c0ecc/codex-rs/core/src/tools/approvals.rs#L506)),
@@ -1120,7 +1128,7 @@ All notes are VERIFIED against `rust-v0.160.0`
 [^33]: Rollout JSONL at
     `~/.codex/sessions/YYYY/MM/DD/rollout-<ts>-<uuid>.jsonl`
     ([GH…/codex-rs/rollout/src/list.rs#L438](https://github.com/openai/codex/blob/a956835d020762cb2b570053af06f643a11c0ecc/codex-rs/rollout/src/list.rs#L438));
-    14 `RolloutItem` variants (`history/src/lib.rs:201`).
+    12 `RolloutItem` variants (`history/src/lib.rs:201`).
     `codex-state` mirrors metadata into SQLite;
     `thread-store` keeps a session index. Fork via
     `thread/fork`: `Copied | CopiedDeferred | Referenced`.
@@ -1137,7 +1145,8 @@ All notes are VERIFIED against `rust-v0.160.0`
     ([GH…/codex-rs/config/src/config_layer_source.rs#L6](https://github.com/openai/codex/blob/a956835d020762cb2b570053af06f643a11c0ecc/codex-rs/config/src/config_layer_source.rs#L6)):
     PackagedDefaults → Mdm → System → EnterpriseManaged →
     User (`~/.codex/config.toml` + named profiles) → Project
-    (`.codex/`) → SessionFlags → CLI `--config` overrides.
+    (`.codex/`) → SessionFlags (incl. CLI `--config`) →
+    `LegacyManagedConfigTomlFromFile` / `…FromMdm`.
     Schema emitted to `core/config.schema.json`.
 [^36]: AGENTS.md discovery
     ([GH…/core/src/agents_md.rs](https://github.com/openai/codex/blob/a956835d020762cb2b570053af06f643a11c0ecc/codex-rs/core/src/agents_md.rs))
