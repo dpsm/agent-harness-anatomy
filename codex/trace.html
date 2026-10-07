@@ -180,7 +180,7 @@
     <div class="ret"><b>One pass</b> &mdash; TUI keypress &rarr; app-server <code>turn/start</code> &rarr; <code>Op::TurnInput</code> &rarr; core: <code>spawn_task</code> &rarr; <code>run_turn</code> &rarr; prompt build &rarr; <code>/responses</code> stream &rarr; tool futures gated by approvals &rarr; loop or stop. Three loops nest: <code>RegularTask::run</code> &rarr; <code>run_turn</code> &rarr; sampler retry + stream consumer.</div>
     <div class="flow" id="flowBranch"></div>
     <div class="ret"><b>Approval pause</b> &mdash; step 11 is a center step, not a branch: the turn loop parks in <code>drain_in_flight</code> until the approval decision lands, because approvals gate individual tool futures rather than re-prompting the model. Denials become failure tool results, not loop breaks.</div>
-    <div class="ret" style="border-color:#d08c4e"><b>Outer turn loop</b> &mdash; no <code>max_turns</code> anywhere in the tree (VERIFIED negative across 155 crates): the loop is condition-driven &mdash; <code>needs_follow_up ? continue : break</code>. Mid-stream steering preempts via the input queue; events stream back over app-server; the next user message re-enters at step 1.</div>
+    <div class="ret" style="border-color:#d08c4e"><b>Outer turn loop</b> &mdash; no <code>max_turns</code> anywhere in the tree (VERIFIED negative across 154 crates): the loop is condition-driven &mdash; <code>needs_follow_up ? continue : break</code>. Mid-stream steering preempts via the input queue; events stream back over app-server; the next user message re-enters at step 1.</div>
   </section>
 
   <footer>Simplified shapes of real Codex types, not verbatim runtime dumps. All module links pin <span id="sha"></span>.</footer>
