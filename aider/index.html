@@ -134,7 +134,7 @@ remembering which models need which format.</strong></p>
 </tr>
 <tr>
 <td><code>io.py</code></td>
-<td>~700</td>
+<td>1,191</td>
 <td>prompt_toolkit input, watch/clipboard hooks</td>
 </tr>
 <tr>
@@ -149,17 +149,17 @@ remembering which models need which format.</strong></p>
 </tr>
 <tr>
 <td><code>gui.py</code></td>
-<td>—</td>
+<td>545</td>
 <td>streamlit browser GUI (alt interface)</td>
 </tr>
 <tr>
 <td><code>watch.py</code></td>
-<td>~310</td>
+<td>318</td>
 <td>watchdog file watcher ("AI comments")</td>
 </tr>
 <tr>
 <td><code>voice.py</code></td>
-<td>—</td>
+<td>187</td>
 <td>whisper voice input</td>
 </tr>
 </tbody>
@@ -224,7 +224,7 @@ the model is never handed the steering wheel — it only ever writes prose.</p>
 <h2 id="one-turn-end-to-end">One turn, end to end</h2>
 <p>Trace: the user types <code>add error handling to foo.py</code> with <code>foo.py</code>
 already <code>/add</code>ed to the chat (default edit format <code>diff</code>, model gpt-4o).</p>
-<p><strong>① Input.</strong> <code>Coder.run()</code> → <code>get_input()</code> (<code>base_coder.py:899</code>,
+<p><strong>① Input.</strong> <code>Coder.run()</code> → <code>get_input()</code> (<code>base_coder.py:898</code>,
 prompt_toolkit via <code>io.get_input</code> at <code>io.py:523</code>) → <code>run_one(…,
 preproc=True)</code> → <code>preproc_user_input</code> (<code>:912</code>): slash-command check,
 then <code>check_for_file_mentions</code> on the <em>user's</em> text, then URL
@@ -257,7 +257,7 @@ stream through <code>show_send_output_stream</code>, or arrive whole via
 <code>show_send_output</code>.<sup id="fnref:13"><a class="footnote-ref" href="#fn:13">13</a></sup> No function/tool calling — the edits come back
 as SEARCH/REPLACE text blocks inside the prose.</p>
 <p><strong>④ Response parsing.</strong> <code>EditBlockCoder.get_edits()</code>
-(<code>coders/editblock_coder.py:19</code>) → <code>find_original_update_blocks()</code>
+(<code>coders/editblock_coder.py:21</code>) → <code>find_original_update_blocks()</code>
 (<code>:439</code>): scans the response for <code>&lt;&lt;&lt;&lt;&lt;&lt;&lt; SEARCH</code> / <code>=======</code> /
 <code>&gt;&gt;&gt;&gt;&gt;&gt;&gt; REPLACE</code> fenced blocks and resolves the target filename from
 the 3 preceding lines — exact match, then basename, then difflib 0.8
@@ -286,19 +286,20 @@ git commit with an LLM-written message. The hash is tracked in
 history and kicks off background summarization (more below).<sup id="fnref:17"><a class="footnote-ref" href="#fn:17">17</a></sup></p>
 <p><strong>⑦ Verify &amp; reflect.</strong> Post-apply feedback (<code>:1599-1622</code>): if
 <code>auto_lint</code>, <code>lint_edited()</code> (<code>:1681</code>) runs per-language lint commands
-(<code>linter.py:82</code>, from <code>resources/lint-commands.json</code>, falling back to a
-<code>basic_lint</code>) — on errors, aider asks "Attempt to fix lint errors?" and,
+(<code>linter.py:82</code>: the built-in Python linter, or a user-configured
+<code>--lint-cmd</code>, falling back to a tree-sitter <code>basic_lint</code>) — on errors, aider asks "Attempt to fix lint errors?" and,
 on yes, sets <code>reflected_message = lint_errors</code>, sending the linter's
 complaints back to the model as a new user message (reflection 1 of
 ≤3).<sup id="fnref:18"><a class="footnote-ref" href="#fn:18">18</a></sup> Then <code>run_shell_commands()</code>: each model-suggested shell block
-requires explicit per-command confirmation
-(<code>explicit_yes_required=True</code>, <code>:2456</code>); output is optionally appended
+requires its own explicit confirmation — one prompt per block
+(<code>explicit_yes_required=True</code>, <code>:2456</code>, so neither "All" nor
+<code>--yes-always</code> can approve it); output is optionally appended
 to the chat as a user/assistant pair. Then the <code>auto_test</code> command runs
 the same confirm→reflect cycle for test failures.<sup id="fnref2:18"><a class="footnote-ref" href="#fn:18">18</a></sup></p>
 <p><strong>⑧ Rendering.</strong> Tokens stream live via <code>mdstream</code>
 (<code>io.get_assistant_mdstream</code>); after applying, aider prints "Applied
 edit to foo.py" and — if the turn moved HEAD — a <code>/undo</code> hint
-(<code>show_undo_hint</code>, <code>:2404</code>).<sup id="fnref:19"><a class="footnote-ref" href="#fn:19">19</a></sup> Rendering is imperative throughout:
+(<code>show_undo_hint</code>, <code>:2405</code>).<sup id="fnref:19"><a class="footnote-ref" href="#fn:19">19</a></sup> Rendering is imperative throughout:
 there is no event stream for interfaces to subscribe to, which is why
 the streamlit GUI re-implements display logic instead of observing
 it.<sup id="fnref:20"><a class="footnote-ref" href="#fn:20">20</a></sup></p>
@@ -331,10 +332,11 @@ it.<sup id="fnref:20"><a class="footnote-ref" href="#fn:20">20</a></sup></p>
      the current message's mentioned files and identifiers, with a
      <strong>triple fallback</strong> — personalized → global unhinted → fully
      unhinted (<code>:709-745</code>).</li>
-<li><strong>Refresh policy</strong> (<code>:600-610</code>): <code>manual</code> freezes the last map,
-     <code>always</code> regenerates, <code>files</code> caches on file sets, <code>auto</code>
-     regenerates only when the previous build took over 1 second
-     (<code>map_processing_time &gt; 1.0</code>), keyed on chat plus mentions.<sup id="fnref:21"><a class="footnote-ref" href="#fn:21">21</a></sup></li>
+<li><strong>Refresh policy</strong> (<code>:598-612</code>): <code>manual</code> freezes the last map,
+     <code>always</code> regenerates, <code>files</code> caches on file sets, and <code>auto</code>
+     regenerates every turn <em>unless</em> the previous build took over 1
+     second (<code>map_processing_time &gt; 1.0</code>), in which case it reuses the
+     cached map keyed on chat files plus mentions.<sup id="fnref:21"><a class="footnote-ref" href="#fn:21">21</a></sup></li>
 </ul>
 <p><img alt="Repo map pipeline" src="figures/seq-repomap.svg" /></p>
 <p>This is aider's answer to "how does the model see the codebase" —
@@ -360,7 +362,7 @@ it.<sup id="fnref:20"><a class="footnote-ref" href="#fn:20">20</a></sup></p>
 <tbody>
 <tr>
 <td><code>diff</code></td>
-<td><code>EditBlockCoder</code> (<code>:13</code>)</td>
+<td><code>EditBlockCoder</code> (<code>:15</code>)</td>
 <td>SEARCH/REPLACE blocks, fuzzy filename</td>
 </tr>
 <tr>
@@ -407,8 +409,8 @@ it.<sup id="fnref:20"><a class="footnote-ref" href="#fn:20">20</a></sup></p>
 <ul>
 <li><strong>Model layer.</strong> <code>models.py</code>: <code>Model</code> wraps litellm. Compatibility
   comes from <strong>two tables</strong>: <code>resources/model-settings.yml</code> (<strong>313
-  models</strong>, user-overridable via <code>--model-settings-file</code>,
-  <code>models.py:142-146</code>) → exact match, then
+  models</strong>, loaded at <code>models.py:142-146</code>, user-overridable via
+  <code>--model-settings-file</code> through <code>register_models</code>, <code>:1070</code>) → exact match, then
   <code>apply_generic_model_settings()</code> (<code>:421</code>): dozens of <strong>substring
   heuristics</strong> (<code>"/o3-mini" in model</code>, <code>"gpt-4" in model</code>, …) setting
   <code>edit_format</code>, <code>use_repo_map</code>, <code>streaming</code>, <code>use_temperature</code>,
@@ -457,9 +459,11 @@ it.<sup id="fnref:20"><a class="footnote-ref" href="#fn:20">20</a></sup></p>
   browser GUI wrapping the same <code>Coder</code>.<sup id="fnref2:20"><a class="footnote-ref" href="#fn:20">20</a></sup></p>
 </li>
 <li>
-<p><strong>Failure handling.</strong> Exponential-backoff retry (60s cap) on
-  transient litellm errors; no retry on context-window exhaustion (asks
-  the user to proceed anyway); output-length truncation →
+<p><strong>Failure handling.</strong> Exponential-backoff retry (per-attempt delay
+  capped at 60s) on transient litellm errors; an oversized prompt is
+  caught before sending ("Try to proceed anyway?"), and a
+  <code>ContextWindowExceededError</code> from the provider ends the turn without
+  retry; output-length truncation →
   assistant-prefill continuation; malformed edits → reflected error
   text (≤3 reflections); lint/test failures → confirm → reflected
   errors; double-Ctrl+C exits.<sup id="fnref2:7"><a class="footnote-ref" href="#fn:7">7</a></sup><sup id="fnref:29"><a class="footnote-ref" href="#fn:29">29</a></sup></p>
@@ -468,7 +472,7 @@ it.<sup id="fnref:20"><a class="footnote-ref" href="#fn:20">20</a></sup></p>
 <p><strong>Security model.</strong> Inverted versus pi: <strong>edits to chat files apply
   with no prompt</strong>. Prompts appear only at the boundary — "Create new
   file?" (<code>:2207</code>), "Allow edits to file that has not been added to the
-  chat?" (<code>:2226</code>), every suggested shell command
+  chat?" (<code>:2226</code>), every suggested shell block
   (<code>explicit_yes_required=True</code>, <code>:2456</code>). The safety net is git
   auto-commit plus <code>/undo</code>, not approvals — and there is no sandboxing
   of any kind at runtime.<sup id="fnref:30"><a class="footnote-ref" href="#fn:30">30</a></sup></p>
@@ -486,7 +490,7 @@ extending aider means editing settings, switching formats, or forking.</p>
 <ul>
 <li><strong>Slash commands (closed set).</strong> <code>commands.py</code> holds <strong>42 slash
   commands</strong>; any <code>cmd_*</code> method auto-registers (<code>get_commands</code>,
-  <code>:276</code>) and dispatches by prefix match in <code>do_run</code> (<code>:288</code>), with a
+  <code>:276</code>) and dispatches by unique-prefix match in <code>run</code> (<code>:312</code>) → <code>do_run</code> (<code>:287</code>), with a
   <code>!</code> prefix escaping to shell.<sup id="fnref:32"><a class="footnote-ref" href="#fn:32">32</a></sup> The set is the product:
   <code>/add</code> <code>/drop</code> <code>/read-only</code> (context management), <code>/model</code>
   <code>/editor-model</code> <code>/weak-model</code> (SwitchCoder hot-swap), <code>/architect</code>
@@ -541,12 +545,12 @@ less machinery to plug into.</p>
 <tbody>
 <tr>
 <td>Tool calling</td>
-<td>Native: 4 built-ins + registry, schema-validated, parallel</td>
+<td>Native: 8 built-ins (4 active by default) + registry, schema-validated, parallel</td>
 <td><strong>None.</strong> Model emits text edit blocks; aider parses prose</td>
 </tr>
 <tr>
 <td>MCP</td>
-<td>Wraps MCP servers as native tools</td>
+<td>Wraps MCP tools as native tools (<code>codemode</code> exposure by default)</td>
 <td><strong>Absent</strong> (grep <code>aider/*.py</code> + <code>coders/*.py</code> → 0 hits)</td>
 </tr>
 <tr>
@@ -641,7 +645,7 @@ verify it mechanically, and commit it reversibly.</p>
 <tr>
 <td>2</td>
 <td>Tool system</td>
-<td>None — model emits SEARCH/REPLACE blocks parsed by edit-format coders; shell suggestions run only with per-command confirmation <sup id="fnref3:14"><a class="footnote-ref" href="#fn:14">14</a></sup><sup id="fnref3:18"><a class="footnote-ref" href="#fn:18">18</a></sup></td>
+<td>None — model emits SEARCH/REPLACE blocks parsed by edit-format coders; shell suggestions run only with per-block confirmation <sup id="fnref3:14"><a class="footnote-ref" href="#fn:14">14</a></sup><sup id="fnref3:18"><a class="footnote-ref" href="#fn:18">18</a></sup></td>
 </tr>
 <tr>
 <td>3</td>
@@ -676,7 +680,7 @@ verify it mechanically, and commit it reversibly.</p>
 <tr>
 <td>9</td>
 <td>Failure handling</td>
-<td>Exp-backoff retry (60s cap); no retry on context exhaustion; malformed edits reflected (≤3); lint/test confirm loops <sup id="fnref3:7"><a class="footnote-ref" href="#fn:7">7</a></sup><sup id="fnref4:18"><a class="footnote-ref" href="#fn:18">18</a></sup></td>
+<td>Exp-backoff retry (60s per-attempt cap); no retry on context exhaustion; malformed edits reflected (≤3); lint/test confirm loops <sup id="fnref3:7"><a class="footnote-ref" href="#fn:7">7</a></sup><sup id="fnref4:18"><a class="footnote-ref" href="#fn:18">18</a></sup></td>
 </tr>
 <tr>
 <td>10</td>
@@ -687,7 +691,8 @@ verify it mechanically, and commit it reversibly.</p>
 </table>
 <h2 id="endnotes">Endnotes</h2>
 <p>All notes are VERIFIED against <code>v0.86.2</code>
-(<code>253f0368b873ba30d8ee26e463718f0c03614ddf</code>) unless marked otherwise.
+(<code>253f0368b873ba30d8ee26e463718f0c03614ddf</code>) unless marked otherwise;
+line anchors re-checked on 2026-10-07.
 <code>GH</code> = <code>https://github.com/Aider-AI/aider/blob/253f0368b873ba30d8ee26e463718f0c03614ddf/</code>.</p>
 <hr />
 <p><em>Next in the series: Cline — where the same ten dimensions meet the IDE
@@ -711,8 +716,11 @@ verified with <code>wc -l</code> at the pinned tree
 <li id="fn:3">
 <p><code>resources/model-settings.yml</code> holds 313 model entries (counted by
 YAML parse at the pinned tree); user override via
-<code>--model-settings-file</code>
-(<a href="https://github.com/Aider-AI/aider/blob/253f0368b873ba30d8ee26e463718f0c03614ddf/aider/models.py#L142-L146">GH…/models.py#L142-L146</a>).&#160;<a class="footnote-backref" href="#fnref:3" title="Jump back to footnote 3 in the text">&#8617;</a></p>
+<code>--model-settings-file</code> (bundled file loaded at
+<a href="https://github.com/Aider-AI/aider/blob/253f0368b873ba30d8ee26e463718f0c03614ddf/aider/models.py#L142-L146">GH…/models.py#L142-L146</a>;
+user files merged by <code>register_models</code> at
+<a href="https://github.com/Aider-AI/aider/blob/253f0368b873ba30d8ee26e463718f0c03614ddf/aider/models.py#L1070">GH…/models.py#L1070</a>, called from
+<a href="https://github.com/Aider-AI/aider/blob/253f0368b873ba30d8ee26e463718f0c03614ddf/aider/main.py#L756">GH…/main.py#L756</a>).&#160;<a class="footnote-backref" href="#fnref:3" title="Jump back to footnote 3 in the text">&#8617;</a></p>
 </li>
 <li id="fn:4">
 <p><code>Coder.run()</code> at
@@ -745,12 +753,13 @@ supports it.&#160;<a class="footnote-backref" href="#fnref:7" title="Jump back t
 <li id="fn:8">
 <p>Negative finding: case-insensitive grep for
 <code>max_iter|max_steps|max_turns</code> over <code>aider/</code> at the pinned SHA
-<code>253f0368b873ba30d8ee26e463718f0c03614ddf</code> returns only
-<code>max_reflections</code> — no iteration cap on the REPL.&#160;<a class="footnote-backref" href="#fnref:8" title="Jump back to footnote 8 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:8" title="Jump back to footnote 8 in the text">&#8617;</a></p>
+<code>253f0368b873ba30d8ee26e463718f0c03614ddf</code> returns zero hits; the
+only loop bound in the codebase is <code>max_reflections</code> (see note 6) —
+no iteration cap on the REPL.&#160;<a class="footnote-backref" href="#fnref:8" title="Jump back to footnote 8 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:8" title="Jump back to footnote 8 in the text">&#8617;</a></p>
 </li>
 <li id="fn:9">
 <p>Input path: <code>get_input()</code> at
-<a href="https://github.com/Aider-AI/aider/blob/253f0368b873ba30d8ee26e463718f0c03614ddf/aider/coders/base_coder.py#L899">GH…/base_coder.py#L899</a>
+<a href="https://github.com/Aider-AI/aider/blob/253f0368b873ba30d8ee26e463718f0c03614ddf/aider/coders/base_coder.py#L898">GH…/base_coder.py#L898</a>
 via <code>io.get_input</code> at
 <a href="https://github.com/Aider-AI/aider/blob/253f0368b873ba30d8ee26e463718f0c03614ddf/aider/io.py#L523">GH…/io.py#L523</a>;
 <code>preproc_user_input</code> at
@@ -797,7 +806,7 @@ continuing on error.&#160;<a class="footnote-backref" href="#fnref:12" title="Ju
 </li>
 <li id="fn:14">
 <p><code>EditBlockCoder.get_edits()</code> at
-<a href="https://github.com/Aider-AI/aider/blob/253f0368b873ba30d8ee26e463718f0c03614ddf/aider/coders/editblock_coder.py#L19-L33">GH…/coders/editblock_coder.py#L19-L33</a>;
+<a href="https://github.com/Aider-AI/aider/blob/253f0368b873ba30d8ee26e463718f0c03614ddf/aider/coders/editblock_coder.py#L21-L36">GH…/coders/editblock_coder.py#L21-L36</a>;
 <code>find_original_update_blocks()</code> at
 <a href="https://github.com/Aider-AI/aider/blob/253f0368b873ba30d8ee26e463718f0c03614ddf/aider/coders/editblock_coder.py#L439">L439</a>
 (filename from the 3 preceding lines: exact → basename → difflib
@@ -834,14 +843,15 @@ retires turn messages and starts background summarization.&#160;<a class="footno
 <a href="https://github.com/Aider-AI/aider/blob/253f0368b873ba30d8ee26e463718f0c03614ddf/aider/coders/base_coder.py#L1681">L1681</a>,
 per-language lint in
 <a href="https://github.com/Aider-AI/aider/blob/253f0368b873ba30d8ee26e463718f0c03614ddf/aider/linter.py#L82">GH…/linter.py#L82</a>
-(commands from <code>resources/lint-commands.json</code>); shell blocks run
+(built-in Python linter, else a user <code>--lint-cmd</code>, else tree-sitter
+<code>basic_lint</code>); shell blocks run
 with <code>explicit_yes_required=True</code> at
 <a href="https://github.com/Aider-AI/aider/blob/253f0368b873ba30d8ee26e463718f0c03614ddf/aider/coders/base_coder.py#L2456">L2456</a>.&#160;<a class="footnote-backref" href="#fnref:18" title="Jump back to footnote 18 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:18" title="Jump back to footnote 18 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:18" title="Jump back to footnote 18 in the text">&#8617;</a><a class="footnote-backref" href="#fnref4:18" title="Jump back to footnote 18 in the text">&#8617;</a></p>
 </li>
 <li id="fn:19">
 <p>Streaming render via <code>io.get_assistant_mdstream</code>; <code>/undo</code> hint in
 <code>show_undo_hint()</code> at
-<a href="https://github.com/Aider-AI/aider/blob/253f0368b873ba30d8ee26e463718f0c03614ddf/aider/coders/base_coder.py#L2404">GH…/base_coder.py#L2404</a>.&#160;<a class="footnote-backref" href="#fnref:19" title="Jump back to footnote 19 in the text">&#8617;</a></p>
+<a href="https://github.com/Aider-AI/aider/blob/253f0368b873ba30d8ee26e463718f0c03614ddf/aider/coders/base_coder.py#L2405">GH…/base_coder.py#L2405</a>.&#160;<a class="footnote-backref" href="#fnref:19" title="Jump back to footnote 19 in the text">&#8617;</a></p>
 </li>
 <li id="fn:20">
 <p><code>gui.py</code> imports streamlit
@@ -874,9 +884,9 @@ and <code>render_tree</code> at
 budget <code>max_input_tokens/8</code> clamped to [1024, 4096] in
 <code>get_repo_map_tokens</code> at
 <a href="https://github.com/Aider-AI/aider/blob/253f0368b873ba30d8ee26e463718f0c03614ddf/aider/models.py#L767-L774">GH…/models.py#L767-L774</a>;
-refresh policy (<code>manual</code>/<code>always</code>/<code>files</code>/<code>auto</code>, auto regenerates
-past 1s processing) at
-<a href="https://github.com/Aider-AI/aider/blob/253f0368b873ba30d8ee26e463718f0c03614ddf/aider/repomap.py#L601-L610">GH…/repomap.py#L601-L610</a>.&#160;<a class="footnote-backref" href="#fnref:21" title="Jump back to footnote 21 in the text">&#8617;</a></p>
+refresh policy (<code>manual</code>/<code>always</code>/<code>files</code>/<code>auto</code>; <code>auto</code> reuses the
+cache once a build has taken over 1s) at
+<a href="https://github.com/Aider-AI/aider/blob/253f0368b873ba30d8ee26e463718f0c03614ddf/aider/repomap.py#L598-L612">GH…/repomap.py#L598-L612</a>.&#160;<a class="footnote-backref" href="#fnref:21" title="Jump back to footnote 21 in the text">&#8617;</a></p>
 </li>
 <li id="fn:22">
 <p><code>Coder.create()</code> at
@@ -902,7 +912,7 @@ sentinels with <code>*** Update File:</code> / <code>*** Add File:</code> /
 <code>*** Delete File:</code> actions and <code>@@</code> context chunks (fuzz
 tracked on the <code>Patch</code> dataclass), tolerating missing
 sentinels when the content is patch-like
-(<a href="https://github.com/Aider-AI/aider/blob/253f0368b873ba30d8ee26e463718f0c03614ddf/aider/coders/patch_coder.py#L217-L260">GH…/coders/patch_coder.py#L217-L260</a>).&#160;<a class="footnote-backref" href="#fnref:22" title="Jump back to footnote 22 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:22" title="Jump back to footnote 22 in the text">&#8617;</a></p>
+(<a href="https://github.com/Aider-AI/aider/blob/253f0368b873ba30d8ee26e463718f0c03614ddf/aider/coders/patch_coder.py#L220-L260">GH…/coders/patch_coder.py#L220-L260</a>).&#160;<a class="footnote-backref" href="#fnref:22" title="Jump back to footnote 22 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:22" title="Jump back to footnote 22 in the text">&#8617;</a></p>
 </li>
 <li id="fn:23">
 <p>Format-switch summarization in <code>Coder.create()</code> at
@@ -962,7 +972,7 @@ a prompt with tree context around the comment lines.&#160;<a class="footnote-bac
 </li>
 <li id="fn:29">
 <p>Double-Ctrl+C exit in <code>keyboard_interrupt()</code> at
-<a href="https://github.com/Aider-AI/aider/blob/253f0368b873ba30d8ee26e463718f0c03614ddf/aider/coders/base_coder.py#L983-L998">GH…/base_coder.py#L983-L998</a>
+<a href="https://github.com/Aider-AI/aider/blob/253f0368b873ba30d8ee26e463718f0c03614ddf/aider/coders/base_coder.py#L986-L1000">GH…/base_coder.py#L986-L1000</a>
 (2-second threshold between interrupts).&#160;<a class="footnote-backref" href="#fnref:29" title="Jump back to footnote 29 in the text">&#8617;</a></p>
 </li>
 <li id="fn:30">
@@ -989,8 +999,9 @@ dev-container files only).&#160;<a class="footnote-backref" href="#fnref:30" tit
 <p>42 <code>cmd_*</code> methods (counted at the pinned tree);
 auto-registration in <code>get_commands()</code> at
 <a href="https://github.com/Aider-AI/aider/blob/253f0368b873ba30d8ee26e463718f0c03614ddf/aider/commands.py#L276">GH…/commands.py#L276</a>,
-prefix dispatch in <code>do_run()</code> at
-<a href="https://github.com/Aider-AI/aider/blob/253f0368b873ba30d8ee26e463718f0c03614ddf/aider/commands.py#L288">L288</a>;
+unique-prefix dispatch in <code>run()</code> at
+<a href="https://github.com/Aider-AI/aider/blob/253f0368b873ba30d8ee26e463718f0c03614ddf/aider/commands.py#L312">L312</a> → <code>do_run()</code> at
+<a href="https://github.com/Aider-AI/aider/blob/253f0368b873ba30d8ee26e463718f0c03614ddf/aider/commands.py#L287">L287</a>;
 <code>/undo</code> at
 <a href="https://github.com/Aider-AI/aider/blob/253f0368b873ba30d8ee26e463718f0c03614ddf/aider/commands.py#L553-L600">L553-L600</a>
 (reverts only aider's own commits: checks <code>aider_commit_hashes</code>,
