@@ -51,12 +51,12 @@ Single-package layout (`aider/`), not pi's monorepo. Dependency direction:
 | `models.py` | 1,323 | Model compat table (YAML + heuristics), litellm calls |
 | `main.py` | 1,274 | CLI entry, mode dispatch, coder construction |
 | `repomap.py` | 867 | PageRank repo map (tree-sitter + networkx) |
-| `io.py` | ~700 | prompt_toolkit input, watch/clipboard hooks |
+| `io.py` | 1,191 | prompt_toolkit input, watch/clipboard hooks |
 | `history.py` | 143 | background-thread chat summarization |
 | `diffs.py` | 128 | streaming whole-file diff display helper |
-| `gui.py` | — | streamlit browser GUI (alt interface) |
-| `watch.py` | ~310 | watchdog file watcher ("AI comments") |
-| `voice.py` | — | whisper voice input |
+| `gui.py` | 545 | streamlit browser GUI (alt interface) |
+| `watch.py` | 318 | watchdog file watcher ("AI comments") |
+| `voice.py` | 187 | whisper voice input |
 
 Entry is `aider/__main__.py` → `main()` at `main.py:451`.[^1]
 
@@ -126,7 +126,7 @@ the model is never handed the steering wheel — it only ever writes prose.
 Trace: the user types `add error handling to foo.py` with `foo.py`
 already `/add`ed to the chat (default edit format `diff`, model gpt-4o).
 
-**① Input.** `Coder.run()` → `get_input()` (`base_coder.py:899`,
+**① Input.** `Coder.run()` → `get_input()` (`base_coder.py:898`,
 prompt_toolkit via `io.get_input` at `io.py:523`) → `run_one(…,
 preproc=True)` → `preproc_user_input` (`:912`): slash-command check,
 then `check_for_file_mentions` on the *user's* text, then URL
@@ -163,7 +163,7 @@ stream through `show_send_output_stream`, or arrive whole via
 as SEARCH/REPLACE text blocks inside the prose.
 
 **④ Response parsing.** `EditBlockCoder.get_edits()`
-(`coders/editblock_coder.py:19`) → `find_original_update_blocks()`
+(`coders/editblock_coder.py:21`) → `find_original_update_blocks()`
 (`:439`): scans the response for `<<<<<<< SEARCH` / `=======` /
 `>>>>>>> REPLACE` fenced blocks and resolves the target filename from
 the 3 preceding lines — exact match, then basename, then difflib 0.8
@@ -196,20 +196,21 @@ history and kicks off background summarization (more below).[^17]
 
 **⑦ Verify & reflect.** Post-apply feedback (`:1599-1622`): if
 `auto_lint`, `lint_edited()` (`:1681`) runs per-language lint commands
-(`linter.py:82`, from `resources/lint-commands.json`, falling back to a
-`basic_lint`) — on errors, aider asks "Attempt to fix lint errors?" and,
+(`linter.py:82`: the built-in Python linter, or a user-configured
+`--lint-cmd`, falling back to a tree-sitter `basic_lint`) — on errors, aider asks "Attempt to fix lint errors?" and,
 on yes, sets `reflected_message = lint_errors`, sending the linter's
 complaints back to the model as a new user message (reflection 1 of
 ≤3).[^18] Then `run_shell_commands()`: each model-suggested shell block
-requires explicit per-command confirmation
-(`explicit_yes_required=True`, `:2456`); output is optionally appended
+requires its own explicit confirmation — one prompt per block
+(`explicit_yes_required=True`, `:2456`, so neither "All" nor
+`--yes-always` can approve it); output is optionally appended
 to the chat as a user/assistant pair. Then the `auto_test` command runs
 the same confirm→reflect cycle for test failures.[^18]
 
 **⑧ Rendering.** Tokens stream live via `mdstream`
 (`io.get_assistant_mdstream`); after applying, aider prints "Applied
 edit to foo.py" and — if the turn moved HEAD — a `/undo` hint
-(`show_undo_hint`, `:2404`).[^19] Rendering is imperative throughout:
+(`show_undo_hint`, `:2405`).[^19] Rendering is imperative throughout:
 there is no event stream for interfaces to subscribe to, which is why
 the streamlit GUI re-implements display logic instead of observing
 it.[^20]
@@ -243,10 +244,11 @@ it.[^20]
      the current message's mentioned files and identifiers, with a
      **triple fallback** — personalized → global unhinted → fully
      unhinted (`:709-745`).
-  6. **Refresh policy** (`:600-610`): `manual` freezes the last map,
-     `always` regenerates, `files` caches on file sets, `auto`
-     regenerates only when the previous build took over 1 second
-     (`map_processing_time > 1.0`), keyed on chat plus mentions.[^21]
+  6. **Refresh policy** (`:598-612`): `manual` freezes the last map,
+     `always` regenerates, `files` caches on file sets, and `auto`
+     regenerates every turn *unless* the previous build took over 1
+     second (`map_processing_time > 1.0`), in which case it reuses the
+     cached map keyed on chat files plus mentions.[^21]
 
 ![Repo map pipeline](figures/seq-repomap.svg)
 
@@ -264,7 +266,7 @@ it.[^20]
 
   | Format | Coder | Parse |
   |---|---|---|
-  | `diff` | `EditBlockCoder` (`:13`) | SEARCH/REPLACE blocks, fuzzy filename |
+  | `diff` | `EditBlockCoder` (`:15`) | SEARCH/REPLACE blocks, fuzzy filename |
   | `udiff` | `UnifiedDiffCoder` (`:46`) | unified diff hunks, `normalize_hunk` |
   | `whole` | `WholeFileCoder` (`:10`) | full-file fenced rewrites |
   | `patch` | `PatchCoder` (`:210`) | `*** Begin Patch` sentinels; `*** Update/Add/Delete File:` actions with `@@` context chunks and tracked fuzz — tolerant of missing sentinels |
@@ -285,8 +287,8 @@ it.[^20]
 
 - **Model layer.** `models.py`: `Model` wraps litellm. Compatibility
   comes from **two tables**: `resources/model-settings.yml` (**313
-  models**, user-overridable via `--model-settings-file`,
-  `models.py:142-146`) → exact match, then
+  models**, loaded at `models.py:142-146`, user-overridable via
+  `--model-settings-file` through `register_models`, `:1070`) → exact match, then
   `apply_generic_model_settings()` (`:421`): dozens of **substring
   heuristics** (`"/o3-mini" in model`, `"gpt-4" in model`, …) setting
   `edit_format`, `use_repo_map`, `streaming`, `use_temperature`,
@@ -331,9 +333,11 @@ it.[^20]
   file without involving the model at all. `gui.py` is a streamlit
   browser GUI wrapping the same `Coder`.[^20]
 
-- **Failure handling.** Exponential-backoff retry (60s cap) on
-  transient litellm errors; no retry on context-window exhaustion (asks
-  the user to proceed anyway); output-length truncation →
+- **Failure handling.** Exponential-backoff retry (per-attempt delay
+  capped at 60s) on transient litellm errors; an oversized prompt is
+  caught before sending ("Try to proceed anyway?"), and a
+  `ContextWindowExceededError` from the provider ends the turn without
+  retry; output-length truncation →
   assistant-prefill continuation; malformed edits → reflected error
   text (≤3 reflections); lint/test failures → confirm → reflected
   errors; double-Ctrl+C exits.[^7][^29]
@@ -341,7 +345,7 @@ it.[^20]
 - **Security model.** Inverted versus pi: **edits to chat files apply
   with no prompt**. Prompts appear only at the boundary — "Create new
   file?" (`:2207`), "Allow edits to file that has not been added to the
-  chat?" (`:2226`), every suggested shell command
+  chat?" (`:2226`), every suggested shell block
   (`explicit_yes_required=True`, `:2456`). The safety net is git
   auto-commit plus `/undo`, not approvals — and there is no sandboxing
   of any kind at runtime.[^30]
@@ -358,7 +362,7 @@ extending aider means editing settings, switching formats, or forking.
 
 - **Slash commands (closed set).** `commands.py` holds **42 slash
   commands**; any `cmd_*` method auto-registers (`get_commands`,
-  `:276`) and dispatches by prefix match in `do_run` (`:288`), with a
+  `:276`) and dispatches by unique-prefix match in `run` (`:312`) → `do_run` (`:287`), with a
   `!` prefix escaping to shell.[^32] The set is the product:
   `/add` `/drop` `/read-only` (context management), `/model`
   `/editor-model` `/weak-model` (SwitchCoder hot-swap), `/architect`
@@ -409,8 +413,8 @@ less machinery to plug into.
 
 | Capability | pi (v1.0.2) | aider (v0.86.2) |
 |---|---|---|
-| Tool calling | Native: 4 built-ins + registry, schema-validated, parallel | **None.** Model emits text edit blocks; aider parses prose |
-| MCP | Wraps MCP servers as native tools | **Absent** (grep `aider/*.py` + `coders/*.py` → 0 hits) |
+| Tool calling | Native: 8 built-ins (4 active by default) + registry, schema-validated, parallel | **None.** Model emits text edit blocks; aider parses prose |
+| MCP | Wraps MCP tools as native tools (`codemode` exposure by default) | **Absent** (grep `aider/*.py` + `coders/*.py` → 0 hits) |
 | Plugin/extension API | TS extensions, hooks at every seam | **Absent** (grep "plugin" → 0 hits); 42 commands are a closed list |
 | Skills | Skill dirs + frontmatter + `/skill:` | **Absent** (grep "skill" → 0 hits) |
 | Sub-agents | Deliberately omitted | Architect ≈ sequential 2-model delegation with a user gate — not autonomous |
@@ -438,20 +442,21 @@ verify it mechanically, and commit it reversibly.
 | # | Dimension | aider (v0.86.2) |
 |---|---|---|
 | 1 | Agent loop | No tool-call loop; parse→apply→reflect over text edit formats; REPL + reflection (≤3) + retry; no REPL iteration cap [^4][^6][^8] |
-| 2 | Tool system | None — model emits SEARCH/REPLACE blocks parsed by edit-format coders; shell suggestions run only with per-command confirmation [^14][^18] |
+| 2 | Tool system | None — model emits SEARCH/REPLACE blocks parsed by edit-format coders; shell suggestions run only with per-block confirmation [^14][^18] |
 | 3 | Model providers | litellm behind a `Model` wrapper; 313-entry YAML + substring heuristics (model-aware, load-bearing); weak model for commits/summaries [^25][^26] |
 | 4 | Prompt construction | Fixed wire order with synthetic user/assistant pairs; prompt-cache breakpoints on stable prefixes; repo map re-injected per turn [^10][^11] |
 | 5 | Memory/session | In-memory cur/done messages; background-thread summarization; markdown log in repo; git auto-commit per turn [^16][^27] |
 | 6 | Reasoning/planning | Architect = sequential 2-model delegation with user gate; no autonomous sub-agents [^24] |
 | 7 | Extensibility | 42 closed slash commands; model-settings YAML; no plugin API, MCP, or skills — configuration, not code [^32][^33][^34] |
 | 8 | Interfaces | prompt_toolkit CLI; `--message` one-shot; streamlit GUI; imperative rendering, no event stream [^20] |
-| 9 | Failure handling | Exp-backoff retry (60s cap); no retry on context exhaustion; malformed edits reflected (≤3); lint/test confirm loops [^7][^18] |
+| 9 | Failure handling | Exp-backoff retry (60s per-attempt cap); no retry on context exhaustion; malformed edits reflected (≤3); lint/test confirm loops [^7][^18] |
 | 10 | Security model | Chat-file edits auto-apply; prompts only at boundaries; git auto-commit + `/undo`; no sandbox [^30] |
 
 ## Endnotes
 
 All notes are VERIFIED against `v0.86.2`
-(`253f0368b873ba30d8ee26e463718f0c03614ddf`) unless marked otherwise.
+(`253f0368b873ba30d8ee26e463718f0c03614ddf`) unless marked otherwise;
+line anchors re-checked on 2026-10-07.
 `GH` = `https://github.com/Aider-AI/aider/blob/253f0368b873ba30d8ee26e463718f0c03614ddf/`.
 
 [^1]: Entry: `aider/__main__.py` delegates to `main()` at
@@ -465,8 +470,11 @@ All notes are VERIFIED against `v0.86.2`
     `repomap.py` 867, `history.py` 143, `aider/diffs.py` 128).
 [^3]: `resources/model-settings.yml` holds 313 model entries (counted by
     YAML parse at the pinned tree); user override via
-    `--model-settings-file`
-    ([GH…/models.py#L142-L146](https://github.com/Aider-AI/aider/blob/253f0368b873ba30d8ee26e463718f0c03614ddf/aider/models.py#L142-L146)).
+    `--model-settings-file` (bundled file loaded at
+    [GH…/models.py#L142-L146](https://github.com/Aider-AI/aider/blob/253f0368b873ba30d8ee26e463718f0c03614ddf/aider/models.py#L142-L146);
+    user files merged by `register_models` at
+    [GH…/models.py#L1070](https://github.com/Aider-AI/aider/blob/253f0368b873ba30d8ee26e463718f0c03614ddf/aider/models.py#L1070), called from
+    [GH…/main.py#L756](https://github.com/Aider-AI/aider/blob/253f0368b873ba30d8ee26e463718f0c03614ddf/aider/main.py#L756)).
 [^4]: `Coder.run()` at
     [GH…/base_coder.py#L876](https://github.com/Aider-AI/aider/blob/253f0368b873ba30d8ee26e463718f0c03614ddf/aider/coders/base_coder.py#L876)
     (`while True:` → `get_input()` → `run_one(...)`);
@@ -489,10 +497,11 @@ All notes are VERIFIED against `v0.86.2`
     supports it.
 [^8]: Negative finding: case-insensitive grep for
     `max_iter|max_steps|max_turns` over `aider/` at the pinned SHA
-    `253f0368b873ba30d8ee26e463718f0c03614ddf` returns only
-    `max_reflections` — no iteration cap on the REPL.
+    `253f0368b873ba30d8ee26e463718f0c03614ddf` returns zero hits; the
+    only loop bound in the codebase is `max_reflections` (see note 6) —
+    no iteration cap on the REPL.
 [^9]: Input path: `get_input()` at
-    [GH…/base_coder.py#L899](https://github.com/Aider-AI/aider/blob/253f0368b873ba30d8ee26e463718f0c03614ddf/aider/coders/base_coder.py#L899)
+    [GH…/base_coder.py#L898](https://github.com/Aider-AI/aider/blob/253f0368b873ba30d8ee26e463718f0c03614ddf/aider/coders/base_coder.py#L898)
     via `io.get_input` at
     [GH…/io.py#L523](https://github.com/Aider-AI/aider/blob/253f0368b873ba30d8ee26e463718f0c03614ddf/aider/io.py#L523);
     `preproc_user_input` at
@@ -529,7 +538,7 @@ All notes are VERIFIED against `v0.86.2`
     → `litellm.completion(...)`; streaming via
     `show_send_output_stream`.
 [^14]: `EditBlockCoder.get_edits()` at
-    [GH…/coders/editblock_coder.py#L19-L33](https://github.com/Aider-AI/aider/blob/253f0368b873ba30d8ee26e463718f0c03614ddf/aider/coders/editblock_coder.py#L19-L33);
+    [GH…/coders/editblock_coder.py#L21-L36](https://github.com/Aider-AI/aider/blob/253f0368b873ba30d8ee26e463718f0c03614ddf/aider/coders/editblock_coder.py#L21-L36);
     `find_original_update_blocks()` at
     [L439](https://github.com/Aider-AI/aider/blob/253f0368b873ba30d8ee26e463718f0c03614ddf/aider/coders/editblock_coder.py#L439)
     (filename from the 3 preceding lines: exact → basename → difflib
@@ -558,12 +567,13 @@ All notes are VERIFIED against `v0.86.2`
     [L1681](https://github.com/Aider-AI/aider/blob/253f0368b873ba30d8ee26e463718f0c03614ddf/aider/coders/base_coder.py#L1681),
     per-language lint in
     [GH…/linter.py#L82](https://github.com/Aider-AI/aider/blob/253f0368b873ba30d8ee26e463718f0c03614ddf/aider/linter.py#L82)
-    (commands from `resources/lint-commands.json`); shell blocks run
+    (built-in Python linter, else a user `--lint-cmd`, else tree-sitter
+    `basic_lint`); shell blocks run
     with `explicit_yes_required=True` at
     [L2456](https://github.com/Aider-AI/aider/blob/253f0368b873ba30d8ee26e463718f0c03614ddf/aider/coders/base_coder.py#L2456).
 [^19]: Streaming render via `io.get_assistant_mdstream`; `/undo` hint in
     `show_undo_hint()` at
-    [GH…/base_coder.py#L2404](https://github.com/Aider-AI/aider/blob/253f0368b873ba30d8ee26e463718f0c03614ddf/aider/coders/base_coder.py#L2404).
+    [GH…/base_coder.py#L2405](https://github.com/Aider-AI/aider/blob/253f0368b873ba30d8ee26e463718f0c03614ddf/aider/coders/base_coder.py#L2405).
 [^20]: `gui.py` imports streamlit
     ([GH…/gui.py#L7](https://github.com/Aider-AI/aider/blob/253f0368b873ba30d8ee26e463718f0c03614ddf/aider/gui.py#L7))
     and wraps the same `Coder`; rendering is imperative — no event
@@ -592,9 +602,9 @@ All notes are VERIFIED against `v0.86.2`
     budget `max_input_tokens/8` clamped to [1024, 4096] in
     `get_repo_map_tokens` at
     [GH…/models.py#L767-L774](https://github.com/Aider-AI/aider/blob/253f0368b873ba30d8ee26e463718f0c03614ddf/aider/models.py#L767-L774);
-    refresh policy (`manual`/`always`/`files`/`auto`, auto regenerates
-    past 1s processing) at
-    [GH…/repomap.py#L601-L610](https://github.com/Aider-AI/aider/blob/253f0368b873ba30d8ee26e463718f0c03614ddf/aider/repomap.py#L601-L610).
+    refresh policy (`manual`/`always`/`files`/`auto`; `auto` reuses the
+    cache once a build has taken over 1s) at
+    [GH…/repomap.py#L598-L612](https://github.com/Aider-AI/aider/blob/253f0368b873ba30d8ee26e463718f0c03614ddf/aider/repomap.py#L598-L612).
 [^22]: `Coder.create()` at
     [GH…/base_coder.py#L125-L160](https://github.com/Aider-AI/aider/blob/253f0368b873ba30d8ee26e463718f0c03614ddf/aider/coders/base_coder.py#L125-L160)
     (first class whose `edit_format` matches wins; default from
@@ -618,7 +628,7 @@ All notes are VERIFIED against `v0.86.2`
     `*** Delete File:` actions and `@@` context chunks (fuzz
     tracked on the `Patch` dataclass), tolerating missing
     sentinels when the content is patch-like
-    ([GH…/coders/patch_coder.py#L217-L260](https://github.com/Aider-AI/aider/blob/253f0368b873ba30d8ee26e463718f0c03614ddf/aider/coders/patch_coder.py#L217-L260)).
+    ([GH…/coders/patch_coder.py#L220-L260](https://github.com/Aider-AI/aider/blob/253f0368b873ba30d8ee26e463718f0c03614ddf/aider/coders/patch_coder.py#L220-L260)).
 [^23]: Format-switch summarization in `Coder.create()` at
     [GH…/base_coder.py#L163-L176](https://github.com/Aider-AI/aider/blob/253f0368b873ba30d8ee26e463718f0c03614ddf/aider/coders/base_coder.py#L163-L176)
     (old ASSISTANT messages would "confuse the new LLM").
@@ -664,7 +674,7 @@ All notes are VERIFIED against `v0.86.2`
     scans for `AI!`/`AI?` comments, adds the files to chat, and builds
     a prompt with tree context around the comment lines.
 [^29]: Double-Ctrl+C exit in `keyboard_interrupt()` at
-    [GH…/base_coder.py#L983-L998](https://github.com/Aider-AI/aider/blob/253f0368b873ba30d8ee26e463718f0c03614ddf/aider/coders/base_coder.py#L983-L998)
+    [GH…/base_coder.py#L986-L1000](https://github.com/Aider-AI/aider/blob/253f0368b873ba30d8ee26e463718f0c03614ddf/aider/coders/base_coder.py#L986-L1000)
     (2-second threshold between interrupts).
 [^30]: No per-edit approval: `apply_updates()`
     ([GH…/base_coder.py#L2296](https://github.com/Aider-AI/aider/blob/253f0368b873ba30d8ee26e463718f0c03614ddf/aider/coders/base_coder.py#L2296))
@@ -685,8 +695,9 @@ All notes are VERIFIED against `v0.86.2`
 [^32]: 42 `cmd_*` methods (counted at the pinned tree);
     auto-registration in `get_commands()` at
     [GH…/commands.py#L276](https://github.com/Aider-AI/aider/blob/253f0368b873ba30d8ee26e463718f0c03614ddf/aider/commands.py#L276),
-    prefix dispatch in `do_run()` at
-    [L288](https://github.com/Aider-AI/aider/blob/253f0368b873ba30d8ee26e463718f0c03614ddf/aider/commands.py#L288);
+    unique-prefix dispatch in `run()` at
+    [L312](https://github.com/Aider-AI/aider/blob/253f0368b873ba30d8ee26e463718f0c03614ddf/aider/commands.py#L312) → `do_run()` at
+    [L287](https://github.com/Aider-AI/aider/blob/253f0368b873ba30d8ee26e463718f0c03614ddf/aider/commands.py#L287);
     `/undo` at
     [L553-L600](https://github.com/Aider-AI/aider/blob/253f0368b873ba30d8ee26e463718f0c03614ddf/aider/commands.py#L553-L600)
     (reverts only aider's own commits: checks `aider_commit_hashes`,

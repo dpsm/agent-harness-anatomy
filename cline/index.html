@@ -87,7 +87,7 @@ lives in the endnotes.</p>
 <tbody>
 <tr>
 <td><code>apps/vscode/src</code></td>
-<td>570 files, 76,962 LOC</td>
+<td>578 files, 78,079 LOC</td>
 <td>Extension host, webview, gRPC bridge</td>
 </tr>
 <tr>
@@ -182,8 +182,11 @@ loop construct itself is disarmingly plain:<sup id="fnref:7"><a class="footnote-
   re-loops or <code>finishRun("completed")</code> fires the <code>run-finished</code> event.
   With tool calls, <code>executeToolCalls()</code> runs them, results are pushed as
   messages, and <code>findCompletingToolMessage()</code> checks whether any tool with
-  <code>lifecycle.completesRun === true</code> succeeded — exactly one in-tree tool
-  has it, <code>submit_and_exit</code>: the run's stop button is a tool.<sup id="fnref:9"><a class="footnote-ref" href="#fn:9">9</a></sup><sup id="fnref:10"><a class="footnote-ref" href="#fn:10">10</a></sup></li>
+  <code>lifecycle.completesRun === true</code> succeeded. Two in-tree tools set it:
+  the SDK's <code>submit_and_exit</code> (enabled only in the <code>yolo</code> preset) and the
+  CLI's <code>switch_to_act_mode</code>. Where one is registered, the run's stop
+  button is a tool; in VS Code's act and plan modes neither is, so runs
+  end when the model stops calling tools.<sup id="fnref:9"><a class="footnote-ref" href="#fn:9">9</a></sup><sup id="fnref:10"><a class="footnote-ref" href="#fn:10">10</a></sup></li>
 <li><strong>Tool execution</strong> — <code>prepareToolExecution()</code>: resolve the tool →
   <code>beforeTool</code> hooks (which can rewrite input, override policy, or skip) →
   <code>resolveToolPolicy()</code> (merges the <code>"*"</code> policy, then the per-name one) →
@@ -230,8 +233,11 @@ task-start sequence.<sup id="fnref:18"><a class="footnote-ref" href="#fn:18">18<
 mode <code>act</code> selects <code>ToolPresets.act</code>, <code>maxIterations: undefined</code>, and the
 per-mode model fields (<code>planMode*</code>/<code>actMode*</code> settings keys) — then
 <code>VscodeSessionHost.start</code> → <code>ClineCore.start</code> → a <code>SessionRuntime</code> →
-<code>createAgentRuntime</code> with the 9 default tools, the MCP <code>server__tool</code>
-natives, and one quiet substitution: VS Code suppresses the SDK's shell
+<code>createAgentRuntime</code> with the act preset's 7 built-ins (<code>apply_patch</code>
+and <code>submit_and_exit</code> are off; <code>editor</code> is swapped for <code>apply_patch</code> when
+the model ID contains <code>gpt</code> or <code>codex</code>), the MCP <code>server__tool</code> natives —
+VS Code turns <code>spawn_agent</code> and team tools off — and one quiet
+substitution: VS Code suppresses the SDK's shell
 tool via <code>toolExecutors.bash = undefined</code> and registers its own
 terminal-backed <code>run_commands</code> under the identical name — same policy key,
 different execution semantics, invisible to the policy layer.<sup id="fnref:19"><a class="footnote-ref" href="#fn:19">19</a></sup><sup id="fnref:20"><a class="footnote-ref" href="#fn:20">20</a></sup></p>
@@ -256,8 +262,8 @@ stream back as runtime events.<sup id="fnref:23"><a class="footnote-ref" href="#
 <code>prepareToolExecution</code> resolves the policy: VS Code forces
 <code>autoApprove: false</code> on every governed tool so the SDK always consults the
 live UI, and the approval callback applies the live settings — reads,
-edits, browser, and MCP are auto-approved by default; <strong>commands always
-prompt</strong>. <code>read_files</code> and <code>editor</code> run; each result is appended.<sup id="fnref:24"><a class="footnote-ref" href="#fn:24">24</a></sup></p>
+edits, browser, and MCP are auto-approved by default; <strong>commands prompt
+by default</strong>. <code>read_files</code> and <code>editor</code> run; each result is appended.<sup id="fnref:24"><a class="footnote-ref" href="#fn:24">24</a></sup></p>
 <p><strong>⑧ Feedback &amp; loop.</strong> Tool results feed the next iteration. When the model
 calls <code>run_commands</code> for the tests, the approval callback prompts in the
 webview — edits get a diff preview rendered from a virtual document ("the
@@ -382,9 +388,12 @@ semantics for the same user gesture, split by which host you're in.<sup id="fnre
   (<code>ToolPresets</code>) + model-tool routing + executor merge → policy and
   global-disabled filtering; <strong>host executors take precedence over SDK
   defaults</strong>, which is how VS Code injects its terminal, editor-diff, and
-  file-read executors without forking the runtime.<sup id="fnref:30"><a class="footnote-ref" href="#fn:30">30</a></sup> Team mode adds
-  <code>spawn_agent</code> plus eleven <code>team_*</code> tools — the only in-tree parallel
-  tools besides configured-agent tools.<sup id="fnref:31"><a class="footnote-ref" href="#fn:31">31</a></sup> And the old world is truly
+  file-read executors without forking the runtime.<sup id="fnref:30"><a class="footnote-ref" href="#fn:30">30</a></sup> Model-tool
+  routing then swaps <code>editor</code> for <code>apply_patch</code> by substring match on the
+  model ID (<code>gpt</code>, <code>codex</code>) or the <code>openai-native</code> provider.<sup id="fnref:44"><a class="footnote-ref" href="#fn:44">44</a></sup> Team mode
+  adds <code>spawn_agent</code> plus up to eighteen <code>team_*</code> tools; <code>spawn_agent</code> and
+  configured-agent tools are the only in-tree parallel tools — the
+  <code>team_*</code> tools stay sequential.<sup id="fnref:31"><a class="footnote-ref" href="#fn:31">31</a></sup> And the old world is truly
   gone: no <code>AgentTool</code> is registered under any legacy name
   (<code>write_to_file</code>, <code>execute_command</code>, <code>browser_action</code>, <code>use_mcp_tool</code>,
   …) — the names survive only in display enums, message-translator compat
@@ -400,7 +409,10 @@ semantics for the same user gesture, split by which host you're in.<sup id="fnre
   <code>autoApprove: false</code> on <em>every governed tool</em> — reads, edits, commands,
   web, all <code>server__tool</code> MCP tools — so the SDK always consults the live
   UI. The live defaults then auto-approve reads, edits, browser, and MCP;
-  <strong>commands always prompt</strong>. The CLI is the mirror image:
+  <strong>commands prompt by default</strong>. The one command toggle is named
+  <code>executeSafeCommands</code>, but <code>isToolAutoApproved</code> has no notion of a safe
+  command — turning it on auto-approves every <code>run_commands</code> call. The
+  CLI is the mirror image:
   <code>"*": {autoApprove: true}</code>.<sup id="fnref2:3"><a class="footnote-ref" href="#fn:3">3</a></sup><sup id="fnref:39"><a class="footnote-ref" href="#fn:39">39</a></sup>
   <strong>3. The approval callback</strong>: live-settings short-circuit → diff preview
   for <code>editor</code>/<code>apply_patch</code> from a virtual document → webview ask →
@@ -413,10 +425,12 @@ semantics for the same user gesture, split by which host you're in.<sup id="fnre
   tool-list change triggers a silent session rebuild.<sup id="fnref:34"><a class="footnote-ref" href="#fn:34">34</a></sup> Second, a naming
   mismatch with teeth: <code>buildToolPolicies</code> keys policies on the raw
   <code>server__tool</code> name, but registration runs names through a transform that
-  truncates anything over 64 characters to 55 chars + <code>_</code> + an 8-char sha1 —
-  while policy lookup uses the <em>registered</em> name. A long MCP tool name
-  misses its <code>{autoApprove: false}</code> policy and falls through to the
-  default-open <code>autoApprove: true</code>.<sup id="fnref2:34"><a class="footnote-ref" href="#fn:34">34</a></sup> Two naming schemes, one lookup,
+  rewrites any name that is over 64 characters <em>or</em> contains a character
+  outside <code>[A-Za-z0-9_-]</code> (a dot or space in a server name is enough) —
+  sanitized, cut to 55 chars, plus <code>_</code> and an 8-char sha1 — while policy
+  lookup uses the <em>registered</em> name. Such a tool misses its
+  <code>{autoApprove: false}</code> policy and falls through to the default-open
+  <code>autoApprove: true</code>, bypassing even the global MCP toggle.<sup id="fnref2:34"><a class="footnote-ref" href="#fn:34">34</a></sup> Two naming schemes, one lookup,
   fail-open default: the kind of seam that only a pinned-reading finds.</p>
 <p><img alt="Approval model" src="figures/seq-approval.svg" /></p>
 <ul>
@@ -466,7 +480,8 @@ semantics for the same user gesture, split by which host you're in.<sup id="fnre
   model ID takes the unregistered-model fallback, not an error. Per-model
   behavior is data-driven — capabilities, reasoning options, route matchers
   — with <strong>no aider-style substring heuristics</strong> in the resolution
-  path.<sup id="fnref3:23"><a class="footnote-ref" href="#fn:23">23</a></sup> Adding a provider means adding a <code>BuiltinSpec</code> record, not a
+  path.<sup id="fnref3:23"><a class="footnote-ref" href="#fn:23">23</a></sup> (Substring matching does survive one layer up, in the
+  model-tool routing that picks <code>apply_patch</code> over <code>editor</code>.<sup id="fnref3:44"><a class="footnote-ref" href="#fn:44">44</a></sup>) Adding a provider means adding a <code>BuiltinSpec</code> record, not a
   handler class. The tradeoff is scale: the philosophy needs a ~200k-line
   generated catalog that must be regenerated as the model world changes —
   aider's 313-entry YAML fits in a code review; Cline's doesn't.<sup id="fnref4:6"><a class="footnote-ref" href="#fn:6">6</a></sup></p>
@@ -535,20 +550,26 @@ semantics for the same user gesture, split by which host you're in.<sup id="fnre
   manifest. Legacy tasks persist as <code>tasks/&lt;taskId&gt;/{ui_messages.json,
   api_conversation_history.json, context_history.json,
   task_metadata.json}</code>, bridged by <code>sdk-task-history.ts</code>; resume pins
-  <code>config.sessionId = taskId</code> and reseeds via <code>startSession</code>. Compaction is
-  manual (<code>/compact</code> → <code>condense</code> RPC → <code>compactTask()</code>); the old behavior,
-  per the <code>condense.ts</code> docstring, "produced an improvised fake summary
-  without actually compacting" (ref CLINE-2503).<sup id="fnref:37"><a class="footnote-ref" href="#fn:37">37</a></sup></p>
+  <code>config.sessionId = taskId</code> and reseeds via <code>startSession</code>. Compaction is automatic by default
+  (<code>useAutoCondense</code> defaults to true, enabling the runtime's compaction
+  strategy) and also available manually (<code>/compact</code> → <code>condense</code> RPC →
+  <code>compactTask()</code>); the old manual path, per the <code>condense.ts</code> docstring,
+  "produced an improvised fake summary without actually compacting" (ref
+  CLINE-2503).<sup id="fnref:37"><a class="footnote-ref" href="#fn:37">37</a></sup><sup id="fnref2:45"><a class="footnote-ref" href="#fn:45">45</a></sup></p>
 </li>
 <li>
-<p><strong>Sub-agents.</strong> Present, in both stacks. Legacy: YAML agent configs under
+<p><strong>Sub-agents.</strong> Present in the SDK and CLI, but switched off in the VS
+  Code host, which sets <code>enableSpawnAgent: false</code> and <code>enableAgentTeams:
+  false</code>.<sup id="fnref3:45"><a class="footnote-ref" href="#fn:45">45</a></sup> Legacy: YAML agent configs under
   <code>~/Documents/Cline/Agents/</code> become dynamic <code>use_subagent_&lt;name&gt;</code> tools
-  via a chokidar-watched loader. Core: the <code>spawn_agent</code> tool (spawns a
+  via a chokidar-watched loader that only the legacy task path uses. Core:
+  the <code>spawn_agent</code> tool (spawns a
   full delegated agent, waits, returns text/iterations/usage), configured
   markdown agents (frontmatter: name, description, tools, skills,
   providerId, modelId, maxIterations), and the team runtime with its
   <code>team_*</code> tools.<sup id="fnref3:31"><a class="footnote-ref" href="#fn:31">31</a></sup><sup id="fnref2:38"><a class="footnote-ref" href="#fn:38">38</a></sup> Neither pi (deliberately omitted) nor aider
-  (architect = sequential delegation with a user gate) has this.</p>
+  (architect = sequential delegation with a user gate) has this — though
+  in the scoped VS Code product it is not reachable.</p>
 </li>
 <li>
 <p><strong>Interfaces.</strong> The VS Code sidebar webview is primary, over the
@@ -564,7 +585,7 @@ semantics for the same user gesture, split by which host you're in.<sup id="fnre
   conciseness nudge, counter resets on tool-call progress); context
   overflow (compaction pipeline, then terminal messages); loop detection
   (3× nudge / 5× abort, reactive); mistake tracker (6 consecutive, host
-  decides); no <code>maxIterations</code> in the VS Code host — the numeric bound is 5
+  decides); automatic compaction on by default; no <code>maxIterations</code> in the VS Code host — the numeric bound is 5
   identical tool calls, not turns.<sup id="fnref2:9"><a class="footnote-ref" href="#fn:9">9</a></sup><sup id="fnref2:13"><a class="footnote-ref" href="#fn:13">13</a></sup><sup id="fnref4:14"><a class="footnote-ref" href="#fn:14">14</a></sup><sup id="fnref2:15"><a class="footnote-ref" href="#fn:15">15</a></sup></p>
 </li>
 <li>
@@ -601,7 +622,7 @@ policy pipeline as the 9 built-ins, hooks join the runtime bag. This is
 pi-grade extensibility at the SDK layer: policy-aware, lifecycle-aware,
 and host-independent.<sup id="fnref3:4"><a class="footnote-ref" href="#fn:4">4</a></sup></p>
 <p><strong>Start here:</strong> the plugin interface at
-<code>sdk/packages/shared/src/agent.ts:493-507</code>, then
+<code>sdk/packages/shared/src/agent.ts:517-526</code>, then
 <code>DefaultRuntimeBuilder.build</code> to see where plugin tools merge.</p>
 <p><img alt="Plugin lifecycle and the 7-callback hook bag" src="figures/seq-plugin-lifecycle.svg" /></p>
 <h3 id="3-custom-tools">3. Custom tools</h3>
@@ -655,8 +676,9 @@ tool-creation path.</p>
 → <code>use_subagent_&lt;name&gt;</code> tools), the <code>spawn_agent</code> tool (full delegated
 agent, waits, returns text/iterations/usage), configured markdown agents
 with frontmatter (name, description, tools, skills, provider, model,
-maxIterations), and the team runtime with its <code>team_*</code> tools — the only
-in-tree parallel tools.<sup id="fnref2:31"><a class="footnote-ref" href="#fn:31">31</a></sup><sup id="fnref:38"><a class="footnote-ref" href="#fn:38">38</a></sup></p>
+maxIterations), and the team runtime with its <code>team_*</code> tools. Only
+<code>spawn_agent</code> and configured-agent tools run in parallel, and the VS Code
+host disables this whole axis; it is live in the SDK and CLI.<sup id="fnref2:31"><a class="footnote-ref" href="#fn:31">31</a></sup><sup id="fnref:38"><a class="footnote-ref" href="#fn:38">38</a></sup><sup id="fnref:45"><a class="footnote-ref" href="#fn:45">45</a></sup></p>
 <p><strong>Start here:</strong> the <code>spawn_agent</code> tool definition
 (<code>team/spawn-agent-tool.ts:121</code>) — <code>createDelegatedAgent</code> plus
 <code>subAgent.run(task)</code> is the whole delegation primitive; the <code>team_*</code>
@@ -678,7 +700,8 @@ pure function, which is why there's no sequence diagram for it.</p>
   Cline's bet: interruptions are cheaper than surprises, <em>if</em> asking is
   one click and undo is certain. The price is prompt fatigue — which is why
   the defaults auto-approve reads and edits and only ever force the
-  question on commands.<sup id="fnref3:3"><a class="footnote-ref" href="#fn:3">3</a></sup><sup id="fnref2:24"><a class="footnote-ref" href="#fn:24">24</a></sup></li>
+  question on commands — and the toggle that would stop asking is
+  all-or-nothing despite its "safe commands" name.<sup id="fnref3:3"><a class="footnote-ref" href="#fn:3">3</a></sup><sup id="fnref2:24"><a class="footnote-ref" href="#fn:24">24</a></sup></li>
 <li><strong>Per-turn checkpoints vs per-turn commits.</strong> aider's auto-commits are
   public history in your repo; Cline's are <code>git stash</code> snapshots under
   private refs, invisible until you ask, with a transaction-guarded
@@ -695,12 +718,13 @@ pure function, which is why there's no sequence diagram for it.</p>
   model-agnostic by design; aider is model-aware by necessity (substring
   heuristics, load-bearing); Cline is model-aware by <em>scale</em> — 228
   providers behind one AI-SDK adapter, exact-ID resolution, per-model
-  behavior as data. No brittle string matching, but a ~200k-line generated
-  catalog that rots the moment models.dev changes shape.<sup id="fnref:6"><a class="footnote-ref" href="#fn:6">6</a></sup><sup id="fnref2:23"><a class="footnote-ref" href="#fn:23">23</a></sup></li>
+  behavior as data. Almost no brittle string matching (model-tool routing
+  still keys on <code>gpt</code>/<code>codex</code> substrings), but a ~200k-line generated
+  catalog that rots the moment models.dev changes shape.<sup id="fnref:6"><a class="footnote-ref" href="#fn:6">6</a></sup><sup id="fnref2:23"><a class="footnote-ref" href="#fn:23">23</a></sup><sup id="fnref2:44"><a class="footnote-ref" href="#fn:44">44</a></sup></li>
 <li><strong>Native MCP tools vs wrapped MCP tools.</strong> pi wraps each server tool in
   its own <code>ToolDefinition</code>; Cline mints them as first-class <code>AgentTool</code>s.
   The wrapper is a seam you can see; the native path hides its seams
-  deeper — in policy-key naming, where a truncated name fails open.<sup id="fnref2:33"><a class="footnote-ref" href="#fn:33">33</a></sup><sup id="fnref4:34"><a class="footnote-ref" href="#fn:34">34</a></sup></li>
+  deeper — in policy-key naming, where a rewritten name fails open.<sup id="fnref2:33"><a class="footnote-ref" href="#fn:33">33</a></sup><sup id="fnref4:34"><a class="footnote-ref" href="#fn:34">34</a></sup></li>
 </ul>
 <h2 id="deliberate-omissions">Deliberate omissions</h2>
 <ul>
@@ -745,14 +769,14 @@ pure function, which is why there's no sequence diagram for it.</p>
 <tr>
 <td>2</td>
 <td>Tool system</td>
-<td>4 built-ins + registry; TypeBox validation; sequential/parallel</td>
+<td>8 built-ins (4 active by default) + registry; TypeBox validation; sequential/parallel</td>
 <td>None — model emits SEARCH/REPLACE blocks</td>
-<td>9 built-ins + MCP natives + team tools; sequential default, adjacent-parallel batching; 30s default timeout <sup id="fnref2:12"><a class="footnote-ref" href="#fn:12">12</a></sup><sup id="fnref2:28"><a class="footnote-ref" href="#fn:28">28</a></sup><sup id="fnref3:29"><a class="footnote-ref" href="#fn:29">29</a></sup></td>
+<td>9 built-ins (7 active in VS Code act mode) + MCP natives + team tools (SDK/CLI); sequential default, adjacent-parallel batching; 30s default timeout <sup id="fnref2:12"><a class="footnote-ref" href="#fn:12">12</a></sup><sup id="fnref2:28"><a class="footnote-ref" href="#fn:28">28</a></sup><sup id="fnref3:29"><a class="footnote-ref" href="#fn:29">29</a></sup></td>
 </tr>
 <tr>
 <td>3</td>
 <td>Model providers</td>
-<td>~35 behind one <code>StreamFn</code></td>
+<td>~42 behind one <code>StreamFn</code></td>
 <td>litellm; 313-entry YAML + substring heuristics</td>
 <td>228 providers, one generic Vercel AI SDK adapter; exact-ID resolution; data-driven per-model behavior; ~200k-line generated catalog <sup id="fnref5:6"><a class="footnote-ref" href="#fn:6">6</a></sup><sup id="fnref4:23"><a class="footnote-ref" href="#fn:23">23</a></sup></td>
 </tr>
@@ -768,14 +792,14 @@ pure function, which is why there's no sequence diagram for it.</p>
 <td>Memory/session</td>
 <td>JSONL sessions; compaction</td>
 <td>In-memory cur/done; background summarization; markdown log; git auto-commit</td>
-<td>SQLite + file-backend; versioned whole-file JSON envelopes; manual <code>/compact</code> (was fake pre-CLINE-2503) <sup id="fnref2:37"><a class="footnote-ref" href="#fn:37">37</a></sup></td>
+<td>SQLite + file-backend; versioned whole-file JSON envelopes; automatic compaction by default plus manual <code>/compact</code> (was fake pre-CLINE-2503) <sup id="fnref2:37"><a class="footnote-ref" href="#fn:37">37</a></sup><sup id="fnref4:45"><a class="footnote-ref" href="#fn:45">45</a></sup></td>
 </tr>
 <tr>
 <td>6</td>
 <td>Reasoning/planning</td>
 <td>Thinking forwarded; no planner/sub-agents</td>
 <td>Architect = sequential delegation with user gate</td>
-<td>plan/act modes (differ by one tool); sub-agents + teams present <sup id="fnref4:35"><a class="footnote-ref" href="#fn:35">35</a></sup><sup id="fnref3:38"><a class="footnote-ref" href="#fn:38">38</a></sup></td>
+<td>plan/act modes (differ by one tool); sub-agents + teams in SDK/CLI, disabled in VS Code <sup id="fnref4:35"><a class="footnote-ref" href="#fn:35">35</a></sup><sup id="fnref3:38"><a class="footnote-ref" href="#fn:38">38</a></sup><sup id="fnref5:45"><a class="footnote-ref" href="#fn:45">45</a></sup></td>
 </tr>
 <tr>
 <td>7</td>
@@ -803,13 +827,14 @@ pure function, which is why there's no sequence diagram for it.</p>
 <td>Security model</td>
 <td>Project trust + extension hooks; no approval UX</td>
 <td>Boundary prompts; git auto-commit + <code>/undo</code>; no sandbox</td>
-<td>Finest-grained: per-tool policies + webview UI + diff previews; commands always prompt; no sandbox; per-turn stash checkpoints <sup id="fnref5:3"><a class="footnote-ref" href="#fn:3">3</a></sup><sup id="fnref5:22"><a class="footnote-ref" href="#fn:22">22</a></sup><sup id="fnref6:40"><a class="footnote-ref" href="#fn:40">40</a></sup></td>
+<td>Finest-grained: per-tool policies + webview UI + diff previews; commands prompt by default; no sandbox; per-turn stash checkpoints <sup id="fnref5:3"><a class="footnote-ref" href="#fn:3">3</a></sup><sup id="fnref5:22"><a class="footnote-ref" href="#fn:22">22</a></sup><sup id="fnref6:40"><a class="footnote-ref" href="#fn:40">40</a></sup></td>
 </tr>
 </tbody>
 </table>
 <h2 id="endnotes">Endnotes</h2>
 <p>All notes are VERIFIED against <code>v4.1.22</code>
-(<code>f58bc118bdeef1bd2813cd08e00d98bdcda96475</code>) unless marked DOCS.
+(<code>f58bc118bdeef1bd2813cd08e00d98bdcda96475</code>) unless marked DOCS; line
+anchors and file paths re-checked on 2026-10-07.
 <code>GH</code> = <code>https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/</code>.</p>
 <hr />
 <p><em>Next in the series: Goose — where the same ten dimensions meet an MCP-native runtime.</em></p>
@@ -819,7 +844,8 @@ pure function, which is why there's no sequence diagram for it.</p>
 <li id="fn:1">
 <p>Tag <code>v4.1.22</code> ("chore(vscode): release v4.1.22"), committed 2026-09-29
 20:51:26 -0700; Apache-2.0 (<code>LICENSE</code>); TypeScript bun workspace.
-Non-test <code>.ts</code>: <code>apps/vscode/src</code> 570 files / 76,962 LOC,
+Non-test <code>.ts</code> (excluding <code>*.test.ts</code>, <code>*.spec.ts</code>, <code>*.d.ts</code>, and
+<code>test/</code> dirs): <code>apps/vscode/src</code> 578 files / 78,079 LOC,
 <code>sdk/packages/core/src</code> 342 / 110,215, <code>sdk/packages/agents/src</code> 2 /
 2,919, <code>sdk/packages/shared/src</code> 99 / 18,252,
 <code>sdk/packages/llms/src</code> ~17.5k non-generated. Generated catalog
@@ -839,7 +865,7 @@ approval default; the desktop app is out of scope.&#160;<a class="footnote-backr
 → <code>SdkController</code> (<code>apps/vscode/src/sdk/SdkController.ts</code>, 2,499 lines)
 → <code>VscodeSessionHost</code> (<code>apps/vscode/src/sdk/vscode-session-host.ts</code>)
 wrapping <code>ClineCore</code> with VS Code tool executors, the MCP hub, and a
-terminal manager. The webview never touches the loop — see <sup id="fnref9:26"><a class="footnote-ref" href="#fn:26">26</a></sup>.&#160;<a class="footnote-backref" href="#fnref:2" title="Jump back to footnote 2 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:2" title="Jump back to footnote 2 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:2" title="Jump back to footnote 2 in the text">&#8617;</a></p>
+terminal manager. The webview never touches the loop — see note 26.&#160;<a class="footnote-backref" href="#fnref:2" title="Jump back to footnote 2 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:2" title="Jump back to footnote 2 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:2" title="Jump back to footnote 2 in the text">&#8617;</a></p>
 </li>
 <li id="fn:3">
 <p>Three approval layers. (1) SDK policy gate: <code>ToolPolicy{enabled,
@@ -852,13 +878,13 @@ forces <code>autoApprove: false</code> on every governed tool. (3) The approval
 callback at
 <a href="https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/apps/vscode/src/sdk/sdk-interaction-coordinator.ts#L94-L137">GH…/apps/vscode/src/sdk/sdk-interaction-coordinator.ts#L94-L137</a>.
 CLI mirror image: <code>"*": {autoApprove: true}</code> at
-<a href="https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/apps/cli/src/main.ts#L893-L902">GH…/apps/cli/src/main.ts#L893-L902</a>.&#160;<a class="footnote-backref" href="#fnref:3" title="Jump back to footnote 3 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:3" title="Jump back to footnote 3 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:3" title="Jump back to footnote 3 in the text">&#8617;</a><a class="footnote-backref" href="#fnref4:3" title="Jump back to footnote 3 in the text">&#8617;</a><a class="footnote-backref" href="#fnref5:3" title="Jump back to footnote 3 in the text">&#8617;</a><a class="footnote-backref" href="#fnref6:3" title="Jump back to footnote 3 in the text">&#8617;</a></p>
+<a href="https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/apps/cli/src/main.ts#L892-L902">GH…/apps/cli/src/main.ts#L892-L902</a>.&#160;<a class="footnote-backref" href="#fnref:3" title="Jump back to footnote 3 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:3" title="Jump back to footnote 3 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:3" title="Jump back to footnote 3 in the text">&#8617;</a><a class="footnote-backref" href="#fnref4:3" title="Jump back to footnote 3 in the text">&#8617;</a><a class="footnote-backref" href="#fnref5:3" title="Jump back to footnote 3 in the text">&#8617;</a></p>
 </li>
 <li id="fn:4">
 <p><code>@cline/sdk</code> is
 <code>export * from "@cline/core"</code> — one line, no README. The plugin
 interface <code>AgentRuntimePlugin</code> (<code>setup()</code> → <code>{tools, hooks}</code>) at
-<a href="https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/shared/src/agent.ts#L493-L507">GH…/sdk/packages/shared/src/agent.ts#L493-L507</a>.&#160;<a class="footnote-backref" href="#fnref:4" title="Jump back to footnote 4 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:4" title="Jump back to footnote 4 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:4" title="Jump back to footnote 4 in the text">&#8617;</a><a class="footnote-backref" href="#fnref4:4" title="Jump back to footnote 4 in the text">&#8617;</a><a class="footnote-backref" href="#fnref5:4" title="Jump back to footnote 4 in the text">&#8617;</a><a class="footnote-backref" href="#fnref6:4" title="Jump back to footnote 4 in the text">&#8617;</a><a class="footnote-backref" href="#fnref7:4" title="Jump back to footnote 4 in the text">&#8617;</a></p>
+<a href="https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/shared/src/agent.ts#L517-L526">GH…/sdk/packages/shared/src/agent.ts#L517-L526</a>.&#160;<a class="footnote-backref" href="#fnref:4" title="Jump back to footnote 4 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:4" title="Jump back to footnote 4 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:4" title="Jump back to footnote 4 in the text">&#8617;</a><a class="footnote-backref" href="#fnref4:4" title="Jump back to footnote 4 in the text">&#8617;</a><a class="footnote-backref" href="#fnref5:4" title="Jump back to footnote 4 in the text">&#8617;</a><a class="footnote-backref" href="#fnref6:4" title="Jump back to footnote 4 in the text">&#8617;</a><a class="footnote-backref" href="#fnref7:4" title="Jump back to footnote 4 in the text">&#8617;</a></p>
 </li>
 <li id="fn:5">
 <p>Layering per <code>sdk/ARCHITECTURE.md</code>; dependency direction verified
@@ -875,9 +901,9 @@ handwritten, merged by <code>mergeBuiltinSpecs</code> at
 <a href="https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/llms/src/providers/ids.ts#L90-L92">GH…/sdk/packages/llms/src/providers/ids.ts#L90-L92</a>).
 No per-provider handler classes: 14 <code>ProviderFamily</code> values bind to one
 generic <code>createAiSdkProvider</code> at
-<a href="https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/llms/src/ai-sdk.ts#L2127">GH…/sdk/packages/llms/src/ai-sdk.ts#L2127</a>;
+<a href="https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/llms/src/providers/ai-sdk.ts#L2127">GH…/sdk/packages/llms/src/providers/ai-sdk.ts#L2127</a>;
 the universal transport is AI-SDK <code>streamText</code> at
-<a href="https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/llms/src/ai-sdk.ts#L2324">GH…/sdk/packages/llms/src/ai-sdk.ts#L2324</a>.&#160;<a class="footnote-backref" href="#fnref:6" title="Jump back to footnote 6 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:6" title="Jump back to footnote 6 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:6" title="Jump back to footnote 6 in the text">&#8617;</a><a class="footnote-backref" href="#fnref4:6" title="Jump back to footnote 6 in the text">&#8617;</a><a class="footnote-backref" href="#fnref5:6" title="Jump back to footnote 6 in the text">&#8617;</a></p>
+<a href="https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/llms/src/providers/ai-sdk.ts#L2324">GH…/sdk/packages/llms/src/providers/ai-sdk.ts#L2324</a>.&#160;<a class="footnote-backref" href="#fnref:6" title="Jump back to footnote 6 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:6" title="Jump back to footnote 6 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:6" title="Jump back to footnote 6 in the text">&#8617;</a><a class="footnote-backref" href="#fnref4:6" title="Jump back to footnote 6 in the text">&#8617;</a><a class="footnote-backref" href="#fnref5:6" title="Jump back to footnote 6 in the text">&#8617;</a></p>
 </li>
 <li id="fn:7">
 <p>The loop construct, verbatim, at
@@ -896,15 +922,18 @@ completion-tool reminder — at
 <a href="https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/agents/src/agent-runtime.ts#L1172">GH…/sdk/packages/agents/src/agent-runtime.ts#L1172</a>;
 <code>PROVIDER_ERROR_MAX_RETRIES = 3</code>, 1s→15s backoff, transient errors
 only, at
-<a href="https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/agents/src/agent-runtime.ts#L76-L86">GH…/sdk/packages/agents/src/agent-runtime.ts#L76-L86</a>.&#160;<a class="footnote-backref" href="#fnref:9" title="Jump back to footnote 9 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:9" title="Jump back to footnote 9 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:9" title="Jump back to footnote 9 in the text">&#8617;</a></p>
+<a href="https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/agents/src/agent-runtime.ts#L87-L91">GH…/sdk/packages/agents/src/agent-runtime.ts#L87-L91</a>.&#160;<a class="footnote-backref" href="#fnref:9" title="Jump back to footnote 9 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:9" title="Jump back to footnote 9 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:9" title="Jump back to footnote 9 in the text">&#8617;</a></p>
 </li>
 <li id="fn:10">
 <p><code>executeToolCalls()</code> at
-<a href="https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/agents/src/agent-runtime.ts#L2284">GH…/sdk/packages/agents/src/agent-runtime.ts#L2284</a>;
-<code>findCompletingToolMessage()</code> at L2320; <code>submit_and_exit</code> carries
+<a href="https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/agents/src/agent-runtime.ts#L2285">GH…/sdk/packages/agents/src/agent-runtime.ts#L2285</a>;
+<code>findCompletingToolMessage()</code> at L2325; <code>submit_and_exit</code> carries
 <code>lifecycle.completesRun: true</code> at
-<a href="https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/core/src/extensions/tools/definitions.ts#L845-L847">GH…/sdk/packages/core/src/extensions/tools/definitions.ts#L845-L847</a>
-— the only in-tree tool with it. Completion reminders via
+<a href="https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/core/src/extensions/tools/definitions.ts#L855-L858">GH…/sdk/packages/core/src/extensions/tools/definitions.ts#L855-L858</a>
+(enabled only by the <code>yolo</code> preset,
+<a href="https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/core/src/extensions/tools/presets.ts#L20-L60">GH…/sdk/packages/core/src/extensions/tools/presets.ts#L20-L60</a>);
+the CLI's <code>switch_to_act_mode</code> sets it too, at
+<a href="https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/apps/cli/src/runtime/interactive/mode.ts#L53-L55">GH…/apps/cli/src/runtime/interactive/mode.ts#L53-L55</a>. Completion reminders via
 <code>getCompletionReminderMessages</code> at
 <a href="https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/agents/src/agent-runtime.ts#L763">GH…/sdk/packages/agents/src/agent-runtime.ts#L763</a>;
 otherwise <code>finishRun("completed")</code>.&#160;<a class="footnote-backref" href="#fnref:10" title="Jump back to footnote 10 in the text">&#8617;</a></p>
@@ -941,13 +970,13 @@ reminders → <code>finishRun("completed")</code>; a completing tool succeeding;
 <a href="https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/core/src/runtime/safety/loop-detection.ts">GH…/sdk/packages/core/src/runtime/safety/loop-detection.ts</a>:
 consecutive identical (name + key-sorted-JSON-signature) tool calls —
 soft nudge at 3, mistake record + abort at 5, in
-<a href="https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/core/src/runtime/safety/session-runtime-orchestrator.ts#L1417-L1481">GH…/sdk/packages/core/src/runtime/safety/session-runtime-orchestrator.ts#L1417-L1481</a>.
+<a href="https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/core/src/runtime/orchestration/session-runtime-orchestrator.ts#L1417-L1481">GH…/sdk/packages/core/src/runtime/orchestration/session-runtime-orchestrator.ts#L1417-L1481</a>.
 It is reactive: fed from the <code>tool-started</code> event at
-<a href="https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/core/src/runtime/safety/session-runtime-orchestrator.ts#L1257">GH…/sdk/packages/core/src/runtime/safety/session-runtime-orchestrator.ts#L1257</a>,
+<a href="https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/core/src/runtime/orchestration/session-runtime-orchestrator.ts#L1257">GH…/sdk/packages/core/src/runtime/orchestration/session-runtime-orchestrator.ts#L1257</a>,
 not the <code>beforeTool</code> hook its own file header claims — the 5th
 identical call starts before the abort lands. Mistake tracker: default
 6 consecutive all-failed turns at
-<a href="https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/core/src/runtime/safety/session-runtime-orchestrator.ts#L449">GH…/sdk/packages/core/src/runtime/safety/session-runtime-orchestrator.ts#L449</a>;
+<a href="https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/core/src/runtime/orchestration/session-runtime-orchestrator.ts#L450">GH…/sdk/packages/core/src/runtime/orchestration/session-runtime-orchestrator.ts#L450</a>;
 a productive turn resets; at the limit the host decides continue/stop.&#160;<a class="footnote-backref" href="#fnref:14" title="Jump back to footnote 14 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:14" title="Jump back to footnote 14 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:14" title="Jump back to footnote 14 in the text">&#8617;</a><a class="footnote-backref" href="#fnref4:14" title="Jump back to footnote 14 in the text">&#8617;</a><a class="footnote-backref" href="#fnref5:14" title="Jump back to footnote 14 in the text">&#8617;</a><a class="footnote-backref" href="#fnref6:14" title="Jump back to footnote 14 in the text">&#8617;</a></p>
 </li>
 <li id="fn:15">
@@ -988,17 +1017,17 @@ Server-streaming RPCs register callbacks plus unsubscribe handles.&#160;<a class
 <code>act</code> → <code>ToolPresets.act</code>; per-mode model fields at
 <a href="https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/apps/vscode/src/sdk/cline-session-factory.ts#L399-L424">GH…/apps/vscode/src/sdk/cline-session-factory.ts#L399-L424</a>)
 → <code>VscodeSessionHost.start</code> at
-<a href="https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/apps/vscode/src/sdk/vscode-session-host.ts#L198">GH…/apps/vscode/src/sdk/vscode-session-host.ts#L198</a>
+<a href="https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/apps/vscode/src/sdk/vscode-session-host.ts#L206">GH…/apps/vscode/src/sdk/vscode-session-host.ts#L206</a>
 → <code>ClineCore.start</code>
 (<code>sdk/packages/core/src/core/ClineCore.ts:285</code>) → <code>SessionRuntime</code> →
-<code>createAgentRuntime</code> with the 9 default tools plus MCP <code>server__tool</code>
-natives.&#160;<a class="footnote-backref" href="#fnref:19" title="Jump back to footnote 19 in the text">&#8617;</a></p>
+<code>createAgentRuntime</code> with the act preset's tools plus MCP
+<code>server__tool</code> natives.&#160;<a class="footnote-backref" href="#fnref:19" title="Jump back to footnote 19 in the text">&#8617;</a></p>
 </li>
 <li id="fn:20">
 <p>VS Code suppresses the SDK's shell tool via
 <code>toolExecutors.bash = undefined</code> and registers its own terminal-backed
 <code>run_commands</code> under the identical name at
-<a href="https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/apps/vscode/src/sdk/vscode-session-host.ts#L118-L126">GH…/apps/vscode/src/sdk/vscode-session-host.ts#L118-L126</a>
+<a href="https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/apps/vscode/src/sdk/vscode-session-host.ts#L122-L142">GH…/apps/vscode/src/sdk/vscode-session-host.ts#L122-L142</a>
 (tool implementation at
 <a href="https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/apps/vscode/src/sdk/vscode-run-commands-tool.ts#L531">GH…/apps/vscode/src/sdk/vscode-run-commands-tool.ts#L531</a>)
 — same policy key, different execution semantics, invisible to the
@@ -1034,18 +1063,21 @@ repository stays untouched" — all three claims are false at this SHA.&#160;<a 
 <p><code>DefaultGateway.stream()</code> at
 <a href="https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/llms/src/providers/gateway.ts#L273">GH…/sdk/packages/llms/src/providers/gateway.ts#L273</a>;
 <code>registry.resolveModel()</code> at
-<a href="https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/llms/src/registry.ts#L251">GH…/sdk/packages/llms/src/registry.ts#L251</a>
+<a href="https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/llms/src/providers/registry.ts#L251-L267">GH…/sdk/packages/llms/src/providers/registry.ts#L251-L267</a>
 (exact-ID match; unknown modelId → unregistered-model fallback, not an
 error); per-model behavior is data-driven (capabilities, reasoning
 options, route matchers) — no aider-style substring heuristics in the
-resolution path (see <sup id="fnref2:41"><a class="footnote-ref" href="#fn:41">41</a></sup>).&#160;<a class="footnote-backref" href="#fnref:23" title="Jump back to footnote 23 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:23" title="Jump back to footnote 23 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:23" title="Jump back to footnote 23 in the text">&#8617;</a><a class="footnote-backref" href="#fnref4:23" title="Jump back to footnote 23 in the text">&#8617;</a></p>
+resolution path (see note 41).&#160;<a class="footnote-backref" href="#fnref:23" title="Jump back to footnote 23 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:23" title="Jump back to footnote 23 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:23" title="Jump back to footnote 23 in the text">&#8617;</a><a class="footnote-backref" href="#fnref4:23" title="Jump back to footnote 23 in the text">&#8617;</a></p>
 </li>
 <li id="fn:24">
 <p>VS Code forces <code>autoApprove: false</code> on every governed tool
 (<a href="https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/apps/vscode/src/sdk/sdk-tool-policies.ts#L13-L41">GH…/apps/vscode/src/sdk/sdk-tool-policies.ts#L13-L41</a>).
 Live defaults at
-<a href="https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/shared/src/storage/AutoApprovalSettings.ts#L33-L44">GH…/sdk/packages/shared/src/storage/AutoApprovalSettings.ts#L33-L44</a>:
-reads, edits, browser, MCP auto-approved; commands always prompt. The
+<a href="https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/apps/vscode/src/shared/AutoApprovalSettings.ts#L28-L44">GH…/apps/vscode/src/shared/AutoApprovalSettings.ts#L28-L44</a>:
+reads, edits, browser, MCP auto-approved; <code>executeSafeCommands: false</code>,
+so commands prompt. <code>isToolAutoApproved</code> maps every <code>run_commands</code> call
+to that single toggle, with no safe/unsafe classification, at
+<a href="https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/apps/vscode/src/sdk/sdk-tool-policies.ts#L48-L67">GH…/apps/vscode/src/sdk/sdk-tool-policies.ts#L48-L67</a>. The
 approval callback at
 <a href="https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/apps/vscode/src/sdk/sdk-interaction-coordinator.ts#L94-L137">GH…/apps/vscode/src/sdk/sdk-interaction-coordinator.ts#L94-L137</a>.&#160;<a class="footnote-backref" href="#fnref:24" title="Jump back to footnote 24 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:24" title="Jump back to footnote 24 in the text">&#8617;</a></p>
 </li>
@@ -1058,7 +1090,7 @@ preview" at
 <code>resolvePendingToolApproval</code> at
 <a href="https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/apps/vscode/src/sdk/sdk-interaction-coordinator.ts#L160-L216">GH…/apps/vscode/src/sdk/sdk-interaction-coordinator.ts#L160-L216</a>;
 denial text at
-<a href="https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/core/src/runtime/safety/tool-approval-denial.ts#L6-L7">GH…/sdk/packages/core/src/runtime/safety/tool-approval-denial.ts#L6-L7</a>
+<a href="https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/apps/vscode/src/sdk/tool-approval-denial.ts#L6-L7">GH…/apps/vscode/src/sdk/tool-approval-denial.ts#L6-L7</a>
 ("The user denied this edit. The file was NOT modified…").&#160;<a class="footnote-backref" href="#fnref:25" title="Jump back to footnote 25 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:25" title="Jump back to footnote 25 in the text">&#8617;</a></p>
 </li>
 <li id="fn:26">
@@ -1068,20 +1100,20 @@ denial text at
 translates SDK session events into <code>ClineMessage</code>s → proto →
 <code>subscribeToPartialMessage</code> / <code>subscribeToState</code> streams → the
 webview's convergent-replica reducer renders the transcript
-(out-of-order/duplicate/lossy delivery converges).&#160;<a class="footnote-backref" href="#fnref:26" title="Jump back to footnote 26 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:26" title="Jump back to footnote 26 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:26" title="Jump back to footnote 26 in the text">&#8617;</a><a class="footnote-backref" href="#fnref4:26" title="Jump back to footnote 26 in the text">&#8617;</a><a class="footnote-backref" href="#fnref5:26" title="Jump back to footnote 26 in the text">&#8617;</a><a class="footnote-backref" href="#fnref6:26" title="Jump back to footnote 26 in the text">&#8617;</a><a class="footnote-backref" href="#fnref7:26" title="Jump back to footnote 26 in the text">&#8617;</a><a class="footnote-backref" href="#fnref8:26" title="Jump back to footnote 26 in the text">&#8617;</a><a class="footnote-backref" href="#fnref9:26" title="Jump back to footnote 26 in the text">&#8617;</a><a class="footnote-backref" href="#fnref10:26" title="Jump back to footnote 26 in the text">&#8617;</a></p>
+(out-of-order/duplicate/lossy delivery converges).&#160;<a class="footnote-backref" href="#fnref:26" title="Jump back to footnote 26 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:26" title="Jump back to footnote 26 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:26" title="Jump back to footnote 26 in the text">&#8617;</a><a class="footnote-backref" href="#fnref4:26" title="Jump back to footnote 26 in the text">&#8617;</a><a class="footnote-backref" href="#fnref5:26" title="Jump back to footnote 26 in the text">&#8617;</a><a class="footnote-backref" href="#fnref6:26" title="Jump back to footnote 26 in the text">&#8617;</a><a class="footnote-backref" href="#fnref7:26" title="Jump back to footnote 26 in the text">&#8617;</a><a class="footnote-backref" href="#fnref8:26" title="Jump back to footnote 26 in the text">&#8617;</a></p>
 </li>
 <li id="fn:27">
 <p>Restore at
-<a href="https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/core/src/session/services/checkpoint-restore.ts#L439-L477">GH…/sdk/packages/core/src/session/services/checkpoint-restore.ts#L439-L477</a>
+<a href="https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/core/src/session/checkpoint-restore.ts#L439-L477">GH…/sdk/packages/core/src/session/checkpoint-restore.ts#L439-L477</a>
 (refuses if HEAD moved past the checkpoint at
-<a href="https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/core/src/session/services/checkpoint-restore.ts#L414-L437">L414-L437</a>;
+<a href="https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/core/src/session/checkpoint-restore.ts#L414-L437">L414-L437</a>;
 <code>update-ref HEAD</code> + <code>reset --hard</code> + conditional <code>clean -fd</code> +
 <code>stash apply</code>, guarded by a pre-restore transaction snapshot under
 <code>refs/cline/restore-transactions/{uuid}</code>); UI entry
 <code>SdkController.restoreCheckpoint</code> at
 <a href="https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/apps/vscode/src/sdk/SdkController.ts#L1704-L1786">GH…/apps/vscode/src/sdk/SdkController.ts#L1704-L1786</a>;
 compare via
-<a href="https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/core/src/session/services/checkpoint-diff.ts#L150">GH…/sdk/packages/core/src/session/services/checkpoint-diff.ts#L150</a>.&#160;<a class="footnote-backref" href="#fnref:27" title="Jump back to footnote 27 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:27" title="Jump back to footnote 27 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:27" title="Jump back to footnote 27 in the text">&#8617;</a></p>
+<a href="https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/core/src/session/checkpoint-diff.ts#L150">GH…/sdk/packages/core/src/session/checkpoint-diff.ts#L150</a>.&#160;<a class="footnote-backref" href="#fnref:27" title="Jump back to footnote 27 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:27" title="Jump back to footnote 27 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:27" title="Jump back to footnote 27 in the text">&#8617;</a></p>
 </li>
 <li id="fn:28">
 <p>The 9 built-in tool factories in
@@ -1095,7 +1127,7 @@ L496, <code>createWebFetchTool</code> L556, <code>createApplyPatchTool</code> L6
 <p><code>AgentTool</code> contract at
 <a href="https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/shared/src/agent.ts#L202">GH…/sdk/packages/shared/src/agent.ts#L202</a>
 (definition + <code>executionMode</code> at
-<a href="https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/shared/src/agent.ts#L207">L207</a>);
+<a href="https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/shared/src/agent.ts#L205">L205</a>);
 <code>createTool</code> factory at
 <a href="https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/shared/src/tools/create.ts#L81">GH…/sdk/packages/shared/src/tools/create.ts#L81</a>
 (default <code>timeoutMs: 30_000</code> at
@@ -1115,10 +1147,13 @@ Host executors take precedence over SDK defaults at
 </li>
 <li id="fn:31">
 <p>Team tools at
-<a href="https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/core/src/extensions/tools/team/team-tools.ts#L303-L682">GH…/sdk/packages/core/src/extensions/tools/team/team-tools.ts#L303-L682</a>
-(<code>spawn_agent</code> + eleven <code>team_*</code> tools). Legacy YAML agents:
+<a href="https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/core/src/extensions/tools/team/team-tools.ts#L292-L864">GH…/sdk/packages/core/src/extensions/tools/team/team-tools.ts#L292-L864</a>
+(<code>createAgentTeamsTools</code>: up to eighteen <code>team_*</code> tools, some gated by
+<code>includeSpawnTool</code>/<code>includeManagementTools</code>; none sets
+<code>executionMode</code>, so all are sequential). <code>spawn_agent</code> is the separate
+parallel tool in <code>spawn-agent-tool.ts</code>. Legacy YAML agents:
 <code>~/Documents/Cline/Agents/*.yaml</code> → dynamic <code>use_subagent_&lt;name&gt;</code>
-tools via a chokidar-watched <code>AgentConfigLoader</code>.&#160;<a class="footnote-backref" href="#fnref:31" title="Jump back to footnote 31 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:31" title="Jump back to footnote 31 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:31" title="Jump back to footnote 31 in the text">&#8617;</a><a class="footnote-backref" href="#fnref4:31" title="Jump back to footnote 31 in the text">&#8617;</a></p>
+tools via a chokidar-watched <code>AgentConfigLoader</code>.&#160;<a class="footnote-backref" href="#fnref:31" title="Jump back to footnote 31 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:31" title="Jump back to footnote 31 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:31" title="Jump back to footnote 31 in the text">&#8617;</a></p>
 </li>
 <li id="fn:32">
 <p>Negative finding: grep for <code>name: "write_to_file"</code>, <code>"execute_command"</code>,
@@ -1136,8 +1171,10 @@ matches — no <code>AgentTool</code> is registered under any legacy name.&#160;
 on <code>tools/list_changed</code>). <code>createMcpTools</code> at
 <a href="https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/core/src/extensions/mcp/tools.ts#L16">GH…/sdk/packages/core/src/extensions/mcp/tools.ts#L16</a>;
 naming at
-<a href="https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/core/src/extensions/mcp/name-transform.ts#L20-L38">GH…/sdk/packages/core/src/extensions/mcp/name-transform.ts#L20-L38</a>
-(names over 64 chars → 55 chars + <code>_</code> + 8-char sha1). Negative finding:
+<a href="https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/core/src/extensions/mcp/name-transform.ts#L1-L35">GH…/sdk/packages/core/src/extensions/mcp/name-transform.ts#L1-L35</a>
+(names over 64 chars or containing characters outside <code>[A-Za-z0-9_-]</code>
+→ sanitized, cut to 55 chars, + <code>_</code> + 8-char sha1); VS Code uses this
+default transform via <code>createMcpTools</code> in <code>vscode-runtime-builder.ts</code>. Negative finding:
 grep for <code>readResource|resources/read|prompts/get</code> over
 <code>sdk/packages/core/src</code> returns zero hits — MCP resources/prompts are
 webview-display-only.&#160;<a class="footnote-backref" href="#fnref:33" title="Jump back to footnote 33 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:33" title="Jump back to footnote 33 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:33" title="Jump back to footnote 33 in the text">&#8617;</a><a class="footnote-backref" href="#fnref4:33" title="Jump back to footnote 33 in the text">&#8617;</a></p>
@@ -1152,15 +1189,17 @@ message at <code>McpHub.ts:818</code>) — no tool-count limit. Tool-list change
 trigger a silent session rebuild at
 <a href="https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/apps/vscode/src/sdk/sdk-mcp-coordinator.ts#L35-L113">GH…/apps/vscode/src/sdk/sdk-mcp-coordinator.ts#L35-L113</a>.
 The naming seam: <code>buildToolPolicies</code> keys policies on the raw
-<code>server__tool</code> name while registration truncates+hashes long names —
+<code>server__tool</code> name while registration sanitizes and hashes long or
+non-conforming names —
 and policy lookup uses the <em>registered</em> name
 (<a href="https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/agents/src/agent-runtime.ts#L2419">GH…/sdk/packages/agents/src/agent-runtime.ts#L2419</a>).
-A truncated name misses its <code>{autoApprove: false}</code> policy and falls
-through to the default-open <code>autoApprove: true</code> (see <sup id="fnref6:3"><a class="footnote-ref" href="#fn:3">3</a></sup>).&#160;<a class="footnote-backref" href="#fnref:34" title="Jump back to footnote 34 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:34" title="Jump back to footnote 34 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:34" title="Jump back to footnote 34 in the text">&#8617;</a><a class="footnote-backref" href="#fnref4:34" title="Jump back to footnote 34 in the text">&#8617;</a></p>
+A rewritten name misses its <code>{autoApprove: false}</code> policy and falls
+through to the default-open <code>autoApprove: true</code> (see note 3), so the
+approval callback, and with it the <code>useMcp</code> toggle, is never consulted.&#160;<a class="footnote-backref" href="#fnref:34" title="Jump back to footnote 34 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:34" title="Jump back to footnote 34 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:34" title="Jump back to footnote 34 in the text">&#8617;</a><a class="footnote-backref" href="#fnref4:34" title="Jump back to footnote 34 in the text">&#8617;</a></p>
 </li>
 <li id="fn:35">
 <p><code>Mode = "plan" | "act"</code> at
-<a href="https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/shared/src/storage/types.ts#L14">GH…/sdk/packages/shared/src/storage/types.ts#L14</a>;
+<a href="https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/apps/vscode/src/shared/storage/types.ts#L14">GH…/apps/vscode/src/shared/storage/types.ts#L14</a>;
 <code>AgentMode = "act" | "plan" | "yolo" | "zen"</code> at
 <a href="https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/shared/src/session/runtime-config.ts#L3">GH…/sdk/packages/shared/src/session/runtime-config.ts#L3</a>.
 plan vs act differ by exactly one tool (<code>editor</code> off in plan) at
@@ -1183,7 +1222,7 @@ at
 <a href="https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/shared/src/agent.ts#L443-L451">GH…/sdk/packages/shared/src/agent.ts#L443-L451</a>.
 File-based hooks: engine <code>hook-file-hooks.ts</code> (1,171 lines), ten named
 files in
-<a href="https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/core/src/hooks/hook-file-config.ts#L19-L30">GH…/sdk/packages/core/src/hooks/hook-file-config.ts#L19-L30</a>
+<a href="https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/core/src/hooks/hook-file-config.ts#L17-L42">GH…/sdk/packages/core/src/hooks/hook-file-config.ts#L17-L42</a>
 (<code>PreCompact</code> maps to <code>undefined</code> — named but unwired). Legacy hook
 system survives only via <code>hooks-adapter.ts</code> (4 of 9 points wired, 5
 explicitly not).&#160;<a class="footnote-backref" href="#fnref:36" title="Jump back to footnote 36 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:36" title="Jump back to footnote 36 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:36" title="Jump back to footnote 36 in the text">&#8617;</a><a class="footnote-backref" href="#fnref4:36" title="Jump back to footnote 36 in the text">&#8617;</a><a class="footnote-backref" href="#fnref5:36" title="Jump back to footnote 36 in the text">&#8617;</a></p>
@@ -1213,20 +1252,22 @@ in the <code>condense.ts</code> docstring, ref CLINE-2503).&#160;<a class="footn
 configured markdown agents (frontmatter: name, description, tools,
 skills, providerId, modelId, maxIterations) at
 <a href="https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/core/src/extensions/tools/team/configured-agent-tool.ts">GH…/sdk/packages/core/src/extensions/tools/team/configured-agent-tool.ts</a>;
-the team runtime with its <code>team_*</code> tools (see <sup id="fnref4:31"><a class="footnote-ref" href="#fn:31">31</a></sup>).&#160;<a class="footnote-backref" href="#fnref:38" title="Jump back to footnote 38 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:38" title="Jump back to footnote 38 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:38" title="Jump back to footnote 38 in the text">&#8617;</a></p>
+the team runtime with its <code>team_*</code> tools (see note 31).&#160;<a class="footnote-backref" href="#fnref:38" title="Jump back to footnote 38 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:38" title="Jump back to footnote 38 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:38" title="Jump back to footnote 38 in the text">&#8617;</a></p>
 </li>
 <li id="fn:39">
 <p>Interfaces: the React webview over the proto-bus gRPC bridge (see
-<sup id="fnref10:26"><a class="footnote-ref" href="#fn:26">26</a></sup>); <code>@cline/cli</code> 3.0.66 as a separate host app with the opposite
+note 26); <code>@cline/cli</code> 3.0.66 as a separate host app with the opposite
 approval default
-(<a href="https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/apps/cli/src/main.ts#L893-L902">GH…/apps/cli/src/main.ts#L893-L902</a>).&#160;<a class="footnote-backref" href="#fnref:39" title="Jump back to footnote 39 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:39" title="Jump back to footnote 39 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:39" title="Jump back to footnote 39 in the text">&#8617;</a></p>
+(<a href="https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/apps/cli/src/main.ts#L892-L902">GH…/apps/cli/src/main.ts#L892-L902</a>).&#160;<a class="footnote-backref" href="#fnref:39" title="Jump back to footnote 39 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:39" title="Jump back to footnote 39 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:39" title="Jump back to footnote 39 in the text">&#8617;</a></p>
 </li>
 <li id="fn:40">
 <p><code>command-guard.ts</code> documents itself as "a simple blacklist, not a
 shell interpreter" at
-<a href="https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/core/src/runtime/safety/command-guard.ts#L1-L18">GH…/sdk/packages/core/src/runtime/safety/command-guard.ts#L1-L18</a>
-(plan-mode enforcement via the <code>command-guard-extension.ts</code>
-<code>beforeTool</code> hook). <code>subprocess-sandbox.ts</code> consumers: only
+<a href="https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/core/src/extensions/tools/command-guard.ts#L1-L18">GH…/sdk/packages/core/src/extensions/tools/command-guard.ts#L1-L18</a>
+(plan-mode enforcement via the <code>beforeTool</code> hook in
+<a href="https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/core/src/extensions/tools/command-guard-extension.ts#L1-L16">GH…/sdk/packages/core/src/extensions/tools/command-guard-extension.ts#L1-L16</a>;
+<code>command-guard.ts</code>'s own header still says <code>createShellTool</code> runs the
+check, which no longer matches). <code>subprocess-sandbox.ts</code> consumers: only
 <code>plugin-sandbox.ts:322</code> (internal Node helpers) — it is not a command
 sandbox; <code>run_commands</code> executes unsandboxed in the user's shell.&#160;<a class="footnote-backref" href="#fnref:40" title="Jump back to footnote 40 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:40" title="Jump back to footnote 40 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:40" title="Jump back to footnote 40 in the text">&#8617;</a><a class="footnote-backref" href="#fnref4:40" title="Jump back to footnote 40 in the text">&#8617;</a><a class="footnote-backref" href="#fnref5:40" title="Jump back to footnote 40 in the text">&#8617;</a><a class="footnote-backref" href="#fnref6:40" title="Jump back to footnote 40 in the text">&#8617;</a></p>
 </li>
@@ -1237,12 +1278,12 @@ record
 not a handler class. Negative finding: no aider-style substring
 heuristics in the resolution path — <code>.includes(</code> in
 <code>sdk/packages/llms/src</code> outside catalog-metadata derivations appears
-nowhere in <code>registry.ts:225-244</code> (exact-ID match + unregistered
-fallback). The legacy <code>ApiHandler</code> interface survives as a compat shim
+nowhere in <code>providers/registry.ts:251-267</code> (exact-ID match +
+unregistered fallback). The legacy <code>ApiHandler</code> interface survives as a compat shim
 at
 <a href="https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/llms/src/providers/handler.ts#L28">GH…/sdk/packages/llms/src/providers/handler.ts#L28</a>
 and
-<a href="https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/llms/src/providers/compat.ts#L678">GH…/sdk/packages/llms/src/providers/compat.ts#L678</a>.&#160;<a class="footnote-backref" href="#fnref:41" title="Jump back to footnote 41 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:41" title="Jump back to footnote 41 in the text">&#8617;</a></p>
+<a href="https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/llms/src/providers/compat.ts#L678">GH…/sdk/packages/llms/src/providers/compat.ts#L678</a>.&#160;<a class="footnote-backref" href="#fnref:41" title="Jump back to footnote 41 in the text">&#8617;</a></p>
 </li>
 <li id="fn:42">
 <p>Negative finding: grep for <code>repomap|repo-map|code-map|codemap|</code>,
@@ -1260,6 +1301,24 @@ gesture. Skills: the <code>skills</code> tool at
 global <code>SKILL.md</code> discovery at
 <a href="https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/core/src/services/marketplace.ts#L249-L253">GH…/sdk/packages/core/src/services/marketplace.ts#L249-L253</a>
 (<code>~/.cline/skills/&lt;name&gt;/SKILL.md</code>, <code>~/.agents/skills/&lt;name&gt;/SKILL.md</code>).&#160;<a class="footnote-backref" href="#fnref:43" title="Jump back to footnote 43 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:43" title="Jump back to footnote 43 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:43" title="Jump back to footnote 43 in the text">&#8617;</a></p>
+</li>
+<li id="fn:44">
+<p>Model-tool routing: <code>DEFAULT_MODEL_TOOL_ROUTING_RULES</code> at
+<a href="https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/core/src/extensions/tools/model-tool-routing.ts#L60-L75">GH…/sdk/packages/core/src/extensions/tools/model-tool-routing.ts#L60-L75</a>
+enables <code>apply_patch</code> and disables <code>editor</code> in act mode for the
+<code>openai-native</code> provider or any model ID containing <code>codex</code> or <code>gpt</code>
+(substring match at L77-L88), applied by <code>createBuiltinToolsList</code> at
+<a href="https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/core/src/runtime/orchestration/runtime-builder.ts#L140-L158">GH…/sdk/packages/core/src/runtime/orchestration/runtime-builder.ts#L140-L158</a>.&#160;<a class="footnote-backref" href="#fnref:44" title="Jump back to footnote 44 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:44" title="Jump back to footnote 44 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:44" title="Jump back to footnote 44 in the text">&#8617;</a></p>
+</li>
+<li id="fn:45">
+<p>VS Code session config at
+<a href="https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/apps/vscode/src/sdk/cline-session-factory.ts#L1093-L1102">GH…/apps/vscode/src/sdk/cline-session-factory.ts#L1093-L1102</a>:
+<code>enableSpawnAgent: false</code>, <code>enableAgentTeams: false</code>, and
+<code>compaction: {enabled: true, strategy}</code> whenever <code>useAutoCondense</code> is
+on — which it is by default
+(<a href="https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/apps/vscode/src/shared/storage/state-keys.ts#L277">GH…/apps/vscode/src/shared/storage/state-keys.ts#L277</a>;
+resolved at
+<a href="https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/apps/vscode/src/sdk/cline-session-factory.ts#L1015-L1019">GH…/apps/vscode/src/sdk/cline-session-factory.ts#L1015-L1019</a>).&#160;<a class="footnote-backref" href="#fnref:45" title="Jump back to footnote 45 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:45" title="Jump back to footnote 45 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:45" title="Jump back to footnote 45 in the text">&#8617;</a><a class="footnote-backref" href="#fnref4:45" title="Jump back to footnote 45 in the text">&#8617;</a><a class="footnote-backref" href="#fnref5:45" title="Jump back to footnote 45 in the text">&#8617;</a></p>
 </li>
 </ol>
 </div>

@@ -141,7 +141,7 @@
    "step": 7,
    "node": "tools",
    "title": "Tool dispatch",
-   "narrative": "The model emits read_files and editor calls. prepareToolExecution resolves the policy: VS Code forces autoApprove: false on every governed tool so the SDK always consults the live UI; the approval callback applies the live settings — reads, edits, browser, MCP auto-approved by default; commands always prompt. read_files and editor run; each result is appended.",
+   "narrative": "The model emits read_files and editor calls. prepareToolExecution resolves the policy: VS Code forces autoApprove: false on every governed tool so the SDK always consults the live UI; the approval callback applies the live settings — reads, edits, browser, MCP auto-approved by default; commands prompt by default. read_files and editor run; each result is appended.",
    "representation": "tool calls: read_files, editor\n  → prepareToolExecution()\n    → resolveToolPolicy()  // '*' then per-name; VS Code forces autoApprove:false\n    → approval callback: reads/edits auto-approved, commands prompt\n  → execute (sequential) → results appended",
    "modules": [
     {
