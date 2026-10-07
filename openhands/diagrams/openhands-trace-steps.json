@@ -1,0 +1,207 @@
+{
+ "title": "One turn through OpenHands — step-by-step",
+ "example_input": "fix the failing test in tests/test_auth.py",
+ "note": "Representations below are simplified shapes of the real types at the pinned SHA, not verbatim dumps.",
+ "repo": "https://github.com/OpenHands/software-agent-sdk",
+ "sha": "54daf056bd863bb46f922a2fe9324dd736b37ff6",
+ "steps": [
+  {
+   "step": 1,
+   "title": "Input",
+   "node": "input",
+   "narrative": "The user sends 'fix the failing test in tests/test_auth.py'. LocalConversation.send_message() resets FINISHED/STUCK to IDLE, runs UserPromptSubmit hooks through HookEventProcessor.on_event — a deny blocks the message entirely — then matches skill triggers (get_user_message_suffix; matched names recorded in state.activated_knowledge_skills), and emits the user MessageEvent before entering run(). A blocked message surfaces in _step via state.pop_blocked_message -> FINISHED, so the hook veto lands before the model is ever consulted.",
+   "representation": "send_message(\"fix the failing test in tests/test_auth.py\")\n  -> UserPromptSubmit hooks (HookEventProcessor.on_event)\n     -> deny? block_message(id) ... _step: FINISHED, skip model\n  -> get_user_message_suffix: KeywordTrigger / TaskTrigger / PathTrigger match\n     -> skill content appended to user message\n  -> MessageEvent(source=\"user\") emitted on the stream",
+   "modules": [
+    {
+     "file": "openhands-sdk/openhands/sdk/conversation/impl/local_conversation.py",
+     "label": "local_conversation.py:1807",
+     "line": "1807",
+     "url": "https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/conversation/impl/local_conversation.py#L1807"
+    },
+    {
+     "file": "openhands-sdk/openhands/sdk/hooks/conversation_hooks.py",
+     "label": "conversation_hooks.py:244",
+     "line": "244",
+     "url": "https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/hooks/conversation_hooks.py#L244"
+    },
+    {
+     "file": "openhands-sdk/openhands/sdk/context/agent_context.py",
+     "label": "agent_context.py:517",
+     "line": "517",
+     "url": "https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/context/agent_context.py#L517"
+    }
+   ]
+  },
+  {
+   "step": 2,
+   "title": "Prompt assembly",
+   "node": "prompt",
+   "narrative": "prepare_llm_messages(state.view, condenser, llm) builds the model input from the cached incremental view — the raw event list is never serialized directly. The system prompt carries AgentContext._resolve_dynamic_data() output, including the <available_skills> block listing every AgentSkills-format skill (descriptions truncated to 1024 chars per the AgentSkills spec). Tool declarations come from the registry: SDK builtins (finish, think, switch_llm, invoke_skill, ...) plus the default exec set (terminal, file_editor, task_tracker), resolved to implementations at runtime.",
+   "representation": "prepare_llm_messages(\n  view=state.view,          # cached, incrementally maintained\n  condenser=condenser, llm=llm\n)\n  -> [SystemMessage(<available_skills>… 1024-char descs),\n      MessageEvent…, ObservationEvent…, ActionEvent…]  # view invariants enforced",
+   "modules": [
+    {
+     "file": "openhands-sdk/openhands/sdk/agent/utils.py",
+     "label": "utils.py:564",
+     "line": "564",
+     "url": "https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/agent/utils.py#L564"
+    },
+    {
+     "file": "openhands-sdk/openhands/sdk/context/agent_context.py",
+     "label": "agent_context.py:360",
+     "line": "360",
+     "url": "https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/context/agent_context.py#L360"
+    },
+    {
+     "file": "openhands-sdk/openhands/sdk/tool/registry.py",
+     "label": "registry.py:127",
+     "line": "127",
+     "url": "https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/tool/registry.py#L127"
+    }
+   ]
+  },
+  {
+   "step": 3,
+   "title": "Model call",
+   "node": "modelcall",
+   "narrative": "Agent._step calls llm.generate(messages, tools, add_security_risk_prediction=True, on_token=stream.token_callback). LLM is a frozen Pydantic model wrapping LiteLLM (litellm.completion/acompletion); it dispatches between Chat Completions and the Responses API per model (uses_responses_api). The add_security_risk_prediction flag asks the model to self-label each action's security risk — advisory input to the security analyzer, never a decision.",
+   "representation": "llm.generate(\n  messages, tools,\n  add_security_risk_prediction=True,   # model self-labels action risk\n  on_token=stream.token_callback       # StreamContext mints event IDs\n)\n  -> uses_responses_api() ? Responses API : Chat Completions\n  -> LLMResponse",
+   "modules": [
+    {
+     "file": "openhands-sdk/openhands/sdk/llm/llm.py",
+     "label": "llm.py:76",
+     "line": "76",
+     "url": "https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/llm/llm.py#L76"
+    },
+    {
+     "file": "openhands-sdk/openhands/sdk/llm/llm.py",
+     "label": "llm.py:1673",
+     "line": "1673",
+     "url": "https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/llm/llm.py#L1673"
+    },
+    {
+     "file": "openhands-sdk/openhands/sdk/agent/agent.py",
+     "label": "agent.py:706",
+     "line": "706",
+     "url": "https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/agent/agent.py#L706"
+    }
+   ]
+  },
+  {
+   "step": 4,
+   "title": "Response parsing",
+   "node": "classify",
+   "narrative": "classify_response is a pure function — no side effects, no logging, no mutation. Decision priority, first match wins: TOOL_CALLS (message contains tool calls, e.g. terminal to run pytest, file_editor to view the test) > CONTENT (non-blank TextContent) > REASONING_ONLY (reasoning but no visible content) > EMPTY. Had the model answered in prose, CONTENT would emit a MessageEvent and finish the turn ('awaits user input'); reasoning-only or empty responses get a corrective nudge from source='environment' and the loop continues.",
+   "representation": "classify_response(message)  # pure\n  -> TOOL_CALLS      if message.tool_calls          # e.g. terminal, file_editor\n  -> CONTENT        elif non-blank TextContent       # MessageEvent, FINISHED\n  -> REASONING_ONLY elif reasoning, no content       # env nudge, continue\n  -> EMPTY          else                            # env nudge, continue",
+   "modules": [
+    {
+     "file": "openhands-sdk/openhands/sdk/agent/response_dispatch.py",
+     "label": "response_dispatch.py:54",
+     "line": "54",
+     "url": "https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/agent/response_dispatch.py#L54"
+    }
+   ]
+  },
+  {
+   "step": 5,
+   "title": "Tool dispatch",
+   "node": "dispatch",
+   "narrative": "_handle_tool_calls runs each call through _get_action_event: argument parsing -> normalize_tool_call (aliasing/terminal fallback) -> tool lookup -> Pydantic validation -> security-risk extraction -> critic evaluation — then emits the ActionEvent via on_event. As the event flows through HookEventProcessor, PreToolUse hooks fire; a deny marks the action blocked in state (state.block_action). Then the confirmation gate: _requires_user_confirmation checks the ConfirmationPolicy (AlwaysConfirm / NeverConfirm / ConfirmRisky) against per-action risks from the SecurityAnalyzerBase. Without a configured analyzer, risk is always UNKNOWN.",
+   "representation": "_get_action_event(tool_call)\n  1. parse args -> normalize_tool_call -> tool lookup\n  2. Pydantic validation, security-risk extraction\n  3. critic evaluation (_evaluate_with_critic) -> ActionEvent.critic_result\n  -> on_event(ActionEvent) -> PreToolUse hooks may block_action(id)\n  -> _requires_user_confirmation: policy x analyzer risk\n     -> WAITING_FOR_CONFIRMATION, or proceed",
+   "modules": [
+    {
+     "file": "openhands-sdk/openhands/sdk/agent/agent.py",
+     "label": "agent.py:1311",
+     "line": "1311",
+     "url": "https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/agent/agent.py#L1311"
+    },
+    {
+     "file": "openhands-sdk/openhands/sdk/agent/agent.py",
+     "label": "agent.py:1130",
+     "line": "1130",
+     "url": "https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/agent/agent.py#L1130"
+    },
+    {
+     "file": "openhands-sdk/openhands/sdk/hooks/conversation_hooks.py",
+     "label": "conversation_hooks.py:127",
+     "line": "127",
+     "url": "https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/hooks/conversation_hooks.py#L127"
+    }
+   ]
+  },
+  {
+   "step": 6,
+   "title": "Feedback",
+   "node": "exec",
+   "narrative": "_execute_actions -> _ActionBatch.prepare: truncate the batch at FinishTool (later calls discarded), partition out hook-blocked actions (emitting UserRejectObservation with rejection_source='hook'), and execute the rest through ParallelToolExecutor bounded by tool_concurrency_limit — the async path runs each tool in its own thread (run_in_executor + asyncio.gather). ObservationEvents are emitted in original call order even though execution was parallel. A tool raising ValueError becomes an AgentErrorEvent so the model can self-correct.",
+   "representation": "_ActionBatch.prepare()\n  -> truncate at FinishTool (later calls discarded)\n  -> partition hook-blocked -> UserRejectObservation(rejection_source=\"hook\")\n  -> ParallelToolExecutor: run_in_executor + asyncio.gather\n     (bounded by tool_concurrency_limit, resource locking)\n  -> ObservationEvent per call, in ORIGINAL call order",
+   "modules": [
+    {
+     "file": "openhands-sdk/openhands/sdk/agent/parallel_executor.py",
+     "label": "parallel_executor.py:52",
+     "line": "52",
+     "url": "https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/agent/parallel_executor.py#L52"
+    },
+    {
+     "file": "openhands-sdk/openhands/sdk/agent/agent.py",
+     "label": "agent.py:380",
+     "line": "380",
+     "url": "https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/agent/agent.py#L380"
+    },
+    {
+     "file": "openhands-sdk/openhands/sdk/event/llm_convertible/observation.py",
+     "label": "observation.py:86",
+     "line": "86",
+     "url": "https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/event/llm_convertible/observation.py#L86"
+    }
+   ]
+  },
+  {
+   "step": 7,
+   "title": "Termination",
+   "node": "terminate",
+   "narrative": "Say the model then calls finish. _ActionBatch.finalize runs the iterative-refinement check: if the critic scores the work below threshold, a followup prompt is injected as a user-role message and the loop continues; otherwise status flips to FINISHED. Back in _run, the Stop hooks get their word — a deny flips FINISHED back to RUNNING with the feedback injected as an environment message — and only then does the loop break.",
+   "representation": "finish -> _ActionBatch.finalize()\n  -> check_iterative_refinement: score < threshold?\n     yes -> inject followup user MessageEvent, loop continues\n     no  -> FINISHED\n  -> _run: run_stop(reason=\"agent_finished\")\n     deny -> FINISHED flips back to RUNNING + env feedback\n  -> break",
+   "modules": [
+    {
+     "file": "openhands-sdk/openhands/sdk/agent/agent.py",
+     "label": "agent.py:380",
+     "line": "380",
+     "url": "https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/agent/agent.py#L380"
+    },
+    {
+     "file": "openhands-sdk/openhands/sdk/conversation/impl/local_conversation.py",
+     "label": "local_conversation.py:1952",
+     "line": "1952",
+     "url": "https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/conversation/impl/local_conversation.py#L1952"
+    }
+   ]
+  },
+  {
+   "step": 8,
+   "title": "Rendering",
+   "node": "render",
+   "narrative": "Every event emitted through on_event fans out: the EventLog appends it as JSONL under the conversation directory (thread/process-safe), and in server mode the EventService publishes it over pub/sub to REST/WebSocket clients, with StreamContext minting event IDs so streaming slots can be retired. There is no privileged renderer — the TUI, the web client, and the TypeScript client all consume the same event stream.",
+   "representation": "on_event(event)\n  -> EventLog: append JSONL (thread/process-safe, FileStore locking)\n  -> EventService: pub/sub -> REST / WebSocket clients\n  -> StreamContext: minted event IDs retire streaming slots\n// no privileged renderer — TUI, web, TS client share one stream",
+   "modules": [
+    {
+     "file": "openhands-sdk/openhands/sdk/conversation/event_store.py",
+     "label": "event_store.py:34",
+     "line": "34",
+     "url": "https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/conversation/event_store.py#L34"
+    },
+    {
+     "file": "openhands-agent-server/openhands/agent_server/event_service.py",
+     "label": "event_service.py:202",
+     "line": "202",
+     "url": "https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-agent-server/openhands/agent_server/event_service.py#L202"
+    },
+    {
+     "file": "openhands-sdk/openhands/sdk/agent/stream_context.py",
+     "label": "stream_context.py:1",
+     "line": "1",
+     "url": "https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/agent/stream_context.py#L1"
+    }
+   ]
+  }
+ ]
+}

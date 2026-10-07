@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>One turn through pi — step by step · Agent Harness Anatomy</title>
+<title>One turn through OpenHands — step-by-step · Agent Harness Anatomy</title>
 <style>
   :root { color-scheme: dark; }
   * { box-sizing: border-box; }
@@ -47,7 +47,7 @@
   .rail li:hover { border-color: #a89880; }
   .rail li.current { border-color: #d08c4e; background: #1f1a15; }
   .rail .num {
-    color: #a89880; font-size: 0.8rem; font-variant-numeric: tabular-nums;
+    color: #8a7a66; font-size: 0.8rem; font-variant-numeric: tabular-nums;
     min-width: 16px;
   }
   .rail li.current .num { color: #d08c4e; font-weight: 700; }
@@ -88,7 +88,7 @@
   }
   #dModules { list-style: none; padding: 0; margin: 0; }
   #dModules li { margin-bottom: 8px; font-size: 0.9rem; }
-  #dModules .file { display: block; color: #a89880; font-size: 0.78rem;
+  #dModules .file { display: block; color: #8a7a66; font-size: 0.78rem;
     font-family: ui-monospace, Menlo, Consolas, monospace; }
   .loopnote {
     margin-top: 20px; padding: 12px 16px; border-left: 3px solid #d08c4e;
@@ -114,13 +114,13 @@
     font-size: 0.82rem; background: #1f1a15; white-space: nowrap;
   }
   .chip.hot { border-color: #d08c4e; color: #d08c4e; }
-  .arrow { color: #a89880; }
+  .arrow { color: #8a7a66; }
   .ret {
     margin: 2px 0 14px 8px; padding-left: 16px; border-left: 2px solid #d08c4e;
     font-size: 0.88rem; color: #a89880;
   }
   .ret b { color: #ece1d3; }
-  footer { margin-top: 48px; color: #a89880; font-size: 0.85rem; }
+  footer { margin-top: 48px; color: #8a7a66; font-size: 0.85rem; }
   @media (max-width: 760px) {
     .trace { grid-template-columns: 1fr; }
     .rail { flex-direction: row; overflow-x: auto; padding-bottom: 8px; }
@@ -132,8 +132,8 @@
 </head>
 <body>
 <main>
-  <nav class="topnav"><a href="./">&larr; pi: the minimalist terminal harness</a></nav>
-  <h1 id="pageTitle">One turn through pi</h1>
+  <nav class="topnav"><a href="./">&larr; OpenHands: the event-sourced agent SDK</a></nav>
+  <h1 id="pageTitle">One turn through OpenHands</h1>
   <p class="sub" id="pageSub"></p>
 
   <div class="input-row">
@@ -177,26 +177,28 @@
   <section class="loopmap">
     <h3>Loop map</h3>
     <div class="flow" id="flowMain"></div>
-    <div class="ret"><b>Inner loop</b> &mdash; steps 3&ndash;6 repeat until the model stops emitting tool calls. Each tool result re-enters the model call at step 3.</div>
+<div class="ret"><b>One pass</b> &mdash; <code>send_message</code> &rarr; hook interception on the event stream &rarr; view-built prompt &rarr; <code>llm.generate</code> &rarr; <code>classify_response</code> &rarr; parallel tool batch &rarr; observations &rarr; critic-gated finish. Everything is an event; the model only ever sees the cached view, never the raw stream.</div>
     <div class="flow" id="flowBranch"></div>
-    <div class="ret"><b>Branch</b> &mdash; when step 4 finds no tool calls, the turn settles: termination decision, then rendering.</div>
-    <div class="ret" style="border-color:#d08c4e"><b>Outer loop</b> &mdash; a follow-up message or steering command re-enters at step 1; in-turn steering re-enters at step 3.</div>
+<div class="ret"><b>Hooks, not branches</b> &mdash; hooks are stream interceptors, not turn branches: <code>UserPromptSubmit</code>, <code>PreToolUse</code>, and <code>Stop</code> hooks run inside <code>on_event</code>. A deny blocks the message or the action; a Stop-hook deny un-finishes a turn. Hook executors are fail-open.</div>
+<div class="ret" style="border-color:#d08c4e"><b>Outer turn loop</b> &mdash; <code>max_iteration_per_run</code> (500) bounds the loop, but <code>finish</code> is a proposal, not a stop: the critic&rsquo;s iterative refinement and Stop hooks can both veto it. The next user message re-enters at step 1; the event log persists every step as JSONL.</div>
   </section>
 
-  <footer>Simplified shapes of real pi types, not verbatim runtime dumps. All module links pin <span id="sha"></span>.</footer>
+  <footer>Simplified shapes of real OpenHands types, not verbatim runtime dumps. All module links pin <span id="sha"></span>.</footer>
 </main>
 
 <script>
 (function () {
   var LOOP_NOTES = {
-    1: "<b>Outer loop entry.</b> Every new user message starts here; follow-ups after a settled turn come back to this step.",
-    3: "<b>Inner loop driver.</b> Steps 3&ndash;6 repeat until the model stops emitting tool calls. There is no fixed iteration cap.",
-    4: "<b>Branch point.</b> Tool calls found &rarr; step 5. None &rarr; step 7, the turn settles.",
-    6: "<b>Inner loop edge.</b> The tool result message re-enters the loop at step 3 (model call).",
-    7: "<b>Settle or steer.</b> Finish, or steering input re-enters the loop at step 3.",
-    8: "<b>Terminal.</b> The turn's events are rendered; the loop idles until new input arrives."
+    1: "<b>Submit.</b> <code>LocalConversation.send_message()</code> resets FINISHED/STUCK to IDLE, runs <code>UserPromptSubmit</code> hooks through <code>HookEventProcessor.on_event</code> &mdash; a deny blocks the message entirely &mdash; then matches skill triggers and emits the user <code>MessageEvent</code> before entering <code>run()</code>.",
+    2: "<b>Prompt assembly.</b> <code>prepare_llm_messages(state.view, condenser, llm)</code> builds the model input from the cached incremental view &mdash; the raw event list is never serialized. The system prompt carries <code>&lt;available_skills&gt;</code> (descriptions truncated to 1024 chars per the AgentSkills spec); tool declarations come from the tool registry.",
+    3: "<b>Model call.</b> <code>Agent._step</code> &rarr; <code>llm.generate(messages, tools, add_security_risk_prediction=True, on_token=stream.token_callback)</code>. The <code>LLM</code> wrapper dispatches between Chat Completions and the Responses API per model; the model self-labels each action&rsquo;s security risk &mdash; advisory input to confirmation policy.",
+    4: "<b>Classify.</b> <code>classify_response</code> is a pure function: TOOL_CALLS &gt; CONTENT &gt; REASONING_ONLY &gt; EMPTY, first match wins. A prose answer would emit a <code>MessageEvent</code> and finish the turn here.",
+    5: "<b>Tool dispatch.</b> <code>_handle_tool_calls</code> &rarr; <code>_get_action_event</code>: parse args &rarr; <code>normalize_tool_call</code> &rarr; tool lookup &rarr; Pydantic validation &rarr; security-risk extraction &rarr; critic evaluation &rarr; <code>ActionEvent</code> via <code>on_event</code>. <code>PreToolUse</code> hooks fire as the event flows through the processor; a deny marks the action blocked.",
+    6: "<b>Feedback.</b> <code>_ActionBatch.prepare</code> truncates the batch at <code>FinishTool</code>, partitions hook-blocked actions (emitting <code>UserRejectObservation</code>), and executes the rest through <code>ParallelToolExecutor</code>. <code>ObservationEvent</code>s are emitted in the original call order.",
+    7: "<b>Termination.</b> <code>finish</code> &rarr; <code>_ActionBatch.finalize</code> runs the iterative-refinement check: critic score below threshold injects a follow-up user message and the loop continues; otherwise FINISHED. Back in <code>_run</code>, Stop hooks get their word &mdash; a deny flips FINISHED back to RUNNING.",
+    8: "<b>Rendering.</b> Every event emitted through <code>on_event</code> fans out: the <code>EventLog</code> appends it as JSONL, and in server mode the <code>EventService</code> publishes it over pub/sub to REST/WebSocket clients. There is no privileged renderer &mdash; the TUI, web, and TypeScript clients all consume the same stream."
   };
-  var FLOW_MAIN = [1,2,3,4,5,6], FLOW_BRANCH = [4,7,8];
+  var FLOW_MAIN = [1,2,3,4,5,6,7,8], FLOW_BRANCH = [];
 
   var data, idx = 0, timer = null;
   var $ = function (id) { return document.getElementById(id); };
@@ -263,8 +265,8 @@
     });
     $("dLoop").innerHTML = LOOP_NOTES[s.step] || "";
     $("counter").textContent = (idx + 1) + " / " + data.steps.length;
-    renderFlow($("flowMain"), FLOW_MAIN, s.step <= 6 ? s.step : -1);
-    renderFlow($("flowBranch"), FLOW_BRANCH, s.step >= 4 ? s.step : -1);
+    renderFlow($("flowMain"), FLOW_MAIN, s.step);
+    renderFlow($("flowBranch"), FLOW_BRANCH, -1);
   }
 
   function stop() {
@@ -292,21 +294,21 @@
     if (e.key === " ") { e.preventDefault(); play(); }
   });
 
-  fetch("diagrams/pi-trace-steps.json")
+  fetch("diagrams/openhands-trace-steps.json")
     .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
     .then(function (d) {
       data = d;
       document.title = d.title + " \u00b7 Agent Harness Anatomy";
       $("pageTitle").textContent = d.title;
-      $("pageSub").textContent = "Follow one concrete user input through pi's agent loop. " +
-        "Each step shows the representation pi selects at that boundary and the source modules involved. " + d.note;
-      $("sha").textContent = "v1.0.2 (" + d.sha.slice(0, 12) + "\u2026)";
+      $("pageSub").textContent = "Follow one concrete user input through OpenHands's event-sourced turn loop. " +
+        "Each step shows the representation OpenHands selects at that boundary and the source modules involved. " + d.note;
+      $("sha").textContent = "rust-v0.160.0 (" + d.sha.slice(0, 12) + "\u2026)";
       if (!userInput.value) userInput.value = d.example_input;
       buildRail();
       go(0);
     })
     .catch(function () {
-      $("pageSub").textContent = "Could not load the trace data (diagrams/pi-trace-steps.json).";
+      $("pageSub").textContent = "Could not load the trace data (diagrams/openhands-trace-steps.json).";
     });
 })();
 </script>

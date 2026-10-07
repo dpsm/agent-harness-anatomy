@@ -81,7 +81,7 @@ lives in the endnotes.</p>
 <thead>
 <tr>
 <th>Crate</th>
-<th>Non-test <code>.rs</code></th>
+<th><code>.rs</code> under <code>src/</code></th>
 <th>Role</th>
 </tr>
 </thead>
@@ -104,7 +104,7 @@ lives in the endnotes.</p>
 <tr>
 <td><code>goose-providers</code></td>
 <td>26 files, 15,731 LOC</td>
-<td>Provider implementations (34 static + 48 declarative JSON)</td>
+<td>Provider implementations (36 static registrations + 48 declarative JSON)</td>
 </tr>
 <tr>
 <td><code>goose-local-inference</code></td>
@@ -153,8 +153,8 @@ state machine enabled by <code>GOOSE_STATE_MACHINE=1</code> — and the repo's o
 AGENTS.md documents the parity burden plainly: "Until the migration is
 complete, changes to agent-loop behavior must be implemented and tested in
 both paths."<sup id="fnref:3"><a class="footnote-ref" href="#fn:3">3</a></sup></p>
-<p>Three inversions against the series so far. Against pi: where pi has 4
-built-in tools and a TypeScript extension API, goose's entire toolset is
+<p>Three inversions against the series so far. Against pi: where pi has 8
+built-in tools (4 on by default) and a TypeScript extension API, goose's entire toolset is
 assembled per-session from extension configs — the tool system <em>is</em> the
 extension system. Against aider: where aider negotiates with the model
 through text edit formats and remembers via git, goose speaks native tool
@@ -174,7 +174,7 @@ agent becomes a client of its own capabilities.</p>
 downward:<sup id="fnref2:1"><a class="footnote-ref" href="#fn:1">1</a></sup></p>
 <pre><code>goose-provider-types  Provider trait, Message/Conversation, canonical registry
         ↑
-goose-providers       34 static + 48 declarative provider impls
+goose-providers       36 static + 48 declarative provider registrations
 goose-mcp             MCP client + 4 bundled servers
 goose-agent           generic StateMachine: Operation/Inference/Step traits
 goose-context-management  compaction library (summarize, token estimation)
@@ -286,7 +286,8 @@ system_prompt, messages, &amp;tools)</code> — streaming, with pre-first-item
 transient retries (≤3) on rate-limit/5xx/network. Text chunks yield
 <code>AgentEvent::Message</code> live.<sup id="fnref:15"><a class="footnote-ref" href="#fn:15">15</a></sup></p>
 <p><strong>④ Response parse.</strong> <code>categorize_tool_requests</code> extracts the model's
-<code>ToolRequest</code>s (say, a <code>developer__shell</code> call), canonicalizes
+<code>ToolRequest</code>s (say, a <code>shell</code> call — the developer extension's tools
+are unprefixed), canonicalizes
 model-mangled names (<code>recover_mangled_tool_name</code>), coerces arguments to
 the advertised JSON schema, and dedupes tool-call IDs. Calls to
 unadvertised tools become <code>invalid_request</code> errors — invalid tool calls
@@ -367,7 +368,7 @@ text accumulates in <code>last_assistant_text</code>.<sup id="fnref:20"><a class
 <p>Contrast the series: Cline wraps MCP servers as native <code>server__tool</code>
   <code>AgentTool</code>s with per-server config; <strong>goose inverts it — everything is
   an MCP server</strong>, including builtins, and the agent's entire toolset is
-  extension config. pi has 4 built-ins plus a TS extension API; goose has
+  extension config. pi has 8 built-ins (4 on by default) plus a TS extension API; goose has
   no non-MCP tool path at all.<sup id="fnref2:2"><a class="footnote-ref" href="#fn:2">2</a></sup></p>
 <p><img alt="MCP extension assembly" src="figures/seq-mcp-assembly.svg" /></p>
 <ul>
@@ -419,7 +420,7 @@ text accumulates in <code>last_assistant_text</code>.<sup id="fnref:20"><a class
 <li><strong>Providers.</strong> The <code>Provider</code> trait has exactly one required behavioral
   method: <code>stream()</code>. <code>complete()</code> defaults to stream-plus-collect; only
   one provider in-tree overrides it. There is a single <code>Provider</code>
-  trait — grep confirms it.<sup id="fnref2:34"><a class="footnote-ref" href="#fn:34">34</a></sup> The inventory: 34 static registrations
+  trait — grep confirms it.<sup id="fnref2:34"><a class="footnote-ref" href="#fn:34">34</a></sup> The inventory: 36 static registrations
   (including feature-gated <code>aws_bedrock</code>, <code>sagemaker_tgi</code>, <code>local</code>), 48
   bundled declarative JSON definitions, and user custom providers from
   <code>~/.config/goose/custom_providers/</code> — four tiers (Preferred, Builtin,
@@ -453,7 +454,7 @@ text accumulates in <code>last_assistant_text</code>.<sup id="fnref:20"><a class
   blocks. Cost is estimated, never authoritative unless provider-reported.<sup id="fnref:39"><a class="footnote-ref" href="#fn:39">39</a></sup></p>
 <p>Philosophy: aider's (big model catalog + heuristics) with per-provider
   implementations — but unlike Cline's one generic AI-SDK adapter, goose
-  hand-writes 34 provider impls and adds a declarative JSON tier for the
+  statically registers 36 providers and adds a declarative JSON tier for the
   long tail.<sup id="fnref2:4"><a class="footnote-ref" href="#fn:4">4</a></sup></p>
 <ul>
 <li>
@@ -611,7 +612,7 @@ tool is the whole runtime; skills are advertised in the system prompt
 and loaded on demand, never eagerly injected.</p>
 <p><img alt="Skills discovery and load_skill" src="figures/seq-skills.svg" /></p>
 <h3 id="7-custom-providers">7. Custom providers</h3>
-<p>Two tiers below the 34 hand-written impls: 48 bundled declarative JSON
+<p>Two tiers below the 36 statically registered providers: 48 bundled declarative JSON
 definitions for the long tail, and user-authored custom providers from
 <code>~/.config/goose/custom_providers/</code> (with command-based auth). Adding a
 provider to the long tail is a JSON file, not a Rust impl.<sup id="fnref:35"><a class="footnote-ref" href="#fn:35">35</a></sup></p>
@@ -684,8 +685,8 @@ axis its competitors would have to invent from scratch.</p>
 <li><strong>Catalog + heuristics at three scales.</strong> aider: 313-entry hand-written
   YAML. Cline: ~200k-line generated catalog behind one generic adapter,
   exact-ID resolution, no heuristics. Goose: 8,160-entry generated
-  snapshot <em>plus</em> aider-style substring heuristics <em>plus</em> 34 hand-written
-  provider impls. Three philosophies of "know your model," and goose
+  snapshot <em>plus</em> aider-style substring heuristics <em>plus</em> 36 statically
+  registered providers. Three philosophies of "know your model," and goose
   picked all of them.<sup id="fnref3:4"><a class="footnote-ref" href="#fn:4">4</a></sup><sup id="fnref2:36"><a class="footnote-ref" href="#fn:36">36</a></sup></li>
 <li><strong>Compaction without budgeting.</strong> Goose never budgets tokens per
   subsystem — no allocator, no per-tool caps. It just compacts the whole
@@ -724,9 +725,11 @@ axis its competitors would have to invent from scratch.</p>
   The migration is prose.<sup id="fnref2:24"><a class="footnote-ref" href="#fn:24">24</a></sup></li>
 <li><strong>No model-name validation.</strong> Any string is accepted as a model name;
   resolution is heuristics and fallbacks all the way down.<sup id="fnref3:36"><a class="footnote-ref" href="#fn:36">36</a></sup></li>
-<li><strong>No command sandbox.</strong> The OSV malware check runs at extension
-  <em>install</em> time; <code>run_commands</code> executes unsandboxed in the user's
-  shell, like Cline, like aider.<sup id="fnref3:22"><a class="footnote-ref" href="#fn:22">22</a></sup></li>
+<li><strong>No command sandbox.</strong> The OSV malware check runs when an
+  npx/uvx extension is spawned (and fails open for unknown ecosystems);
+  the developer extension's <code>shell</code> tool executes unsandboxed in the
+  user's shell, like Cline, like aider — inside a Flatpak build it even
+  routes commands to the host.<sup id="fnref3:22"><a class="footnote-ref" href="#fn:22">22</a></sup></li>
 <li><strong>Telegram is the only gateway.</strong> The gateway abstraction has exactly
   one implementation; <code>create_gateway</code> bails on anything else.<sup id="fnref:45"><a class="footnote-ref" href="#fn:45">45</a></sup></li>
 </ul>
@@ -754,18 +757,18 @@ axis its competitors would have to invent from scratch.</p>
 <tr>
 <td>2</td>
 <td>Tool system</td>
-<td>4 built-ins + registry; TypeBox validation; sequential/parallel</td>
+<td>8 built-ins (4 active by default) + registry; TypeBox validation; sequential/parallel</td>
 <td>None — model emits SEARCH/REPLACE blocks</td>
-<td>9 built-ins + MCP natives + team tools; sequential default, adjacent-parallel batching</td>
+<td>9 built-ins (7 active in VS Code act mode) + MCP natives + team tools (SDK/CLI); sequential default, adjacent-parallel batching</td>
 <td><strong>Entirely MCP-shaped</strong>: every tool is an MCP server (builtins = in-process tokio duplex); <code>ext__tool</code> namespacing; no non-MCP path <sup id="fnref5:2"><a class="footnote-ref" href="#fn:2">2</a></sup><sup id="fnref5:21"><a class="footnote-ref" href="#fn:21">21</a></sup><sup id="fnref4:23"><a class="footnote-ref" href="#fn:23">23</a></sup></td>
 </tr>
 <tr>
 <td>3</td>
 <td>Model providers</td>
-<td>~35 behind one <code>StreamFn</code></td>
+<td>~42 behind one <code>StreamFn</code></td>
 <td>litellm; 313-entry YAML + substring heuristics</td>
 <td>228 providers, one generic Vercel AI SDK adapter; exact-ID resolution</td>
-<td>Single <code>Provider</code> trait (<code>stream()</code> required); 34 static + 48 declarative JSON + custom; 8,160-entry models.dev snapshot (zstd-bundled, ETag hot-swap) + substring heuristics; no name validation <sup id="fnref3:34"><a class="footnote-ref" href="#fn:34">34</a></sup><sup id="fnref3:35"><a class="footnote-ref" href="#fn:35">35</a></sup><sup id="fnref4:36"><a class="footnote-ref" href="#fn:36">36</a></sup></td>
+<td>Single <code>Provider</code> trait (<code>stream()</code> required); 36 static + 48 declarative JSON + custom; 8,160-entry models.dev snapshot (zstd-bundled, ETag hot-swap) + substring heuristics; no name validation <sup id="fnref3:34"><a class="footnote-ref" href="#fn:34">34</a></sup><sup id="fnref3:35"><a class="footnote-ref" href="#fn:35">35</a></sup><sup id="fnref4:36"><a class="footnote-ref" href="#fn:36">36</a></sup></td>
 </tr>
 <tr>
 <td>4</td>
@@ -780,7 +783,7 @@ axis its competitors would have to invent from scratch.</p>
 <td>Memory/session</td>
 <td>JSONL sessions; compaction</td>
 <td>In-memory cur/done; background summarization; markdown log; git auto-commit</td>
-<td>SQLite + file-backend; versioned whole-file JSON envelopes; manual <code>/compact</code></td>
+<td>SQLite + file-backend; versioned whole-file JSON envelopes; auto + manual compaction</td>
 <td><strong>SQLite</strong> <code>sessions.db</code> + JSON blobs; full <code>Recipe</code> persisted on session record; explicit cross-session recall (chatrecall + SQL FTS); <code>user_visible</code>/<code>agent_visible</code> flags <sup id="fnref2:40"><a class="footnote-ref" href="#fn:40">40</a></sup></td>
 </tr>
 <tr>
@@ -788,7 +791,7 @@ axis its competitors would have to invent from scratch.</p>
 <td>Reasoning/planning</td>
 <td>Thinking forwarded; no planner/sub-agents</td>
 <td>Architect = sequential delegation with user gate</td>
-<td>plan/act modes (differ by one tool); sub-agents + teams</td>
+<td>plan/act modes (differ by one tool); sub-agents + teams (SDK/CLI only)</td>
 <td>GooseMode (Auto/Approve/SmartApprove/Chat); <code>summon</code> sub-agents (forced Auto, 25 turns, no nesting); <strong>recipes</strong> as declarative task programs; in-process cron schedules (always Auto) <sup id="fnref3:29"><a class="footnote-ref" href="#fn:29">29</a></sup><sup id="fnref3:44"><a class="footnote-ref" href="#fn:44">44</a></sup><sup id="fnref6:46"><a class="footnote-ref" href="#fn:46">46</a></sup><sup id="fnref3:43"><a class="footnote-ref" href="#fn:43">43</a></sup></td>
 </tr>
 <tr>
@@ -820,14 +823,15 @@ axis its competitors would have to invent from scratch.</p>
 <td>Security model</td>
 <td>Project trust + extension hooks; no approval UX</td>
 <td>Boundary prompts; git auto-commit + <code>/undo</code>; no sandbox</td>
-<td>Finest-grained: per-tool policies + webview UI + diff previews; commands always prompt; no sandbox; per-turn stash checkpoints</td>
+<td>Finest-grained: per-tool policies + webview UI + diff previews; commands prompt by default; no sandbox; per-turn stash checkpoints</td>
 <td><strong>Modes × <code>permission.yaml</code> × 5-inspector chain</strong> (security can only escalate); <strong>LLM judge</strong> for SmartApprove (UNTRUSTED-labeled, fail-closed); Always-Allow withheld on security warning; strict headless; <strong>no undo</strong> <sup id="fnref4:29"><a class="footnote-ref" href="#fn:29">29</a></sup><sup id="fnref2:30"><a class="footnote-ref" href="#fn:30">30</a></sup><sup id="fnref2:31"><a class="footnote-ref" href="#fn:31">31</a></sup><sup id="fnref3:32"><a class="footnote-ref" href="#fn:32">32</a></sup><sup id="fnref3:33"><a class="footnote-ref" href="#fn:33">33</a></sup><sup id="fnref4:28"><a class="footnote-ref" href="#fn:28">28</a></sup></td>
 </tr>
 </tbody>
 </table>
 <h2 id="endnotes">Endnotes</h2>
 <p>All notes are VERIFIED against <code>v1.53.0</code>
-(<code>76da81cb964b21cd096db739302329b40c2998b8</code>) unless marked DOCS.
+(<code>76da81cb964b21cd096db739302329b40c2998b8</code>) unless marked DOCS; line
+anchors and file paths re-checked on 2026-10-07.
 <code>GH</code> = <code>https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/</code>.</p>
 <div class="footnote">
 <hr />
@@ -835,8 +839,8 @@ axis its competitors would have to invent from scratch.</p>
 <li id="fn:1">
 <p>Tag <code>v1.53.0</code>, SHA <code>76da81cb964b21cd096db739302329b40c2998b8</code>,
 committed 2026-09-30 14:19:01 -0400; Apache-2.0 (<code>LICENSE</code>); Rust
-cargo workspace (<code>members = ["crates/*"]</code>). Non-test <code>.rs</code> in
-<code>*/src</code>: <code>goose</code> 339 files / 176,482 LOC, <code>goose-cli</code> 51 / 28,625,
+cargo workspace (<code>members = ["crates/*"]</code>). All <code>.rs</code> files under
+<code>*/src</code> (in-tree test modules included): <code>goose</code> 339 files / 176,482 LOC, <code>goose-cli</code> 51 / 28,625,
 <code>goose-provider-types</code> 36 / 30,822, <code>goose-providers</code> 26 / 15,731,
 <code>goose-local-inference</code> 20 / 10,347, <code>goose-mcp</code> 11 / 6,084,
 <code>goose-agent</code> 6 / 1,557, <code>goose-context-management</code> 7 / 1,156,
@@ -855,7 +859,7 @@ mapped but not deep-dived.&#160;<a class="footnote-backref" href="#fnref:1" titl
 <p>"Builtin" means in-process MCP: every tool the agent sees arrives
 through the MCP client layer; builtins connect over in-process tokio
 duplex rather than subprocess stdio (see <sup id="fnref4:22"><a class="footnote-ref" href="#fn:22">22</a></sup>). There is no
-non-MCP tool path — contrast pi's 4 native built-ins plus TS
+non-MCP tool path — contrast pi's 8 native built-ins plus TS
 extension API.&#160;<a class="footnote-backref" href="#fnref:2" title="Jump back to footnote 2 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:2" title="Jump back to footnote 2 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:2" title="Jump back to footnote 2 in the text">&#8617;</a><a class="footnote-backref" href="#fnref4:2" title="Jump back to footnote 2 in the text">&#8617;</a><a class="footnote-backref" href="#fnref5:2" title="Jump back to footnote 2 in the text">&#8617;</a></p>
 </li>
 <li id="fn:3">
@@ -865,7 +869,7 @@ takes <code>use_state_machine: bool</code>; the CLI passes
 <code>goose::agents::state_machine::enabled()</code>
 (<code>crates/goose-cli/src/session/mod.rs:1456</code>), which is false unless
 <code>GOOSE_STATE_MACHINE</code> ∈ {<code>1</code>, <code>true</code>, <code>TRUE</code>, <code>yes</code>} at
-<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/state_machine/mod.rs#L73-L77">GH…/crates/goose/src/agents/state_machine/mod.rs#L73-L77</a>.
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/state_machine/mod.rs#L72-L76">GH…/crates/goose/src/agents/state_machine/mod.rs#L72-L76</a>.
 The repo's own <code>AGENTS.md:41-43</code>: "We are replacing the legacy agent
 loop in <code>crates/goose/src/agents/agent.rs</code> with the state machine in
 <code>crates/goose/src/agents/state_machine/</code>. … Until the migration is
@@ -926,7 +930,7 @@ confirmation natively via <code>PermissionRouting::ActionRequired</code> at
 <a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/reply_parts.rs#L422-L458">GH…/crates/goose/src/agents/reply_parts.rs#L422-L458</a>.
 (b) Recipe <code>RetryManager</code>: shell success checks, <code>on_failure</code>
 command, conversation reset to the <code>initial_messages</code> snapshot — at
-<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/recipe/retry.rs#L92-L142">GH…/crates/goose/src/recipe/retry.rs#L92-L142</a>.
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/retry.rs#L92-L144">GH…/crates/goose/src/agents/retry.rs#L92-L144</a>.
 (c) Micro-retries: empty-turn ×3, compaction ×2, stop-hook ×8. Tool
 failures arrive as error <code>ToolResponse</code> content, not exceptions. The
 <code>RepetitionInspector</code> is inert in the legacy path: registered with
@@ -1084,7 +1088,7 @@ transport at the pinned SHA. Config lives under <code>extensions:</code> in
 (no-op on unchanged config), resolving secrets/envs against a 31-key
 env denylist, then connecting per type: stdio spawns a subprocess
 with an OSV malware check on npx/uvx at
-<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/extension_malware_check.rs#L44">GH…/crates/goose/src/extension_malware_check.rs#L44</a>;
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/extension_malware_check.rs#L44">GH…/crates/goose/src/agents/extension_malware_check.rs#L44</a>;
 builtin servers connect over in-process tokio duplex at
 <a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/extension_manager/builtin.rs#L10">GH…/crates/goose/src/agents/extension_manager/builtin.rs#L10</a>;
 platform extensions run in-process via the client factory; remote
@@ -1125,7 +1129,7 @@ crates/goose-cli/src crates/goose-mcp/src</code> → only
 Registry. The repo's AGENTS.md refuses new <code>servers.json</code> entries
 pending that migration. <code>search_available_extensions</code> is
 config-local only at
-<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/ext_manager.rs#L517-L563">GH…/crates/goose/src/agents/ext_manager.rs#L517-L563</a>.&#160;<a class="footnote-backref" href="#fnref:24" title="Jump back to footnote 24 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:24" title="Jump back to footnote 24 in the text">&#8617;</a></p>
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/agents/platform_extensions/ext_manager.rs#L107-L124">GH…/crates/goose/src/agents/platform_extensions/ext_manager.rs#L107-L124</a>.&#160;<a class="footnote-backref" href="#fnref:24" title="Jump back to footnote 24 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:24" title="Jump back to footnote 24 in the text">&#8617;</a></p>
 </li>
 <li id="fn:25">
 <p><code>ToolInfo.permission</code> is dead code: defined at
@@ -1164,7 +1168,7 @@ never restorative.&#160;<a class="footnote-backref" href="#fnref:28" title="Jump
 </li>
 <li id="fn:29">
 <p><code>GooseMode</code> at
-<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose-provider-types/src/goose_mode.rs#L22-L36">GH…/crates/goose-provider-types/src/goose_mode.rs#L22-L36</a>:
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose-provider-types/src/goose_mode.rs#L22-L32">GH…/crates/goose-provider-types/src/goose_mode.rs#L22-L32</a>:
 <code>Auto</code> (default; "Automatically approve tool calls"), <code>Approve</code>
 ("Ask before every tool call"), <code>SmartApprove</code> ("Ask only for
 sensitive tool calls"), <code>Chat</code> ("Chat only, no tool calls"). Config
@@ -1232,20 +1236,21 @@ Headless is strict: <code>Auto</code> auto-allows (with a warn log);
 <a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose-provider-types/src/base.rs#L504">GH…/crates/goose-provider-types/src/base.rs#L504</a>:
 <code>stream()</code> is the only required behavioral method; <code>complete()</code>
 defaults to stream-plus-<code>collect_stream</code>, overridden only at
-<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose-providers/src/githubcopilot.rs#L621">GH…/crates/goose-providers/src/githubcopilot.rs#L621</a>.
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/providers/githubcopilot.rs#L621">GH…/crates/goose/src/providers/githubcopilot.rs#L621</a>.
 Negative finding: <code>grep "pub trait Provider\b"
 crates/goose-provider-types/src</code> → exactly one hit — a single trait.&#160;<a class="footnote-backref" href="#fnref:34" title="Jump back to footnote 34 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:34" title="Jump back to footnote 34 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:34" title="Jump back to footnote 34 in the text">&#8617;</a><a class="footnote-backref" href="#fnref4:34" title="Jump back to footnote 34 in the text">&#8617;</a></p>
 </li>
 <li id="fn:35">
-<p>34 static registrations at
-<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose-providers/src/providers/init.rs#L54-L158">GH…/crates/goose-providers/src/providers/init.rs#L54-L158</a>
+<p>36 static registrations (unique <code>register::&lt;…&gt;</code> /
+<code>register_with_inventory::&lt;…&gt;</code> calls in <code>init_registry</code>) at
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/providers/init.rs#L58-L231">GH…/crates/goose/src/providers/init.rs#L58-L231</a>
 (incl. feature-gated <code>aws_bedrock</code>, <code>sagemaker_tgi</code>, <code>local</code>) + 48
 bundled declarative JSON definitions + user custom providers from
 <code>~/.config/goose/custom_providers/</code>. Four tiers
 (Preferred/Builtin/Declarative/Custom); selection chain
 (<code>--provider</code> flag → saved session → recipe → <code>GOOSE_PROVIDER</code> env &gt;
 <code>active_provider</code> config &gt; legacy param) at
-<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/session/builder.rs#L283-L446">GH…/crates/goose/src/session/builder.rs#L283-L446</a>.&#160;<a class="footnote-backref" href="#fnref:35" title="Jump back to footnote 35 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:35" title="Jump back to footnote 35 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:35" title="Jump back to footnote 35 in the text">&#8617;</a><a class="footnote-backref" href="#fnref4:35" title="Jump back to footnote 35 in the text">&#8617;</a></p>
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose-cli/src/session/builder.rs#L291-L447">GH…/crates/goose-cli/src/session/builder.rs#L291-L447</a>.&#160;<a class="footnote-backref" href="#fnref:35" title="Jump back to footnote 35 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:35" title="Jump back to footnote 35 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:35" title="Jump back to footnote 35 in the text">&#8617;</a><a class="footnote-backref" href="#fnref4:35" title="Jump back to footnote 35 in the text">&#8617;</a></p>
 </li>
 <li id="fn:36">
 <p>The model catalog: an <strong>8,160-entry models.dev snapshot</strong>
@@ -1293,7 +1298,7 @@ templates.&#160;<a class="footnote-backref" href="#fnref:38" title="Jump back to
 conversation blocks at
 <a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose-provider-types/src/conversation/message.rs#L133-L330">GH…/crates/goose-provider-types/src/conversation/message.rs#L133-L330</a>.
 Cost is estimated, never authoritative unless provider-reported, at
-<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/usage_estimator.rs#L11-L19">GH…/crates/goose/src/usage_estimator.rs#L11-L19</a>.&#160;<a class="footnote-backref" href="#fnref:39" title="Jump back to footnote 39 in the text">&#8617;</a></p>
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/providers/usage_estimator.rs#L9-L20">GH…/crates/goose/src/providers/usage_estimator.rs#L9-L20</a>.&#160;<a class="footnote-backref" href="#fnref:39" title="Jump back to footnote 39 in the text">&#8617;</a></p>
 </li>
 <li id="fn:40">
 <p>SQLite at <code>&lt;data_dir&gt;/sessions/sessions.db</code> —
@@ -1482,9 +1487,7 @@ sensitive user files" — at
 Execution (<code>goose run --recipe</code>) at
 <a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose-cli/src/recipes/extract_from_cli.rs#L11-L61">GH…/crates/goose-cli/src/recipes/extract_from_cli.rs#L11-L61</a>;
 the full recipe is persisted on the session record at
-<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/session/builder.rs#L563-L688">GH…/crates/goose/src/session/builder.rs#L563-L688</a>
-and
-<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/session/builder.rs#L808-L815">L808-L815</a>.
+<a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose-cli/src/session/builder.rs#L808-L815">GH…/crates/goose-cli/src/session/builder.rs#L808-L815</a>.
 Auto-augmentation at
 <a href="https://github.com/block/goose/blob/76da81cb964b21cd096db739302329b40c2998b8/crates/goose/src/recipe/mod.rs#L231-L271">GH…/crates/goose/src/recipe/mod.rs#L231-L271</a>
 and
