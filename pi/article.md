@@ -9,7 +9,7 @@
 
 - **Repo:** [earendil-works/pi](https://github.com/earendil-works/pi)
 - **Pinned:** tag `v1.0.2` → `cd32f7725fdbddbaecdff5b1e68491563394e0ca` (2026-10-04)
-- **Language:** TypeScript (Bun/Node)
+- **Language:** TypeScript (Node ≥ 22.19)
 - **Claim under test:** "a hardened, minimal, extensible agent harness"
 
 ![pi architecture](figures/pi.svg)
@@ -39,7 +39,7 @@ The repo is a monorepo. For this article only three packages matter:[^4]
 | Package | Role |
 |---|---|
 | `packages/agent` | The loop: `Agent` class + `runAgentLoop`/`runAgentLoopContinue` + event types |
-| `packages/ai` | Model providers (~35) behind one `StreamFn` signature |
+| `packages/ai` | Model providers (~42) behind one `StreamFn` signature |
 | `packages/coding-agent` | The app: `AgentSession`, system prompt, tools, TUI/RPC/print modes |
 
 Everything else (`mcp`, `server`, `tui`, `durable`, `evals`, …) is out of
@@ -66,8 +66,8 @@ print mode are all just subscribers — there is no privileged renderer.[^9]
 
 **The most interesting negative finding:** there is no max-iteration,
 max-step, or max-turn limit anywhere in the loop or the session layer.[^10]
-A runaway loop is stopped by the model ceasing to emit tool calls, a
-tool-result setting `terminate: true`, a `finishTurn` hook, or the user
+A runaway loop is stopped by the model ceasing to emit tool calls, every
+tool result in a batch setting `terminate: true`, a `finishTurn` hook, or the user
 hitting Ctrl+C (`AbortController`).[^11] pi trusts the model's stop behavior
 the way a REPL trusts EOF.
 
@@ -83,16 +83,21 @@ policy — the same bet as the approval story below.
 
 Trace: the user types `help me refactor foo.ts` in interactive mode.
 
-**① Input.** `AgentSession.prompt()` validates the model and auth
-(OAuth/API key), expands skill commands and prompt templates, and lets
-extensions intercept via `input` handlers.[^12] If the agent is already
-streaming, the message is queued through `steer()` (interrupt) or
-`followUp()` (wait) instead of starting a new run.[^13]
+**① Input.** `AgentSession.prompt()` first gives extension slash commands
+a chance to handle the text, then lets extensions intercept via `input`
+handlers, then expands skill commands and prompt templates.[^12] If the
+agent is already streaming, the message is queued through `steer()`
+(interrupt) or `followUp()` (wait) instead of starting a new run — the
+caller must say which, or `prompt()` throws.[^13] Only on the non-streaming
+path does it validate the model and auth (OAuth/API key) and run a
+pre-prompt compaction check.[^12][^30]
 
 **② Prompt assembly.** Before every agent start, extensions may edit the
 system-prompt options.[^14] `_preparePromptAndToolLoadout` then diffs the
 *structured* system prompt — sections named `preamble`, `tools`, `rules`,
-`docs`, `skills`, `cwd`, plus project context — against the transcript's
+and `docs` (the last three only when pi's default prompt is in use), plus
+`addendum`, `project_context`, `skills`, `cwd`, and any custom sections —
+against the transcript's
 current sections, and emits only the changed ones (a `null` removes a
 section).[^15][^16] Non-preamble sections are wrapped in XML tags of the
 same name so the model can match later updates to them.[^16] Tool
@@ -109,8 +114,9 @@ whole prompt and eat the tokens; pi chose the complex, cheap path.
 
 **③ Model call.** `Agent.prompt()` → `runAgentLoop()` → the app's `streamFn`,
 which delegates to `modelRuntime.streamSimple()` — token streaming from
-whichever of ~35 providers is selected.[^18] Per-request hooks (`onPayload`,
-`onResponse`) feed extension observers and a prompt-cache warmer.[^19]
+whichever of ~42 providers is selected.[^18] Per-request hooks (`onPayload`,
+`onResponse`) feed extension observers; the same `streamFn` also starts a
+prompt-cache warmer for session requests.[^19]
 
 **④ Response parsing.** Streaming events assemble the partial assistant
 message in context. Tool calls are extracted from assistant content blocks.[^20]
@@ -151,13 +157,15 @@ not an implementation detail.
 
 ## Subsystem inventory
 
-- **Tools.** 4 built-ins: `read`, `bash`, `edit`, `write`.[^27] Schema-validated,
+- **Tools.** 8 built-ins: `read`, `bash`, `edit`, `write` are active by
+  default; `powershell`, `grep`, `find`, and `ls` ship disabled and can be
+  switched on.[^27] Schema-validated,
   with per-tool system-prompt contributions (a one-line snippet + guideline
   bullets that flow into the prompt's `tools` and `rules` sections).[^27]
   Extensions register more through the same registry; tools can invoke
   other tools via `ctx.executeTool()` (nested tool calls re-enter the
   pipeline with the session's hooks).[^28]
-- **Providers.** ~35 files under `packages/ai/src/providers/` (Anthropic,
+- **Providers.** ~42 providers under `packages/ai/src/providers/` (Anthropic,
   OpenAI, Google, Bedrock, OpenRouter, xAI, …). The loop sees exactly one
   function signature; API keys resolve per request (supports expiring
   credentials); thinking levels/budgets are forwarded opaquely.[^29]
@@ -178,7 +186,7 @@ everything plugs in somewhere.
   themes, and prompt templates.[^31] They run in-process and can veto tool
   calls through `beforeToolCall`.[^24]
 - **Custom tools.** Extensions and the SDK register tools through the same
-  registry as the four built-ins; a tool can call other tools via
+  registry as the built-ins; a tool can call other tools via
   `ctx.executeTool()`, re-entering the pipeline with the session's
   hooks.[^28]
 - **Skills.** Markdown files with frontmatter (`name`, `description`),
@@ -186,11 +194,13 @@ everything plugs in somewhere.
   paths — deduplicated by canonical path — and rendered into the system
   prompt's `skills` section.[^34] Invoked as `/skill:name`, expanded before
   the prompt reaches the loop.[^12]
-- **MCP servers.** Each server tool is wrapped as a pi `ToolDefinition`
-  (namespaced `server/tool`, parameters converted from its input schema)
-  and enters the same registry and pipeline as built-ins.[^40] The MCP
-  client itself speaks stdio, streamable HTTP, or in-memory
-  transports.[^41]
+- **MCP servers.** A bundled extension wraps each server tool as a pi
+  `ToolDefinition` (named `mcp__<server>__<tool>`, labelled `server/tool`,
+  parameters converted from its input schema), so its calls run through
+  the same pipeline and hooks as built-ins.[^40] By default, though, MCP
+  tools get `codemode` exposure: callable from codemode scripts but not
+  declared to the model.[^50] The MCP client itself speaks stdio,
+  streamable HTTP, or in-memory transports.[^41]
 - **Plugins** (experimental). Facet-bundled packages — `session` and `tui`
   facets — built with the chord bundler and attached per durable server via
   plugin package profiles.[^35]
@@ -212,8 +222,8 @@ Diagrams use the same numbering as the prose steps.
 ### 1. Lifecycle hooks
 
 Every prompt passes through the same hook pipeline, in a fixed order:
-`input` handlers can rewrite or swallow the text before anything else
-happens; `before_agent_start` can edit the system-prompt options and tool
+`input` handlers can rewrite or swallow the text before skill and template
+expansion (only extension slash commands run earlier); `before_agent_start` can edit the system-prompt options and tool
 selection; then the loop runs, consulting `tool_call`/`tool_result` hooks
 around every tool execution; finally `agent_before_settle` gets a last word
 — its handlers can force another turn — before `agent_end`.
@@ -222,9 +232,12 @@ around every tool execution; finally `agent_before_settle` gets a last word
 
 Handlers run in-process and receive `(event, ctx)`. Several events support
 cancellation (`return { cancel: true }`) — the session-switch confirmation
-in the bundled examples is the canonical pattern.[^44]
+in `examples/extensions/confirm-destructive.ts` is the canonical
+pattern.[^44]
 
-**Start here:** copy `examples/extensions/confirm-destructive.ts`. An
+**Start here:** copy `examples/extensions/permission-gate.ts` — it blocks
+dangerous `bash` commands from a `tool_call` handler and asks the user via
+`ctx.ui.select` when a UI is present.[^51] An
 extension is a default-exported function taking `pi: ExtensionAPI`, dropped
 in `~/.pi/agent/extensions/` or your project's `.pi/extensions/`.[^42]
 Subscribe with `pi.on("tool_call", handler)`; return `{ block: true }` from
@@ -250,7 +263,8 @@ result.
 `core/extensions/types.ts`.[^43] Model the `parameters` schema on
 `bash.ts`'s TypeBox definition and the `execute(id, args, signal,
 onUpdate)` signature on any built-in; set `exposure: "model-only"` if the
-tool should never be directly invokable.
+model should see the tool but other tools must never call it through
+`ctx.executeTool()`.[^45]
 
 ### 3. Slash commands
 
@@ -272,8 +286,10 @@ the full shape including argument completions.[^42][^43]
 Skills have two injection paths, and the diagram shows both. Invoked as
 `/skill:name`, the skill's markdown body (frontmatter stripped) is inlined
 as a `<skill>` block ahead of the user's text. Independently, every prompt
-carries all loaded skills in the system prompt's `skills` section, so the
-model knows they exist before anyone invokes one.[^34]
+lists the loaded skills in the system prompt's `skills` section, so the
+model knows they exist before anyone invokes one — except skills marked
+`disable-model-invocation`, and only when `read` or `bash` is active
+(the model needs one of them to open a skill file).[^34]
 
 ![Skill injection paths](figures/seq-skills.svg)
 
@@ -284,16 +300,23 @@ task-shaped — skills are procedures, not documentation.
 ### 5. MCP servers
 
 MCP is an adapter, not a parallel tool system. Each configured server
-(`command` for stdio, `url` for streamable HTTP)[^47] is spawned at session
-start; its tools are listed once and each is wrapped by
-`createMcpToolDefinition` into a native pi `ToolDefinition` — namespaced as
-`server/tool`, parameters converted from the MCP input schema. From there,
-an MCP tool is indistinguishable from a built-in: declared, dispatched,
-hooked, rendered.
+(`command` for stdio, `url` for streamable HTTP)[^47] connects in the
+background when the session starts; each of its tools is wrapped by
+`createMcpToolDefinition` into a native pi `ToolDefinition` — named
+`mcp__<server>__<tool>`, labelled `server/tool` in the UI, parameters
+converted from the MCP input schema.[^40] Every call is dispatched, hooked,
+and rendered exactly like a built-in's.
+
+What differs is visibility. The default exposure is `codemode`: MCP tools
+stay out of the model's tool declarations and are reached from codemode
+scripts instead. `deferred` surfaces them on demand through `tool_search`,
+and only `direct` declares them to the model up front.[^50] That is the
+same mechanism/policy split again — the adapter is uniform, and how much
+of a server's surface the model sees is configuration.
 
 ![MCP server lifecycle](figures/seq-mcp.svg)
 
-**Start here:** the server config in settings, then
+**Start here:** the server entry in `mcp.json` (including its `exposure`), then
 `extensions/mcp/tools.ts` if you need custom result conversion.[^40] The
 MCP client itself speaks stdio, streamable HTTP, or in-memory
 transports.[^41]
@@ -350,6 +373,13 @@ third is architectural: approval is an extension's job, implemented through
 (`--approve` trusts project-local files) plus extension hooks — not
 per-command gating.[^33]
 
+The repo does ship all three as *example* extensions — `subagent/`,
+`plan-mode/`, and `permission-gate.ts` — which is the thesis made
+concrete: the features exist, as policy, outside the core.[^52] One caveat
+to "minimal": the coding app loads MCP, `codemode`, and `tool_search` as
+built-in extensions (the latter two inactive until enabled), so the *core*
+is minimal while the default install is somewhat broader.[^50]
+
 Read the omissions as the other half of the thesis: every "missing" feature
 is a decision to keep the core's surface area small and let the extension
 layer — or the model itself — carry the weight. Steal the pattern when your
@@ -361,8 +391,8 @@ out of the box.
 | # | Dimension | pi (v1.0.2) |
 |---|---|---|
 | 1 | Agent loop | Event-sourced; inner (tool/steer) + outer (follow-up) loops; no iteration cap [^5][^6][^10] |
-| 2 | Tool system | 4 built-ins + registry; TypeBox validation; sequential/parallel; nested calls [^22][^27][^28] |
-| 3 | Model providers | ~35 behind one `StreamFn`; per-request key resolution [^18][^29] |
+| 2 | Tool system | 8 built-ins (4 active by default) + registry; TypeBox validation; sequential/parallel; nested calls [^22][^27][^28] |
+| 3 | Model providers | ~42 behind one `StreamFn`; per-request key resolution [^18][^29] |
 | 4 | Prompt construction | Structured sections, diffed per turn, XML-tagged [^15][^16] |
 | 5 | Memory/session | JSONL sessions; compaction with branch summarization [^30] |
 | 6 | Reasoning/planning | Thinking levels forwarded; no planner/sub-agents (omitted) [^29][^32] |
@@ -374,7 +404,8 @@ out of the box.
 ## Endnotes
 
 All notes are VERIFIED against `v1.0.2`
-(`cd32f7725fdbddbaecdff5b1e68491563394e0ca`) unless marked DOCS.
+(`cd32f7725fdbddbaecdff5b1e68491563394e0ca`) unless marked DOCS; line
+anchors re-checked on 2026-10-07.
 `GH` = `https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/`.
 
 [^1]: The `Agent` class is constructed once per session in
@@ -385,17 +416,17 @@ All notes are VERIFIED against `v1.0.2`
     `prepareToolCall` ([GH…/agent-loop.ts#L707-L725](https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/agent/src/agent-loop.ts#L707-L725)),
     `beforeToolCall` gating ([GH…/agent-loop.ts#L727-L746](https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/agent/src/agent-loop.ts#L727-L746)),
     execution ([GH…/agent-loop.ts#L820-L848](https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/agent/src/agent-loop.ts#L820-L848)),
-    `afterToolCall` and result finalization ([GH…/agent-loop.ts#L850-L900](https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/agent/src/agent-loop.ts#L850-L900)).
+    `afterToolCall` and result finalization ([GH…/agent-loop.ts#L853-L903](https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/agent/src/agent-loop.ts#L853-L903)).
 [^3]: Prompt sections in
     [GH…/system-prompt.ts#L121](https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/src/core/system-prompt.ts#L121);
     built-in tool names in
-    [GH…/core/tools/index.ts#L95-L97](https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/src/core/tools/index.ts#L95-L97);
+    [GH…/core/tools/index.ts#L95-L105](https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/src/core/tools/index.ts#L95-L105);
     TUI event subscription in
     [GH…/interactive-mode.ts#L3354](https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/src/modes/interactive/interactive-mode.ts#L3354).
 [^4]: `packages/agent/src/index.ts` exports `agent.ts`, `agent-loop.ts`,
     `proxy.ts`, `stream-fn.ts`, `types.ts`
     ([GH…/agent/src](https://github.com/earendil-works/pi/tree/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/agent/src));
-    `packages/ai/src/providers/` holds ~35 provider files
+    `packages/ai/src/providers/` holds ~42 providers (92 files, counting the `*.models.ts` catalogs)
     ([GH…/ai/src/providers](https://github.com/earendil-works/pi/tree/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/ai/src/providers));
     `packages/coding-agent/src/core/` holds `agent-session.ts`, `sdk.ts`,
     `system-prompt.ts`, `tools/`, `modes/`
@@ -417,7 +448,7 @@ All notes are VERIFIED against `v1.0.2`
     outer loop drains follow-ups at
     [L302-L310](https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/agent/src/agent-loop.ts#L302-L310).
 [^7]: `AgentEvent` union in
-    [GH…/agent/src/types.ts#L516-L540](https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/agent/src/types.ts#L516-L540).
+    [GH…/agent/src/types.ts#L514-L529](https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/agent/src/types.ts#L514-L529).
 [^8]: `Agent.processEvents` reduces each event into state, then awaits
     listeners, in
     [GH…/agent/src/agent.ts#L565-L613](https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/agent/src/agent.ts#L565-L613).
@@ -443,23 +474,27 @@ All notes are VERIFIED against `v1.0.2`
     (`runWithLifecycle`; public `abort()` at L341).
 [^12]: `AgentSession.prompt` at
     [GH…/agent-session.ts#L1921-L2015](https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/src/core/agent-session.ts#L1921-L2015):
-    extension commands, input handlers (L1950), skill/template expansion,
-    model and auth validation.
+    extension commands (L1930), input handlers (L1946), skill/template
+    expansion (L1961), streaming branch (L1966), then model and auth
+    validation (L1986-L2003).
 [^13]: Streaming branch queues via `steer()`/`followUp()` at
     [GH…/agent-session.ts#L1967-L1975](https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/src/core/agent-session.ts#L1967-L1975);
-    queue primitives in
+    without a `streamingBehavior` the call throws (L1967-L1971); queue
+    primitives in
     [GH…/agent.ts#L299-L308](https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/agent/src/agent.ts#L299-L308).
 [^14]: `emitBeforeAgentStart` at
     [GH…/agent-session.ts#L2015-L2030](https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/src/core/agent-session.ts#L2015-L2030).
 [^15]: `_preparePromptAndToolLoadout` at
     [GH…/agent-session.ts#L1689-L1701](https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/src/core/agent-session.ts#L1689-L1701);
     section diffing in `diffSystemPromptSections` at
-    [GH…/system-prompt.ts#L204-L218](https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/src/core/system-prompt.ts#L204-L218)
+    [GH…/system-prompt.ts#L204-L216](https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/src/core/system-prompt.ts#L204-L216)
     (`null` removes a section).
 [^16]: Section list and XML wrapping in `buildSystemPromptSections` at
     [GH…/system-prompt.ts#L121-L160](https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/src/core/system-prompt.ts#L121-L160);
-    default tool selection `[read, bash, edit, write]` in
-    `normalizeBuildSystemPromptOptions`.
+    `preamble`/`tools`/`rules`/`docs` are built only without a custom
+    prompt (L143-L161), `addendum`/`project_context`/`skills`/`cwd` after
+    (L163-L170); default tool selection `[read, bash, edit, write]` in
+    `normalizeBuildSystemPromptOptions` (L58).
 [^17]: `declareToolChanges` at
     [GH…/agent-loop.ts#L333-L360](https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/agent/src/agent-loop.ts#L333-L360),
     applied to initial messages
@@ -474,7 +509,7 @@ All notes are VERIFIED against `v1.0.2`
     [GH…/sdk.ts#L387-L406](https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/src/core/sdk.ts#L387-L406).
 [^19]: `transformProviderPayload` / `handleProviderResponse` at
     [GH…/sdk.ts#L358-L380](https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/src/core/sdk.ts#L358-L380);
-    prompt-cache warming at
+    prompt-cache warming inside the app's `streamFn` at
     [L404](https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/src/core/sdk.ts#L404).
 [^20]: Tool-call extraction from assistant content blocks at
     [GH…/agent-loop.ts#L259](https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/agent/src/agent-loop.ts#L259)
@@ -488,12 +523,12 @@ All notes are VERIFIED against `v1.0.2`
 [^22]: `toolExecution` mode (default `"parallel"`) in
     [GH…/agent.ts#L240-L260](https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/agent/src/agent.ts#L240-L260)
     (constructor); per-call pipeline in `runToolCall` at
-    [GH…/agent-loop.ts#L810-L870](https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/agent/src/agent-loop.ts#L810-L870).
+    [GH…/agent-loop.ts#L810-L818](https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/agent/src/agent-loop.ts#L810-L818).
 [^23]: `beforeToolCall` blocking and `terminate` marking at
     [GH…/agent-loop.ts#L727-L746](https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/agent/src/agent-loop.ts#L727-L746).
 [^24]: The app's `_beforeToolCall` only forwards to extension `tool_call`
     handlers, at
-    [GH…/agent-session.ts#L625-L648](https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/src/core/agent-session.ts#L625-L648);
+    [GH…/agent-session.ts#L630-L653](https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/src/core/agent-session.ts#L630-L653);
     negative finding: no approval/confirmation prompt exists in
     `packages/coding-agent/src` or `packages/tui/src` (grep for
     `toolApproval|confirmTool|permissionManager` returns nothing).
@@ -507,8 +542,10 @@ All notes are VERIFIED against `v1.0.2`
     (auto-retry, compaction check at L1837); `agent_before_settle`
     boundary at
     [L1846-L1875](https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/src/core/agent-session.ts#L1846-L1875).
-[^27]: Built-in tool names in
-    [GH…/core/tools/index.ts#L95-L97](https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/src/core/tools/index.ts#L95-L97);
+[^27]: The eight built-in tool names in
+    [GH…/core/tools/index.ts#L95-L105](https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/src/core/tools/index.ts#L95-L105);
+    the four enabled by default in `DEFAULT_TOOL_NAMES` at
+    [GH…/settings-manager.ts#L214-L215](https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/src/core/settings-manager.ts#L214-L215);
     per-tool prompt contributions, e.g.
     [GH…/core/tools/bash.ts](https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/src/core/tools/bash.ts)
     (`bashToolSystemPromptContribution`), consumed as `toolSnippets` /
@@ -517,7 +554,7 @@ All notes are VERIFIED against `v1.0.2`
 [^28]: `_executeNestedToolCall` at
     [GH…/agent-session.ts#L699-L730](https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/src/core/agent-session.ts#L699-L730)
     re-enters `runToolCall` with the session's hooks.
-[^29]: Provider files in
+[^29]: About 42 providers (one `*.models.ts` catalog each) in
     [GH…/ai/src/providers/](https://github.com/earendil-works/pi/tree/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/ai/src/providers);
     per-request API-key resolution at
     [GH…/agent-loop.ts#L401](https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/agent/src/agent-loop.ts#L401);
@@ -536,7 +573,8 @@ All notes are VERIFIED against `v1.0.2`
     (e.g. `tool_call` at L1153, L1620), dispatched by the extension runner
     ([GH…/runner.ts#L1246](https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/src/core/extensions/runner.ts#L1246)).
 [^32]: DOCS grade — stated in project documentation/philosophy, not derived
-    from code: pi deliberately omits sub-agents and plan mode. Consistent
+    from code: pi deliberately omits sub-agents and plan mode
+    ([GH…/README.md#L17-L19](https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/README.md#L17-L19)). Consistent
     with the code: `packages/agent/src` contains only the loop, the `Agent`
     wrapper, and types — no sub-agent orchestration
     ([GH…/agent/src](https://github.com/earendil-works/pi/tree/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/agent/src)),
@@ -551,11 +589,13 @@ All notes are VERIFIED against `v1.0.2`
 [^34]: `SkillFrontmatter` / `Skill` in
     [GH…/core/skills.ts#L67-L83](https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/src/core/skills.ts#L67-L83);
     `loadSkills` resolves the project dir, global agent dir, explicit
-    paths, and defaults, deduplicating by canonical path, at
-    [GH…/core/skills.ts#L394-L440](https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/src/core/skills.ts#L394-L440);
-    skills render into the prompt at
-    [GH…/core/skills.ts#L355](https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/src/core/skills.ts#L355)
-    (`formatSkillsForPrompt`).
+    paths, and defaults, deduplicating by canonical path (L425), at
+    [GH…/core/skills.ts#L409-L509](https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/src/core/skills.ts#L409-L509);
+    skills render into the prompt via `formatSkillsForPrompt`, which drops
+    `disable-model-invocation` skills, at
+    [GH…/core/skills.ts#L352-L356](https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/src/core/skills.ts#L352-L356);
+    the `skills` section is emitted only when `read` or `bash` is selected, at
+    [GH…/system-prompt.ts#L165-L169](https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/src/core/system-prompt.ts#L165-L169).
 [^35]: Experimental plugin packaging: profile version and the default
     `session`/`tui` facets at
     [GH…/experimental/plugins/package.ts#L12-L13](https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/src/experimental/plugins/package.ts#L12-L13),
@@ -563,8 +603,8 @@ All notes are VERIFIED against `v1.0.2`
     the API is not covered by the stability claims made for extensions.
 [^36]: `Transport` in
     [GH…/ai/src/types.ts#L120](https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/ai/src/types.ts#L120);
-    selected via settings and forwarded to the stream function
-    ([GH…/sdk.ts#L387-L406](https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/src/core/sdk.ts#L387-L406)).
+    selected via settings and passed to the `Agent` constructor
+    ([GH…/sdk.ts#L419](https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/src/core/sdk.ts#L419)).
 [^37]: `@earendil-works/pi-protocol` — "Transport-neutral CBOR protocol for
     remote pi sessions"
     ([GH…/protocol/package.json](https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/protocol/package.json));
@@ -583,8 +623,10 @@ All notes are VERIFIED against `v1.0.2`
 [^40]: `createMcpToolDefinition` in
     [GH…/extensions/mcp/tools.ts#L260-L300](https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/src/extensions/mcp/tools.ts#L260-L300)
     wraps an MCP tool as a pi `ToolDefinition` (label
-    `server/tool`, parameters from `inputSchema`, `execute` → MCP
-    `callTool`).
+    `server/tool` at L274, parameters from `inputSchema`, `execute` → MCP
+    `callTool`); the registered name `mcp__<server>__<tool>` comes from
+    `createMcpToolName` at
+    [GH…/extensions/mcp/tools.ts#L88-L97](https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/src/extensions/mcp/tools.ts#L88-L97).
 [^41]: `@earendil-works/pi-mcp` — "Standalone Model Context Protocol client
     for pi and other applications"
     ([GH…/mcp/package.json](https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/mcp/package.json));
@@ -592,10 +634,6 @@ All notes are VERIFIED against `v1.0.2`
     [GH…/mcp/src/transports/](https://github.com/earendil-works/pi/tree/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/mcp/src/transports)
     (`stdio.ts`, `streamable-http.ts`, `in-memory.ts`).
 
----
-
-*Next in the series: Hermes — where the same ten dimensions meet scheduled
-jobs, persistent memory, and sub-agents.*
 [^42]: Extension shape: a default-exported function taking `pi: ExtensionAPI`,
     installed in `~/.pi/agent/extensions/` or `<project>/.pi/extensions/`,
     per the header of
@@ -625,3 +663,23 @@ jobs, persistent memory, and sub-agents.*
 [^49]: `ToolCallEventResult` in
     [GH…/core/extensions/types.ts#L1413](https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/src/core/extensions/types.ts#L1413)
     (`block`, `reason`, `terminate`).
+[^50]: Built-in MCP integration header at
+    [GH…/extensions/mcp/index.ts#L1-L21](https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/src/extensions/mcp/index.ts#L1-L21):
+    tools registered as `mcp__<server>__<tool>`, default `"exposure": "codemode"`
+    (callable from codemode scripts, not declared to the model), `deferred`
+    via `tool_search`, `direct` declared up front, configured in `mcp.json`.
+    `codemode` and `tool_search` are built-in extensions registered inactive
+    ([GH…/extensions/codemode/index.ts#L1-L7](https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/src/extensions/codemode/index.ts#L1-L7),
+    [GH…/extensions/tool-search/index.ts#L1-L7](https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/src/extensions/tool-search/index.ts#L1-L7)).
+[^51]: `tool_call` handler returning `{ block: true, reason }` for dangerous
+    `bash` commands, with `ctx.ui.select` confirmation when a UI is present, in
+    [GH…/examples/extensions/permission-gate.ts#L10-L34](https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/examples/extensions/permission-gate.ts#L10-L34).
+[^52]: Example extensions
+    [GH…/examples/extensions/subagent/](https://github.com/earendil-works/pi/tree/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/examples/extensions/subagent),
+    [GH…/examples/extensions/plan-mode/](https://github.com/earendil-works/pi/tree/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/examples/extensions/plan-mode), and
+    [GH…/examples/extensions/permission-gate.ts](https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/examples/extensions/permission-gate.ts).
+
+---
+
+*Next in the series: Hermes — where the same ten dimensions meet scheduled
+jobs, persistent memory, and sub-agents.*

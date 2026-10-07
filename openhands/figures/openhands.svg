@@ -1,0 +1,181 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-20 -70 1632 1786" width="1600" height="1750" font-family="system-ui, -apple-system, sans-serif">
+<defs>
+<marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 1 L 9 5 L 0 9 z" fill="#8a7a66"/></marker>
+<marker id="arrowHl" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 1 L 9 5 L 0 9 z" fill="#d08c4e"/></marker>
+</defs>
+<text x="-20" y="-36" font-size="26" font-weight="700" fill="#ece1d3">OpenHands — one turn through the harness</text>
+<text x="-20" y="-10" font-size="15" fill="#a89880">OpenHands/software-agent-sdk @ 54daf05</text>
+<g>
+<path d="M 672.5 116.0 C 672.5 133.0, 672.5 133.0, 672.5 150.0" fill="none" stroke="#8a7a66" stroke-width="1.5" marker-end="url(#arrow)"/>
+<text x="678.5" y="137.6" font-size="11" fill="#a89880">view + skills</text>
+<path d="M 672.5 246.0 C 672.5 263.0, 672.5 263.0, 672.5 280.0" fill="none" stroke="#8a7a66" stroke-width="1.5" marker-end="url(#arrow)"/>
+<text x="678.5" y="267.6" font-size="11" fill="#a89880">messages, tools</text>
+<path d="M 672.5 376.0 C 672.5 393.0, 672.0 393.0, 672.0 410.0" fill="none" stroke="#8a7a66" stroke-width="1.5" marker-end="url(#arrow)"/>
+<text x="678.1" y="397.6" font-size="11" fill="#a89880">Message</text>
+<path d="M 639.3 506.0 C 639.3 523.0, 672.5 523.0, 672.5 540.0" fill="none" stroke="#8a7a66" stroke-width="1.5" marker-end="url(#arrow)"/>
+<text x="675.1" y="527.6" font-size="11" fill="#a89880">TOOL_CALLS</text>
+<path d="M 704.7 506.0 C 704.7 653.0, 630.3 653.0, 630.3 800.0" fill="none" stroke="#8a7a66" stroke-width="1.5" marker-end="url(#arrow)"/>
+<text x="694.6" y="602.5" font-size="11" fill="#a89880">CONTENT -&gt; FINISHED</text>
+<path d="M 672.5 636.0 C 672.5 653.0, 672.0 653.0, 672.0 670.0" fill="none" stroke="#8a7a66" stroke-width="1.5" marker-end="url(#arrow)"/>
+<text x="678.1" y="657.6" font-size="11" fill="#a89880">batch</text>
+<path d="M 639.3 766.0 C 639.3 783.0, 713.7 783.0, 713.7 800.0" fill="none" stroke="#8a7a66" stroke-width="1.5" marker-end="url(#arrow)"/>
+<text x="711.9" y="787.6" font-size="11" fill="#a89880">FinishTool</text>
+<path d="M 672.0 896.0 C 672.0 913.0, 638.3 913.0, 638.3 930.0" fill="none" stroke="#8a7a66" stroke-width="1.5" marker-end="url(#arrow)"/>
+<text x="647.8" y="917.6" font-size="11" fill="#a89880">events</text>
+<path d="M 1021.0 58.0 C 881.0 58.0, 937.0 188.0, 797.0 188.0" fill="none" stroke="#8a7a66" stroke-width="1.5" marker-end="url(#arrow)"/>
+<text x="886.7" y="155.9" font-size="11" fill="#a89880">prepare view</text>
+<path d="M 1021.0 78.0 C 881.0 78.0, 938.0 318.0, 798.0 318.0" fill="none" stroke="#8a7a66" stroke-width="1.5" marker-end="url(#arrow)"/>
+<text x="887.4" y="262.2" font-size="11" fill="#a89880">generate()</text>
+<path d="M 207.5 116.0 C 207.5 133.0, 207.0 133.0, 207.0 150.0" fill="none" stroke="#8a7a66" stroke-width="1.5" marker-end="url(#arrow)"/>
+<text x="213.1" y="137.6" font-size="11" fill="#a89880">projects</text>
+<path d="M 340.0 198.0 C 480.0 198.0, 408.0 188.0, 548.0 188.0" fill="none" stroke="#8a7a66" stroke-width="1.5" marker-end="url(#arrow)"/>
+<text x="426.2" y="191.8" font-size="11" fill="#a89880">cached</text>
+<path d="M 348.0 318.0 C 456.5 318.0, 376.5 53.0, 485.0 53.0" fill="none" stroke="#8a7a66" stroke-width="1.5" marker-end="url(#arrow)"/>
+<text x="410.9" y="256.8" font-size="11" fill="#a89880">wraps on_event</text>
+<path d="M 352.0 458.0 C 458.5 458.0, 378.5 68.0, 485.0 68.0" fill="none" stroke="#8a7a66" stroke-width="1.5" marker-end="url(#arrow)"/>
+<text x="413.6" y="369.8" font-size="11" fill="#a89880">deny blocks</text>
+<path d="M 395.0 848.0 C 491.0 848.0, 411.0 848.0, 507.0 848.0" fill="none" stroke="#8a7a66" stroke-width="1.5" marker-end="url(#arrow)"/>
+<text x="449.4" y="844.0" font-size="11" fill="#a89880">deny -&gt; RUNNING</text>
+<path d="M 348.0 338.0 C 460.5 338.0, 380.5 588.0, 493.0 588.0" fill="none" stroke="#8a7a66" stroke-width="1.5" marker-end="url(#arrow)"/>
+<text x="426.5" y="459.0" font-size="11" fill="#a89880">PreToolUse veto</text>
+<path d="M 329.0 588.0 C 447.0 588.0, 367.0 83.0, 485.0 83.0" fill="none" stroke="#8a7a66" stroke-width="1.5" marker-end="url(#arrow)"/>
+<text x="413.0" y="331.5" font-size="11" fill="#a89880">suffix inject</text>
+<path d="M 343.0 708.0 C 483.0 708.0, 408.0 208.0, 548.0 208.0" fill="none" stroke="#8a7a66" stroke-width="1.5" marker-end="url(#arrow)"/>
+<text x="428.6" y="596.0" font-size="11" fill="#a89880">&lt;available_skills&gt;</text>
+<path d="M 1021.0 1238.0 C 881.0 1238.0, 483.0 728.0, 343.0 728.0" fill="none" stroke="#8a7a66" stroke-width="1.5" marker-end="url(#arrow)"/>
+<text x="845.3" y="1123.8" font-size="11" fill="#a89880">bundles</text>
+<path d="M 1259.0 1368.0 C 1340.7 1368.0, 1322.7 1238.0, 1241.0 1238.0" fill="none" stroke="#8a7a66" stroke-width="1.5" marker-end="url(#arrow)"/>
+<text x="1312.6" y="1335.9" font-size="11" fill="#a89880">distributes</text>
+<path d="M 989.0 328.0 C 880.5 328.0, 960.5 570.0, 852.0 570.0" fill="none" stroke="#8a7a66" stroke-width="1.5" marker-end="url(#arrow)"/>
+<text x="903.5" y="540.8" font-size="11" fill="#a89880">resolve</text>
+<path d="M 1241.0 1108.0 C 1381.2 1108.0, 1413.2 328.0, 1273.0 328.0" fill="none" stroke="#8a7a66" stroke-width="1.5" marker-end="url(#arrow)"/>
+<text x="1342.2" y="935.5" font-size="11" fill="#a89880">server tools</text>
+<path d="M 950.0 458.0 C 861.0 458.0, 941.0 582.0, 852.0 582.0" fill="none" stroke="#8a7a66" stroke-width="1.5" marker-end="url(#arrow)"/>
+<text x="912.4" y="480.8" font-size="11" fill="#a89880">confirmation gate</text>
+<path d="M 986.0 578.0 C 879.0 578.0, 959.0 594.0, 852.0 594.0" fill="none" stroke="#8a7a66" stroke-width="1.5" marker-end="url(#arrow)"/>
+<text x="902.8" y="588.3" font-size="11" fill="#a89880">score per call</text>
+<path d="M 986.0 598.0 C 871.5 598.0, 951.5 848.0, 837.0 848.0" fill="none" stroke="#8a7a66" stroke-width="1.5" marker-end="url(#arrow)"/>
+<text x="913.2" y="748.7" font-size="11" fill="#a89880">refinement check</text>
+<path d="M 1006.0 978.0 C 889.0 978.0, 969.0 606.0, 852.0 606.0" fill="none" stroke="#8a7a66" stroke-width="1.5" marker-end="url(#arrow)"/>
+<text x="920.7" y="682.4" font-size="11" fill="#a89880">delegate</text>
+<path d="M 1019.0 718.0 C 879.0 718.0, 938.0 338.0, 798.0 338.0" fill="none" stroke="#8a7a66" stroke-width="1.5" marker-end="url(#arrow)"/>
+<text x="867.3" y="373.5" font-size="11" fill="#a89880">per-completion</text>
+<path d="M 1272.0 848.0 C 1413.5 848.0, 1382.5 53.0, 1241.0 53.0" fill="none" stroke="#8a7a66" stroke-width="1.5" marker-end="url(#arrow)"/>
+<text x="1360.5" y="672.3" font-size="11" fill="#a89880">mid-run swap</text>
+<path d="M 332.0 1108.0 C 472.0 1108.0, 407.0 328.0, 547.0 328.0" fill="none" stroke="#8a7a66" stroke-width="1.5" marker-end="url(#arrow)"/>
+<text x="419.7" y="935.5" font-size="11" fill="#a89880">token callback</text>
+<path d="M 996.0 198.0 C 856.5 198.0, 936.5 208.0, 797.0 208.0" fill="none" stroke="#8a7a66" stroke-width="1.5" marker-end="url(#arrow)"/>
+<text x="881.1" y="201.8" font-size="11" fill="#a89880">condense(view)</text>
+<path d="M 1282.0 1498.0 C 1480.7 1498.0, 1439.7 68.0, 1241.0 68.0" fill="none" stroke="#8a7a66" stroke-width="1.5" marker-end="url(#arrow)"/>
+<text x="1404.3" y="1185.1" font-size="11" fill="#a89880">nudge / STUCK</text>
+<path d="M 1285.0 1628.0 C 1494.0 1628.0, 1450.0 83.0, 1241.0 83.0" fill="none" stroke="#8a7a66" stroke-width="1.5" marker-end="url(#arrow)"/>
+<text x="1413.2" y="1290.3" font-size="11" fill="#a89880">goal loop</text>
+<path d="M 704.7 766.0 C 704.7 848.0, 705.7 848.0, 705.7 930.0" fill="none" stroke="#8a7a66" stroke-width="1.5" marker-end="url(#arrow)"/>
+<text x="710.9" y="818.1" font-size="11" fill="#a89880">observations</text>
+<path d="M 358.0 978.0 C 484.5 978.0, 404.5 978.0, 531.0 978.0" fill="none" stroke="#8a7a66" stroke-width="1.5" marker-end="url(#arrow)"/>
+<text x="433.2" y="974.0" font-size="11" fill="#a89880">pub/sub</text>
+</g><g>
+<rect x="485" y="20" width="375" height="96" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/><rect x="485" y="20" width="5" height="96" rx="2" fill="#d08c4e"/>
+<circle cx="507" cy="42" r="13" fill="#d08c4e"/><text x="507" y="47" text-anchor="middle" font-size="12" font-weight="700" fill="#161210">1</text>
+<text x="529" y="48" font-size="13" font-weight="600" fill="#ece1d3">send_message input</text><text x="529" y="66" font-size="10.5" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" fill="#a89880">conversation/impl/local_conversation.py:1807</text>
+<text x="499" y="104" font-size="11" fill="#a89880">2 source links — click</text>
+<rect x="548" y="150" width="249" height="96" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/><rect x="548" y="150" width="5" height="96" rx="2" fill="#d08c4e"/>
+<circle cx="570" cy="172" r="13" fill="#d08c4e"/><text x="570" y="177" text-anchor="middle" font-size="12" font-weight="700" fill="#161210">2</text>
+<text x="592" y="178" font-size="13" font-weight="600" fill="#ece1d3">prepare_llm_messages</text><text x="592" y="196" font-size="10.5" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" fill="#a89880">agent/utils.py:564</text>
+<text x="562" y="234" font-size="11" fill="#a89880">2 source links — click</text>
+<rect x="547" y="280" width="251" height="96" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/><rect x="547" y="280" width="5" height="96" rx="2" fill="#d08c4e"/>
+<circle cx="569" cy="302" r="13" fill="#d08c4e"/><text x="569" y="307" text-anchor="middle" font-size="12" font-weight="700" fill="#161210">3</text>
+<text x="591" y="308" font-size="13" font-weight="600" fill="#ece1d3">llm.generate (LiteLLM)</text><text x="591" y="326" font-size="10.5" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" fill="#a89880">llm/llm.py:76</text>
+<text x="561" y="364" font-size="11" fill="#a89880">2 source links — click</text>
+<rect x="534" y="410" width="276" height="96" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/><rect x="534" y="410" width="5" height="96" rx="2" fill="#d08c4e"/>
+<circle cx="556" cy="432" r="13" fill="#d08c4e"/><text x="556" y="437" text-anchor="middle" font-size="12" font-weight="700" fill="#161210">4</text>
+<text x="578" y="438" font-size="13" font-weight="600" fill="#ece1d3">classify_response</text><text x="578" y="456" font-size="10.5" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" fill="#a89880">agent/response_dispatch.py:54</text>
+<text x="548" y="494" font-size="11" fill="#a89880">1 source link — click</text>
+<rect x="493" y="540" width="359" height="96" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/><rect x="493" y="540" width="5" height="96" rx="2" fill="#d08c4e"/>
+<circle cx="515" cy="562" r="13" fill="#d08c4e"/><text x="515" y="567" text-anchor="middle" font-size="12" font-weight="700" fill="#161210">5</text>
+<text x="537" y="568" font-size="13" font-weight="600" fill="#ece1d3">_handle_tool_calls / _get_action_event</text><text x="537" y="586" font-size="10.5" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" fill="#a89880">agent/agent.py:1311</text>
+<text x="507" y="624" font-size="11" fill="#a89880">2 source links — click</text>
+<rect x="534" y="670" width="276" height="96" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/><rect x="534" y="670" width="5" height="96" rx="2" fill="#d08c4e"/>
+<circle cx="556" cy="692" r="13" fill="#d08c4e"/><text x="556" y="697" text-anchor="middle" font-size="12" font-weight="700" fill="#161210">6</text>
+<text x="578" y="698" font-size="13" font-weight="600" fill="#ece1d3">ParallelToolExecutor</text><text x="578" y="716" font-size="10.5" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" fill="#a89880">agent/parallel_executor.py:52</text>
+<text x="548" y="754" font-size="11" fill="#a89880">2 source links — click</text>
+<rect x="507" y="800" width="330" height="96" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/><rect x="507" y="800" width="5" height="96" rx="2" fill="#d08c4e"/>
+<circle cx="529" cy="822" r="13" fill="#d08c4e"/><text x="529" y="827" text-anchor="middle" font-size="12" font-weight="700" fill="#161210">7</text>
+<text x="551" y="828" font-size="13" font-weight="600" fill="#ece1d3">_ActionBatch.finalize + FinishTool</text><text x="551" y="846" font-size="10.5" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" fill="#a89880">agent/agent.py:380</text>
+<text x="521" y="884" font-size="11" fill="#a89880">3 source links — click</text>
+<rect x="531" y="930" width="282" height="96" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/><rect x="531" y="930" width="5" height="96" rx="2" fill="#d08c4e"/>
+<circle cx="553" cy="952" r="13" fill="#d08c4e"/><text x="553" y="957" text-anchor="middle" font-size="12" font-weight="700" fill="#161210">8</text>
+<text x="575" y="958" font-size="13" font-weight="600" fill="#ece1d3">EventLog (JSONL)</text><text x="575" y="976" font-size="10.5" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" fill="#a89880">conversation/event_store.py:34</text>
+<text x="545" y="1014" font-size="11" fill="#a89880">1 source link — click</text>
+<rect x="57" y="20" width="301" height="96" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/><rect x="57" y="20" width="5" height="96" rx="2" fill="#d08c4e"/>
+<text x="101" y="48" font-size="13" font-weight="600" fill="#ece1d3">ConversationState event tree</text><text x="101" y="66" font-size="10.5" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" fill="#a89880">event/types.py:4</text>
+<text x="71" y="104" font-size="11" fill="#a89880">1 source link — click</text>
+<rect x="74" y="150" width="266" height="96" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/><rect x="74" y="150" width="5" height="96" rx="2" fill="#d08c4e"/>
+<text x="118" y="178" font-size="13" font-weight="600" fill="#ece1d3">state.view (cached view)</text><text x="118" y="196" font-size="10.5" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" fill="#a89880">context/view/view.py:22</text>
+<text x="88" y="234" font-size="11" fill="#a89880">2 source links — click</text>
+<rect x="66" y="280" width="282" height="96" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/><rect x="66" y="280" width="5" height="96" rx="2" fill="#d08c4e"/>
+<text x="110" y="308" font-size="13" font-weight="600" fill="#ece1d3">HookEventProcessor</text><text x="110" y="326" font-size="10.5" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" fill="#a89880">hooks/conversation_hooks.py:50</text>
+<text x="80" y="364" font-size="11" fill="#a89880">1 source link — click</text>
+<rect x="63" y="410" width="289" height="96" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/><rect x="63" y="410" width="5" height="96" rx="2" fill="#d08c4e"/>
+<text x="107" y="438" font-size="13" font-weight="600" fill="#ece1d3">UserPromptSubmit hooks</text><text x="107" y="456" font-size="10.5" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" fill="#a89880">hooks/conversation_hooks.py:244</text>
+<text x="77" y="494" font-size="11" fill="#a89880">2 source links — click</text>
+<rect x="86" y="540" width="243" height="96" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/><rect x="86" y="540" width="5" height="96" rx="2" fill="#d08c4e"/>
+<text x="130" y="568" font-size="13" font-weight="600" fill="#ece1d3">Skill trigger matching</text><text x="130" y="586" font-size="10.5" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" fill="#a89880">skills/trigger.py:19</text>
+<text x="100" y="624" font-size="11" fill="#a89880">2 source links — click</text>
+<rect x="71" y="670" width="272" height="96" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/><rect x="71" y="670" width="5" height="96" rx="2" fill="#d08c4e"/>
+<text x="115" y="698" font-size="13" font-weight="600" fill="#ece1d3">Skills (3 activation paths)</text><text x="115" y="716" font-size="10.5" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" fill="#a89880">skills/skill.py:178</text>
+<text x="85" y="754" font-size="11" fill="#a89880">1 source link — click</text>
+<rect x="20" y="800" width="375" height="96" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/><rect x="20" y="800" width="5" height="96" rx="2" fill="#d08c4e"/>
+<text x="64" y="828" font-size="13" font-weight="600" fill="#ece1d3">Stop hook veto</text><text x="64" y="846" font-size="10.5" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" fill="#a89880">conversation/impl/local_conversation.py:1952</text>
+<text x="34" y="884" font-size="11" fill="#a89880">1 source link — click</text>
+<rect x="56" y="930" width="302" height="96" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/><rect x="56" y="930" width="5" height="96" rx="2" fill="#d08c4e"/>
+<text x="100" y="958" font-size="13" font-weight="600" fill="#ece1d3">EventService pub/sub</text><text x="100" y="976" font-size="10.5" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" fill="#a89880">agent_server/event_service.py:202</text>
+<text x="70" y="1014" font-size="11" fill="#a89880">1 source link — click</text>
+<rect x="83" y="1060" width="249" height="96" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/><rect x="83" y="1060" width="5" height="96" rx="2" fill="#d08c4e"/>
+<text x="127" y="1088" font-size="13" font-weight="600" fill="#ece1d3">StreamContext</text><text x="127" y="1106" font-size="10.5" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" fill="#a89880">agent/stream_context.py:1</text>
+<text x="97" y="1144" font-size="11" fill="#a89880">1 source link — click</text>
+<rect x="1021" y="20" width="220" height="96" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/><rect x="1021" y="20" width="5" height="96" rx="2" fill="#d08c4e"/>
+<text x="1065" y="48" font-size="13" font-weight="600" fill="#ece1d3">Agent.step</text><text x="1065" y="66" font-size="10.5" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" fill="#a89880">agent/agent.py:693</text>
+<text x="1035" y="104" font-size="11" fill="#a89880">2 source links — click</text>
+<rect x="996" y="150" width="269" height="96" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/><rect x="996" y="150" width="5" height="96" rx="2" fill="#d08c4e"/>
+<text x="1040" y="178" font-size="13" font-weight="600" fill="#ece1d3">Condenser</text><text x="1040" y="196" font-size="10.5" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" fill="#a89880">context/condenser/base.py:16</text>
+<text x="1010" y="234" font-size="11" fill="#a89880">2 source links — click</text>
+<rect x="989" y="280" width="284" height="96" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/><rect x="989" y="280" width="5" height="96" rx="2" fill="#d08c4e"/>
+<text x="1033" y="308" font-size="13" font-weight="600" fill="#ece1d3">Tool registry (spec/resolve)</text><text x="1033" y="326" font-size="10.5" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" fill="#a89880">tool/registry.py:19</text>
+<text x="1003" y="364" font-size="11" fill="#a89880">3 source links — click</text>
+<rect x="950" y="410" width="362" height="96" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/><rect x="950" y="410" width="5" height="96" rx="2" fill="#d08c4e"/>
+<text x="994" y="438" font-size="13" font-weight="600" fill="#ece1d3">Security analyzer + confirmation gate</text><text x="994" y="456" font-size="10.5" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" fill="#a89880">agent/agent.py:1130</text>
+<text x="964" y="494" font-size="11" fill="#a89880">2 source links — click</text>
+<rect x="986" y="540" width="290" height="96" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/><rect x="986" y="540" width="5" height="96" rx="2" fill="#d08c4e"/>
+<text x="1030" y="568" font-size="13" font-weight="600" fill="#ece1d3">Critic + iterative refinement</text><text x="1030" y="586" font-size="10.5" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" fill="#a89880">critic/base.py:83</text>
+<text x="1000" y="624" font-size="11" fill="#a89880">2 source links — click</text>
+<rect x="1019" y="670" width="223" height="96" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/><rect x="1019" y="670" width="5" height="96" rx="2" fill="#d08c4e"/>
+<text x="1063" y="698" font-size="13" font-weight="600" fill="#ece1d3">RouterLLM</text><text x="1063" y="716" font-size="10.5" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" fill="#a89880">llm/router/base.py:28</text>
+<text x="1033" y="754" font-size="11" fill="#a89880">2 source links — click</text>
+<rect x="990" y="800" width="282" height="96" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/><rect x="990" y="800" width="5" height="96" rx="2" fill="#d08c4e"/>
+<text x="1034" y="828" font-size="13" font-weight="600" fill="#ece1d3">switch_llm builtin</text><text x="1034" y="846" font-size="10.5" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" fill="#a89880">tool/builtins/switch_llm.py:19</text>
+<text x="1004" y="884" font-size="11" fill="#a89880">1 source link — click</text>
+<rect x="1006" y="930" width="249" height="96" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/><rect x="1006" y="930" width="5" height="96" rx="2" fill="#d08c4e"/>
+<text x="1050" y="958" font-size="13" font-weight="600" fill="#ece1d3">Sub-agent delegation</text><text x="1050" y="976" font-size="10.5" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" fill="#a89880">tools/delegate/impl.py:33</text>
+<text x="1020" y="1014" font-size="11" fill="#a89880">3 source links — click</text>
+<rect x="1021" y="1060" width="220" height="96" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/><rect x="1021" y="1060" width="5" height="96" rx="2" fill="#d08c4e"/>
+<text x="1065" y="1088" font-size="13" font-weight="600" fill="#ece1d3">MCP servers</text><text x="1065" y="1106" font-size="10.5" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" fill="#a89880">mcp/config.py:497</text>
+<text x="1035" y="1144" font-size="11" fill="#a89880">2 source links — click</text>
+<rect x="1021" y="1190" width="220" height="96" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/><rect x="1021" y="1190" width="5" height="96" rx="2" fill="#d08c4e"/>
+<text x="1065" y="1218" font-size="13" font-weight="600" fill="#ece1d3">Plugins</text><text x="1065" y="1236" font-size="10.5" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" fill="#a89880">plugin/plugin.py:36</text>
+<text x="1035" y="1274" font-size="11" fill="#a89880">2 source links — click</text>
+<rect x="1003" y="1320" width="256" height="96" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/><rect x="1003" y="1320" width="5" height="96" rx="2" fill="#d08c4e"/>
+<text x="1047" y="1348" font-size="13" font-weight="600" fill="#ece1d3">Marketplace registry</text><text x="1047" y="1366" font-size="10.5" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" fill="#a89880">marketplace/registry.py:79</text>
+<text x="1017" y="1404" font-size="11" fill="#a89880">2 source links — click</text>
+<rect x="980" y="1450" width="302" height="96" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/><rect x="980" y="1450" width="5" height="96" rx="2" fill="#d08c4e"/>
+<text x="1024" y="1478" font-size="13" font-weight="600" fill="#ece1d3">Stuck detector</text><text x="1024" y="1496" font-size="10.5" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" fill="#a89880">conversation/stuck_detector.py:22</text>
+<text x="994" y="1534" font-size="11" fill="#a89880">1 source link — click</text>
+<rect x="976" y="1580" width="309" height="96" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/><rect x="976" y="1580" width="5" height="96" rx="2" fill="#d08c4e"/>
+<text x="1020" y="1608" font-size="13" font-weight="600" fill="#ece1d3">GoalController</text><text x="1020" y="1626" font-size="10.5" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" fill="#a89880">conversation/goal/controller.py:78</text>
+<text x="990" y="1664" font-size="11" fill="#a89880">1 source link — click</text>
+</g>
+<g font-size="12" fill="#a89880">
+<rect x="1282" y="1681" width="12" height="12" rx="2" fill="#d08c4e"/><text x="1299" y="1692">verified</text>
+<rect x="1387" y="1681" width="12" height="12" rx="2" fill="#7c8aa0"/><text x="1404" y="1692">docs</text>
+<rect x="1492" y="1681" width="12" height="12" rx="2" fill="#8a7a66"/><text x="1509" y="1692">inferred</text>
+</g></svg>

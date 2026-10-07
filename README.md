@@ -17,6 +17,7 @@ Companion repo to the Substack series.
 | 3 | Cline (v4.1.22) | [cline/article.md](cline/article.md) | forthcoming |
 | 4 | Goose (v1.53.0) | [goose/article.md](goose/article.md) | forthcoming |
 | 5 | Codex CLI (rust-v0.160.0) | [codex/article.md](codex/article.md) | forthcoming |
+| 6 | OpenHands (v1.53.0) | [openhands/article.md](openhands/article.md) | forthcoming |
 
 ## What's here
 

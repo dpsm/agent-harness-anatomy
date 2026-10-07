@@ -100,7 +100,15 @@
   .loopmap { margin-top: 36px; border: 1px solid #2c231b; border-radius: 12px; padding: 24px; }
   .loopmap h3 { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.06em;
     color: #a89880; margin: 0 0 16px; }
-  .flow { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 6px; }
+  .flow { display: flex; flex-direction: column; margin-bottom: 6px; }
+  .vstep { display: flex; gap: 14px; align-items: stretch; }
+  .vrail { display: flex; flex-direction: column; align-items: center; flex: 0 0 16px; }
+  .vdot { width: 10px; height: 10px; border-radius: 50%; border: 2px solid #8a7a66;
+          margin-top: 6px; flex: 0 0 auto; }
+  .vdot.hot { border-color: #d08c4e; background: #d08c4e; }
+  .vline { width: 2px; flex: 1; background: #3a2f26; min-height: 16px; }
+  .vbody { padding: 2px 0 16px; }
+  .vstep:last-child .vbody { padding-bottom: 2px; }
   .chip {
     border: 1px solid #3a2f26; border-radius: 20px; padding: 4px 12px;
     font-size: 0.82rem; background: #1f1a15; white-space: nowrap;
@@ -172,7 +180,7 @@
     <div class="ret"><b>One pass</b> &mdash; TUI keypress &rarr; app-server <code>turn/start</code> &rarr; <code>Op::TurnInput</code> &rarr; core: <code>spawn_task</code> &rarr; <code>run_turn</code> &rarr; prompt build &rarr; <code>/responses</code> stream &rarr; tool futures gated by approvals &rarr; loop or stop. Three loops nest: <code>RegularTask::run</code> &rarr; <code>run_turn</code> &rarr; sampler retry + stream consumer.</div>
     <div class="flow" id="flowBranch"></div>
     <div class="ret"><b>Approval pause</b> &mdash; step 11 is a center step, not a branch: the turn loop parks in <code>drain_in_flight</code> until the approval decision lands, because approvals gate individual tool futures rather than re-prompting the model. Denials become failure tool results, not loop breaks.</div>
-    <div class="ret" style="border-color:#d08c4e"><b>Outer turn loop</b> &mdash; no <code>max_turns</code> anywhere in the tree (VERIFIED negative across 155 crates): the loop is condition-driven &mdash; <code>needs_follow_up ? continue : break</code>. Mid-stream steering preempts via the input queue; events stream back over app-server; the next user message re-enters at step 1.</div>
+    <div class="ret" style="border-color:#d08c4e"><b>Outer turn loop</b> &mdash; no <code>max_turns</code> anywhere in the tree (VERIFIED negative across 154 crates): the loop is condition-driven &mdash; <code>needs_follow_up ? continue : break</code>. Mid-stream steering preempts via the input queue; events stream back over app-server; the next user message re-enters at step 1.</div>
   </section>
 
   <footer>Simplified shapes of real Codex types, not verbatim runtime dumps. All module links pin <span id="sha"></span>.</footer>
@@ -207,8 +215,12 @@
   function renderFlow(el, steps, hot) {
     el.innerHTML = steps.map(function (n, i) {
       var s = data.steps[n - 1];
+      var last = i === steps.length - 1;
+      var dot = '<span class="vdot' + (n === hot ? ' hot' : '') + '"></span>';
+      var line = last ? '' : '<span class="vline"></span>';
       var chip = '<span class="chip' + (n === hot ? ' hot' : '') + '">' + n + ' &middot; ' + esc(s.title) + '</span>';
-      return i < steps.length - 1 ? chip + '<span class="arrow">&rarr;</span>' : chip;
+      return '<div class="vstep"><div class="vrail">' + dot + line + '</div>' +
+             '<div class="vbody">' + chip + '</div></div>';
     }).join("");
   }
 

@@ -69,7 +69,7 @@ lives in the endnotes. </p>
 <ul>
 <li><strong>Repo:</strong> <a href="https://github.com/earendil-works/pi">earendil-works/pi</a></li>
 <li><strong>Pinned:</strong> tag <code>v1.0.2</code> → <code>cd32f7725fdbddbaecdff5b1e68491563394e0ca</code> (2026-10-04)</li>
-<li><strong>Language:</strong> TypeScript (Bun/Node)</li>
+<li><strong>Language:</strong> TypeScript (Node ≥ 22.19)</li>
 <li><strong>Claim under test:</strong> "a hardened, minimal, extensible agent harness"</li>
 </ul>
 <p><img alt="pi architecture" src="figures/pi.svg" /></p>
@@ -104,7 +104,7 @@ in the core, policy in extensions.</p>
 </tr>
 <tr>
 <td><code>packages/ai</code></td>
-<td>Model providers (~35) behind one <code>StreamFn</code> signature</td>
+<td>Model providers (~42) behind one <code>StreamFn</code> signature</td>
 </tr>
 <tr>
 <td><code>packages/coding-agent</code></td>
@@ -133,8 +133,8 @@ its state and forwards them to subscribers.<sup id="fnref:8"><a class="footnote-
 print mode are all just subscribers — there is no privileged renderer.<sup id="fnref:9"><a class="footnote-ref" href="#fn:9">9</a></sup></p>
 <p><strong>The most interesting negative finding:</strong> there is no max-iteration,
 max-step, or max-turn limit anywhere in the loop or the session layer.<sup id="fnref:10"><a class="footnote-ref" href="#fn:10">10</a></sup>
-A runaway loop is stopped by the model ceasing to emit tool calls, a
-tool-result setting <code>terminate: true</code>, a <code>finishTurn</code> hook, or the user
+A runaway loop is stopped by the model ceasing to emit tool calls, every
+tool result in a batch setting <code>terminate: true</code>, a <code>finishTurn</code> hook, or the user
 hitting Ctrl+C (<code>AbortController</code>).<sup id="fnref:11"><a class="footnote-ref" href="#fn:11">11</a></sup> pi trusts the model's stop behavior
 the way a REPL trusts EOF.</p>
 <p>That's a deliberate trust model, not an oversight — and it's the kind of
@@ -146,15 +146,20 @@ that a policy-free core stays small and stable while the ecosystem sorts out
 policy — the same bet as the approval story below.</p>
 <h2 id="one-turn-end-to-end">One turn, end to end</h2>
 <p>Trace: the user types <code>help me refactor foo.ts</code> in interactive mode.</p>
-<p><strong>① Input.</strong> <code>AgentSession.prompt()</code> validates the model and auth
-(OAuth/API key), expands skill commands and prompt templates, and lets
-extensions intercept via <code>input</code> handlers.<sup id="fnref:12"><a class="footnote-ref" href="#fn:12">12</a></sup> If the agent is already
-streaming, the message is queued through <code>steer()</code> (interrupt) or
-<code>followUp()</code> (wait) instead of starting a new run.<sup id="fnref:13"><a class="footnote-ref" href="#fn:13">13</a></sup></p>
+<p><strong>① Input.</strong> <code>AgentSession.prompt()</code> first gives extension slash commands
+a chance to handle the text, then lets extensions intercept via <code>input</code>
+handlers, then expands skill commands and prompt templates.<sup id="fnref:12"><a class="footnote-ref" href="#fn:12">12</a></sup> If the
+agent is already streaming, the message is queued through <code>steer()</code>
+(interrupt) or <code>followUp()</code> (wait) instead of starting a new run — the
+caller must say which, or <code>prompt()</code> throws.<sup id="fnref:13"><a class="footnote-ref" href="#fn:13">13</a></sup> Only on the non-streaming
+path does it validate the model and auth (OAuth/API key) and run a
+pre-prompt compaction check.<sup id="fnref2:12"><a class="footnote-ref" href="#fn:12">12</a></sup><sup id="fnref:30"><a class="footnote-ref" href="#fn:30">30</a></sup></p>
 <p><strong>② Prompt assembly.</strong> Before every agent start, extensions may edit the
 system-prompt options.<sup id="fnref:14"><a class="footnote-ref" href="#fn:14">14</a></sup> <code>_preparePromptAndToolLoadout</code> then diffs the
 <em>structured</em> system prompt — sections named <code>preamble</code>, <code>tools</code>, <code>rules</code>,
-<code>docs</code>, <code>skills</code>, <code>cwd</code>, plus project context — against the transcript's
+and <code>docs</code> (the last three only when pi's default prompt is in use), plus
+<code>addendum</code>, <code>project_context</code>, <code>skills</code>, <code>cwd</code>, and any custom sections —
+against the transcript's
 current sections, and emits only the changed ones (a <code>null</code> removes a
 section).<sup id="fnref:15"><a class="footnote-ref" href="#fn:15">15</a></sup><sup id="fnref:16"><a class="footnote-ref" href="#fn:16">16</a></sup> Non-preamble sections are wrapped in XML tags of the
 same name so the model can match later updates to them.<sup id="fnref2:16"><a class="footnote-ref" href="#fn:16">16</a></sup> Tool
@@ -169,8 +174,9 @@ provider adapter must replay faithfully.<sup id="fnref2:15"><a class="footnote-r
 whole prompt and eat the tokens; pi chose the complex, cheap path.</p>
 <p><strong>③ Model call.</strong> <code>Agent.prompt()</code> → <code>runAgentLoop()</code> → the app's <code>streamFn</code>,
 which delegates to <code>modelRuntime.streamSimple()</code> — token streaming from
-whichever of ~35 providers is selected.<sup id="fnref:18"><a class="footnote-ref" href="#fn:18">18</a></sup> Per-request hooks (<code>onPayload</code>,
-<code>onResponse</code>) feed extension observers and a prompt-cache warmer.<sup id="fnref:19"><a class="footnote-ref" href="#fn:19">19</a></sup></p>
+whichever of ~42 providers is selected.<sup id="fnref:18"><a class="footnote-ref" href="#fn:18">18</a></sup> Per-request hooks (<code>onPayload</code>,
+<code>onResponse</code>) feed extension observers; the same <code>streamFn</code> also starts a
+prompt-cache warmer for session requests.<sup id="fnref:19"><a class="footnote-ref" href="#fn:19">19</a></sup></p>
 <p><strong>④ Response parsing.</strong> Streaming events assemble the partial assistant
 message in context. Tool calls are extracted from assistant content blocks.<sup id="fnref:20"><a class="footnote-ref" href="#fn:20">20</a></sup>
 Edge case worth noting: if the model stops because of output length, tool
@@ -203,19 +209,21 @@ de-facto API contract. Adding a new event type is a versioning decision,
 not an implementation detail.</p>
 <h2 id="subsystem-inventory">Subsystem inventory</h2>
 <ul>
-<li><strong>Tools.</strong> 4 built-ins: <code>read</code>, <code>bash</code>, <code>edit</code>, <code>write</code>.<sup id="fnref:27"><a class="footnote-ref" href="#fn:27">27</a></sup> Schema-validated,
+<li><strong>Tools.</strong> 8 built-ins: <code>read</code>, <code>bash</code>, <code>edit</code>, <code>write</code> are active by
+  default; <code>powershell</code>, <code>grep</code>, <code>find</code>, and <code>ls</code> ship disabled and can be
+  switched on.<sup id="fnref:27"><a class="footnote-ref" href="#fn:27">27</a></sup> Schema-validated,
   with per-tool system-prompt contributions (a one-line snippet + guideline
   bullets that flow into the prompt's <code>tools</code> and <code>rules</code> sections).<sup id="fnref2:27"><a class="footnote-ref" href="#fn:27">27</a></sup>
   Extensions register more through the same registry; tools can invoke
   other tools via <code>ctx.executeTool()</code> (nested tool calls re-enter the
   pipeline with the session's hooks).<sup id="fnref:28"><a class="footnote-ref" href="#fn:28">28</a></sup></li>
-<li><strong>Providers.</strong> ~35 files under <code>packages/ai/src/providers/</code> (Anthropic,
+<li><strong>Providers.</strong> ~42 providers under <code>packages/ai/src/providers/</code> (Anthropic,
   OpenAI, Google, Bedrock, OpenRouter, xAI, …). The loop sees exactly one
   function signature; API keys resolve per request (supports expiring
   credentials); thinking levels/budgets are forwarded opaquely.<sup id="fnref:29"><a class="footnote-ref" href="#fn:29">29</a></sup></li>
 <li><strong>Sessions.</strong> JSONL files under <code>~/.pi/agent/sessions/</code>. Compaction lives
   in <code>core/compaction/</code> with branch summarization; a compaction check runs
-  before and after each prompt.<sup id="fnref:30"><a class="footnote-ref" href="#fn:30">30</a></sup></li>
+  before and after each prompt.<sup id="fnref2:30"><a class="footnote-ref" href="#fn:30">30</a></sup></li>
 <li><strong>Extensibility.</strong> TypeScript extensions with hooks at every seam (see
   <a href="#extension-points">Extension points</a> below).<sup id="fnref2:31"><a class="footnote-ref" href="#fn:31">31</a></sup></li>
 </ul>
@@ -229,19 +237,21 @@ everything plugs in somewhere.</p>
   themes, and prompt templates.<sup id="fnref3:31"><a class="footnote-ref" href="#fn:31">31</a></sup> They run in-process and can veto tool
   calls through <code>beforeToolCall</code>.<sup id="fnref3:24"><a class="footnote-ref" href="#fn:24">24</a></sup></li>
 <li><strong>Custom tools.</strong> Extensions and the SDK register tools through the same
-  registry as the four built-ins; a tool can call other tools via
+  registry as the built-ins; a tool can call other tools via
   <code>ctx.executeTool()</code>, re-entering the pipeline with the session's
   hooks.<sup id="fnref2:28"><a class="footnote-ref" href="#fn:28">28</a></sup></li>
 <li><strong>Skills.</strong> Markdown files with frontmatter (<code>name</code>, <code>description</code>),
   loaded from the project directory, the global agent dir, or explicit
   paths — deduplicated by canonical path — and rendered into the system
   prompt's <code>skills</code> section.<sup id="fnref2:34"><a class="footnote-ref" href="#fn:34">34</a></sup> Invoked as <code>/skill:name</code>, expanded before
-  the prompt reaches the loop.<sup id="fnref3:12"><a class="footnote-ref" href="#fn:12">12</a></sup></li>
-<li><strong>MCP servers.</strong> Each server tool is wrapped as a pi <code>ToolDefinition</code>
-  (namespaced <code>server/tool</code>, parameters converted from its input schema)
-  and enters the same registry and pipeline as built-ins.<sup id="fnref2:40"><a class="footnote-ref" href="#fn:40">40</a></sup> The MCP
-  client itself speaks stdio, streamable HTTP, or in-memory
-  transports.<sup id="fnref2:41"><a class="footnote-ref" href="#fn:41">41</a></sup></li>
+  the prompt reaches the loop.<sup id="fnref4:12"><a class="footnote-ref" href="#fn:12">12</a></sup></li>
+<li><strong>MCP servers.</strong> A bundled extension wraps each server tool as a pi
+  <code>ToolDefinition</code> (named <code>mcp__&lt;server&gt;__&lt;tool&gt;</code>, labelled <code>server/tool</code>,
+  parameters converted from its input schema), so its calls run through
+  the same pipeline and hooks as built-ins.<sup id="fnref3:40"><a class="footnote-ref" href="#fn:40">40</a></sup> By default, though, MCP
+  tools get <code>codemode</code> exposure: callable from codemode scripts but not
+  declared to the model.<sup id="fnref3:50"><a class="footnote-ref" href="#fn:50">50</a></sup> The MCP client itself speaks stdio,
+  streamable HTTP, or in-memory transports.<sup id="fnref2:41"><a class="footnote-ref" href="#fn:41">41</a></sup></li>
 <li><strong>Plugins</strong> (experimental). Facet-bundled packages — <code>session</code> and <code>tui</code>
   facets — built with the chord bundler and attached per durable server via
   plugin package profiles.<sup id="fnref2:35"><a class="footnote-ref" href="#fn:35">35</a></sup></li>
@@ -260,16 +270,19 @@ exact interaction sequence, and the first file to open when you implement.
 Diagrams use the same numbering as the prose steps.</p>
 <h3 id="1-lifecycle-hooks">1. Lifecycle hooks</h3>
 <p>Every prompt passes through the same hook pipeline, in a fixed order:
-<code>input</code> handlers can rewrite or swallow the text before anything else
-happens; <code>before_agent_start</code> can edit the system-prompt options and tool
+<code>input</code> handlers can rewrite or swallow the text before skill and template
+expansion (only extension slash commands run earlier); <code>before_agent_start</code> can edit the system-prompt options and tool
 selection; then the loop runs, consulting <code>tool_call</code>/<code>tool_result</code> hooks
 around every tool execution; finally <code>agent_before_settle</code> gets a last word
 — its handlers can force another turn — before <code>agent_end</code>.</p>
 <p><img alt="Hook lifecycle" src="figures/seq-hooks.svg" /></p>
 <p>Handlers run in-process and receive <code>(event, ctx)</code>. Several events support
 cancellation (<code>return { cancel: true }</code>) — the session-switch confirmation
-in the bundled examples is the canonical pattern.<sup id="fnref:44"><a class="footnote-ref" href="#fn:44">44</a></sup></p>
-<p><strong>Start here:</strong> copy <code>examples/extensions/confirm-destructive.ts</code>. An
+in <code>examples/extensions/confirm-destructive.ts</code> is the canonical
+pattern.<sup id="fnref:44"><a class="footnote-ref" href="#fn:44">44</a></sup></p>
+<p><strong>Start here:</strong> copy <code>examples/extensions/permission-gate.ts</code> — it blocks
+dangerous <code>bash</code> commands from a <code>tool_call</code> handler and asks the user via
+<code>ctx.ui.select</code> when a UI is present.<sup id="fnref:51"><a class="footnote-ref" href="#fn:51">51</a></sup> An
 extension is a default-exported function taking <code>pi: ExtensionAPI</code>, dropped
 in <code>~/.pi/agent/extensions/</code> or your project's <code>.pi/extensions/</code>.<sup id="fnref:42"><a class="footnote-ref" href="#fn:42">42</a></sup>
 Subscribe with <code>pi.on("tool_call", handler)</code>; return <code>{ block: true }</code> from
@@ -291,11 +304,12 @@ result.</p>
 <code>core/extensions/types.ts</code>.<sup id="fnref:43"><a class="footnote-ref" href="#fn:43">43</a></sup> Model the <code>parameters</code> schema on
 <code>bash.ts</code>'s TypeBox definition and the <code>execute(id, args, signal,
 onUpdate)</code> signature on any built-in; set <code>exposure: "model-only"</code> if the
-tool should never be directly invokable.</p>
+model should see the tool but other tools must never call it through
+<code>ctx.executeTool()</code>.<sup id="fnref2:45"><a class="footnote-ref" href="#fn:45">45</a></sup></p>
 <h3 id="3-slash-commands">3. Slash commands</h3>
 <p>Commands bypass the model entirely: text starting with <code>/</code> is intercepted
 before prompt expansion, matched against the command registry, and its
-handler runs immediately — even mid-stream.<sup id="fnref2:12"><a class="footnote-ref" href="#fn:12">12</a></sup> The handler receives the
+handler runs immediately — even mid-stream.<sup id="fnref3:12"><a class="footnote-ref" href="#fn:12">12</a></sup> The handler receives the
 raw argument string and a command context with UI primitives
 (<code>ctx.ui.confirm/select/notify</code>) and messaging (<code>ctx.sendMessage</code>,
 <code>ctx.sendUserMessage</code>, which can trigger a fresh turn).<sup id="fnref2:44"><a class="footnote-ref" href="#fn:44">44</a></sup><sup id="fnref:46"><a class="footnote-ref" href="#fn:46">46</a></sup></p>
@@ -307,23 +321,31 @@ the full shape including argument completions.<sup id="fnref2:42"><a class="foot
 <p>Skills have two injection paths, and the diagram shows both. Invoked as
 <code>/skill:name</code>, the skill's markdown body (frontmatter stripped) is inlined
 as a <code>&lt;skill&gt;</code> block ahead of the user's text. Independently, every prompt
-carries all loaded skills in the system prompt's <code>skills</code> section, so the
-model knows they exist before anyone invokes one.<sup id="fnref:34"><a class="footnote-ref" href="#fn:34">34</a></sup></p>
+lists the loaded skills in the system prompt's <code>skills</code> section, so the
+model knows they exist before anyone invokes one — except skills marked
+<code>disable-model-invocation</code>, and only when <code>read</code> or <code>bash</code> is active
+(the model needs one of them to open a skill file).<sup id="fnref:34"><a class="footnote-ref" href="#fn:34">34</a></sup></p>
 <p><img alt="Skill injection paths" src="figures/seq-skills.svg" /></p>
 <p><strong>Start here:</strong> a markdown file with <code>name:</code>/<code>description:</code> frontmatter in
 <code>&lt;project&gt;/.pi/skills/</code> or <code>~/.pi/agent/skills/</code>.<sup id="fnref:48"><a class="footnote-ref" href="#fn:48">48</a></sup> Keep the body
 task-shaped — skills are procedures, not documentation.</p>
 <h3 id="5-mcp-servers">5. MCP servers</h3>
 <p>MCP is an adapter, not a parallel tool system. Each configured server
-(<code>command</code> for stdio, <code>url</code> for streamable HTTP)<sup id="fnref:47"><a class="footnote-ref" href="#fn:47">47</a></sup> is spawned at session
-start; its tools are listed once and each is wrapped by
-<code>createMcpToolDefinition</code> into a native pi <code>ToolDefinition</code> — namespaced as
-<code>server/tool</code>, parameters converted from the MCP input schema. From there,
-an MCP tool is indistinguishable from a built-in: declared, dispatched,
-hooked, rendered.</p>
+(<code>command</code> for stdio, <code>url</code> for streamable HTTP)<sup id="fnref:47"><a class="footnote-ref" href="#fn:47">47</a></sup> connects in the
+background when the session starts; each of its tools is wrapped by
+<code>createMcpToolDefinition</code> into a native pi <code>ToolDefinition</code> — named
+<code>mcp__&lt;server&gt;__&lt;tool&gt;</code>, labelled <code>server/tool</code> in the UI, parameters
+converted from the MCP input schema.<sup id="fnref:40"><a class="footnote-ref" href="#fn:40">40</a></sup> Every call is dispatched, hooked,
+and rendered exactly like a built-in's.</p>
+<p>What differs is visibility. The default exposure is <code>codemode</code>: MCP tools
+stay out of the model's tool declarations and are reached from codemode
+scripts instead. <code>deferred</code> surfaces them on demand through <code>tool_search</code>,
+and only <code>direct</code> declares them to the model up front.<sup id="fnref:50"><a class="footnote-ref" href="#fn:50">50</a></sup> That is the
+same mechanism/policy split again — the adapter is uniform, and how much
+of a server's surface the model sees is configuration.</p>
 <p><img alt="MCP server lifecycle" src="figures/seq-mcp.svg" /></p>
-<p><strong>Start here:</strong> the server config in settings, then
-<code>extensions/mcp/tools.ts</code> if you need custom result conversion.<sup id="fnref:40"><a class="footnote-ref" href="#fn:40">40</a></sup> The
+<p><strong>Start here:</strong> the server entry in <code>mcp.json</code> (including its <code>exposure</code>), then
+<code>extensions/mcp/tools.ts</code> if you need custom result conversion.<sup id="fnref2:40"><a class="footnote-ref" href="#fn:40">40</a></sup> The
 MCP client itself speaks stdio, streamable HTTP, or in-memory
 transports.<sup id="fnref:41"><a class="footnote-ref" href="#fn:41">41</a></sup></p>
 <h3 id="6-plugins-experimental">6. Plugins (experimental)</h3>
@@ -364,6 +386,12 @@ third is architectural: approval is an extension's job, implemented through
 <code>beforeToolCall</code>, not a core feature.<sup id="fnref2:24"><a class="footnote-ref" href="#fn:24">24</a></sup> The security model is project trust
 (<code>--approve</code> trusts project-local files) plus extension hooks — not
 per-command gating.<sup id="fnref:33"><a class="footnote-ref" href="#fn:33">33</a></sup></p>
+<p>The repo does ship all three as <em>example</em> extensions — <code>subagent/</code>,
+<code>plan-mode/</code>, and <code>permission-gate.ts</code> — which is the thesis made
+concrete: the features exist, as policy, outside the core.<sup id="fnref:52"><a class="footnote-ref" href="#fn:52">52</a></sup> One caveat
+to "minimal": the coding app loads MCP, <code>codemode</code>, and <code>tool_search</code> as
+built-in extensions (the latter two inactive until enabled), so the <em>core</em>
+is minimal while the default install is somewhat broader.<sup id="fnref2:50"><a class="footnote-ref" href="#fn:50">50</a></sup></p>
 <p>Read the omissions as the other half of the thesis: every "missing" feature
 is a decision to keep the core's surface area small and let the extension
 layer — or the model itself — carry the weight. Steal the pattern when your
@@ -387,12 +415,12 @@ out of the box.</p>
 <tr>
 <td>2</td>
 <td>Tool system</td>
-<td>4 built-ins + registry; TypeBox validation; sequential/parallel; nested calls <sup id="fnref3:22"><a class="footnote-ref" href="#fn:22">22</a></sup><sup id="fnref3:27"><a class="footnote-ref" href="#fn:27">27</a></sup><sup id="fnref3:28"><a class="footnote-ref" href="#fn:28">28</a></sup></td>
+<td>8 built-ins (4 active by default) + registry; TypeBox validation; sequential/parallel; nested calls <sup id="fnref3:22"><a class="footnote-ref" href="#fn:22">22</a></sup><sup id="fnref3:27"><a class="footnote-ref" href="#fn:27">27</a></sup><sup id="fnref3:28"><a class="footnote-ref" href="#fn:28">28</a></sup></td>
 </tr>
 <tr>
 <td>3</td>
 <td>Model providers</td>
-<td>~35 behind one <code>StreamFn</code>; per-request key resolution <sup id="fnref2:18"><a class="footnote-ref" href="#fn:18">18</a></sup><sup id="fnref2:29"><a class="footnote-ref" href="#fn:29">29</a></sup></td>
+<td>~42 behind one <code>StreamFn</code>; per-request key resolution <sup id="fnref2:18"><a class="footnote-ref" href="#fn:18">18</a></sup><sup id="fnref2:29"><a class="footnote-ref" href="#fn:29">29</a></sup></td>
 </tr>
 <tr>
 <td>4</td>
@@ -402,7 +430,7 @@ out of the box.</p>
 <tr>
 <td>5</td>
 <td>Memory/session</td>
-<td>JSONL sessions; compaction with branch summarization <sup id="fnref2:30"><a class="footnote-ref" href="#fn:30">30</a></sup></td>
+<td>JSONL sessions; compaction with branch summarization <sup id="fnref3:30"><a class="footnote-ref" href="#fn:30">30</a></sup></td>
 </tr>
 <tr>
 <td>6</td>
@@ -433,7 +461,8 @@ out of the box.</p>
 </table>
 <h2 id="endnotes">Endnotes</h2>
 <p>All notes are VERIFIED against <code>v1.0.2</code>
-(<code>cd32f7725fdbddbaecdff5b1e68491563394e0ca</code>) unless marked DOCS.
+(<code>cd32f7725fdbddbaecdff5b1e68491563394e0ca</code>) unless marked DOCS; line
+anchors re-checked on 2026-10-07.
 <code>GH</code> = <code>https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/</code>.</p>
 <hr />
 <p><em>Next in the series: Hermes — where the same ten dimensions meet scheduled
@@ -452,13 +481,13 @@ primitives (<a href="https://github.com/earendil-works/pi/blob/cd32f7725fdbddbae
 <code>prepareToolCall</code> (<a href="https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/agent/src/agent-loop.ts#L707-L725">GH…/agent-loop.ts#L707-L725</a>),
 <code>beforeToolCall</code> gating (<a href="https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/agent/src/agent-loop.ts#L727-L746">GH…/agent-loop.ts#L727-L746</a>),
 execution (<a href="https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/agent/src/agent-loop.ts#L820-L848">GH…/agent-loop.ts#L820-L848</a>),
-<code>afterToolCall</code> and result finalization (<a href="https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/agent/src/agent-loop.ts#L850-L900">GH…/agent-loop.ts#L850-L900</a>).&#160;<a class="footnote-backref" href="#fnref:2" title="Jump back to footnote 2 in the text">&#8617;</a></p>
+<code>afterToolCall</code> and result finalization (<a href="https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/agent/src/agent-loop.ts#L853-L903">GH…/agent-loop.ts#L853-L903</a>).&#160;<a class="footnote-backref" href="#fnref:2" title="Jump back to footnote 2 in the text">&#8617;</a></p>
 </li>
 <li id="fn:3">
 <p>Prompt sections in
 <a href="https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/src/core/system-prompt.ts#L121">GH…/system-prompt.ts#L121</a>;
 built-in tool names in
-<a href="https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/src/core/tools/index.ts#L95-L97">GH…/core/tools/index.ts#L95-L97</a>;
+<a href="https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/src/core/tools/index.ts#L95-L105">GH…/core/tools/index.ts#L95-L105</a>;
 TUI event subscription in
 <a href="https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/src/modes/interactive/interactive-mode.ts#L3354">GH…/interactive-mode.ts#L3354</a>.&#160;<a class="footnote-backref" href="#fnref:3" title="Jump back to footnote 3 in the text">&#8617;</a></p>
 </li>
@@ -466,7 +495,7 @@ TUI event subscription in
 <p><code>packages/agent/src/index.ts</code> exports <code>agent.ts</code>, <code>agent-loop.ts</code>,
 <code>proxy.ts</code>, <code>stream-fn.ts</code>, <code>types.ts</code>
 (<a href="https://github.com/earendil-works/pi/tree/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/agent/src">GH…/agent/src</a>);
-<code>packages/ai/src/providers/</code> holds ~35 provider files
+<code>packages/ai/src/providers/</code> holds ~42 providers (92 files, counting the <code>*.models.ts</code> catalogs)
 (<a href="https://github.com/earendil-works/pi/tree/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/ai/src/providers">GH…/ai/src/providers</a>);
 <code>packages/coding-agent/src/core/</code> holds <code>agent-session.ts</code>, <code>sdk.ts</code>,
 <code>system-prompt.ts</code>, <code>tools/</code>, <code>modes/</code>
@@ -494,7 +523,7 @@ outer loop drains follow-ups at
 </li>
 <li id="fn:7">
 <p><code>AgentEvent</code> union in
-<a href="https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/agent/src/types.ts#L516-L540">GH…/agent/src/types.ts#L516-L540</a>.&#160;<a class="footnote-backref" href="#fnref:7" title="Jump back to footnote 7 in the text">&#8617;</a></p>
+<a href="https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/agent/src/types.ts#L514-L529">GH…/agent/src/types.ts#L514-L529</a>.&#160;<a class="footnote-backref" href="#fnref:7" title="Jump back to footnote 7 in the text">&#8617;</a></p>
 </li>
 <li id="fn:8">
 <p><code>Agent.processEvents</code> reduces each event into state, then awaits
@@ -530,13 +559,15 @@ abort via the per-run <code>AbortController</code> in
 <li id="fn:12">
 <p><code>AgentSession.prompt</code> at
 <a href="https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/src/core/agent-session.ts#L1921-L2015">GH…/agent-session.ts#L1921-L2015</a>:
-extension commands, input handlers (L1950), skill/template expansion,
-model and auth validation.&#160;<a class="footnote-backref" href="#fnref:12" title="Jump back to footnote 12 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:12" title="Jump back to footnote 12 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:12" title="Jump back to footnote 12 in the text">&#8617;</a></p>
+extension commands (L1930), input handlers (L1946), skill/template
+expansion (L1961), streaming branch (L1966), then model and auth
+validation (L1986-L2003).&#160;<a class="footnote-backref" href="#fnref:12" title="Jump back to footnote 12 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:12" title="Jump back to footnote 12 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:12" title="Jump back to footnote 12 in the text">&#8617;</a><a class="footnote-backref" href="#fnref4:12" title="Jump back to footnote 12 in the text">&#8617;</a></p>
 </li>
 <li id="fn:13">
 <p>Streaming branch queues via <code>steer()</code>/<code>followUp()</code> at
 <a href="https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/src/core/agent-session.ts#L1967-L1975">GH…/agent-session.ts#L1967-L1975</a>;
-queue primitives in
+without a <code>streamingBehavior</code> the call throws (L1967-L1971); queue
+primitives in
 <a href="https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/agent/src/agent.ts#L299-L308">GH…/agent.ts#L299-L308</a>.&#160;<a class="footnote-backref" href="#fnref:13" title="Jump back to footnote 13 in the text">&#8617;</a></p>
 </li>
 <li id="fn:14">
@@ -547,14 +578,16 @@ queue primitives in
 <p><code>_preparePromptAndToolLoadout</code> at
 <a href="https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/src/core/agent-session.ts#L1689-L1701">GH…/agent-session.ts#L1689-L1701</a>;
 section diffing in <code>diffSystemPromptSections</code> at
-<a href="https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/src/core/system-prompt.ts#L204-L218">GH…/system-prompt.ts#L204-L218</a>
+<a href="https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/src/core/system-prompt.ts#L204-L216">GH…/system-prompt.ts#L204-L216</a>
 (<code>null</code> removes a section).&#160;<a class="footnote-backref" href="#fnref:15" title="Jump back to footnote 15 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:15" title="Jump back to footnote 15 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:15" title="Jump back to footnote 15 in the text">&#8617;</a></p>
 </li>
 <li id="fn:16">
 <p>Section list and XML wrapping in <code>buildSystemPromptSections</code> at
 <a href="https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/src/core/system-prompt.ts#L121-L160">GH…/system-prompt.ts#L121-L160</a>;
-default tool selection <code>[read, bash, edit, write]</code> in
-<code>normalizeBuildSystemPromptOptions</code>.&#160;<a class="footnote-backref" href="#fnref:16" title="Jump back to footnote 16 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:16" title="Jump back to footnote 16 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:16" title="Jump back to footnote 16 in the text">&#8617;</a><a class="footnote-backref" href="#fnref4:16" title="Jump back to footnote 16 in the text">&#8617;</a></p>
+<code>preamble</code>/<code>tools</code>/<code>rules</code>/<code>docs</code> are built only without a custom
+prompt (L143-L161), <code>addendum</code>/<code>project_context</code>/<code>skills</code>/<code>cwd</code> after
+(L163-L170); default tool selection <code>[read, bash, edit, write]</code> in
+<code>normalizeBuildSystemPromptOptions</code> (L58).&#160;<a class="footnote-backref" href="#fnref:16" title="Jump back to footnote 16 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:16" title="Jump back to footnote 16 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:16" title="Jump back to footnote 16 in the text">&#8617;</a><a class="footnote-backref" href="#fnref4:16" title="Jump back to footnote 16 in the text">&#8617;</a></p>
 </li>
 <li id="fn:17">
 <p><code>declareToolChanges</code> at
@@ -575,7 +608,7 @@ the app's <code>streamFn</code> delegates to <code>modelRuntime.streamSimple</co
 <li id="fn:19">
 <p><code>transformProviderPayload</code> / <code>handleProviderResponse</code> at
 <a href="https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/src/core/sdk.ts#L358-L380">GH…/sdk.ts#L358-L380</a>;
-prompt-cache warming at
+prompt-cache warming inside the app's <code>streamFn</code> at
 <a href="https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/src/core/sdk.ts#L404">L404</a>.&#160;<a class="footnote-backref" href="#fnref:19" title="Jump back to footnote 19 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:19" title="Jump back to footnote 19 in the text">&#8617;</a></p>
 </li>
 <li id="fn:20">
@@ -595,7 +628,7 @@ arguments may be truncated"), with the rationale at
 <p><code>toolExecution</code> mode (default <code>"parallel"</code>) in
 <a href="https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/agent/src/agent.ts#L240-L260">GH…/agent.ts#L240-L260</a>
 (constructor); per-call pipeline in <code>runToolCall</code> at
-<a href="https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/agent/src/agent-loop.ts#L810-L870">GH…/agent-loop.ts#L810-L870</a>.&#160;<a class="footnote-backref" href="#fnref:22" title="Jump back to footnote 22 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:22" title="Jump back to footnote 22 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:22" title="Jump back to footnote 22 in the text">&#8617;</a></p>
+<a href="https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/agent/src/agent-loop.ts#L810-L818">GH…/agent-loop.ts#L810-L818</a>.&#160;<a class="footnote-backref" href="#fnref:22" title="Jump back to footnote 22 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:22" title="Jump back to footnote 22 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:22" title="Jump back to footnote 22 in the text">&#8617;</a></p>
 </li>
 <li id="fn:23">
 <p><code>beforeToolCall</code> blocking and <code>terminate</code> marking at
@@ -604,7 +637,7 @@ arguments may be truncated"), with the rationale at
 <li id="fn:24">
 <p>The app's <code>_beforeToolCall</code> only forwards to extension <code>tool_call</code>
 handlers, at
-<a href="https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/src/core/agent-session.ts#L625-L648">GH…/agent-session.ts#L625-L648</a>;
+<a href="https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/src/core/agent-session.ts#L630-L653">GH…/agent-session.ts#L630-L653</a>;
 negative finding: no approval/confirmation prompt exists in
 <code>packages/coding-agent/src</code> or <code>packages/tui/src</code> (grep for
 <code>toolApproval|confirmTool|permissionManager</code> returns nothing).&#160;<a class="footnote-backref" href="#fnref:24" title="Jump back to footnote 24 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:24" title="Jump back to footnote 24 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:24" title="Jump back to footnote 24 in the text">&#8617;</a><a class="footnote-backref" href="#fnref4:24" title="Jump back to footnote 24 in the text">&#8617;</a></p>
@@ -624,8 +657,10 @@ boundary at
 <a href="https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/src/core/agent-session.ts#L1846-L1875">L1846-L1875</a>.&#160;<a class="footnote-backref" href="#fnref:26" title="Jump back to footnote 26 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:26" title="Jump back to footnote 26 in the text">&#8617;</a></p>
 </li>
 <li id="fn:27">
-<p>Built-in tool names in
-<a href="https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/src/core/tools/index.ts#L95-L97">GH…/core/tools/index.ts#L95-L97</a>;
+<p>The eight built-in tool names in
+<a href="https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/src/core/tools/index.ts#L95-L105">GH…/core/tools/index.ts#L95-L105</a>;
+the four enabled by default in <code>DEFAULT_TOOL_NAMES</code> at
+<a href="https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/src/core/settings-manager.ts#L214-L215">GH…/settings-manager.ts#L214-L215</a>;
 per-tool prompt contributions, e.g.
 <a href="https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/src/core/tools/bash.ts">GH…/core/tools/bash.ts</a>
 (<code>bashToolSystemPromptContribution</code>), consumed as <code>toolSnippets</code> /
@@ -638,7 +673,7 @@ per-tool prompt contributions, e.g.
 re-enters <code>runToolCall</code> with the session's hooks.&#160;<a class="footnote-backref" href="#fnref:28" title="Jump back to footnote 28 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:28" title="Jump back to footnote 28 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:28" title="Jump back to footnote 28 in the text">&#8617;</a></p>
 </li>
 <li id="fn:29">
-<p>Provider files in
+<p>About 42 providers (one <code>*.models.ts</code> catalog each) in
 <a href="https://github.com/earendil-works/pi/tree/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/ai/src/providers">GH…/ai/src/providers/</a>;
 per-request API-key resolution at
 <a href="https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/agent/src/agent-loop.ts#L401">GH…/agent-loop.ts#L401</a>;
@@ -653,7 +688,7 @@ in
 <a href="https://github.com/earendil-works/pi/tree/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/src/core/compaction">GH…/core/compaction/</a>
 with checks before and after each prompt
 (<a href="https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/src/core/agent-session.ts#L2009">GH…/agent-session.ts#L2009</a>,
-<a href="https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/src/core/agent-session.ts#L1837">L1837</a>).&#160;<a class="footnote-backref" href="#fnref:30" title="Jump back to footnote 30 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:30" title="Jump back to footnote 30 in the text">&#8617;</a></p>
+<a href="https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/src/core/agent-session.ts#L1837">L1837</a>).&#160;<a class="footnote-backref" href="#fnref:30" title="Jump back to footnote 30 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:30" title="Jump back to footnote 30 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:30" title="Jump back to footnote 30 in the text">&#8617;</a></p>
 </li>
 <li id="fn:31">
 <p>Hook event types in
@@ -663,7 +698,8 @@ with checks before and after each prompt
 </li>
 <li id="fn:32">
 <p>DOCS grade — stated in project documentation/philosophy, not derived
-from code: pi deliberately omits sub-agents and plan mode. Consistent
+from code: pi deliberately omits sub-agents and plan mode
+(<a href="https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/README.md#L17-L19">GH…/README.md#L17-L19</a>). Consistent
 with the code: <code>packages/agent/src</code> contains only the loop, the <code>Agent</code>
 wrapper, and types — no sub-agent orchestration
 (<a href="https://github.com/earendil-works/pi/tree/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/agent/src">GH…/agent/src</a>),
@@ -682,11 +718,13 @@ files, at
 <p><code>SkillFrontmatter</code> / <code>Skill</code> in
 <a href="https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/src/core/skills.ts#L67-L83">GH…/core/skills.ts#L67-L83</a>;
 <code>loadSkills</code> resolves the project dir, global agent dir, explicit
-paths, and defaults, deduplicating by canonical path, at
-<a href="https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/src/core/skills.ts#L394-L440">GH…/core/skills.ts#L394-L440</a>;
-skills render into the prompt at
-<a href="https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/src/core/skills.ts#L355">GH…/core/skills.ts#L355</a>
-(<code>formatSkillsForPrompt</code>).&#160;<a class="footnote-backref" href="#fnref:34" title="Jump back to footnote 34 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:34" title="Jump back to footnote 34 in the text">&#8617;</a></p>
+paths, and defaults, deduplicating by canonical path (L425), at
+<a href="https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/src/core/skills.ts#L409-L509">GH…/core/skills.ts#L409-L509</a>;
+skills render into the prompt via <code>formatSkillsForPrompt</code>, which drops
+<code>disable-model-invocation</code> skills, at
+<a href="https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/src/core/skills.ts#L352-L356">GH…/core/skills.ts#L352-L356</a>;
+the <code>skills</code> section is emitted only when <code>read</code> or <code>bash</code> is selected, at
+<a href="https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/src/core/system-prompt.ts#L165-L169">GH…/system-prompt.ts#L165-L169</a>.&#160;<a class="footnote-backref" href="#fnref:34" title="Jump back to footnote 34 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:34" title="Jump back to footnote 34 in the text">&#8617;</a></p>
 </li>
 <li id="fn:35">
 <p>Experimental plugin packaging: profile version and the default
@@ -698,8 +736,8 @@ the API is not covered by the stability claims made for extensions.&#160;<a clas
 <li id="fn:36">
 <p><code>Transport</code> in
 <a href="https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/ai/src/types.ts#L120">GH…/ai/src/types.ts#L120</a>;
-selected via settings and forwarded to the stream function
-(<a href="https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/src/core/sdk.ts#L387-L406">GH…/sdk.ts#L387-L406</a>).&#160;<a class="footnote-backref" href="#fnref:36" title="Jump back to footnote 36 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:36" title="Jump back to footnote 36 in the text">&#8617;</a></p>
+selected via settings and passed to the <code>Agent</code> constructor
+(<a href="https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/src/core/sdk.ts#L419">GH…/sdk.ts#L419</a>).&#160;<a class="footnote-backref" href="#fnref:36" title="Jump back to footnote 36 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:36" title="Jump back to footnote 36 in the text">&#8617;</a></p>
 </li>
 <li id="fn:37">
 <p><code>@earendil-works/pi-protocol</code> — "Transport-neutral CBOR protocol for
@@ -726,8 +764,10 @@ per server at L153.&#160;<a class="footnote-backref" href="#fnref:38" title="Jum
 <p><code>createMcpToolDefinition</code> in
 <a href="https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/src/extensions/mcp/tools.ts#L260-L300">GH…/extensions/mcp/tools.ts#L260-L300</a>
 wraps an MCP tool as a pi <code>ToolDefinition</code> (label
-<code>server/tool</code>, parameters from <code>inputSchema</code>, <code>execute</code> → MCP
-<code>callTool</code>).&#160;<a class="footnote-backref" href="#fnref:40" title="Jump back to footnote 40 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:40" title="Jump back to footnote 40 in the text">&#8617;</a></p>
+<code>server/tool</code> at L274, parameters from <code>inputSchema</code>, <code>execute</code> → MCP
+<code>callTool</code>); the registered name <code>mcp__&lt;server&gt;__&lt;tool&gt;</code> comes from
+<code>createMcpToolName</code> at
+<a href="https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/src/extensions/mcp/tools.ts#L88-L97">GH…/extensions/mcp/tools.ts#L88-L97</a>.&#160;<a class="footnote-backref" href="#fnref:40" title="Jump back to footnote 40 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:40" title="Jump back to footnote 40 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:40" title="Jump back to footnote 40 in the text">&#8617;</a></p>
 </li>
 <li id="fn:41">
 <p><code>@earendil-works/pi-mcp</code> — "Standalone Model Context Protocol client
@@ -759,7 +799,7 @@ per the header of
 <p><code>ToolExposure = "direct" | "model-only" | "codemode" | "deferred" | "hidden"</code> at
 <a href="https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/src/core/extensions/types.ts#L509">GH…/core/extensions/types.ts#L509</a>;
 exposure and <code>defaultActive</code> semantics at
-<a href="https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/src/core/extensions/types.ts#L593-L606">L593-L606</a>.&#160;<a class="footnote-backref" href="#fnref:45" title="Jump back to footnote 45 in the text">&#8617;</a></p>
+<a href="https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/src/core/extensions/types.ts#L593-L606">L593-L606</a>.&#160;<a class="footnote-backref" href="#fnref:45" title="Jump back to footnote 45 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:45" title="Jump back to footnote 45 in the text">&#8617;</a></p>
 </li>
 <li id="fn:46">
 <p><code>sendMessage</code> / <code>sendUserMessage</code> on <code>ExtensionAPI</code> at
@@ -781,6 +821,27 @@ skills).&#160;<a class="footnote-backref" href="#fnref:48" title="Jump back to f
 <p><code>ToolCallEventResult</code> in
 <a href="https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/src/core/extensions/types.ts#L1413">GH…/core/extensions/types.ts#L1413</a>
 (<code>block</code>, <code>reason</code>, <code>terminate</code>).&#160;<a class="footnote-backref" href="#fnref:49" title="Jump back to footnote 49 in the text">&#8617;</a></p>
+</li>
+<li id="fn:50">
+<p>Built-in MCP integration header at
+<a href="https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/src/extensions/mcp/index.ts#L1-L21">GH…/extensions/mcp/index.ts#L1-L21</a>:
+tools registered as <code>mcp__&lt;server&gt;__&lt;tool&gt;</code>, default <code>"exposure": "codemode"</code>
+(callable from codemode scripts, not declared to the model), <code>deferred</code>
+via <code>tool_search</code>, <code>direct</code> declared up front, configured in <code>mcp.json</code>.
+<code>codemode</code> and <code>tool_search</code> are built-in extensions registered inactive
+(<a href="https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/src/extensions/codemode/index.ts#L1-L7">GH…/extensions/codemode/index.ts#L1-L7</a>,
+<a href="https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/src/extensions/tool-search/index.ts#L1-L7">GH…/extensions/tool-search/index.ts#L1-L7</a>).&#160;<a class="footnote-backref" href="#fnref:50" title="Jump back to footnote 50 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:50" title="Jump back to footnote 50 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:50" title="Jump back to footnote 50 in the text">&#8617;</a></p>
+</li>
+<li id="fn:51">
+<p><code>tool_call</code> handler returning <code>{ block: true, reason }</code> for dangerous
+<code>bash</code> commands, with <code>ctx.ui.select</code> confirmation when a UI is present, in
+<a href="https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/examples/extensions/permission-gate.ts#L10-L34">GH…/examples/extensions/permission-gate.ts#L10-L34</a>.&#160;<a class="footnote-backref" href="#fnref:51" title="Jump back to footnote 51 in the text">&#8617;</a></p>
+</li>
+<li id="fn:52">
+<p>Example extensions
+<a href="https://github.com/earendil-works/pi/tree/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/examples/extensions/subagent">GH…/examples/extensions/subagent/</a>,
+<a href="https://github.com/earendil-works/pi/tree/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/examples/extensions/plan-mode">GH…/examples/extensions/plan-mode/</a>, and
+<a href="https://github.com/earendil-works/pi/blob/cd32f7725fdbddbaecdff5b1e68491563394e0ca/packages/coding-agent/examples/extensions/permission-gate.ts">GH…/examples/extensions/permission-gate.ts</a>.&#160;<a class="footnote-backref" href="#fnref:52" title="Jump back to footnote 52 in the text">&#8617;</a></p>
 </li>
 </ol>
 </div>

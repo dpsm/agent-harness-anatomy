@@ -1,7 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 946" width="1600" font-family="system-ui, -apple-system, sans-serif">
 <defs><marker id="arrc" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 1 L 9 5 L 0 9 z" fill="#d08c4e"/></marker><marker id="arrr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 1 L 9 5 L 0 9 z" fill="#8a7a66"/></marker></defs><rect x="0" y="0" width="1600" height="946" fill="#f7f2e9"/>
 <text x="90.78014184397163" y="44" font-size="26" font-weight="700" fill="#000000">Approval: tool call -&gt; policy gate -&gt; webview -&gt; feedback</text>
-<text x="90.78014184397163" y="74" font-size="15" fill="#000000">VS Code forces autoApprove: false on every governed tool; reads/edits auto-approve, commands always prompt</text>
+<text x="90.78014184397163" y="74" font-size="15" fill="#000000">VS Code forces autoApprove: false on every governed tool; reads/edits auto-approve, commands prompt by default</text>
 <line x1="233" y1="110" x2="233" y2="878" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
 <rect x="113" y="82" width="238" height="56" rx="10" fill="#ffffff" stroke="#3a2f26" stroke-width="1.5"/>
 <text x="233" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#000000">AgentRuntime</text>
