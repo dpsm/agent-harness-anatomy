@@ -640,8 +640,9 @@ the SDK as adapter.[^66]
 OpenHands ships no git-level safety net — no auto-commit, no stash, no
 session undo. The `git` module is read-only helpers plus cached clones
 for extensions; the only undo anywhere is per-file `undo_edit` in the
-file editor (verified: case-insensitive grep for `commit|undo|stash` over
-`sdk/git/*.py` and `openhands-tools/**` finds only that one).[^87]
+file editor (verified: every `commit|undo|stash` hit in `sdk/git/*.py` is
+a read-only history helper or a checkout/reset on a cached extension
+clone, never the user's workspace).[^87]
 Contrast Aider, whose git auto-commit plus `/undo` is the safety model.
 There is no OS sandbox in the loop — no Seatbelt, no seccomp, no
 bubblewrap, no Landlock (grep over `openhands-sdk/` and `openhands-tools/`
@@ -676,7 +677,8 @@ hooks, and the confirmation policy to build them with.
 ## Endnotes
 
 All notes are VERIFIED against `v1.53.0`
-(`54daf056bd863bb46f922a2fe9324dd736b37ff6`) unless marked DOCS.
+(`54daf056bd863bb46f922a2fe9324dd736b37ff6`) unless marked DOCS; line
+anchors and file paths re-checked on 2026-10-07.
 `GH` = `https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/`.
 
 [^1]: Scope correction, VERIFIED via GitHub API 2026-10-05:
@@ -1137,9 +1139,13 @@ All notes are VERIFIED against `v1.53.0`
 [^87]: No git-level safety net. Search scope (2026-10-05, pinned SHA):
     case-insensitive grep for `commit|undo|stash` over
     `openhands-sdk/openhands/sdk/git/*.py` and
-    `openhands-tools/openhands/tools/**/`: only `undo_edit` in
-    `tools/file_editor/definition.py:26`; `git_commits.py` holds
-    read-only history helpers; commit guidance appears only as a static
+    `openhands-tools/openhands/tools/**/`. In `openhands-tools` the only
+    undo is `undo_edit` (`tools/file_editor/definition.py:26`, also
+    exposed by `planning_file_editor`). In `sdk/git` the hits are
+    read-only history helpers (`git_commits.py`, `git_changes.py`,
+    `git_diff.py`) and `checkout`/`reset --hard` on cached extension
+    clones (`cached_repo.py:108`, `:121`) — none snapshot or restore the
+    user's workspace. Commit guidance appears only as a static
     prompt section
     ([GH…/sdk/context/prompts/sections/static.py#L227](https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/context/prompts/sections/static.py#L227)).
 [^88]: No OS sandbox in the SDK. Search scope (2026-10-05, pinned SHA):

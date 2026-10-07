@@ -640,8 +640,9 @@ the SDK as adapter.<sup id="fnref:66"><a class="footnote-ref" href="#fn:66">66</
 <p>OpenHands ships no git-level safety net — no auto-commit, no stash, no
 session undo. The <code>git</code> module is read-only helpers plus cached clones
 for extensions; the only undo anywhere is per-file <code>undo_edit</code> in the
-file editor (verified: case-insensitive grep for <code>commit|undo|stash</code> over
-<code>sdk/git/*.py</code> and <code>openhands-tools/**</code> finds only that one).<sup id="fnref:87"><a class="footnote-ref" href="#fn:87">87</a></sup>
+file editor (verified: every <code>commit|undo|stash</code> hit in <code>sdk/git/*.py</code> is
+a read-only history helper or a checkout/reset on a cached extension
+clone, never the user's workspace).<sup id="fnref:87"><a class="footnote-ref" href="#fn:87">87</a></sup>
 Contrast Aider, whose git auto-commit plus <code>/undo</code> is the safety model.
 There is no OS sandbox in the loop — no Seatbelt, no seccomp, no
 bubblewrap, no Landlock (grep over <code>openhands-sdk/</code> and <code>openhands-tools/</code>
@@ -720,7 +721,8 @@ hooks, and the confirmation policy to build them with.</p>
 </table>
 <h2 id="endnotes">Endnotes</h2>
 <p>All notes are VERIFIED against <code>v1.53.0</code>
-(<code>54daf056bd863bb46f922a2fe9324dd736b37ff6</code>) unless marked DOCS.
+(<code>54daf056bd863bb46f922a2fe9324dd736b37ff6</code>) unless marked DOCS; line
+anchors and file paths re-checked on 2026-10-07.
 <code>GH</code> = <code>https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/</code>.</p>
 <div class="footnote">
 <hr />
@@ -1356,9 +1358,13 @@ mid-run.&#160;<a class="footnote-backref" href="#fnref:86" title="Jump back to f
 <p>No git-level safety net. Search scope (2026-10-05, pinned SHA):
 case-insensitive grep for <code>commit|undo|stash</code> over
 <code>openhands-sdk/openhands/sdk/git/*.py</code> and
-<code>openhands-tools/openhands/tools/**/</code>: only <code>undo_edit</code> in
-<code>tools/file_editor/definition.py:26</code>; <code>git_commits.py</code> holds
-read-only history helpers; commit guidance appears only as a static
+<code>openhands-tools/openhands/tools/**/</code>. In <code>openhands-tools</code> the only
+undo is <code>undo_edit</code> (<code>tools/file_editor/definition.py:26</code>, also
+exposed by <code>planning_file_editor</code>). In <code>sdk/git</code> the hits are
+read-only history helpers (<code>git_commits.py</code>, <code>git_changes.py</code>,
+<code>git_diff.py</code>) and <code>checkout</code>/<code>reset --hard</code> on cached extension
+clones (<code>cached_repo.py:108</code>, <code>:121</code>) — none snapshot or restore the
+user's workspace. Commit guidance appears only as a static
 prompt section
 (<a href="https://github.com/OpenHands/software-agent-sdk/blob/54daf056bd863bb46f922a2fe9324dd736b37ff6/openhands-sdk/openhands/sdk/context/prompts/sections/static.py#L227">GH…/sdk/context/prompts/sections/static.py#L227</a>).&#160;<a class="footnote-backref" href="#fnref:87" title="Jump back to footnote 87 in the text">&#8617;</a></p>
 </li>
@@ -1371,6 +1377,7 @@ policy rails only. Sandboxing lives in deployment (agent-server
 Docker runtimes, <sup id="fnref2:59"><a class="footnote-ref" href="#fn:59">59</a></sup>).&#160;<a class="footnote-backref" href="#fnref:88" title="Jump back to footnote 88 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:88" title="Jump back to footnote 88 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:88" title="Jump back to footnote 88 in the text">&#8617;</a></p>
 </li>
 </ol>
+</div>
 </div>  <a class="diagram-cta" href="trace.html">
     Step through one turn live
     <span>Play the 8-step trace: message to event stream to view-built prompt, classify, tool batch, and critic-gated finish</span>
