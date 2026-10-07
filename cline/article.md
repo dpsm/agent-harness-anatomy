@@ -18,7 +18,7 @@
 
 | Package | Non-test `.ts` | Role |
 |---|---|---|
-| `apps/vscode/src` | 570 files, 76,962 LOC | Extension host, webview, gRPC bridge |
+| `apps/vscode/src` | 578 files, 78,079 LOC | Extension host, webview, gRPC bridge |
 | `sdk/packages/core/src` | 342 files, 110,215 LOC | Runtime, tools, session, safety, checkpoints |
 | `sdk/packages/agents/src` | 2 files, 2,919 LOC | THE loop |
 | `sdk/packages/shared/src` | 99 files, 18,252 LOC | Contracts, hooks, prompt templates |
@@ -108,8 +108,11 @@ Three nested levels, the same shape as aider's:
   re-loops or `finishRun("completed")` fires the `run-finished` event.
   With tool calls, `executeToolCalls()` runs them, results are pushed as
   messages, and `findCompletingToolMessage()` checks whether any tool with
-  `lifecycle.completesRun === true` succeeded — exactly one in-tree tool
-  has it, `submit_and_exit`: the run's stop button is a tool.[^9][^10]
+  `lifecycle.completesRun === true` succeeded. Two in-tree tools set it:
+  the SDK's `submit_and_exit` (enabled only in the `yolo` preset) and the
+  CLI's `switch_to_act_mode`. Where one is registered, the run's stop
+  button is a tool; in VS Code's act and plan modes neither is, so runs
+  end when the model stops calling tools.[^9][^10]
 - **Tool execution** — `prepareToolExecution()`: resolve the tool →
   `beforeTool` hooks (which can rewrite input, override policy, or skip) →
   `resolveToolPolicy()` (merges the `"*"` policy, then the per-name one) →
@@ -162,8 +165,11 @@ task-start sequence.[^18]
 mode `act` selects `ToolPresets.act`, `maxIterations: undefined`, and the
 per-mode model fields (`planMode*`/`actMode*` settings keys) — then
 `VscodeSessionHost.start` → `ClineCore.start` → a `SessionRuntime` →
-`createAgentRuntime` with the 9 default tools, the MCP `server__tool`
-natives, and one quiet substitution: VS Code suppresses the SDK's shell
+`createAgentRuntime` with the act preset's 7 built-ins (`apply_patch`
+and `submit_and_exit` are off; `editor` is swapped for `apply_patch` when
+the model ID contains `gpt` or `codex`), the MCP `server__tool` natives —
+VS Code turns `spawn_agent` and team tools off — and one quiet
+substitution: VS Code suppresses the SDK's shell
 tool via `toolExecutors.bash = undefined` and registers its own
 terminal-backed `run_commands` under the identical name — same policy key,
 different execution semantics, invisible to the policy layer.[^19][^20]
@@ -192,8 +198,8 @@ stream back as runtime events.[^23]
 `prepareToolExecution` resolves the policy: VS Code forces
 `autoApprove: false` on every governed tool so the SDK always consults the
 live UI, and the approval callback applies the live settings — reads,
-edits, browser, and MCP are auto-approved by default; **commands always
-prompt**. `read_files` and `editor` run; each result is appended.[^24]
+edits, browser, and MCP are auto-approved by default; **commands prompt
+by default**. `read_files` and `editor` run; each result is appended.[^24]
 
 **⑧ Feedback & loop.** Tool results feed the next iteration. When the model
 calls `run_commands` for the tests, the approval callback prompts in the
@@ -283,9 +289,12 @@ semantics for the same user gesture, split by which host you're in.[^43]
   (`ToolPresets`) + model-tool routing + executor merge → policy and
   global-disabled filtering; **host executors take precedence over SDK
   defaults**, which is how VS Code injects its terminal, editor-diff, and
-  file-read executors without forking the runtime.[^30] Team mode adds
-  `spawn_agent` plus eleven `team_*` tools — the only in-tree parallel
-  tools besides configured-agent tools.[^31] And the old world is truly
+  file-read executors without forking the runtime.[^30] Model-tool
+  routing then swaps `editor` for `apply_patch` by substring match on the
+  model ID (`gpt`, `codex`) or the `openai-native` provider.[^44] Team mode
+  adds `spawn_agent` plus up to eighteen `team_*` tools; `spawn_agent` and
+  configured-agent tools are the only in-tree parallel tools — the
+  `team_*` tools stay sequential.[^31] And the old world is truly
   gone: no `AgentTool` is registered under any legacy name
   (`write_to_file`, `execute_command`, `browser_action`, `use_mcp_tool`,
   …) — the names survive only in display enums, message-translator compat
@@ -301,7 +310,10 @@ semantics for the same user gesture, split by which host you're in.[^43]
   `autoApprove: false` on *every governed tool* — reads, edits, commands,
   web, all `server__tool` MCP tools — so the SDK always consults the live
   UI. The live defaults then auto-approve reads, edits, browser, and MCP;
-  **commands always prompt**. The CLI is the mirror image:
+  **commands prompt by default**. The one command toggle is named
+  `executeSafeCommands`, but `isToolAutoApproved` has no notion of a safe
+  command — turning it on auto-approves every `run_commands` call. The
+  CLI is the mirror image:
   `"*": {autoApprove: true}`.[^3][^39]
   **3. The approval callback**: live-settings short-circuit → diff preview
   for `editor`/`apply_patch` from a virtual document → webview ask →
@@ -315,10 +327,12 @@ semantics for the same user gesture, split by which host you're in.[^43]
   tool-list change triggers a silent session rebuild.[^34] Second, a naming
   mismatch with teeth: `buildToolPolicies` keys policies on the raw
   `server__tool` name, but registration runs names through a transform that
-  truncates anything over 64 characters to 55 chars + `_` + an 8-char sha1 —
-  while policy lookup uses the *registered* name. A long MCP tool name
-  misses its `{autoApprove: false}` policy and falls through to the
-  default-open `autoApprove: true`.[^34] Two naming schemes, one lookup,
+  rewrites any name that is over 64 characters *or* contains a character
+  outside `[A-Za-z0-9_-]` (a dot or space in a server name is enough) —
+  sanitized, cut to 55 chars, plus `_` and an 8-char sha1 — while policy
+  lookup uses the *registered* name. Such a tool misses its
+  `{autoApprove: false}` policy and falls through to the default-open
+  `autoApprove: true`, bypassing even the global MCP toggle.[^34] Two naming schemes, one lookup,
   fail-open default: the kind of seam that only a pinned-reading finds.
 
 ![Approval model](figures/seq-approval.svg)
@@ -367,7 +381,8 @@ semantics for the same user gesture, split by which host you're in.[^43]
   model ID takes the unregistered-model fallback, not an error. Per-model
   behavior is data-driven — capabilities, reasoning options, route matchers
   — with **no aider-style substring heuristics** in the resolution
-  path.[^23] Adding a provider means adding a `BuiltinSpec` record, not a
+  path.[^23] (Substring matching does survive one layer up, in the
+  model-tool routing that picks `apply_patch` over `editor`.[^44]) Adding a provider means adding a `BuiltinSpec` record, not a
   handler class. The tradeoff is scale: the philosophy needs a ~200k-line
   generated catalog that must be regenerated as the model world changes —
   aider's 313-entry YAML fits in a code review; Cline's doesn't.[^6]
@@ -431,19 +446,25 @@ semantics for the same user gesture, split by which host you're in.[^43]
   manifest. Legacy tasks persist as `tasks/<taskId>/{ui_messages.json,
   api_conversation_history.json, context_history.json,
   task_metadata.json}`, bridged by `sdk-task-history.ts`; resume pins
-  `config.sessionId = taskId` and reseeds via `startSession`. Compaction is
-  manual (`/compact` → `condense` RPC → `compactTask()`); the old behavior,
-  per the `condense.ts` docstring, "produced an improvised fake summary
-  without actually compacting" (ref CLINE-2503).[^37]
+  `config.sessionId = taskId` and reseeds via `startSession`. Compaction is automatic by default
+  (`useAutoCondense` defaults to true, enabling the runtime's compaction
+  strategy) and also available manually (`/compact` → `condense` RPC →
+  `compactTask()`); the old manual path, per the `condense.ts` docstring,
+  "produced an improvised fake summary without actually compacting" (ref
+  CLINE-2503).[^37][^45]
 
-- **Sub-agents.** Present, in both stacks. Legacy: YAML agent configs under
+- **Sub-agents.** Present in the SDK and CLI, but switched off in the VS
+  Code host, which sets `enableSpawnAgent: false` and `enableAgentTeams:
+  false`.[^45] Legacy: YAML agent configs under
   `~/Documents/Cline/Agents/` become dynamic `use_subagent_<name>` tools
-  via a chokidar-watched loader. Core: the `spawn_agent` tool (spawns a
+  via a chokidar-watched loader that only the legacy task path uses. Core:
+  the `spawn_agent` tool (spawns a
   full delegated agent, waits, returns text/iterations/usage), configured
   markdown agents (frontmatter: name, description, tools, skills,
   providerId, modelId, maxIterations), and the team runtime with its
   `team_*` tools.[^31][^38] Neither pi (deliberately omitted) nor aider
-  (architect = sequential delegation with a user gate) has this.
+  (architect = sequential delegation with a user gate) has this — though
+  in the scoped VS Code product it is not reachable.
 
 - **Interfaces.** The VS Code sidebar webview is primary, over the
   proto-bus gRPC bridge. `@cline/cli` (3.0.66) is a separate host app with
@@ -457,7 +478,7 @@ semantics for the same user gesture, split by which host you're in.[^43]
   conciseness nudge, counter resets on tool-call progress); context
   overflow (compaction pipeline, then terminal messages); loop detection
   (3× nudge / 5× abort, reactive); mistake tracker (6 consecutive, host
-  decides); no `maxIterations` in the VS Code host — the numeric bound is 5
+  decides); automatic compaction on by default; no `maxIterations` in the VS Code host — the numeric bound is 5
   identical tool calls, not turns.[^9][^13][^14][^15]
 
 - **Security model.** Approvals at the tool boundary (per-tool policies +
@@ -499,7 +520,7 @@ pi-grade extensibility at the SDK layer: policy-aware, lifecycle-aware,
 and host-independent.[^4]
 
 **Start here:** the plugin interface at
-`sdk/packages/shared/src/agent.ts:493-507`, then
+`sdk/packages/shared/src/agent.ts:517-526`, then
 `DefaultRuntimeBuilder.build` to see where plugin tools merge.
 
 ![Plugin lifecycle and the 7-callback hook bag](figures/seq-plugin-lifecycle.svg)
@@ -575,8 +596,9 @@ Three generations coexist: legacy YAML agents (`~/Documents/Cline/Agents/`
 → `use_subagent_<name>` tools), the `spawn_agent` tool (full delegated
 agent, waits, returns text/iterations/usage), configured markdown agents
 with frontmatter (name, description, tools, skills, provider, model,
-maxIterations), and the team runtime with its `team_*` tools — the only
-in-tree parallel tools.[^31][^38]
+maxIterations), and the team runtime with its `team_*` tools. Only
+`spawn_agent` and configured-agent tools run in parallel, and the VS Code
+host disables this whole axis; it is live in the SDK and CLI.[^31][^38][^45]
 
 **Start here:** the `spawn_agent` tool definition
 (`team/spawn-agent-tool.ts:121`) — `createDelegatedAgent` plus
@@ -604,7 +626,8 @@ pure function, which is why there's no sequence diagram for it.
   Cline's bet: interruptions are cheaper than surprises, *if* asking is
   one click and undo is certain. The price is prompt fatigue — which is why
   the defaults auto-approve reads and edits and only ever force the
-  question on commands.[^3][^24]
+  question on commands — and the toggle that would stop asking is
+  all-or-nothing despite its "safe commands" name.[^3][^24]
 - **Per-turn checkpoints vs per-turn commits.** aider's auto-commits are
   public history in your repo; Cline's are `git stash` snapshots under
   private refs, invisible until you ask, with a transaction-guarded
@@ -621,12 +644,13 @@ pure function, which is why there's no sequence diagram for it.
   model-agnostic by design; aider is model-aware by necessity (substring
   heuristics, load-bearing); Cline is model-aware by *scale* — 228
   providers behind one AI-SDK adapter, exact-ID resolution, per-model
-  behavior as data. No brittle string matching, but a ~200k-line generated
-  catalog that rots the moment models.dev changes shape.[^6][^23]
+  behavior as data. Almost no brittle string matching (model-tool routing
+  still keys on `gpt`/`codex` substrings), but a ~200k-line generated
+  catalog that rots the moment models.dev changes shape.[^6][^23][^44]
 - **Native MCP tools vs wrapped MCP tools.** pi wraps each server tool in
   its own `ToolDefinition`; Cline mints them as first-class `AgentTool`s.
   The wrapper is a seam you can see; the native path hides its seams
-  deeper — in policy-key naming, where a truncated name fails open.[^33][^34]
+  deeper — in policy-key naming, where a rewritten name fails open.[^33][^34]
 
 ## Deliberate omissions
 
@@ -654,25 +678,27 @@ pure function, which is why there's no sequence diagram for it.
 | # | Dimension | pi (v1.0.2) | aider (v0.86.2) | Cline (v4.1.22) |
 |---|---|---|---|---|
 | 1 | Agent loop | Event-sourced; inner + outer loops; no iteration cap | No tool-call loop; parse→apply→reflect; REPL + reflection (≤3) + retry | Host-independent SDK `AgentRuntime.execute`; turn loop + tool execution; `maxIterations: undefined` in VS Code host — bound is 5 identical tool calls [^7][^13][^14] |
-| 2 | Tool system | 4 built-ins + registry; TypeBox validation; sequential/parallel | None — model emits SEARCH/REPLACE blocks | 9 built-ins + MCP natives + team tools; sequential default, adjacent-parallel batching; 30s default timeout [^12][^28][^29] |
-| 3 | Model providers | ~35 behind one `StreamFn` | litellm; 313-entry YAML + substring heuristics | 228 providers, one generic Vercel AI SDK adapter; exact-ID resolution; data-driven per-model behavior; ~200k-line generated catalog [^6][^23] |
+| 2 | Tool system | 8 built-ins (4 active by default) + registry; TypeBox validation; sequential/parallel | None — model emits SEARCH/REPLACE blocks | 9 built-ins (7 active in VS Code act mode) + MCP natives + team tools (SDK/CLI); sequential default, adjacent-parallel batching; 30s default timeout [^12][^28][^29] |
+| 3 | Model providers | ~42 behind one `StreamFn` | litellm; 313-entry YAML + substring heuristics | 228 providers, one generic Vercel AI SDK adapter; exact-ID resolution; data-driven per-model behavior; ~200k-line generated catalog [^6][^23] |
 | 4 | Prompt construction | Structured sections, diffed per turn | Fixed wire order, synthetic user/assistant pairs, cache breakpoints | Template + placeholder replacement; `MessageBuilder` normalization; rules as `# Rules` sections [^21] |
-| 5 | Memory/session | JSONL sessions; compaction | In-memory cur/done; background summarization; markdown log; git auto-commit | SQLite + file-backend; versioned whole-file JSON envelopes; manual `/compact` (was fake pre-CLINE-2503) [^37] |
-| 6 | Reasoning/planning | Thinking forwarded; no planner/sub-agents | Architect = sequential delegation with user gate | plan/act modes (differ by one tool); sub-agents + teams present [^35][^38] |
+| 5 | Memory/session | JSONL sessions; compaction | In-memory cur/done; background summarization; markdown log; git auto-commit | SQLite + file-backend; versioned whole-file JSON envelopes; automatic compaction by default plus manual `/compact` (was fake pre-CLINE-2503) [^37][^45] |
+| 6 | Reasoning/planning | Thinking forwarded; no planner/sub-agents | Architect = sequential delegation with user gate | plan/act modes (differ by one tool); sub-agents + teams in SDK/CLI, disabled in VS Code [^35][^38][^45] |
 | 7 | Extensibility | TS extensions, hooks, MCP, skills | 42 closed commands; no plugin API/MCP/skills | Richest so far: `AgentRuntimePlugin`, 7-callback hooks, file hooks, skills, MCP, sub-agents [^4][^36] |
 | 8 | Interfaces | TUI / print / RPC / SDK on one event stream | prompt_toolkit CLI + streamlit GUI | VS Code webview over proto-bus gRPC (22 svcs/224 RPCs) + CLI host + npm SDK re-export [^26][^39] |
 | 9 | Failure handling | Auto-retry, truncation guards, abort; no cap | Exp-backoff (60s); malformed edits reflected (≤3) | Provider retry 3×; output-limit recovery 3×; loop detection 3×/5× (reactive); mistake tracker 6; no host iteration cap [^9][^14][^15] |
-| 10 | Security model | Project trust + extension hooks; no approval UX | Boundary prompts; git auto-commit + `/undo`; no sandbox | Finest-grained: per-tool policies + webview UI + diff previews; commands always prompt; no sandbox; per-turn stash checkpoints [^3][^22][^40] |
+| 10 | Security model | Project trust + extension hooks; no approval UX | Boundary prompts; git auto-commit + `/undo`; no sandbox | Finest-grained: per-tool policies + webview UI + diff previews; commands prompt by default; no sandbox; per-turn stash checkpoints [^3][^22][^40] |
 
 ## Endnotes
 
 All notes are VERIFIED against `v4.1.22`
-(`f58bc118bdeef1bd2813cd08e00d98bdcda96475`) unless marked DOCS.
+(`f58bc118bdeef1bd2813cd08e00d98bdcda96475`) unless marked DOCS; line
+anchors and file paths re-checked on 2026-10-07.
 `GH` = `https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/`.
 
 [^1]: Tag `v4.1.22` ("chore(vscode): release v4.1.22"), committed 2026-09-29
     20:51:26 -0700; Apache-2.0 (`LICENSE`); TypeScript bun workspace.
-    Non-test `.ts`: `apps/vscode/src` 570 files / 76,962 LOC,
+    Non-test `.ts` (excluding `*.test.ts`, `*.spec.ts`, `*.d.ts`, and
+    `test/` dirs): `apps/vscode/src` 578 files / 78,079 LOC,
     `sdk/packages/core/src` 342 / 110,215, `sdk/packages/agents/src` 2 /
     2,919, `sdk/packages/shared/src` 99 / 18,252,
     `sdk/packages/llms/src` ~17.5k non-generated. Generated catalog
@@ -690,7 +716,7 @@ All notes are VERIFIED against `v4.1.22`
     → `SdkController` (`apps/vscode/src/sdk/SdkController.ts`, 2,499 lines)
     → `VscodeSessionHost` (`apps/vscode/src/sdk/vscode-session-host.ts`)
     wrapping `ClineCore` with VS Code tool executors, the MCP hub, and a
-    terminal manager. The webview never touches the loop — see [^26].
+    terminal manager. The webview never touches the loop — see note 26.
 [^3]: Three approval layers. (1) SDK policy gate: `ToolPolicy{enabled,
     autoApprove}`, both defaulting to `true`, at
     [GH…/sdk/packages/shared/src/llms/tools.ts#L7-L19](https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/shared/src/llms/tools.ts#L7-L19)
@@ -701,11 +727,11 @@ All notes are VERIFIED against `v4.1.22`
     callback at
     [GH…/apps/vscode/src/sdk/sdk-interaction-coordinator.ts#L94-L137](https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/apps/vscode/src/sdk/sdk-interaction-coordinator.ts#L94-L137).
     CLI mirror image: `"*": {autoApprove: true}` at
-    [GH…/apps/cli/src/main.ts#L893-L902](https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/apps/cli/src/main.ts#L893-L902).
+    [GH…/apps/cli/src/main.ts#L892-L902](https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/apps/cli/src/main.ts#L892-L902).
 [^4]: `@cline/sdk` is
     `export * from "@cline/core"` — one line, no README. The plugin
     interface `AgentRuntimePlugin` (`setup()` → `{tools, hooks}`) at
-    [GH…/sdk/packages/shared/src/agent.ts#L493-L507](https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/shared/src/agent.ts#L493-L507).
+    [GH…/sdk/packages/shared/src/agent.ts#L517-L526](https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/shared/src/agent.ts#L517-L526).
 [^5]: Layering per `sdk/ARCHITECTURE.md`; dependency direction verified
     from imports: `extension.ts` → `SdkController` →
     `VscodeSessionHost` (`ClineCore`) → `SessionRuntime` →
@@ -718,9 +744,9 @@ All notes are VERIFIED against `v4.1.22`
     [GH…/sdk/packages/llms/src/providers/ids.ts#L90-L92](https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/llms/src/providers/ids.ts#L90-L92)).
     No per-provider handler classes: 14 `ProviderFamily` values bind to one
     generic `createAiSdkProvider` at
-    [GH…/sdk/packages/llms/src/ai-sdk.ts#L2127](https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/llms/src/ai-sdk.ts#L2127);
+    [GH…/sdk/packages/llms/src/providers/ai-sdk.ts#L2127](https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/llms/src/providers/ai-sdk.ts#L2127);
     the universal transport is AI-SDK `streamText` at
-    [GH…/sdk/packages/llms/src/ai-sdk.ts#L2324](https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/llms/src/ai-sdk.ts#L2324).
+    [GH…/sdk/packages/llms/src/providers/ai-sdk.ts#L2324](https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/llms/src/providers/ai-sdk.ts#L2324).
 [^7]: The loop construct, verbatim, at
     [GH…/sdk/packages/agents/src/agent-runtime.ts#L830-L833](https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/agents/src/agent-runtime.ts#L830-L833).
     Entry: `run(input)` at L623, `continue(input)` at L627, both into
@@ -733,13 +759,16 @@ All notes are VERIFIED against `v4.1.22`
     [GH…/sdk/packages/agents/src/agent-runtime.ts#L1172](https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/agents/src/agent-runtime.ts#L1172);
     `PROVIDER_ERROR_MAX_RETRIES = 3`, 1s→15s backoff, transient errors
     only, at
-    [GH…/sdk/packages/agents/src/agent-runtime.ts#L76-L86](https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/agents/src/agent-runtime.ts#L76-L86).
+    [GH…/sdk/packages/agents/src/agent-runtime.ts#L87-L91](https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/agents/src/agent-runtime.ts#L87-L91).
 [^10]: `executeToolCalls()` at
-    [GH…/sdk/packages/agents/src/agent-runtime.ts#L2284](https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/agents/src/agent-runtime.ts#L2284);
-    `findCompletingToolMessage()` at L2320; `submit_and_exit` carries
+    [GH…/sdk/packages/agents/src/agent-runtime.ts#L2285](https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/agents/src/agent-runtime.ts#L2285);
+    `findCompletingToolMessage()` at L2325; `submit_and_exit` carries
     `lifecycle.completesRun: true` at
-    [GH…/sdk/packages/core/src/extensions/tools/definitions.ts#L845-L847](https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/core/src/extensions/tools/definitions.ts#L845-L847)
-    — the only in-tree tool with it. Completion reminders via
+    [GH…/sdk/packages/core/src/extensions/tools/definitions.ts#L855-L858](https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/core/src/extensions/tools/definitions.ts#L855-L858)
+    (enabled only by the `yolo` preset,
+    [GH…/sdk/packages/core/src/extensions/tools/presets.ts#L20-L60](https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/core/src/extensions/tools/presets.ts#L20-L60));
+    the CLI's `switch_to_act_mode` sets it too, at
+    [GH…/apps/cli/src/runtime/interactive/mode.ts#L53-L55](https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/apps/cli/src/runtime/interactive/mode.ts#L53-L55). Completion reminders via
     `getCompletionReminderMessages` at
     [GH…/sdk/packages/agents/src/agent-runtime.ts#L763](https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/agents/src/agent-runtime.ts#L763);
     otherwise `finishRun("completed")`.
@@ -768,13 +797,13 @@ All notes are VERIFIED against `v4.1.22`
     [GH…/sdk/packages/core/src/runtime/safety/loop-detection.ts](https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/core/src/runtime/safety/loop-detection.ts):
     consecutive identical (name + key-sorted-JSON-signature) tool calls —
     soft nudge at 3, mistake record + abort at 5, in
-    [GH…/sdk/packages/core/src/runtime/safety/session-runtime-orchestrator.ts#L1417-L1481](https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/core/src/runtime/safety/session-runtime-orchestrator.ts#L1417-L1481).
+    [GH…/sdk/packages/core/src/runtime/orchestration/session-runtime-orchestrator.ts#L1417-L1481](https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/core/src/runtime/orchestration/session-runtime-orchestrator.ts#L1417-L1481).
     It is reactive: fed from the `tool-started` event at
-    [GH…/sdk/packages/core/src/runtime/safety/session-runtime-orchestrator.ts#L1257](https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/core/src/runtime/safety/session-runtime-orchestrator.ts#L1257),
+    [GH…/sdk/packages/core/src/runtime/orchestration/session-runtime-orchestrator.ts#L1257](https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/core/src/runtime/orchestration/session-runtime-orchestrator.ts#L1257),
     not the `beforeTool` hook its own file header claims — the 5th
     identical call starts before the abort lands. Mistake tracker: default
     6 consecutive all-failed turns at
-    [GH…/sdk/packages/core/src/runtime/safety/session-runtime-orchestrator.ts#L449](https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/core/src/runtime/safety/session-runtime-orchestrator.ts#L449);
+    [GH…/sdk/packages/core/src/runtime/orchestration/session-runtime-orchestrator.ts#L450](https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/core/src/runtime/orchestration/session-runtime-orchestrator.ts#L450);
     a productive turn resets; at the limit the host decides continue/stop.
 [^15]: `MAX_TOKENS_RECOVERY_LIMIT = 3` at
     [GH…/sdk/packages/agents/src/agent-runtime.ts#L63-L72](https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/agents/src/agent-runtime.ts#L63-L72)
@@ -805,15 +834,15 @@ All notes are VERIFIED against `v4.1.22`
     `act` → `ToolPresets.act`; per-mode model fields at
     [GH…/apps/vscode/src/sdk/cline-session-factory.ts#L399-L424](https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/apps/vscode/src/sdk/cline-session-factory.ts#L399-L424))
     → `VscodeSessionHost.start` at
-    [GH…/apps/vscode/src/sdk/vscode-session-host.ts#L198](https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/apps/vscode/src/sdk/vscode-session-host.ts#L198)
+    [GH…/apps/vscode/src/sdk/vscode-session-host.ts#L206](https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/apps/vscode/src/sdk/vscode-session-host.ts#L206)
     → `ClineCore.start`
     (`sdk/packages/core/src/core/ClineCore.ts:285`) → `SessionRuntime` →
-    `createAgentRuntime` with the 9 default tools plus MCP `server__tool`
-    natives.
+    `createAgentRuntime` with the act preset's tools plus MCP
+    `server__tool` natives.
 [^20]: VS Code suppresses the SDK's shell tool via
     `toolExecutors.bash = undefined` and registers its own terminal-backed
     `run_commands` under the identical name at
-    [GH…/apps/vscode/src/sdk/vscode-session-host.ts#L118-L126](https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/apps/vscode/src/sdk/vscode-session-host.ts#L118-L126)
+    [GH…/apps/vscode/src/sdk/vscode-session-host.ts#L122-L142](https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/apps/vscode/src/sdk/vscode-session-host.ts#L122-L142)
     (tool implementation at
     [GH…/apps/vscode/src/sdk/vscode-run-commands-tool.ts#L531](https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/apps/vscode/src/sdk/vscode-run-commands-tool.ts#L531))
     — same policy key, different execution semantics, invisible to the
@@ -843,16 +872,19 @@ All notes are VERIFIED against `v4.1.22`
 [^23]: `DefaultGateway.stream()` at
     [GH…/sdk/packages/llms/src/providers/gateway.ts#L273](https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/llms/src/providers/gateway.ts#L273);
     `registry.resolveModel()` at
-    [GH…/sdk/packages/llms/src/registry.ts#L251](https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/llms/src/registry.ts#L251)
+    [GH…/sdk/packages/llms/src/providers/registry.ts#L251-L267](https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/llms/src/providers/registry.ts#L251-L267)
     (exact-ID match; unknown modelId → unregistered-model fallback, not an
     error); per-model behavior is data-driven (capabilities, reasoning
     options, route matchers) — no aider-style substring heuristics in the
-    resolution path (see [^41]).
+    resolution path (see note 41).
 [^24]: VS Code forces `autoApprove: false` on every governed tool
     ([GH…/apps/vscode/src/sdk/sdk-tool-policies.ts#L13-L41](https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/apps/vscode/src/sdk/sdk-tool-policies.ts#L13-L41)).
     Live defaults at
-    [GH…/sdk/packages/shared/src/storage/AutoApprovalSettings.ts#L33-L44](https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/shared/src/storage/AutoApprovalSettings.ts#L33-L44):
-    reads, edits, browser, MCP auto-approved; commands always prompt. The
+    [GH…/apps/vscode/src/shared/AutoApprovalSettings.ts#L28-L44](https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/apps/vscode/src/shared/AutoApprovalSettings.ts#L28-L44):
+    reads, edits, browser, MCP auto-approved; `executeSafeCommands: false`,
+    so commands prompt. `isToolAutoApproved` maps every `run_commands` call
+    to that single toggle, with no safe/unsafe classification, at
+    [GH…/apps/vscode/src/sdk/sdk-tool-policies.ts#L48-L67](https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/apps/vscode/src/sdk/sdk-tool-policies.ts#L48-L67). The
     approval callback at
     [GH…/apps/vscode/src/sdk/sdk-interaction-coordinator.ts#L94-L137](https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/apps/vscode/src/sdk/sdk-interaction-coordinator.ts#L94-L137).
 [^25]: Diff preview via `SdkDiffEditCoordinator` at
@@ -863,7 +895,7 @@ All notes are VERIFIED against `v4.1.22`
     `resolvePendingToolApproval` at
     [GH…/apps/vscode/src/sdk/sdk-interaction-coordinator.ts#L160-L216](https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/apps/vscode/src/sdk/sdk-interaction-coordinator.ts#L160-L216);
     denial text at
-    [GH…/sdk/packages/core/src/runtime/safety/tool-approval-denial.ts#L6-L7](https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/core/src/runtime/safety/tool-approval-denial.ts#L6-L7)
+    [GH…/apps/vscode/src/sdk/tool-approval-denial.ts#L6-L7](https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/apps/vscode/src/sdk/tool-approval-denial.ts#L6-L7)
     ("The user denied this edit. The file was NOT modified…").
 [^26]: The proto-bus: `apps/vscode/proto/` — 22 services, 224 RPCs (16
     `cline/*`, 6 `host/*`). `WebviewGrpcBridge` at
@@ -873,16 +905,16 @@ All notes are VERIFIED against `v4.1.22`
     webview's convergent-replica reducer renders the transcript
     (out-of-order/duplicate/lossy delivery converges).
 [^27]: Restore at
-    [GH…/sdk/packages/core/src/session/services/checkpoint-restore.ts#L439-L477](https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/core/src/session/services/checkpoint-restore.ts#L439-L477)
+    [GH…/sdk/packages/core/src/session/checkpoint-restore.ts#L439-L477](https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/core/src/session/checkpoint-restore.ts#L439-L477)
     (refuses if HEAD moved past the checkpoint at
-    [L414-L437](https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/core/src/session/services/checkpoint-restore.ts#L414-L437);
+    [L414-L437](https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/core/src/session/checkpoint-restore.ts#L414-L437);
     `update-ref HEAD` + `reset --hard` + conditional `clean -fd` +
     `stash apply`, guarded by a pre-restore transaction snapshot under
     `refs/cline/restore-transactions/{uuid}`); UI entry
     `SdkController.restoreCheckpoint` at
     [GH…/apps/vscode/src/sdk/SdkController.ts#L1704-L1786](https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/apps/vscode/src/sdk/SdkController.ts#L1704-L1786);
     compare via
-    [GH…/sdk/packages/core/src/session/services/checkpoint-diff.ts#L150](https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/core/src/session/services/checkpoint-diff.ts#L150).
+    [GH…/sdk/packages/core/src/session/checkpoint-diff.ts#L150](https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/core/src/session/checkpoint-diff.ts#L150).
 [^28]: The 9 built-in tool factories in
     [GH…/sdk/packages/core/src/extensions/tools/definitions.ts](https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/core/src/extensions/tools/definitions.ts):
     `createReadFilesTool` L268, `createSearchTool` L364, `createShellTool`
@@ -892,7 +924,7 @@ All notes are VERIFIED against `v4.1.22`
 [^29]: `AgentTool` contract at
     [GH…/sdk/packages/shared/src/agent.ts#L202](https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/shared/src/agent.ts#L202)
     (definition + `executionMode` at
-    [L207](https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/shared/src/agent.ts#L207));
+    [L205](https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/shared/src/agent.ts#L205));
     `createTool` factory at
     [GH…/sdk/packages/shared/src/tools/create.ts#L81](https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/shared/src/tools/create.ts#L81)
     (default `timeoutMs: 30_000` at
@@ -908,8 +940,11 @@ All notes are VERIFIED against `v4.1.22`
     `ToolPresets` at
     [GH…/sdk/packages/core/src/extensions/tools/presets.ts#L20](https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/core/src/extensions/tools/presets.ts#L20).
 [^31]: Team tools at
-    [GH…/sdk/packages/core/src/extensions/tools/team/team-tools.ts#L303-L682](https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/core/src/extensions/tools/team/team-tools.ts#L303-L682)
-    (`spawn_agent` + eleven `team_*` tools). Legacy YAML agents:
+    [GH…/sdk/packages/core/src/extensions/tools/team/team-tools.ts#L292-L864](https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/core/src/extensions/tools/team/team-tools.ts#L292-L864)
+    (`createAgentTeamsTools`: up to eighteen `team_*` tools, some gated by
+    `includeSpawnTool`/`includeManagementTools`; none sets
+    `executionMode`, so all are sequential). `spawn_agent` is the separate
+    parallel tool in `spawn-agent-tool.ts`. Legacy YAML agents:
     `~/Documents/Cline/Agents/*.yaml` → dynamic `use_subagent_<name>`
     tools via a chokidar-watched `AgentConfigLoader`.
 [^32]: Negative finding: grep for `name: "write_to_file"`, `"execute_command"`,
@@ -925,8 +960,10 @@ All notes are VERIFIED against `v4.1.22`
     on `tools/list_changed`). `createMcpTools` at
     [GH…/sdk/packages/core/src/extensions/mcp/tools.ts#L16](https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/core/src/extensions/mcp/tools.ts#L16);
     naming at
-    [GH…/sdk/packages/core/src/extensions/mcp/name-transform.ts#L20-L38](https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/core/src/extensions/mcp/name-transform.ts#L20-L38)
-    (names over 64 chars → 55 chars + `_` + 8-char sha1). Negative finding:
+    [GH…/sdk/packages/core/src/extensions/mcp/name-transform.ts#L1-L35](https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/core/src/extensions/mcp/name-transform.ts#L1-L35)
+    (names over 64 chars or containing characters outside `[A-Za-z0-9_-]`
+    → sanitized, cut to 55 chars, + `_` + 8-char sha1); VS Code uses this
+    default transform via `createMcpTools` in `vscode-runtime-builder.ts`. Negative finding:
     grep for `readResource|resources/read|prompts/get` over
     `sdk/packages/core/src` returns zero hits — MCP resources/prompts are
     webview-display-only.
@@ -939,13 +976,15 @@ All notes are VERIFIED against `v4.1.22`
     trigger a silent session rebuild at
     [GH…/apps/vscode/src/sdk/sdk-mcp-coordinator.ts#L35-L113](https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/apps/vscode/src/sdk/sdk-mcp-coordinator.ts#L35-L113).
     The naming seam: `buildToolPolicies` keys policies on the raw
-    `server__tool` name while registration truncates+hashes long names —
+    `server__tool` name while registration sanitizes and hashes long or
+    non-conforming names —
     and policy lookup uses the *registered* name
     ([GH…/sdk/packages/agents/src/agent-runtime.ts#L2419](https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/agents/src/agent-runtime.ts#L2419)).
-    A truncated name misses its `{autoApprove: false}` policy and falls
-    through to the default-open `autoApprove: true` (see [^3]).
+    A rewritten name misses its `{autoApprove: false}` policy and falls
+    through to the default-open `autoApprove: true` (see note 3), so the
+    approval callback, and with it the `useMcp` toggle, is never consulted.
 [^35]: `Mode = "plan" | "act"` at
-    [GH…/sdk/packages/shared/src/storage/types.ts#L14](https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/shared/src/storage/types.ts#L14);
+    [GH…/apps/vscode/src/shared/storage/types.ts#L14](https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/apps/vscode/src/shared/storage/types.ts#L14);
     `AgentMode = "act" | "plan" | "yolo" | "zen"` at
     [GH…/sdk/packages/shared/src/session/runtime-config.ts#L3](https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/shared/src/session/runtime-config.ts#L3).
     plan vs act differ by exactly one tool (`editor` off in plan) at
@@ -966,7 +1005,7 @@ All notes are VERIFIED against `v4.1.22`
     [GH…/sdk/packages/shared/src/agent.ts#L443-L451](https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/shared/src/agent.ts#L443-L451).
     File-based hooks: engine `hook-file-hooks.ts` (1,171 lines), ten named
     files in
-    [GH…/sdk/packages/core/src/hooks/hook-file-config.ts#L19-L30](https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/core/src/hooks/hook-file-config.ts#L19-L30)
+    [GH…/sdk/packages/core/src/hooks/hook-file-config.ts#L17-L42](https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/core/src/hooks/hook-file-config.ts#L17-L42)
     (`PreCompact` maps to `undefined` — named but unwired). Legacy hook
     system survives only via `hooks-adapter.ts` (4 of 9 points wired, 5
     explicitly not).
@@ -992,16 +1031,18 @@ All notes are VERIFIED against `v4.1.22`
     configured markdown agents (frontmatter: name, description, tools,
     skills, providerId, modelId, maxIterations) at
     [GH…/sdk/packages/core/src/extensions/tools/team/configured-agent-tool.ts](https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/core/src/extensions/tools/team/configured-agent-tool.ts);
-    the team runtime with its `team_*` tools (see [^31]).
+    the team runtime with its `team_*` tools (see note 31).
 [^39]: Interfaces: the React webview over the proto-bus gRPC bridge (see
-    [^26]); `@cline/cli` 3.0.66 as a separate host app with the opposite
+    note 26); `@cline/cli` 3.0.66 as a separate host app with the opposite
     approval default
-    ([GH…/apps/cli/src/main.ts#L893-L902](https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/apps/cli/src/main.ts#L893-L902)).
+    ([GH…/apps/cli/src/main.ts#L892-L902](https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/apps/cli/src/main.ts#L892-L902)).
 [^40]: `command-guard.ts` documents itself as "a simple blacklist, not a
     shell interpreter" at
-    [GH…/sdk/packages/core/src/runtime/safety/command-guard.ts#L1-L18](https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/core/src/runtime/safety/command-guard.ts#L1-L18)
-    (plan-mode enforcement via the `command-guard-extension.ts`
-    `beforeTool` hook). `subprocess-sandbox.ts` consumers: only
+    [GH…/sdk/packages/core/src/extensions/tools/command-guard.ts#L1-L18](https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/core/src/extensions/tools/command-guard.ts#L1-L18)
+    (plan-mode enforcement via the `beforeTool` hook in
+    [GH…/sdk/packages/core/src/extensions/tools/command-guard-extension.ts#L1-L16](https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/core/src/extensions/tools/command-guard-extension.ts#L1-L16);
+    `command-guard.ts`'s own header still says `createShellTool` runs the
+    check, which no longer matches). `subprocess-sandbox.ts` consumers: only
     `plugin-sandbox.ts:322` (internal Node helpers) — it is not a command
     sandbox; `run_commands` executes unsandboxed in the user's shell.
 [^41]: Provider philosophy: adding a provider = adding a `BuiltinSpec`
@@ -1010,8 +1051,8 @@ All notes are VERIFIED against `v4.1.22`
     not a handler class. Negative finding: no aider-style substring
     heuristics in the resolution path — `.includes(` in
     `sdk/packages/llms/src` outside catalog-metadata derivations appears
-    nowhere in `registry.ts:225-244` (exact-ID match + unregistered
-    fallback). The legacy `ApiHandler` interface survives as a compat shim
+    nowhere in `providers/registry.ts:251-267` (exact-ID match +
+    unregistered fallback). The legacy `ApiHandler` interface survives as a compat shim
     at
     [GH…/sdk/packages/llms/src/providers/handler.ts#L28](https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/llms/src/providers/handler.ts#L28)
     and
@@ -1029,6 +1070,20 @@ All notes are VERIFIED against `v4.1.22`
     global `SKILL.md` discovery at
     [GH…/sdk/packages/core/src/services/marketplace.ts#L249-L253](https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/core/src/services/marketplace.ts#L249-L253)
     (`~/.cline/skills/<name>/SKILL.md`, `~/.agents/skills/<name>/SKILL.md`).
+[^44]: Model-tool routing: `DEFAULT_MODEL_TOOL_ROUTING_RULES` at
+    [GH…/sdk/packages/core/src/extensions/tools/model-tool-routing.ts#L60-L75](https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/core/src/extensions/tools/model-tool-routing.ts#L60-L75)
+    enables `apply_patch` and disables `editor` in act mode for the
+    `openai-native` provider or any model ID containing `codex` or `gpt`
+    (substring match at L77-L88), applied by `createBuiltinToolsList` at
+    [GH…/sdk/packages/core/src/runtime/orchestration/runtime-builder.ts#L140-L158](https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/sdk/packages/core/src/runtime/orchestration/runtime-builder.ts#L140-L158).
+[^45]: VS Code session config at
+    [GH…/apps/vscode/src/sdk/cline-session-factory.ts#L1093-L1102](https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/apps/vscode/src/sdk/cline-session-factory.ts#L1093-L1102):
+    `enableSpawnAgent: false`, `enableAgentTeams: false`, and
+    `compaction: {enabled: true, strategy}` whenever `useAutoCondense` is
+    on — which it is by default
+    ([GH…/apps/vscode/src/shared/storage/state-keys.ts#L277](https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/apps/vscode/src/shared/storage/state-keys.ts#L277);
+    resolved at
+    [GH…/apps/vscode/src/sdk/cline-session-factory.ts#L1015-L1019](https://github.com/cline/cline/blob/f58bc118bdeef1bd2813cd08e00d98bdcda96475/apps/vscode/src/sdk/cline-session-factory.ts#L1015-L1019)).
 
 ---
 
