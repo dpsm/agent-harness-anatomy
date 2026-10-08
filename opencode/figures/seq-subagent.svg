@@ -38,8 +38,8 @@
 <circle cx="864" cy="422" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
 <text x="864" y="427" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">5</text>
 <text x="882" y="427" font-size="14" fill="#000000">ops.prompt({sessionID: nextSession.id, agent})</text>
-<rect x="113" y="470" width="1373" height="44" rx="8" fill="#d08c4e22" stroke="#d08c4e" stroke-width="1"/>
-<text x="800" y="502" text-anchor="middle" font-size="14" fill="#000000">Full nested runLoop: own history, own model, own SQLite rows</text>
+<rect x="113" y="470" width="1373" height="44" rx="8" fill="#d08c4e" fill-opacity="0.13" stroke="#d08c4e" stroke-width="1"/>
+<text x="800" y="497" text-anchor="middle" font-size="14" fill="#000000">Full nested runLoop: own history, own model, own SQLite rows</text>
 <line x1="1084" y1="570" x2="810" y2="570" stroke="#8a7a66" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrr)"/>
 <circle cx="864" cy="556" r="11" fill="#ffffff" stroke="#8a7a66" stroke-width="1.5"/>
 <text x="864" y="561" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">6</text>
@@ -52,6 +52,6 @@
 <circle cx="864" cy="678" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
 <text x="864" y="683" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">8</text>
 <text x="882" y="683" font-size="14" fill="#000000">ToolPart completed</text>
-<rect x="113" y="726" width="1373" height="44" rx="8" fill="#d08c4e22" stroke="#d08c4e" stroke-width="1"/>
-<text x="800" y="758" text-anchor="middle" font-size="14" fill="#000000">Background tasks fork and inject results as synthetic user messages</text>
+<rect x="113" y="726" width="1373" height="44" rx="8" fill="#d08c4e" fill-opacity="0.13" stroke="#d08c4e" stroke-width="1"/>
+<text x="800" y="753" text-anchor="middle" font-size="14" fill="#000000">Background tasks fork and inject results as synthetic user messages</text>
 </svg>
