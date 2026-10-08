@@ -22,26 +22,34 @@
 <circle cx="722" cy="292" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
 <text x="722" y="297" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">2</text>
 <text x="740" y="297" font-size="14" fill="#000000">commands.is_command(inp)</text>
-<rect x="972" y="353" width="83" height="47" rx="6" fill="none" stroke="#d08c4e" stroke-width="2"/>
-<text x="1074" y="381" font-size="14" fill="#000000">run(inp): &#x27;!&#x27; prefix -&gt; shell</text>
-<rect x="483" y="422" width="634" height="44" rx="8" fill="#d08c4e22" stroke="#d08c4e" stroke-width="1"/>
-<text x="800" y="461" text-anchor="middle" font-size="14" fill="#000000">&#x27;!&#x27; escapes to do_run(&#x27;run&#x27;, rest) — shell without the loop</text>
-<rect x="972" y="516" width="83" height="47" rx="6" fill="none" stroke="#d08c4e" stroke-width="2"/>
-<text x="1074" y="543" font-size="14" fill="#000000">matching_commands(inp): prefix match</text>
-<rect x="972" y="590" width="83" height="47" rx="6" fill="none" stroke="#d08c4e" stroke-width="2"/>
-<text x="1074" y="618" font-size="14" fill="#000000">do_run(command, args)</text>
+<path d="M 972 381 h 61 v 36 H 982" fill="none" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="1002" cy="365" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="1002" y="370" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">3</text>
+<text x="1043" y="386" font-size="14" fill="#000000">run(inp): &#x27;!&#x27; prefix -&gt; shell</text>
+<rect x="483" y="422" width="634" height="44" rx="8" fill="#d08c4e" fill-opacity="0.13" stroke="#d08c4e" stroke-width="1"/>
+<text x="800" y="449" text-anchor="middle" font-size="14" fill="#000000">&#x27;!&#x27; escapes to do_run(&#x27;run&#x27;, rest) — shell without the loop</text>
+<path d="M 972 544 h 61 v 36 H 982" fill="none" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="1002" cy="528" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="1002" y="533" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">4</text>
+<text x="1043" y="549" font-size="14" fill="#000000">matching_commands(inp): prefix match</text>
+<path d="M 972 618 h 61 v 36 H 982" fill="none" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="1002" cy="602" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="1002" y="607" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">5</text>
+<text x="1043" y="623" font-size="14" fill="#000000">do_run(command, args)</text>
 <line x1="972" y1="692" x2="1307" y2="692" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
 <circle cx="1067" cy="678" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
 <text x="1067" y="683" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">6</text>
 <text x="1085" y="683" font-size="14" fill="#000000">getattr(self, &#x27;cmd_&#x27; + name)</text>
-<rect x="483" y="734" width="979" height="44" rx="8" fill="#d08c4e22" stroke="#d08c4e" stroke-width="1"/>
-<text x="972" y="772" text-anchor="middle" font-size="14" fill="#000000">any cmd_* method auto-registers (get_commands :276) — the closed set of 42</text>
-<rect x="1317" y="828" width="83" height="47" rx="6" fill="none" stroke="#d08c4e" stroke-width="2"/>
-<text x="1419" y="855" font-size="14" fill="#000000">the cmd_* method runs</text>
+<rect x="483" y="734" width="979" height="44" rx="8" fill="#d08c4e" fill-opacity="0.13" stroke="#d08c4e" stroke-width="1"/>
+<text x="972" y="761" text-anchor="middle" font-size="14" fill="#000000">any cmd_* method auto-registers (get_commands :276) — the closed set of 42</text>
+<path d="M 1317 856 h 61 v 36 H 1327" fill="none" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="1347" cy="840" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="1347" y="845" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">7</text>
+<text x="1388" y="861" font-size="14" fill="#000000">the cmd_* method runs</text>
 <line x1="1317" y1="930" x2="293" y2="930" stroke="#8a7a66" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrr)"/>
 <circle cx="722" cy="916" r="11" fill="#ffffff" stroke="#8a7a66" stroke-width="1.5"/>
 <text x="722" y="921" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">8</text>
 <text x="740" y="921" font-size="14" fill="#000000">result or error text</text>
-<rect x="138" y="971" width="1324" height="44" rx="8" fill="#d08c4e22" stroke="#d08c4e" stroke-width="1"/>
-<text x="800" y="1010" text-anchor="middle" font-size="14" fill="#000000">No plugin API exists: extending commands means forking commands.py (grep &#x27;plugin&#x27; -&gt; 0 hits)</text>
+<rect x="138" y="971" width="1324" height="44" rx="8" fill="#d08c4e" fill-opacity="0.13" stroke="#d08c4e" stroke-width="1"/>
+<text x="800" y="998" text-anchor="middle" font-size="14" fill="#000000">No plugin API exists: extending commands means forking commands.py (grep &#x27;plugin&#x27; -&gt; 0 hits)</text>
 </svg>

@@ -29,20 +29,26 @@
 <circle cx="864" cy="299" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
 <text x="864" y="304" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">3</text>
 <text x="882" y="304" font-size="14" fill="#000000">io.interrupt_input()</text>
-<rect x="681" y="347" width="522" height="44" rx="8" fill="#d08c4e22" stroke="#d08c4e" stroke-width="1"/>
-<text x="942" y="379" text-anchor="middle" font-size="14" fill="#000000">Partial input is stashed as placeholder; the prompt session exits</text>
-<rect x="800" y="424" width="68" height="39" rx="6" fill="none" stroke="#d08c4e" stroke-width="2"/>
-<text x="884" y="447" font-size="14" fill="#000000">process_changes()</text>
-<rect x="800" y="486" width="68" height="39" rx="6" fill="none" stroke="#d08c4e" stroke-width="2"/>
-<text x="884" y="508" font-size="14" fill="#000000">get_ai_comments(fname): scan for AI!/AI?</text>
-<rect x="397" y="542" width="522" height="44" rx="8" fill="#d08c4e22" stroke="#d08c4e" stroke-width="1"/>
-<text x="658" y="574" text-anchor="middle" font-size="14" fill="#000000">Files not yet in chat are auto-added; others only need the comment</text>
-<rect x="800" y="620" width="68" height="39" rx="6" fill="none" stroke="#d08c4e" stroke-width="2"/>
-<text x="884" y="642" font-size="14" fill="#000000">TreeContext around comment lines</text>
+<rect x="681" y="347" width="522" height="44" rx="8" fill="#d08c4e" fill-opacity="0.13" stroke="#d08c4e" stroke-width="1"/>
+<text x="942" y="374" text-anchor="middle" font-size="14" fill="#000000">Partial input is stashed as placeholder; the prompt session exits</text>
+<path d="M 800 447 h 50 v 29 H 810" fill="none" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="825" cy="431" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="825" y="436" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">4</text>
+<text x="860" y="452" font-size="14" fill="#000000">process_changes()</text>
+<path d="M 800 509 h 50 v 29 H 810" fill="none" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="825" cy="493" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="825" y="498" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">5</text>
+<text x="860" y="514" font-size="14" fill="#000000">get_ai_comments(fname): scan for AI!/AI?</text>
+<rect x="397" y="542" width="522" height="44" rx="8" fill="#d08c4e" fill-opacity="0.13" stroke="#d08c4e" stroke-width="1"/>
+<text x="658" y="569" text-anchor="middle" font-size="14" fill="#000000">Files not yet in chat are auto-added; others only need the comment</text>
+<path d="M 800 643 h 50 v 29 H 810" fill="none" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="825" cy="627" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="825" y="632" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">6</text>
+<text x="860" y="648" font-size="14" fill="#000000">TreeContext around comment lines</text>
 <line x1="800" y1="704" x2="1357" y2="704" stroke="#8a7a66" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrr)"/>
 <circle cx="1006" cy="690" r="11" fill="#ffffff" stroke="#8a7a66" stroke-width="1.5"/>
 <text x="1006" y="695" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">7</text>
 <text x="1024" y="695" font-size="14" fill="#000000">watch_code_prompt / watch_ask_prompt + context</text>
-<rect x="681" y="738" width="806" height="44" rx="8" fill="#d08c4e22" stroke="#d08c4e" stroke-width="1"/>
-<text x="1084" y="769" text-anchor="middle" font-size="14" fill="#000000">The prompt returns as the next user input — the filesystem is an input device</text>
+<rect x="681" y="738" width="806" height="44" rx="8" fill="#d08c4e" fill-opacity="0.13" stroke="#d08c4e" stroke-width="1"/>
+<text x="1084" y="765" text-anchor="middle" font-size="14" fill="#000000">The prompt returns as the next user input — the filesystem is an input device</text>
 </svg>

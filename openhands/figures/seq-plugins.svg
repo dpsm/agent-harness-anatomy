@@ -21,16 +21,20 @@
 <circle cx="296" cy="177" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
 <text x="296" y="182" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">1</text>
 <text x="314" y="182" font-size="14" fill="#000000">Plugin.load(path): parse plugin.json manifest</text>
-<rect x="516" y="229" width="68" height="39" rx="6" fill="none" stroke="#d08c4e" stroke-width="2"/>
-<text x="600" y="252" font-size="14" fill="#000000">Plugin(skills, hooks, mcp, agents, commands)</text>
+<path d="M 516 252 h 50 v 29 H 526" fill="none" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="541" cy="236" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="541" y="241" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">2</text>
+<text x="576" y="257" font-size="14" fill="#000000">Plugin(skills, hooks, mcp, agents, commands)</text>
 <line x1="516" y1="313" x2="243" y2="313" stroke="#8a7a66" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrr)"/>
 <circle cx="296" cy="299" r="11" fill="#ffffff" stroke="#8a7a66" stroke-width="1.5"/>
 <text x="296" y="304" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">3</text>
 <text x="314" y="304" font-size="14" fill="#000000">Plugin manifest + bundle contents</text>
-<rect x="113" y="347" width="1373" height="44" rx="8" fill="#d08c4e22" stroke="#d08c4e" stroke-width="1"/>
-<text x="800" y="379" text-anchor="middle" font-size="14" fill="#000000">No standalone slash-command dispatcher: commands become keyword-triggered skills</text>
-<rect x="516" y="424" width="68" height="39" rx="6" fill="none" stroke="#d08c4e" stroke-width="2"/>
-<text x="600" y="447" font-size="14" fill="#000000">get_all_skills()</text>
+<rect x="113" y="347" width="1373" height="44" rx="8" fill="#d08c4e" fill-opacity="0.13" stroke="#d08c4e" stroke-width="1"/>
+<text x="800" y="374" text-anchor="middle" font-size="14" fill="#000000">No standalone slash-command dispatcher: commands become keyword-triggered skills</text>
+<path d="M 516 447 h 50 v 29 H 526" fill="none" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="541" cy="431" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="541" y="436" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">4</text>
+<text x="576" y="452" font-size="14" fill="#000000">get_all_skills()</text>
 <line x1="516" y1="508" x2="790" y2="508" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
 <circle cx="580" cy="494" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
 <text x="580" y="499" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">5</text>

@@ -30,8 +30,10 @@
 <circle cx="894" cy="441" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
 <text x="894" y="446" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">4</text>
 <text x="912" y="446" font-size="14" fill="#000000">attach bundle to durable server</text>
-<rect x="1317" y="502" width="83" height="47" rx="6" fill="none" stroke="#d08c4e" stroke-width="2"/>
-<text x="1419" y="530" font-size="14" fill="#000000">session facet drives runs; tui facet renders</text>
-<rect x="138" y="571" width="1324" height="44" rx="8" fill="#d08c4e22" stroke="#d08c4e" stroke-width="1"/>
-<text x="800" y="610" text-anchor="middle" font-size="14" fill="#000000">Experimental: packaging API is not stable — pin your pi version</text>
+<path d="M 1317 530 h 61 v 36 H 1327" fill="none" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="1347" cy="514" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="1347" y="519" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">5</text>
+<text x="1388" y="535" font-size="14" fill="#000000">session facet drives runs; tui facet renders</text>
+<rect x="138" y="571" width="1324" height="44" rx="8" fill="#d08c4e" fill-opacity="0.13" stroke="#d08c4e" stroke-width="1"/>
+<text x="800" y="598" text-anchor="middle" font-size="14" fill="#000000">Experimental: packaging API is not stable — pin your pi version</text>
 </svg>

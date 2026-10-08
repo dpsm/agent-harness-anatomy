@@ -35,6 +35,6 @@
 <circle cx="502" cy="756" r="11" fill="#ffffff" stroke="#8a7a66" stroke-width="1.5"/>
 <text x="502" y="761" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">6</text>
 <text x="520" y="761" font-size="14" fill="#000000">CancelEnvelope {id, target}</text>
-<rect x="176" y="823" width="1248" height="44" rx="8" fill="#d08c4e22" stroke="#d08c4e" stroke-width="1"/>
-<text x="800" y="872" text-anchor="middle" font-size="14" fill="#000000">Carried over Unix sockets locally, radius relay (WebSocket) remotely</text>
+<rect x="176" y="823" width="1248" height="44" rx="8" fill="#d08c4e" fill-opacity="0.13" stroke="#d08c4e" stroke-width="1"/>
+<text x="800" y="850" text-anchor="middle" font-size="14" fill="#000000">Carried over Unix sockets locally, radius relay (WebSocket) remotely</text>
 </svg>

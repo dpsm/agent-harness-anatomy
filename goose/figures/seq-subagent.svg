@@ -19,14 +19,14 @@
 <circle cx="942" cy="376" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
 <text x="942" y="381" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">2</text>
 <text x="960" y="381" font-size="14" fill="#000000">create_subagent_session: SessionType::SubAgent, GooseMode::Auto</text>
-<rect x="176" y="443" width="1248" height="44" rx="8" fill="#d08c4e22" stroke="#d08c4e" stroke-width="1"/>
-<text x="800" y="492" text-anchor="middle" font-size="14" fill="#000000">Forced Auto; linked to parent via parent_session_id; DEFAULT_SUBAGENT_MAX_TURNS = 25</text>
+<rect x="176" y="443" width="1248" height="44" rx="8" fill="#d08c4e" fill-opacity="0.13" stroke="#d08c4e" stroke-width="1"/>
+<text x="800" y="470" text-anchor="middle" font-size="14" fill="#000000">Forced Auto; linked to parent via parent_session_id; DEFAULT_SUBAGENT_MAX_TURNS = 25</text>
 <line x1="800" y1="598" x2="1230" y2="598" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
 <circle cx="942" cy="584" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
 <text x="942" y="589" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">3</text>
 <text x="960" y="589" font-size="14" fill="#000000">recursive in-process Agent on the child session</text>
-<rect x="176" y="651" width="1248" height="44" rx="8" fill="#d08c4e22" stroke="#d08c4e" stroke-width="1"/>
-<text x="800" y="700" text-anchor="middle" font-size="14" fill="#000000">The child is a full agent, not a prompt template; async delegates report via load(taskId)</text>
+<rect x="176" y="651" width="1248" height="44" rx="8" fill="#d08c4e" fill-opacity="0.13" stroke="#d08c4e" stroke-width="1"/>
+<text x="800" y="678" text-anchor="middle" font-size="14" fill="#000000">The child is a full agent, not a prompt template; async delegates report via load(taskId)</text>
 <line x1="1240" y1="805" x2="810" y2="805" stroke="#8a7a66" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrr)"/>
 <circle cx="942" cy="791" r="11" fill="#ffffff" stroke="#8a7a66" stroke-width="1.5"/>
 <text x="942" y="796" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">4</text>
@@ -35,6 +35,6 @@
 <circle cx="502" cy="886" r="11" fill="#ffffff" stroke="#8a7a66" stroke-width="1.5"/>
 <text x="502" y="891" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">5</text>
 <text x="520" y="891" font-size="14" fill="#000000">result as tool result</text>
-<rect x="176" y="953" width="1248" height="44" rx="8" fill="#d08c4e22" stroke="#d08c4e" stroke-width="1"/>
-<text x="800" y="1002" text-anchor="middle" font-size="14" fill="#000000">No nesting: a delegate cannot itself delegate (documented hang risk otherwise)</text>
+<rect x="176" y="953" width="1248" height="44" rx="8" fill="#d08c4e" fill-opacity="0.13" stroke="#d08c4e" stroke-width="1"/>
+<text x="800" y="980" text-anchor="middle" font-size="14" fill="#000000">No nesting: a delegate cannot itself delegate (documented hang risk otherwise)</text>
 </svg>

@@ -17,14 +17,16 @@
 <line x1="1367" y1="110" x2="1367" y2="1062" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
 <rect x="1248" y="82" width="238" height="56" rx="10" fill="#ffffff" stroke="#3a2f26" stroke-width="1.5"/>
 <text x="1367" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#000000">invoke_skill</text>
-<rect x="113" y="163" width="1373" height="44" rx="8" fill="#d08c4e22" stroke="#d08c4e" stroke-width="1"/>
-<text x="800" y="195" text-anchor="middle" font-size="14" fill="#000000">Path 1: progressive disclosure — skills listed in &lt;available_skills&gt;, read on demand</text>
+<rect x="113" y="163" width="1373" height="44" rx="8" fill="#d08c4e" fill-opacity="0.13" stroke="#d08c4e" stroke-width="1"/>
+<text x="800" y="190" text-anchor="middle" font-size="14" fill="#000000">Path 1: progressive disclosure — skills listed in &lt;available_skills&gt;, read on demand</text>
 <line x1="233" y1="263" x2="506" y2="263" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
 <circle cx="296" cy="249" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
 <text x="296" y="254" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">1</text>
 <text x="314" y="254" font-size="14" fill="#000000">prepare_llm_messages(view): get_system_message_suffix()</text>
-<rect x="516" y="302" width="68" height="39" rx="6" fill="none" stroke="#d08c4e" stroke-width="2"/>
-<text x="600" y="325" font-size="14" fill="#000000">_resolve_dynamic_data(): render &lt;available_skills&gt;</text>
+<path d="M 516 325 h 50 v 29 H 526" fill="none" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="541" cy="309" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="541" y="314" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">2</text>
+<text x="576" y="330" font-size="14" fill="#000000">_resolve_dynamic_data(): render &lt;available_skills&gt;</text>
 <line x1="516" y1="386" x2="790" y2="386" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
 <circle cx="580" cy="372" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
 <text x="580" y="377" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">3</text>
@@ -37,20 +39,22 @@
 <circle cx="722" cy="494" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
 <text x="722" y="499" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">5</text>
 <text x="740" y="499" font-size="14" fill="#000000">system prompt carries &lt;available_skills&gt; block</text>
-<rect x="113" y="542" width="1373" height="44" rx="8" fill="#d08c4e22" stroke="#d08c4e" stroke-width="1"/>
-<text x="800" y="574" text-anchor="middle" font-size="14" fill="#000000">Path 2: trigger injection — send_message matches triggers, appends content to the user message</text>
+<rect x="113" y="542" width="1373" height="44" rx="8" fill="#d08c4e" fill-opacity="0.13" stroke="#d08c4e" stroke-width="1"/>
+<text x="800" y="569" text-anchor="middle" font-size="14" fill="#000000">Path 2: trigger injection — send_message matches triggers, appends content to the user message</text>
 <line x1="233" y1="642" x2="506" y2="642" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
 <circle cx="296" cy="628" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
 <text x="296" y="633" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">6</text>
 <text x="314" y="633" font-size="14" fill="#000000">send_message: get_user_message_suffix(message)</text>
-<rect x="516" y="681" width="68" height="39" rx="6" fill="none" stroke="#d08c4e" stroke-width="2"/>
-<text x="600" y="704" font-size="14" fill="#000000">match KeywordTrigger / TaskTrigger / PathTrigger</text>
+<path d="M 516 704 h 50 v 29 H 526" fill="none" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="541" cy="688" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="541" y="693" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">7</text>
+<text x="576" y="709" font-size="14" fill="#000000">match KeywordTrigger / TaskTrigger / PathTrigger</text>
 <line x1="516" y1="765" x2="243" y2="765" stroke="#8a7a66" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrr)"/>
 <circle cx="296" cy="751" r="11" fill="#ffffff" stroke="#8a7a66" stroke-width="1.5"/>
 <text x="296" y="756" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">8</text>
 <text x="314" y="756" font-size="14" fill="#000000">suffix + triggered names (recorded in activated_knowledge_skills)</text>
-<rect x="113" y="799" width="1373" height="44" rx="8" fill="#d08c4e22" stroke="#d08c4e" stroke-width="1"/>
-<text x="800" y="831" text-anchor="middle" font-size="14" fill="#000000">Path 3: model invocation — the model calls the invoke_skill builtin tool</text>
+<rect x="113" y="799" width="1373" height="44" rx="8" fill="#d08c4e" fill-opacity="0.13" stroke="#d08c4e" stroke-width="1"/>
+<text x="800" y="826" text-anchor="middle" font-size="14" fill="#000000">Path 3: model invocation — the model calls the invoke_skill builtin tool</text>
 <line x1="1084" y1="899" x2="1357" y2="899" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
 <circle cx="1148" cy="885" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
 <text x="1148" y="890" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">9</text>

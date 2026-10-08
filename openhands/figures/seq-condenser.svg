@@ -17,10 +17,12 @@
 <line x1="1367" y1="110" x2="1367" y2="817" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
 <rect x="1248" y="82" width="238" height="56" rx="10" fill="#ffffff" stroke="#3a2f26" stroke-width="1.5"/>
 <text x="1367" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#000000">Event stream</text>
-<rect x="113" y="163" width="1373" height="44" rx="8" fill="#d08c4e22" stroke="#d08c4e" stroke-width="1"/>
-<text x="800" y="195" text-anchor="middle" font-size="14" fill="#000000">Reactive trigger: context-window or malformed-history error becomes a CondensationRequest event</text>
-<rect x="233" y="241" width="68" height="39" rx="6" fill="none" stroke="#d08c4e" stroke-width="2"/>
-<text x="317" y="263" font-size="14" fill="#000000">LLMContextWindowExceedError / LLMMalformedConversationHistoryError</text>
+<rect x="113" y="163" width="1373" height="44" rx="8" fill="#d08c4e" fill-opacity="0.13" stroke="#d08c4e" stroke-width="1"/>
+<text x="800" y="190" text-anchor="middle" font-size="14" fill="#000000">Reactive trigger: context-window or malformed-history error becomes a CondensationRequest event</text>
+<path d="M 233 264 h 50 v 29 H 243" fill="none" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="258" cy="248" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="258" y="253" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">1</text>
+<text x="293" y="269" font-size="14" fill="#000000">LLMContextWindowExceedError / LLMMalformedConversationHistoryError</text>
 <line x1="233" y1="325" x2="1357" y2="325" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
 <circle cx="722" cy="311" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
 <text x="722" y="316" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">2</text>
@@ -33,8 +35,8 @@
 <circle cx="864" cy="433" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
 <text x="864" y="438" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">4</text>
 <text x="882" y="438" font-size="14" fill="#000000">condense(state.view, agent_llm)</text>
-<rect x="113" y="481" width="1373" height="44" rx="8" fill="#d08c4e22" stroke="#d08c4e" stroke-width="1"/>
-<text x="800" y="513" text-anchor="middle" font-size="14" fill="#000000">View is read-only: mutating it corrupts ConversationState&#x27;s incremental cache</text>
+<rect x="113" y="481" width="1373" height="44" rx="8" fill="#d08c4e" fill-opacity="0.13" stroke="#d08c4e" stroke-width="1"/>
+<text x="800" y="508" text-anchor="middle" font-size="14" fill="#000000">View is read-only: mutating it corrupts ConversationState&#x27;s incremental cache</text>
 <line x1="1084" y1="581" x2="810" y2="581" stroke="#8a7a66" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrr)"/>
 <circle cx="864" cy="567" r="11" fill="#ffffff" stroke="#8a7a66" stroke-width="1.5"/>
 <text x="864" y="572" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">5</text>
@@ -43,8 +45,8 @@
 <circle cx="580" cy="628" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
 <text x="580" y="633" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">6</text>
 <text x="598" y="633" font-size="14" fill="#000000">install condensed view</text>
-<rect x="113" y="676" width="1373" height="44" rx="8" fill="#d08c4e22" stroke="#d08c4e" stroke-width="1"/>
-<text x="800" y="708" text-anchor="middle" font-size="14" fill="#000000">Proactive trigger: condenser with handles_condensation_requests short-circuits before the error</text>
+<rect x="113" y="676" width="1373" height="44" rx="8" fill="#d08c4e" fill-opacity="0.13" stroke="#d08c4e" stroke-width="1"/>
+<text x="800" y="703" text-anchor="middle" font-size="14" fill="#000000">Proactive trigger: condenser with handles_condensation_requests short-circuits before the error</text>
 <line x1="516" y1="776" x2="243" y2="776" stroke="#8a7a66" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrr)"/>
 <circle cx="296" cy="762" r="11" fill="#ffffff" stroke="#8a7a66" stroke-width="1.5"/>
 <text x="296" y="767" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">7</text>

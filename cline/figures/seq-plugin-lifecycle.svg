@@ -32,27 +32,31 @@
 <circle cx="361" cy="252" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
 <text x="361" y="257" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">3</text>
 <text x="379" y="257" font-size="14" fill="#000000">merge plugin tools into registry</text>
-<rect x="96" y="295" width="684" height="44" rx="8" fill="#d08c4e22" stroke="#d08c4e" stroke-width="1"/>
+<rect x="96" y="295" width="684" height="44" rx="8" fill="#d08c4e" fill-opacity="0.13" stroke="#d08c4e" stroke-width="1"/>
 <text x="439" y="322" text-anchor="middle" font-size="14" fill="#000000">Plugin tools enter the same registry + ToolPolicy pipeline as the 9 built-ins</text>
 <line x1="198" y1="380" x2="910" y2="380" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
 <circle cx="481" cy="366" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
 <text x="481" y="371" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">4</text>
 <text x="499" y="371" font-size="14" fill="#000000">merge plugin hooks into runtime bag</text>
-<rect x="96" y="409" width="925" height="44" rx="8" fill="#d08c4e22" stroke="#d08c4e" stroke-width="1"/>
+<rect x="96" y="409" width="925" height="44" rx="8" fill="#d08c4e" fill-opacity="0.13" stroke="#d08c4e" stroke-width="1"/>
 <text x="559" y="436" text-anchor="middle" font-size="14" fill="#000000">beforeRun/afterRun/beforeModel/afterModel/beforeTool/afterTool/onEvent</text>
 <line x1="1161" y1="493" x2="930" y2="493" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
 <circle cx="963" cy="479" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
 <text x="963" y="484" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">5</text>
 <text x="981" y="484" font-size="14" fill="#000000">prepareToolExecution(toolCall)</text>
-<rect x="920" y="526" width="58" height="33" rx="6" fill="none" stroke="#d08c4e" stroke-width="2"/>
-<text x="992" y="546" font-size="14" fill="#000000">beforeTool: rewrite input / override policy / skip</text>
+<path d="M 920 545 h 43 v 25 H 930" fill="none" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="941" cy="529" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="941" y="534" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">6</text>
+<text x="973" y="550" font-size="14" fill="#000000">beforeTool: rewrite input / override policy / skip</text>
 <line x1="1161" y1="598" x2="1392" y2="598" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
 <circle cx="1204" cy="584" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
 <text x="1204" y="589" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">7</text>
 <text x="1222" y="589" font-size="14" fill="#000000">execute tool</text>
-<rect x="920" y="630" width="58" height="33" rx="6" fill="none" stroke="#d08c4e" stroke-width="2"/>
-<text x="992" y="650" font-size="14" fill="#000000">afterTool: stop / replace result / appendContext</text>
-<rect x="819" y="679" width="684" height="44" rx="8" fill="#d08c4e22" stroke="#d08c4e" stroke-width="1"/>
+<path d="M 920 649 h 43 v 25 H 930" fill="none" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="941" cy="633" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="941" y="638" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">8</text>
+<text x="973" y="654" font-size="14" fill="#000000">afterTool: stop / replace result / appendContext</text>
+<rect x="819" y="679" width="684" height="44" rx="8" fill="#d08c4e" fill-opacity="0.13" stroke="#d08c4e" stroke-width="1"/>
 <text x="1161" y="706" text-anchor="middle" font-size="14" fill="#000000">appendContext surfaces as &lt;hook_context&gt; on the next model request</text>
 <line x1="1402" y1="763" x2="1171" y2="763" stroke="#8a7a66" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrr)"/>
 <circle cx="1204" cy="749" r="11" fill="#ffffff" stroke="#8a7a66" stroke-width="1.5"/>
