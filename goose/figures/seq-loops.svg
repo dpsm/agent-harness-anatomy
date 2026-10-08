@@ -24,7 +24,7 @@
 <circle cx="240" cy="148" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
 <text x="240" y="153" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">1</text>
 <text x="258" y="153" font-size="14" fill="#000000">reply(msg, use_state_machine)</text>
-<rect x="337" y="191" width="684" height="44" rx="8" fill="#d08c4e22" stroke="#d08c4e" stroke-width="1"/>
+<rect x="337" y="191" width="684" height="44" rx="8" fill="#d08c4e" fill-opacity="0.13" stroke="#d08c4e" stroke-width="1"/>
 <text x="680" y="218" text-anchor="middle" font-size="14" fill="#000000">use_state_machine=false unless GOOSE_STATE_MACHINE is 1/true/TRUE/yes</text>
 <line x1="439" y1="276" x2="670" y2="276" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
 <circle cx="481" cy="262" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
@@ -34,8 +34,10 @@
 <circle cx="602" cy="314" r="11" fill="#ffffff" stroke="#8a7a66" stroke-width="1.5"/>
 <text x="602" y="319" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">3</text>
 <text x="620" y="319" font-size="14" fill="#000000">dispatch (opt-in)</text>
-<rect x="680" y="360" width="58" height="33" rx="6" fill="none" stroke="#d08c4e" stroke-width="2"/>
-<text x="751" y="380" font-size="14" fill="#000000">plain loop { } — one provider round-trip + tool-drain per turn</text>
+<path d="M 680 379 h 43 v 25 H 690" fill="none" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="701" cy="363" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="701" y="368" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">4</text>
+<text x="733" y="384" font-size="14" fill="#000000">plain loop { } — one provider round-trip + tool-drain per turn</text>
 <line x1="680" y1="432" x2="1151" y2="432" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
 <circle cx="842" cy="418" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
 <text x="842" y="423" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">5</text>
@@ -44,8 +46,10 @@
 <circle cx="842" cy="470" r="11" fill="#ffffff" stroke="#8a7a66" stroke-width="1.5"/>
 <text x="842" y="475" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">6</text>
 <text x="860" y="475" font-size="14" fill="#000000">stream: text + ToolRequests</text>
-<rect x="680" y="517" width="58" height="33" rx="6" fill="none" stroke="#d08c4e" stroke-width="2"/>
-<text x="751" y="536" font-size="14" fill="#000000">inspect_tools: approved / needs_approval / denied</text>
+<path d="M 680 536 h 43 v 25 H 690" fill="none" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="701" cy="520" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="701" y="525" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">7</text>
+<text x="733" y="541" font-size="14" fill="#000000">inspect_tools: approved / needs_approval / denied</text>
 <line x1="680" y1="588" x2="1392" y2="588" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
 <circle cx="963" cy="574" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
 <text x="963" y="579" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">8</text>
@@ -54,18 +58,22 @@
 <circle cx="963" cy="626" r="11" fill="#ffffff" stroke="#8a7a66" stroke-width="1.5"/>
 <text x="963" y="631" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">9</text>
 <text x="981" y="631" font-size="14" fill="#000000">submit_tool_confirmation(permission)</text>
-<rect x="680" y="673" width="58" height="33" rx="6" fill="none" stroke="#d08c4e" stroke-width="2"/>
-<text x="751" y="692" font-size="14" fill="#000000">turns_taken &gt; 1000 -&gt; MAX_TURNS_MESSAGE, break</text>
-<rect x="920" y="725" width="58" height="33" rx="6" fill="none" stroke="#d08c4e" stroke-width="2"/>
-<text x="992" y="744" font-size="14" fill="#000000">18 ordered operations; Inference is LAST</text>
-<rect x="578" y="773" width="684" height="44" rx="8" fill="#d08c4e22" stroke="#d08c4e" stroke-width="1"/>
+<path d="M 680 692 h 43 v 25 H 690" fill="none" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="701" cy="676" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="701" y="681" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">10</text>
+<text x="733" y="697" font-size="14" fill="#000000">turns_taken &gt; 1000 -&gt; MAX_TURNS_MESSAGE, break</text>
+<path d="M 920 744 h 43 v 25 H 930" fill="none" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="941" cy="728" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="941" y="733" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">11</text>
+<text x="973" y="749" font-size="14" fill="#000000">18 ordered operations; Inference is LAST</text>
+<rect x="578" y="773" width="684" height="44" rx="8" fill="#d08c4e" fill-opacity="0.13" stroke="#d08c4e" stroke-width="1"/>
 <text x="920" y="800" text-anchor="middle" font-size="14" fill="#000000">EntryHook .. ExitOnError, then Inference gathers tools + prompt parts from all ops</text>
 <line x1="920" y1="858" x2="1151" y2="858" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
 <circle cx="963" cy="844" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
 <text x="963" y="849" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">12</text>
 <text x="981" y="849" font-size="14" fill="#000000">Inference: provider.stream(tools, prompt_parts, moim_parts)</text>
-<rect x="96" y="887" width="1407" height="44" rx="8" fill="#d08c4e22" stroke="#d08c4e" stroke-width="1"/>
+<rect x="96" y="887" width="1407" height="44" rx="8" fill="#d08c4e" fill-opacity="0.13" stroke="#d08c4e" stroke-width="1"/>
 <text x="800" y="914" text-anchor="middle" font-size="14" fill="#000000">Seam: the legacy loop imports the new path&#x27;s MAX_TURNS_MESSAGE (agent.rs:40)</text>
-<rect x="96" y="948" width="1407" height="44" rx="8" fill="#d08c4e22" stroke="#d08c4e" stroke-width="1"/>
+<rect x="96" y="948" width="1407" height="44" rx="8" fill="#d08c4e" fill-opacity="0.13" stroke="#d08c4e" stroke-width="1"/>
 <text x="800" y="975" text-anchor="middle" font-size="14" fill="#000000">Migration tax: every behavior change lands in both paths until parity (AGENTS.md)</text>
 </svg>

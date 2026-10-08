@@ -21,12 +21,16 @@
 <circle cx="296" cy="177" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
 <text x="296" y="182" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">1</text>
 <text x="314" y="182" font-size="14" fill="#000000">/voice</text>
-<rect x="516" y="229" width="68" height="39" rx="6" fill="none" stroke="#d08c4e" stroke-width="2"/>
-<text x="600" y="252" font-size="14" fill="#000000">cmd_voice(args)</text>
-<rect x="516" y="290" width="68" height="39" rx="6" fill="none" stroke="#d08c4e" stroke-width="2"/>
-<text x="600" y="313" font-size="14" fill="#000000">OPENAI_API_KEY present?</text>
-<rect x="113" y="347" width="806" height="44" rx="8" fill="#d08c4e22" stroke="#d08c4e" stroke-width="1"/>
-<text x="516" y="379" text-anchor="middle" font-size="14" fill="#000000">No key -&gt; tool_error(&#x27;To use /voice you must provide an OpenAI API key.&#x27;)</text>
+<path d="M 516 252 h 50 v 29 H 526" fill="none" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="541" cy="236" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="541" y="241" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">2</text>
+<text x="576" y="257" font-size="14" fill="#000000">cmd_voice(args)</text>
+<path d="M 516 313 h 50 v 29 H 526" fill="none" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="541" cy="297" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="541" y="302" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">3</text>
+<text x="576" y="318" font-size="14" fill="#000000">OPENAI_API_KEY present?</text>
+<rect x="113" y="347" width="806" height="44" rx="8" fill="#d08c4e" fill-opacity="0.13" stroke="#d08c4e" stroke-width="1"/>
+<text x="516" y="374" text-anchor="middle" font-size="14" fill="#000000">No key -&gt; tool_error(&#x27;To use /voice you must provide an OpenAI API key.&#x27;)</text>
 <line x1="516" y1="447" x2="790" y2="447" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
 <circle cx="580" cy="433" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
 <text x="580" y="438" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">4</text>
@@ -47,6 +51,6 @@
 <circle cx="864" cy="678" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
 <text x="864" y="683" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">8</text>
 <text x="882" y="683" font-size="14" fill="#000000">io.placeholder = text</text>
-<rect x="397" y="726" width="1089" height="44" rx="8" fill="#d08c4e22" stroke="#d08c4e" stroke-width="1"/>
-<text x="942" y="758" text-anchor="middle" font-size="14" fill="#000000">Transcript lands in the input placeholder — the user reviews/edits before sending; nothing goes to the model automatically</text>
+<rect x="397" y="726" width="1089" height="44" rx="8" fill="#d08c4e" fill-opacity="0.13" stroke="#d08c4e" stroke-width="1"/>
+<text x="942" y="753" text-anchor="middle" font-size="14" fill="#000000">Transcript lands in the input placeholder — the user reviews/edits before sending; nothing goes to the model automatically</text>
 </svg>

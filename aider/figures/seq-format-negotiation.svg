@@ -21,10 +21,12 @@
 <circle cx="296" cy="177" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
 <text x="296" y="182" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">1</text>
 <text x="314" y="182" font-size="14" fill="#000000">/architect (or /model gpt-4o)</text>
-<rect x="516" y="229" width="68" height="39" rx="6" fill="none" stroke="#d08c4e" stroke-width="2"/>
-<text x="600" y="252" font-size="14" fill="#000000">raise SwitchCoder</text>
-<rect x="113" y="286" width="1089" height="44" rx="8" fill="#d08c4e22" stroke="#d08c4e" stroke-width="1"/>
-<text x="658" y="318" text-anchor="middle" font-size="14" fill="#000000">SwitchCoder propagates out of coder.run() to main.py&#x27;s while True</text>
+<path d="M 516 252 h 50 v 29 H 526" fill="none" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="541" cy="236" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="541" y="241" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">2</text>
+<text x="576" y="257" font-size="14" fill="#000000">raise SwitchCoder</text>
+<rect x="113" y="286" width="1089" height="44" rx="8" fill="#d08c4e" fill-opacity="0.13" stroke="#d08c4e" stroke-width="1"/>
+<text x="658" y="313" text-anchor="middle" font-size="14" fill="#000000">SwitchCoder propagates out of coder.run() to main.py&#x27;s while True</text>
 <line x1="516" y1="386" x2="790" y2="386" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
 <circle cx="580" cy="372" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
 <text x="580" y="377" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">3</text>
@@ -37,8 +39,10 @@
 <circle cx="864" cy="494" r="11" fill="#ffffff" stroke="#8a7a66" stroke-width="1.5"/>
 <text x="864" y="499" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">5</text>
 <text x="882" y="499" font-size="14" fill="#000000">&#x27;diff&#x27; (YAML exact match, else substring heuristics, else &#x27;whole&#x27;)</text>
-<rect x="800" y="547" width="68" height="39" rx="6" fill="none" stroke="#d08c4e" stroke-width="2"/>
-<text x="884" y="570" font-size="14" fill="#000000">summarize chat — old ASSISTANT msgs would &#x27;confuse the new LLM&#x27;</text>
+<path d="M 800 570 h 50 v 29 H 810" fill="none" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="825" cy="554" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="825" y="559" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">6</text>
+<text x="860" y="575" font-size="14" fill="#000000">summarize chat — old ASSISTANT msgs would &#x27;confuse the new LLM&#x27;</text>
 <line x1="800" y1="631" x2="1357" y2="631" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
 <circle cx="1006" cy="617" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
 <text x="1006" y="622" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">7</text>
