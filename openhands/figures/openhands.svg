@@ -35,13 +35,13 @@
 <path d="M 352.0 458.0 C 458.5 458.0, 378.5 68.0, 485.0 68.0" fill="none" stroke="#8a7a66" stroke-width="1.5" marker-end="url(#arrow)"/>
 <text x="413.6" y="369.8" font-size="11" fill="#a89880">deny blocks</text>
 <path d="M 395.0 848.0 C 491.0 848.0, 411.0 848.0, 507.0 848.0" fill="none" stroke="#8a7a66" stroke-width="1.5" marker-end="url(#arrow)"/>
-<text x="449.4" y="844.0" font-size="11" fill="#a89880">deny -&gt; RUNNING</text>
+<text x="360" y="844.0" font-size="11" fill="#a89880">deny -&gt; RUNNING</text>
 <path d="M 348.0 338.0 C 460.5 338.0, 380.5 588.0, 493.0 588.0" fill="none" stroke="#8a7a66" stroke-width="1.5" marker-end="url(#arrow)"/>
 <text x="426.5" y="459.0" font-size="11" fill="#a89880">PreToolUse veto</text>
 <path d="M 329.0 588.0 C 447.0 588.0, 367.0 83.0, 485.0 83.0" fill="none" stroke="#8a7a66" stroke-width="1.5" marker-end="url(#arrow)"/>
 <text x="413.0" y="331.5" font-size="11" fill="#a89880">suffix inject</text>
 <path d="M 343.0 708.0 C 483.0 708.0, 408.0 208.0, 548.0 208.0" fill="none" stroke="#8a7a66" stroke-width="1.5" marker-end="url(#arrow)"/>
-<text x="428.6" y="596.0" font-size="11" fill="#a89880">&lt;available_skills&gt;</text>
+<text x="340" y="596.0" font-size="11" fill="#a89880">&lt;available_skills&gt;</text>
 <path d="M 1021.0 1238.0 C 881.0 1238.0, 483.0 728.0, 343.0 728.0" fill="none" stroke="#8a7a66" stroke-width="1.5" marker-end="url(#arrow)"/>
 <text x="845.3" y="1123.8" font-size="11" fill="#a89880">bundles</text>
 <path d="M 1259.0 1368.0 C 1340.7 1368.0, 1322.7 1238.0, 1241.0 1238.0" fill="none" stroke="#8a7a66" stroke-width="1.5" marker-end="url(#arrow)"/>
@@ -51,7 +51,7 @@
 <path d="M 1241.0 1108.0 C 1381.2 1108.0, 1413.2 328.0, 1273.0 328.0" fill="none" stroke="#8a7a66" stroke-width="1.5" marker-end="url(#arrow)"/>
 <text x="1342.2" y="935.5" font-size="11" fill="#a89880">server tools</text>
 <path d="M 950.0 458.0 C 861.0 458.0, 941.0 582.0, 852.0 582.0" fill="none" stroke="#8a7a66" stroke-width="1.5" marker-end="url(#arrow)"/>
-<text x="912.4" y="480.8" font-size="11" fill="#a89880">confirmation gate</text>
+<text x="820" y="480.8" font-size="11" fill="#a89880">confirmation gate</text>
 <path d="M 986.0 578.0 C 879.0 578.0, 959.0 594.0, 852.0 594.0" fill="none" stroke="#8a7a66" stroke-width="1.5" marker-end="url(#arrow)"/>
 <text x="902.8" y="588.3" font-size="11" fill="#a89880">score per call</text>
 <path d="M 986.0 598.0 C 871.5 598.0, 951.5 848.0, 837.0 848.0" fill="none" stroke="#8a7a66" stroke-width="1.5" marker-end="url(#arrow)"/>
