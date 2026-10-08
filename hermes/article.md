@@ -135,13 +135,19 @@ The tradeoff visible across all eight steps: Hermes spends model calls to save f
 
 Providers are plugins — adding one is a directory under `plugins/model-providers/`, discovered lazily by the registry. The dispatch funnel exposes `pre_tool_call` plugin hooks and a fail-open `transform_tool_result` hook, so extensions can intercept tools without forking the loop.
 
+![Plugin hook protocol](figures/seq-plugins.svg)
+
 ### Memory providers
 
 Memory is an ABC (`prefetch`, `system_prompt_block`, `get_tool_schemas`, `handle_tool_call`) with builtin, honcho, and hindsight implementations. Swapping in a new memory backend is a provider, not a schema migration.[^23]
 
+![Memory provider protocol](figures/seq-memory.svg)
+
 ### Skills
 
 Skills are `SKILL.md` + YAML frontmatter, agentskills.io compatible, loadable from bundled, config, and external directories with platform/env/apps matching. The agent itself can write them at runtime through `skill_manage` — the extension point and the learning loop are the same mechanism.
+
+![Skill write protocol](figures/seq-skills.svg)
 
 ## Deliberate omissions
 

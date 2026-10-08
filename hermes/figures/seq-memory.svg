@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1272" width="1600" font-family="system-ui, -apple-system, sans-serif">
+<defs><marker id="arrc" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 1 L 9 5 L 0 9 z" fill="#d08c4e"/></marker><marker id="arrr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 1 L 9 5 L 0 9 z" fill="#8a7a66"/></marker></defs>
+<rect x="0" y="0" width="1600" height="1272" fill="#f7f2e9"/>
+<text x="110.3448275862069" y="44" font-size="26" font-weight="700" fill="#000000">Memory: the provider ABC protocol</text>
+<text x="110.3448275862069" y="74" font-size="15" fill="#000000">system_prompt_block -&gt; prefetch -&gt; sync_turn; tools via get_tool_schemas</text>
+<line x1="283" y1="110" x2="283" y2="1189" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="138" y="82" width="290" height="56" rx="10" fill="#ffffff" stroke="#3a2f26" stroke-width="1.5"/>
+<text x="283" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#000000">Turn loop</text>
+<line x1="628" y1="110" x2="628" y2="1189" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="483" y="82" width="290" height="56" rx="10" fill="#ffffff" stroke="#3a2f26" stroke-width="1.5"/>
+<text x="628" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#000000">MemoryManager</text>
+<line x1="972" y1="110" x2="972" y2="1189" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="828" y="82" width="290" height="56" rx="10" fill="#ffffff" stroke="#3a2f26" stroke-width="1.5"/>
+<text x="972" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#000000">MemoryProvider</text>
+<line x1="1317" y1="110" x2="1317" y2="1189" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="1172" y="82" width="290" height="56" rx="10" fill="#ffffff" stroke="#3a2f26" stroke-width="1.5"/>
+<text x="1317" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#000000">SessionDB</text>
+<line x1="283" y1="232" x2="618" y2="232" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="377" cy="218" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="377" y="223" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">1</text>
+<text x="395" y="223" font-size="14" fill="#000000">turn start</text>
+<line x1="628" y1="306" x2="962" y2="306" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="722" cy="292" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="722" y="297" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">2</text>
+<text x="740" y="297" font-size="14" fill="#000000">system_prompt_block()</text>
+<line x1="972" y1="381" x2="638" y2="381" stroke="#8a7a66" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrr)"/>
+<circle cx="722" cy="367" r="11" fill="#ffffff" stroke="#8a7a66" stroke-width="1.5"/>
+<text x="722" y="372" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">3</text>
+<text x="740" y="372" font-size="14" fill="#000000">static text (or &#x27;&#x27;)</text>
+<line x1="628" y1="455" x2="962" y2="455" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="722" cy="441" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="722" y="446" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">4</text>
+<text x="740" y="446" font-size="14" fill="#000000">prefetch(query, session_id)</text>
+<rect x="138" y="497" width="1324" height="44" rx="8" fill="#d08c4e" fill-opacity="0.13" stroke="#d08c4e" stroke-width="1"/>
+<text x="800" y="524" text-anchor="middle" font-size="14" fill="#000000">Must be fast: recall in background, return cached. Scoped by session_id.</text>
+<line x1="972" y1="618" x2="638" y2="618" stroke="#8a7a66" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrr)"/>
+<circle cx="722" cy="604" r="11" fill="#ffffff" stroke="#8a7a66" stroke-width="1.5"/>
+<text x="722" y="609" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">5</text>
+<text x="740" y="609" font-size="14" fill="#000000">recall context</text>
+<line x1="628" y1="692" x2="962" y2="692" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="722" cy="678" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="722" y="683" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">6</text>
+<text x="740" y="683" font-size="14" fill="#000000">get_tool_schemas()</text>
+<line x1="972" y1="767" x2="638" y2="767" stroke="#8a7a66" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrr)"/>
+<circle cx="722" cy="753" r="11" fill="#ffffff" stroke="#8a7a66" stroke-width="1.5"/>
+<text x="722" y="758" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">7</text>
+<text x="740" y="758" font-size="14" fill="#000000">[{name, description, parameters}]</text>
+<line x1="283" y1="841" x2="962" y2="841" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="550" cy="827" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="550" y="832" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">8</text>
+<text x="568" y="832" font-size="14" fill="#000000">handle_tool_call(name, args)</text>
+<line x1="972" y1="916" x2="293" y2="916" stroke="#8a7a66" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrr)"/>
+<circle cx="550" cy="902" r="11" fill="#ffffff" stroke="#8a7a66" stroke-width="1.5"/>
+<text x="550" y="907" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">9</text>
+<text x="568" y="907" font-size="14" fill="#000000">JSON string</text>
+<line x1="283" y1="990" x2="618" y2="990" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="377" cy="976" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="377" y="981" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">10</text>
+<text x="395" y="981" font-size="14" fill="#000000">turn end</text>
+<line x1="628" y1="1065" x2="962" y2="1065" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="722" cy="1051" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="722" y="1056" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">11</text>
+<text x="740" y="1056" font-size="14" fill="#000000">sync_turn(user, assistant)</text>
+<line x1="972" y1="1139" x2="1307" y2="1139" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="1067" cy="1125" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="1067" y="1130" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">12</text>
+<text x="1085" y="1130" font-size="14" fill="#000000">persist (non-blocking)</text>
+</svg>
