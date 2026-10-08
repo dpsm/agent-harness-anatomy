@@ -15,10 +15,12 @@
 <circle cx="502" cy="281" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
 <text x="502" y="286" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">1</text>
 <text x="520" y="286" font-size="14" fill="#000000">lifecycle event (PreToolUse, UserPromptSubmit, Stop, ...)</text>
-<rect x="800" y="355" width="105" height="60" rx="6" fill="none" stroke="#d08c4e" stroke-width="2"/>
-<text x="930" y="390" font-size="14" fill="#000000">load hooks.json from plugin dirs</text>
-<rect x="176" y="443" width="809" height="44" rx="8" fill="#d08c4e22" stroke="#d08c4e" stroke-width="1"/>
-<text x="580" y="492" text-anchor="middle" font-size="14" fill="#000000">12 HookEvent variants (hooks/mod.rs:55); JSON payload on stdin</text>
+<path d="M 800 390 h 77 v 46 H 810" fill="none" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="838" cy="374" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="838" y="379" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">2</text>
+<text x="887" y="395" font-size="14" fill="#000000">load hooks.json from plugin dirs</text>
+<rect x="176" y="443" width="809" height="44" rx="8" fill="#d08c4e" fill-opacity="0.13" stroke="#d08c4e" stroke-width="1"/>
+<text x="580" y="470" text-anchor="middle" font-size="14" fill="#000000">12 HookEvent variants (hooks/mod.rs:55); JSON payload on stdin</text>
 <line x1="800" y1="598" x2="1230" y2="598" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
 <circle cx="942" cy="584" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
 <text x="942" y="589" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">3</text>
@@ -31,12 +33,12 @@
 <circle cx="502" cy="774" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
 <text x="502" y="779" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">5</text>
 <text x="520" y="779" font-size="14" fill="#000000">exit 2 (or {&quot;decision&quot;:&quot;block&quot;}) -&gt; DENY</text>
-<rect x="176" y="840" width="809" height="44" rx="8" fill="#d08c4e22" stroke="#d08c4e" stroke-width="1"/>
-<text x="580" y="890" text-anchor="middle" font-size="14" fill="#000000">emit_blocking stops at the first denial; reason on stderr</text>
+<rect x="176" y="840" width="809" height="44" rx="8" fill="#d08c4e" fill-opacity="0.13" stroke="#d08c4e" stroke-width="1"/>
+<text x="580" y="867" text-anchor="middle" font-size="14" fill="#000000">emit_blocking stops at the first denial; reason on stderr</text>
 <line x1="800" y1="995" x2="370" y2="995" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
 <circle cx="502" cy="981" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
 <text x="502" y="986" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">6</text>
 <text x="520" y="986" font-size="14" fill="#000000">exit 0 -&gt; allow, continue pipeline</text>
-<rect x="176" y="1048" width="809" height="44" rx="8" fill="#d08c4e22" stroke="#d08c4e" stroke-width="1"/>
-<text x="580" y="1097" text-anchor="middle" font-size="14" fill="#000000">pi&#x27;s beforeToolCall shape with plugin packaging — no Rust required</text>
+<rect x="176" y="1048" width="809" height="44" rx="8" fill="#d08c4e" fill-opacity="0.13" stroke="#d08c4e" stroke-width="1"/>
+<text x="580" y="1075" text-anchor="middle" font-size="14" fill="#000000">pi&#x27;s beforeToolCall shape with plugin packaging — no Rust required</text>
 </svg>

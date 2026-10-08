@@ -173,6 +173,10 @@ Entry is the CLI binary at <code>codex-rs/cli/src/main.rs</code> → <code>cli_m
 bare <code>codex</code> launches the TUI; the agent loop is <code>run_turn</code> at
 <code>codex-rs/core/src/session/turn.rs</code>.<sup id="fnref:1"><a class="footnote-ref" href="#fn:1">1</a></sup></p>
 <p><img alt="Codex CLI architecture" src="figures/codex.svg" /></p>
+<a class="diagram-cta" href="../diagrams/template.html?data=../codex/diagrams/codex.json">
+    Explore the interactive architecture diagram
+    <span>Pan, zoom, and click any node for its source module reference</span>
+  </a>
 <h2 id="the-mental-model">The mental model</h2>
 <p>Codex is a <strong>sandbox-first, approval-gated pair programmer that speaks
 exactly one wire protocol</strong>. Three inversions define it against the
@@ -347,6 +351,10 @@ token (<code>input_queue.rs:246</code>); <code>run_sampling_request</code> retur
 re-samples — the same shape as Cline's mid-run steering, one layer
 lower.<sup id="fnref3:5"><a class="footnote-ref" href="#fn:5">5</a></sup> <strong>Exec variant:</strong> <code>codex exec</code> drives the identical pipeline
 through its in-process app-server — there is no second loop.<sup id="fnref2:2"><a class="footnote-ref" href="#fn:2">2</a></sup></p>
+<a class="diagram-cta" href="trace.html">
+    Step through one turn live
+    <span>Play the 12-step trace: TUI to app-server to core, the sandbox stack, the approval pause, and source modules</span>
+  </a>
 <h2 id="the-sandbox-stack">The sandbox stack</h2>
 <p>The sandbox stack clears the new-section bar. It is not one mechanism
 but <strong>four stacked layers</strong>, each with its own language, its own
@@ -1371,14 +1379,6 @@ at this SHA.&#160;<a class="footnote-backref" href="#fnref:37" title="Jump back 
 </li>
 </ol>
 </div>
-  <a class="diagram-cta" href="trace.html">
-    Step through one turn live
-    <span>Play the 12-step trace: TUI to app-server to core, the sandbox stack, the approval pause, and source modules</span>
-  </a>
-  <a class="diagram-cta" href="../diagrams/template.html?data=../codex/diagrams/codex.json">
-    Explore the interactive architecture diagram
-    <span>Pan, zoom, and click any node for its source module reference</span>
-  </a>
 </main>
 </body>
 </html>

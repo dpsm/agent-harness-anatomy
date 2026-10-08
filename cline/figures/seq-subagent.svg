@@ -19,12 +19,14 @@
 <circle cx="942" cy="376" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
 <text x="942" y="381" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">2</text>
 <text x="960" y="381" font-size="14" fill="#000000">createDelegatedAgent({kind:&#x27;subagent&#x27;, tools, policies})</text>
-<rect x="176" y="443" width="1248" height="44" rx="8" fill="#d08c4e22" stroke="#d08c4e" stroke-width="1"/>
-<text x="800" y="492" text-anchor="middle" font-size="14" fill="#000000">Child inherits tool policies + approval callback; executionMode:&#x27;parallel&#x27; — the only parallel built-in</text>
-<rect x="1240" y="563" width="105" height="60" rx="6" fill="none" stroke="#d08c4e" stroke-width="2"/>
-<text x="1370" y="598" font-size="14" fill="#000000">subAgent.run(task)</text>
-<rect x="176" y="651" width="1248" height="44" rx="8" fill="#d08c4e22" stroke="#d08c4e" stroke-width="1"/>
-<text x="800" y="700" text-anchor="middle" font-size="14" fill="#000000">Full AgentRuntime loop in the child; parent waits (onSubAgentStart/End are best-effort observers)</text>
+<rect x="176" y="443" width="1248" height="44" rx="8" fill="#d08c4e" fill-opacity="0.13" stroke="#d08c4e" stroke-width="1"/>
+<text x="800" y="470" text-anchor="middle" font-size="14" fill="#000000">Child inherits tool policies + approval callback; executionMode:&#x27;parallel&#x27; — the only parallel built-in</text>
+<path d="M 1240 598 h 77 v 46 H 1250" fill="none" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="1278" cy="582" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="1278" y="587" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">3</text>
+<text x="1327" y="603" font-size="14" fill="#000000">subAgent.run(task)</text>
+<rect x="176" y="651" width="1248" height="44" rx="8" fill="#d08c4e" fill-opacity="0.13" stroke="#d08c4e" stroke-width="1"/>
+<text x="800" y="678" text-anchor="middle" font-size="14" fill="#000000">Full AgentRuntime loop in the child; parent waits (onSubAgentStart/End are best-effort observers)</text>
 <line x1="1240" y1="805" x2="810" y2="805" stroke="#8a7a66" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrr)"/>
 <circle cx="942" cy="791" r="11" fill="#ffffff" stroke="#8a7a66" stroke-width="1.5"/>
 <text x="942" y="796" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">4</text>
@@ -33,6 +35,6 @@
 <circle cx="502" cy="886" r="11" fill="#ffffff" stroke="#8a7a66" stroke-width="1.5"/>
 <text x="502" y="891" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">5</text>
 <text x="520" y="891" font-size="14" fill="#000000">result as tool result</text>
-<rect x="176" y="953" width="1248" height="44" rx="8" fill="#d08c4e22" stroke="#d08c4e" stroke-width="1"/>
-<text x="800" y="1002" text-anchor="middle" font-size="14" fill="#000000">team_* tools share the AgentTool shape for multi-agent coordination; legacy YAML agents (-&gt; use_subagent_*) are the older lane</text>
+<rect x="176" y="953" width="1248" height="44" rx="8" fill="#d08c4e" fill-opacity="0.13" stroke="#d08c4e" stroke-width="1"/>
+<text x="800" y="980" text-anchor="middle" font-size="14" fill="#000000">team_* tools share the AgentTool shape for multi-agent coordination; legacy YAML agents (-&gt; use_subagent_*) are the older lane</text>
 </svg>

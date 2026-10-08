@@ -18,8 +18,10 @@
 <circle cx="377" cy="218" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
 <text x="377" y="223" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">1</text>
 <text x="395" y="223" font-size="14" fill="#000000">prompt(&quot;/deploy prod&quot;)</text>
-<rect x="628" y="279" width="83" height="47" rx="6" fill="none" stroke="#d08c4e" stroke-width="2"/>
-<text x="730" y="306" font-size="14" fill="#000000">_tryExecuteExtensionCommand</text>
+<path d="M 628 307 h 61 v 36 H 638" fill="none" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="658" cy="291" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="658" y="296" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">2</text>
+<text x="699" y="312" font-size="14" fill="#000000">_tryExecuteExtensionCommand</text>
 <line x1="628" y1="381" x2="962" y2="381" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
 <circle cx="722" cy="367" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
 <text x="722" y="372" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">3</text>
@@ -32,12 +34,14 @@
 <circle cx="894" cy="516" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
 <text x="894" y="521" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">5</text>
 <text x="912" y="521" font-size="14" fill="#000000">handler(&quot;prod&quot;, ctx)</text>
-<rect x="1317" y="577" width="83" height="47" rx="6" fill="none" stroke="#d08c4e" stroke-width="2"/>
-<text x="1419" y="604" font-size="14" fill="#000000">ctx.ui.confirm(&quot;Deploy to prod?&quot;)</text>
+<path d="M 1317 605 h 61 v 36 H 1327" fill="none" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="1347" cy="589" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="1347" y="594" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">6</text>
+<text x="1388" y="610" font-size="14" fill="#000000">ctx.ui.confirm(&quot;Deploy to prod?&quot;)</text>
 <line x1="1317" y1="679" x2="638" y2="679" stroke="#8a7a66" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrr)"/>
 <circle cx="894" cy="665" r="11" fill="#ffffff" stroke="#8a7a66" stroke-width="1.5"/>
 <text x="894" y="670" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">7</text>
 <text x="912" y="670" font-size="14" fill="#000000">ctx.sendUserMessage(&quot;…&quot;) / ctx.ui.notify(…)</text>
-<rect x="138" y="720" width="1324" height="44" rx="8" fill="#d08c4e22" stroke="#d08c4e" stroke-width="1"/>
-<text x="800" y="759" text-anchor="middle" font-size="14" fill="#000000">Commands run immediately, even mid-stream — no LLM call involved</text>
+<rect x="138" y="720" width="1324" height="44" rx="8" fill="#d08c4e" fill-opacity="0.13" stroke="#d08c4e" stroke-width="1"/>
+<text x="800" y="747" text-anchor="middle" font-size="14" fill="#000000">Commands run immediately, even mid-stream — no LLM call involved</text>
 </svg>

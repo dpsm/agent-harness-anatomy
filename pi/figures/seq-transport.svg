@@ -22,8 +22,10 @@
 <circle cx="722" cy="292" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
 <text x="722" y="297" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">2</text>
 <text x="740" y="297" font-size="14" fill="#000000">streamSimple(model, context, requestOptions)</text>
-<rect x="972" y="353" width="83" height="47" rx="6" fill="none" stroke="#d08c4e" stroke-width="2"/>
-<text x="1074" y="381" font-size="14" fill="#000000">resolve transport (auto → sse / websocket)</text>
+<path d="M 972 381 h 61 v 36 H 982" fill="none" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="1002" cy="365" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="1002" y="370" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">3</text>
+<text x="1043" y="386" font-size="14" fill="#000000">resolve transport (auto → sse / websocket)</text>
 <line x1="972" y1="455" x2="1307" y2="455" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
 <circle cx="1067" cy="441" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
 <text x="1067" y="446" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">4</text>
@@ -36,6 +38,6 @@
 <circle cx="550" cy="590" r="11" fill="#ffffff" stroke="#8a7a66" stroke-width="1.5"/>
 <text x="550" y="595" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">6</text>
 <text x="568" y="595" font-size="14" fill="#000000">normalized stream events</text>
-<rect x="138" y="646" width="1324" height="44" rx="8" fill="#d08c4e22" stroke="#d08c4e" stroke-width="1"/>
-<text x="800" y="684" text-anchor="middle" font-size="14" fill="#000000">onPayload / onResponse hooks observe every request here</text>
+<rect x="138" y="646" width="1324" height="44" rx="8" fill="#d08c4e" fill-opacity="0.13" stroke="#d08c4e" stroke-width="1"/>
+<text x="800" y="673" text-anchor="middle" font-size="14" fill="#000000">onPayload / onResponse hooks observe every request here</text>
 </svg>

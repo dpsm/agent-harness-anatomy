@@ -18,8 +18,8 @@
 <circle cx="377" cy="218" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
 <text x="377" y="223" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">1</text>
 <text x="395" y="223" font-size="14" fill="#000000">session start: discover_skills(working_dir)</text>
-<rect x="138" y="273" width="634" height="44" rx="8" fill="#d08c4e22" stroke="#d08c4e" stroke-width="1"/>
-<text x="455" y="312" text-anchor="middle" font-size="14" fill="#000000">SKILL.md frontmatter + markdown, same shape as pi/Cline</text>
+<rect x="138" y="273" width="634" height="44" rx="8" fill="#d08c4e" fill-opacity="0.13" stroke="#d08c4e" stroke-width="1"/>
+<text x="455" y="300" text-anchor="middle" font-size="14" fill="#000000">SKILL.md frontmatter + markdown, same shape as pi/Cline</text>
 <line x1="283" y1="394" x2="962" y2="394" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
 <circle cx="550" cy="380" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
 <text x="550" y="385" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">2</text>
@@ -36,6 +36,6 @@
 <circle cx="722" cy="604" r="11" fill="#ffffff" stroke="#8a7a66" stroke-width="1.5"/>
 <text x="722" y="609" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">5</text>
 <text x="740" y="609" font-size="14" fill="#000000">full skill content into context</text>
-<rect x="483" y="659" width="979" height="44" rx="8" fill="#d08c4e22" stroke="#d08c4e" stroke-width="1"/>
-<text x="972" y="698" text-anchor="middle" font-size="14" fill="#000000">Model reads the body and follows it; slash form (/skill-name) injects the prompt as a user message instead</text>
+<rect x="483" y="659" width="979" height="44" rx="8" fill="#d08c4e" fill-opacity="0.13" stroke="#d08c4e" stroke-width="1"/>
+<text x="972" y="686" text-anchor="middle" font-size="14" fill="#000000">Model reads the body and follows it; slash form (/skill-name) injects the prompt as a user message instead</text>
 </svg>
