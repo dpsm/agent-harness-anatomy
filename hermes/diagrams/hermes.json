@@ -1,0 +1,427 @@
+{
+  "title": "Hermes Agent architecture",
+  "repo": "https://github.com/NousResearch/hermes-agent",
+  "sha": "f97608f178d1ffeca59860195ab7da295f7c8e5f",
+  "nodes": [
+    {
+      "id": "cli",
+      "label": "CLI entry",
+      "sub": "cli.py:1647",
+      "x": 20,
+      "y": 20,
+      "w": 380,
+      "h": 96,
+      "grade": "verified",
+      "links": [
+        {
+          "label": "cli.py:1647",
+          "url": "https://github.com/NousResearch/hermes-agent/blob/f97608f178d1ffeca59860195ab7da295f7c8e5f/cli.py#L1647"
+        }
+      ],
+      "excerpt": "fire.Fire CLI: oneshot query, gateway daemon, resume, worktrees."
+    },
+    {
+      "id": "run_agent",
+      "label": "AIAgent facade",
+      "sub": "run_agent.py:239",
+      "x": 20,
+      "y": 150,
+      "w": 380,
+      "h": 96,
+      "grade": "verified",
+      "links": [
+        {
+          "label": "run_agent.py:239",
+          "url": "https://github.com/NousResearch/hermes-agent/blob/f97608f178d1ffeca59860195ab7da295f7c8e5f/run_agent.py#L239"
+        }
+      ],
+      "excerpt": "Public facade: AIAgent assembled from mixins; ~60 init params."
+    },
+    {
+      "id": "conv_loop",
+      "label": "run_conversation",
+      "sub": "agent/conversation_loop.py:1605",
+      "x": 20,
+      "y": 280,
+      "w": 380,
+      "h": 96,
+      "grade": "verified",
+      "links": [
+        {
+          "label": "conversation_loop.py:1605",
+          "url": "https://github.com/NousResearch/hermes-agent/blob/f97608f178d1ffeca59860195ab7da295f7c8e5f/agent/conversation_loop.py#L1605"
+        }
+      ],
+      "excerpt": "Runs ONE turn; max_iterations (500) bounds the in-turn API-call loop."
+    },
+    {
+      "id": "gateway",
+      "label": "Messaging gateway",
+      "sub": "gateway/run.py:5794",
+      "x": 20,
+      "y": 410,
+      "w": 380,
+      "h": 96,
+      "grade": "verified",
+      "links": [
+        {
+          "label": "gateway/run.py:3933",
+          "url": "https://github.com/NousResearch/hermes-agent/blob/f97608f178d1ffeca59860195ab7da295f7c8e5f/gateway/run.py#L3933"
+        }
+      ],
+      "excerpt": "One process multiplexes Telegram/Discord/etc. into session-key namespaces."
+    },
+    {
+      "id": "turn_phases",
+      "label": "Turn phases",
+      "sub": "agent/turn_*.py",
+      "x": 20,
+      "y": 540,
+      "w": 380,
+      "h": 96,
+      "grade": "verified",
+      "links": [
+        {
+          "label": "agent/AGENTS.md",
+          "url": "https://github.com/NousResearch/hermes-agent/blob/f97608f178d1ffeca59860195ab7da295f7c8e5f/agent/AGENTS.md"
+        }
+      ],
+      "excerpt": "Each iteration phase is a sibling module: preflight, request, tool round, overflow..."
+    },
+    {
+      "id": "turn_lease",
+      "label": "Session turn lease",
+      "sub": "agent/turn_facade_lease.py",
+      "x": 20,
+      "y": 670,
+      "w": 380,
+      "h": 96,
+      "grade": "docs",
+      "links": [
+        {
+          "label": "agent/AGENTS.md",
+          "url": "https://github.com/NousResearch/hermes-agent/blob/f97608f178d1ffeca59860195ab7da295f7c8e5f/agent/AGENTS.md"
+        }
+      ],
+      "excerpt": "Turns take a session lease so concurrent prompts serialize per session."
+    },
+    {
+      "id": "compaction",
+      "label": "Turn-start compaction",
+      "sub": "agent/turn_context_compaction.py:128",
+      "x": 20,
+      "y": 800,
+      "w": 380,
+      "h": 96,
+      "grade": "verified",
+      "links": [
+        {
+          "label": "turn_context_compaction.py:128",
+          "url": "https://github.com/NousResearch/hermes-agent/blob/f97608f178d1ffeca59860195ab7da295f7c8e5f/agent/turn_context_compaction.py#L128"
+        }
+      ],
+      "excerpt": "Proactive compaction before each turn; overflow vs truncation are separate verdicts."
+    },
+    {
+      "id": "dispatch",
+      "label": "handle_function_call",
+      "sub": "model_tools.py:872",
+      "x": 470,
+      "y": 20,
+      "w": 380,
+      "h": 96,
+      "grade": "verified",
+      "links": [
+        {
+          "label": "model_tools.py:872",
+          "url": "https://github.com/NousResearch/hermes-agent/blob/f97608f178d1ffeca59860195ab7da295f7c8e5f/model_tools.py#L872"
+        }
+      ],
+      "excerpt": "Single dispatch funnel: bridge unwrap, middleware, plugin hooks, ACP approval."
+    },
+    {
+      "id": "registry",
+      "label": "ToolRegistry",
+      "sub": "tools/registry.py:427",
+      "x": 470,
+      "y": 150,
+      "w": 380,
+      "h": 96,
+      "grade": "verified",
+      "links": [
+        {
+          "label": "tools/registry.py:427",
+          "url": "https://github.com/NousResearch/hermes-agent/blob/f97608f178d1ffeca59860195ab7da295f7c8e5f/tools/registry.py#L427"
+        }
+      ],
+      "excerpt": "Import-time self-registration; ToolEntry holds schema, handler, check_fn."
+    },
+    {
+      "id": "toolsearch",
+      "label": "Tool Search bridge",
+      "sub": "model_tools.py:219",
+      "x": 470,
+      "y": 280,
+      "w": 380,
+      "h": 96,
+      "grade": "verified",
+      "links": [
+        {
+          "label": "model_tools.py:219",
+          "url": "https://github.com/NousResearch/hermes-agent/blob/f97608f178d1ffeca59860195ab7da295f7c8e5f/model_tools.py#L219"
+        }
+      ],
+      "excerpt": "Model sees only tool_search/describe/call; the 100+ tool catalog assembles on demand."
+    },
+    {
+      "id": "approval",
+      "label": "Approval queue",
+      "sub": "tools/approval.py:138",
+      "x": 470,
+      "y": 410,
+      "w": 380,
+      "h": 96,
+      "grade": "verified",
+      "links": [
+        {
+          "label": "tools/approval.py:138",
+          "url": "https://github.com/NousResearch/hermes-agent/blob/f97608f178d1ffeca59860195ab7da295f7c8e5f/tools/approval.py#L138"
+        }
+      ],
+      "excerpt": "Per-session gateway approval queue, YOLO mode, denial breaker."
+    },
+    {
+      "id": "delegate",
+      "label": "delegate_task",
+      "sub": "tools/delegate_tool.py:71",
+      "x": 470,
+      "y": 540,
+      "w": 380,
+      "h": 96,
+      "grade": "verified",
+      "links": [
+        {
+          "label": "tools/delegate_tool.py:71",
+          "url": "https://github.com/NousResearch/hermes-agent/blob/f97608f178d1ffeca59860195ab7da295f7c8e5f/tools/delegate_tool.py#L71"
+        }
+      ],
+      "excerpt": "Subagents: 250 iterations, tool grant carved from the parent \u2014 no escalation."
+    },
+    {
+      "id": "curator",
+      "label": "Curator",
+      "sub": "agent/curator.py:1150",
+      "x": 920,
+      "y": 20,
+      "w": 380,
+      "h": 96,
+      "grade": "verified",
+      "links": [
+        {
+          "label": "agent/curator.py:1150",
+          "url": "https://github.com/NousResearch/hermes-agent/blob/f97608f178d1ffeca59860195ab7da295f7c8e5f/agent/curator.py#L1150"
+        }
+      ],
+      "excerpt": "Inactivity-triggered skill maintenance (7d default); archives, never deletes."
+    },
+    {
+      "id": "bg_review",
+      "label": "Background review",
+      "sub": "agent/background_review.py",
+      "x": 920,
+      "y": 150,
+      "w": 380,
+      "h": 96,
+      "grade": "verified",
+      "links": [
+        {
+          "label": "background_review.py",
+          "url": "https://github.com/NousResearch/hermes-agent/blob/f97608f178d1ffeca59860195ab7da295f7c8e5f/agent/background_review.py"
+        }
+      ],
+      "excerpt": "Post-turn daemon forks the agent: 'should any skill/memory be saved?'"
+    },
+    {
+      "id": "skill_manage",
+      "label": "skill_manage tool",
+      "sub": "tools/skill_manager_tool.py:762",
+      "x": 920,
+      "y": 280,
+      "w": 380,
+      "h": 96,
+      "grade": "verified",
+      "links": [
+        {
+          "label": "skill_manager_tool.py:762",
+          "url": "https://github.com/NousResearch/hermes-agent/blob/f97608f178d1ffeca59860195ab7da295f7c8e5f/tools/skill_manager_tool.py#L762"
+        }
+      ],
+      "excerpt": "The write path: agent creates/edits/archives skills at runtime."
+    },
+    {
+      "id": "skills",
+      "label": "Skill library",
+      "sub": "skills/",
+      "x": 920,
+      "y": 410,
+      "w": 380,
+      "h": 96,
+      "grade": "docs",
+      "links": [
+        {
+          "label": "skills/AGENTS.md",
+          "url": "https://github.com/NousResearch/hermes-agent/blob/f97608f178d1ffeca59860195ab7da295f7c8e5f/skills/AGENTS.md"
+        }
+      ],
+      "excerpt": "SKILL.md + frontmatter per skill; agentskills.io-compatible."
+    },
+    {
+      "id": "sessiondb",
+      "label": "SessionDB",
+      "sub": "hermes_state.py",
+      "x": 920,
+      "y": 540,
+      "w": 380,
+      "h": 96,
+      "grade": "verified",
+      "links": [
+        {
+          "label": "hermes_state_sessions.py:397",
+          "url": "https://github.com/NousResearch/hermes-agent/blob/f97608f178d1ffeca59860195ab7da295f7c8e5f/hermes_state_sessions.py#L397"
+        }
+      ],
+      "excerpt": "SQLite/WAL facade composing ~30 mixins: sessions, messages, titles, timeline."
+    },
+    {
+      "id": "memory",
+      "label": "MemoryProvider",
+      "sub": "agent/memory_provider.py:84",
+      "x": 920,
+      "y": 670,
+      "w": 380,
+      "h": 96,
+      "grade": "verified",
+      "links": [
+        {
+          "label": "agent/memory_provider.py:84",
+          "url": "https://github.com/NousResearch/hermes-agent/blob/f97608f178d1ffeca59860195ab7da295f7c8e5f/agent/memory_provider.py#L84"
+        }
+      ],
+      "excerpt": "Memory is a provider ABC \u2014 honcho is a plugin, not a table."
+    },
+    {
+      "id": "providers",
+      "label": "Provider profiles",
+      "sub": "providers/base.py:42",
+      "x": 920,
+      "y": 800,
+      "w": 380,
+      "h": 96,
+      "grade": "verified",
+      "links": [
+        {
+          "label": "providers/base.py:42",
+          "url": "https://github.com/NousResearch/hermes-agent/blob/f97608f178d1ffeca59860195ab7da295f7c8e5f/providers/base.py#L42"
+        }
+      ],
+      "excerpt": "Providers are plugins (~40 dirs); chat_completions default, codex_responses for some."
+    }
+  ],
+  "edges": [
+    {
+      "from": "cli",
+      "to": "run_agent",
+      "label": "chat / oneshot"
+    },
+    {
+      "from": "run_agent",
+      "to": "conv_loop",
+      "label": "run_conversation"
+    },
+    {
+      "from": "gateway",
+      "to": "conv_loop",
+      "label": "session key \u2192 turn"
+    },
+    {
+      "from": "conv_loop",
+      "to": "turn_phases",
+      "label": null
+    },
+    {
+      "from": "conv_loop",
+      "to": "turn_lease",
+      "label": null
+    },
+    {
+      "from": "conv_loop",
+      "to": "compaction",
+      "label": null
+    },
+    {
+      "from": "conv_loop",
+      "to": "dispatch",
+      "label": "tool calls"
+    },
+    {
+      "from": "dispatch",
+      "to": "registry",
+      "label": null
+    },
+    {
+      "from": "dispatch",
+      "to": "toolsearch",
+      "label": null
+    },
+    {
+      "from": "dispatch",
+      "to": "approval",
+      "label": null
+    },
+    {
+      "from": "dispatch",
+      "to": "delegate",
+      "label": null
+    },
+    {
+      "from": "delegate",
+      "to": "conv_loop",
+      "label": "child turn"
+    },
+    {
+      "from": "conv_loop",
+      "to": "bg_review",
+      "label": null
+    },
+    {
+      "from": "curator",
+      "to": "skill_manage",
+      "label": null
+    },
+    {
+      "from": "bg_review",
+      "to": "skill_manage",
+      "label": "propose writes"
+    },
+    {
+      "from": "skill_manage",
+      "to": "skills",
+      "label": "create / edit"
+    },
+    {
+      "from": "bg_review",
+      "to": "sessiondb",
+      "label": null
+    },
+    {
+      "from": "conv_loop",
+      "to": "memory",
+      "label": "prefetch + prompt block"
+    },
+    {
+      "from": "conv_loop",
+      "to": "providers",
+      "label": "transport"
+    }
+  ]
+}

@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 946" width="1600" font-family="system-ui, -apple-system, sans-serif">
+<defs><marker id="arrc" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 1 L 9 5 L 0 9 z" fill="#d08c4e"/></marker><marker id="arrr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 1 L 9 5 L 0 9 z" fill="#8a7a66"/></marker></defs>
+<rect x="0" y="0" width="1600" height="946" fill="#f7f2e9"/>
+<text x="90.78014184397163" y="44" font-size="26" font-weight="700" fill="#000000">Learning: the self-improvement loop</text>
+<text x="90.78014184397163" y="74" font-size="15" fill="#000000">post-turn fork proposes; curator maintains; skill_manage writes</text>
+<line x1="233" y1="110" x2="233" y2="878" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="113" y="82" width="238" height="56" rx="10" fill="#ffffff" stroke="#3a2f26" stroke-width="1.5"/>
+<text x="233" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#000000">run_conversation</text>
+<line x1="516" y1="110" x2="516" y2="878" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="397" y="82" width="238" height="56" rx="10" fill="#ffffff" stroke="#3a2f26" stroke-width="1.5"/>
+<text x="516" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#000000">Background review</text>
+<line x1="800" y1="110" x2="800" y2="878" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="681" y="82" width="238" height="56" rx="10" fill="#ffffff" stroke="#3a2f26" stroke-width="1.5"/>
+<text x="800" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#000000">Curator</text>
+<line x1="1084" y1="110" x2="1084" y2="878" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="965" y="82" width="238" height="56" rx="10" fill="#ffffff" stroke="#3a2f26" stroke-width="1.5"/>
+<text x="1084" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#000000">skill_manage</text>
+<line x1="1367" y1="110" x2="1367" y2="878" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="1248" y="82" width="238" height="56" rx="10" fill="#ffffff" stroke="#3a2f26" stroke-width="1.5"/>
+<text x="1367" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#000000">Skill library</text>
+<rect x="113" y="163" width="1373" height="44" rx="8" fill="#d08c4e" fill-opacity="0.13" stroke="#d08c4e" stroke-width="1"/>
+<text x="800" y="190" text-anchor="middle" font-size="14" fill="#000000">After every turn: forked review (daemon thread)</text>
+<line x1="233" y1="263" x2="506" y2="263" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="296" cy="249" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="296" y="254" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">1</text>
+<text x="314" y="254" font-size="14" fill="#000000">_spawn_background_review(snapshot)</text>
+<path d="M 516 325 h 50 v 29 H 526" fill="none" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="541" cy="309" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="541" y="314" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">2</text>
+<text x="576" y="330" font-size="14" fill="#000000">replay conversation in forked AIAgent</text>
+<path d="M 516 386 h 50 v 29 H 526" fill="none" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="541" cy="370" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="541" y="375" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">3</text>
+<text x="576" y="391" font-size="14" fill="#000000">&#x27;should any skill/memory be saved?&#x27;</text>
+<line x1="516" y1="447" x2="1074" y2="447" stroke="#8a7a66" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrr)"/>
+<circle cx="722" cy="433" r="11" fill="#ffffff" stroke="#8a7a66" stroke-width="1.5"/>
+<text x="722" y="438" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">4</text>
+<text x="740" y="438" font-size="14" fill="#000000">proposed writes</text>
+<line x1="1084" y1="508" x2="1357" y2="508" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="1148" cy="494" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="1148" y="499" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">5</text>
+<text x="1166" y="499" font-size="14" fill="#000000">create / edit skills</text>
+<rect x="113" y="542" width="1373" height="44" rx="8" fill="#d08c4e" fill-opacity="0.13" stroke="#d08c4e" stroke-width="1"/>
+<text x="800" y="569" text-anchor="middle" font-size="14" fill="#000000">On inactivity (default 7d): curator lifecycle pass</text>
+<path d="M 800 643 h 50 v 29 H 810" fill="none" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="825" cy="627" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="825" y="632" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">6</text>
+<text x="860" y="648" font-size="14" fill="#000000">maybe_run_curator()</text>
+<path d="M 800 704 h 50 v 29 H 810" fill="none" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="825" cy="688" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="825" y="693" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">7</text>
+<text x="860" y="709" font-size="14" fill="#000000">fork AIAgent (opt-in LLM consolidation)</text>
+<line x1="800" y1="765" x2="1074" y2="765" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="864" cy="751" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="864" y="756" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">8</text>
+<text x="882" y="756" font-size="14" fill="#000000">pin / archive / patch via skill_manage</text>
+<rect x="113" y="799" width="1373" height="44" rx="8" fill="#d08c4e" fill-opacity="0.13" stroke="#d08c4e" stroke-width="1"/>
+<text x="800" y="826" text-anchor="middle" font-size="14" fill="#000000">Never deletes — only archives (recoverable); pinned skills bypass auto-transitions</text>
+</svg>
