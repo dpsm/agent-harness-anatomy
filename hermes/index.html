@@ -396,17 +396,20 @@ itself outperforms one that merely remembers.</p>
 The dispatch funnel exposes <code>pre_tool_call</code> plugin hooks and a
 fail-open <code>transform_tool_result</code> hook, so extensions can
 intercept tools without forking the loop.</p>
+<p><img alt="Plugin hook protocol" src="figures/seq-plugins.svg" /></p>
 <h3>Memory providers</h3>
 <p>Memory is an ABC (<code>prefetch</code>, <code>system_prompt_block</code>,
 <code>get_tool_schemas</code>, <code>handle_tool_call</code>) with builtin,
 honcho, and hindsight implementations. Swapping in a new memory backend
 is a provider, not a schema migration.<sup id="fnref:23"><a class="footnote-ref" href="#fn:23">23</a></sup></p>
+<p><img alt="Memory provider protocol" src="figures/seq-memory.svg" /></p>
 <h3>Skills</h3>
 <p>Skills are <code>SKILL.md</code> + YAML frontmatter, agentskills.io
 compatible, loadable from bundled, config, and external directories with
 platform/env/apps matching. The agent itself can write them at runtime
 through <code>skill_manage</code> — the extension point and the learning
 loop are the same mechanism.</p>
+<p><img alt="Skill write protocol" src="figures/seq-skills.svg" /></p>
 <h2 id="deliberate-omissions">Deliberate omissions</h2>
 <p>This teardown covers the turn loop, the learning loop, tools, gateway,
 sessions, and providers. It does not cover the TUI, the ACP adapter, the
