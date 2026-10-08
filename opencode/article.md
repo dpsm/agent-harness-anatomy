@@ -28,6 +28,8 @@ is not whether Effect works here (it does), but what it buys a coding
 agent: cancellation, resource safety, and a permission system built on
 deferred effects rather than callbacks.[^1][^2]
 
+![OpenCode architecture](figures/opencode.svg)
+
 ## The mental model
 
 OpenCode is a **dual-runtime coding agent**: one session loop, one
@@ -93,6 +95,8 @@ child sessions, compactions get processed, and context overflow triggers
 and runs everything inside `state.ensureRunning` so concurrent
 prompts serialize on the session rather than interleaving.[^8]
 
+![Turn sequence](figures/seq-turn.svg)
+
 ## The dual LLM runtime
 
 This is OpenCode's most distinctive architectural decision. The boundary
@@ -120,6 +124,8 @@ model selection is not vendored at all: it is fetched from
 locking, and refreshed periodically — the harness adapts to new models
 without a release.[^15]
 
+![Dual runtime sequence](figures/seq-runtime.svg)
+
 ## Model-adaptive tools
 
 `ToolRegistry.tools()` rebuilds the tool set for the exact
@@ -146,6 +152,8 @@ all pending requests closed rather than leaving them hanging.[^17]
 Answering "always" appends the pattern to the approved ruleset, so the
 permission model learns within a session.
 
+![Permission sequence](figures/seq-permission.svg)
+
 ## LSP feedback, for free
 
 After `edit` or `write` applies, the tool touches the file
@@ -156,6 +164,8 @@ Only errors are reported (warnings stay silent), capped at 20 per file —
 the compiler feedback loop is closed *inside the tool result*, so
 the model self-corrects on the next turn without any harness-level retry
 logic.
+
+![LSP feedback sequence](figures/seq-lsp.svg)
 
 ## One turn, end to end
 
@@ -232,6 +242,8 @@ dumb and pushes intelligence into the seams — model-adapted tools,
 deferred permission effects, in-tool LSP feedback — but every seam is
 another per-request computation, and the harness trusts the model to know
 when it is done.
+
+![Subagent sequence](figures/seq-subagent.svg)
 
 ## Subsystem inventory
 
