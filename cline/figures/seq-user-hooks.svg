@@ -15,16 +15,18 @@
 <circle cx="502" cy="281" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
 <text x="502" y="286" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">1</text>
 <text x="520" y="286" font-size="14" fill="#000000">event fires (tool use, file edit, session start...)</text>
-<rect x="800" y="355" width="105" height="60" rx="6" fill="none" stroke="#d08c4e" stroke-width="2"/>
-<text x="930" y="390" font-size="14" fill="#000000">createHookCommandMap(workspace): discover hook files</text>
-<rect x="176" y="443" width="1248" height="44" rx="8" fill="#d08c4e22" stroke="#d08c4e" stroke-width="1"/>
-<text x="800" y="492" text-anchor="middle" font-size="14" fill="#000000">~/Documents/Cline/Hooks, ~/.cline/hooks, workspace .clinerules/hooks, .cline/hooks</text>
+<path d="M 800 390 h 77 v 46 H 810" fill="none" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="838" cy="374" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="838" y="379" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">2</text>
+<text x="887" y="395" font-size="14" fill="#000000">createHookCommandMap(workspace): discover hook files</text>
+<rect x="176" y="443" width="1248" height="44" rx="8" fill="#d08c4e" fill-opacity="0.13" stroke="#d08c4e" stroke-width="1"/>
+<text x="800" y="470" text-anchor="middle" font-size="14" fill="#000000">~/Documents/Cline/Hooks, ~/.cline/hooks, workspace .clinerules/hooks, .cline/hooks</text>
 <line x1="800" y1="598" x2="1230" y2="598" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
 <circle cx="942" cy="584" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
 <text x="942" y="589" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">3</text>
 <text x="960" y="589" font-size="14" fill="#000000">runHookCommand(payload, {command, cwd, env})</text>
-<rect x="615" y="651" width="809" height="44" rx="8" fill="#d08c4e22" stroke="#d08c4e" stroke-width="1"/>
-<text x="1020" y="700" text-anchor="middle" font-size="14" fill="#000000">JSON payload on stdin; subprocess with timeout; Windows python fallback</text>
+<rect x="615" y="651" width="809" height="44" rx="8" fill="#d08c4e" fill-opacity="0.13" stroke="#d08c4e" stroke-width="1"/>
+<text x="1020" y="678" text-anchor="middle" font-size="14" fill="#000000">JSON payload on stdin; subprocess with timeout; Windows python fallback</text>
 <line x1="1240" y1="805" x2="810" y2="805" stroke="#8a7a66" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrr)"/>
 <circle cx="942" cy="791" r="11" fill="#ffffff" stroke="#8a7a66" stroke-width="1.5"/>
 <text x="942" y="796" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">4</text>
@@ -33,6 +35,6 @@
 <circle cx="502" cy="886" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
 <text x="502" y="891" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">5</text>
 <text x="520" y="891" font-size="14" fill="#000000">merge outputs (cancel wins, contexts concatenate)</text>
-<rect x="176" y="953" width="1248" height="44" rx="8" fill="#d08c4e22" stroke="#d08c4e" stroke-width="1"/>
-<text x="800" y="1002" text-anchor="middle" font-size="14" fill="#000000">PreCompact is named in config but maps to undefined — the point exists, the wiring doesn&#x27;t</text>
+<rect x="176" y="953" width="1248" height="44" rx="8" fill="#d08c4e" fill-opacity="0.13" stroke="#d08c4e" stroke-width="1"/>
+<text x="800" y="980" text-anchor="middle" font-size="14" fill="#000000">PreCompact is named in config but maps to undefined — the point exists, the wiring doesn&#x27;t</text>
 </svg>

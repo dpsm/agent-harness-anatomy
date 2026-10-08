@@ -32,14 +32,16 @@
 <circle cx="722" cy="252" r="11" fill="#ffffff" stroke="#8a7a66" stroke-width="1.5"/>
 <text x="722" y="257" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">3</text>
 <text x="740" y="257" font-size="14" fill="#000000">update-ref refs/cline/checkpoints/{session}/{run}</text>
-<rect x="96" y="295" width="925" height="44" rx="8" fill="#d08c4e22" stroke="#d08c4e" stroke-width="1"/>
+<rect x="96" y="295" width="925" height="44" rx="8" fill="#d08c4e" fill-opacity="0.13" stroke="#d08c4e" stroke-width="1"/>
 <text x="559" y="322" text-anchor="middle" font-size="14" fill="#000000">User&#x27;s own repo -- no shadow repo; per-session GIT_INDEX_FILE leaves the user index alone</text>
 <line x1="1402" y1="380" x2="1171" y2="380" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
 <circle cx="1204" cy="366" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
 <text x="1204" y="371" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">4</text>
 <text x="1222" y="371" font-size="14" fill="#000000">/undo</text>
-<rect x="1161" y="413" width="58" height="33" rx="6" fill="none" stroke="#d08c4e" stroke-width="2"/>
-<text x="1233" y="432" font-size="14" fill="#000000">refuse if HEAD moved past the checkpoint</text>
+<path d="M 1161 432 h 43 v 25 H 1171" fill="none" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="1182" cy="416" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="1182" y="421" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">5</text>
+<text x="1214" y="437" font-size="14" fill="#000000">refuse if HEAD moved past the checkpoint</text>
 <line x1="1161" y1="484" x2="690" y2="484" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
 <circle cx="842" cy="470" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
 <text x="842" y="475" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">6</text>

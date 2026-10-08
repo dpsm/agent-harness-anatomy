@@ -74,6 +74,10 @@ lives in the endnotes.</p>
 <li><strong>Claim under test:</strong> "AI pair programming in your terminal"</li>
 </ul>
 <p><img alt="aider architecture" src="figures/aider.svg" /></p>
+<a class="diagram-cta" href="../diagrams/template.html?data=../aider/diagrams/aider.json">
+    Explore the interactive architecture diagram
+    <span>Pan, zoom, and click any node for its source module reference</span>
+  </a>
 <h2 id="the-mental-model">The mental model</h2>
 <p>aider is a <strong>text-format-negotiating pair programmer</strong>: one LLM call per
 turn, then a deterministic parse→apply→verify pipeline, with git as the
@@ -303,6 +307,10 @@ edit to foo.py" and — if the turn moved HEAD — a <code>/undo</code> hint
 there is no event stream for interfaces to subscribe to, which is why
 the streamlit GUI re-implements display logic instead of observing
 it.<sup id="fnref:20"><a class="footnote-ref" href="#fn:20">20</a></sup></p>
+<a class="diagram-cta" href="trace.html">
+    Step through one turn live
+    <span>Play the 8-step trace: the parse&rarr;apply&rarr;reflect loop, the reflection sub-loop, and source modules</span>
+  </a>
 <h2 id="subsystem-inventory">Subsystem inventory</h2>
 <ul>
 <li><strong>Repo map</strong> (signature subsystem). <code>repomap.py:42</code>. The pipeline:</li>
@@ -1024,14 +1032,6 @@ plugin API.)&#160;<a class="footnote-backref" href="#fnref:34" title="Jump back 
 </li>
 </ol>
 </div>
-  <a class="diagram-cta" href="trace.html">
-    Step through one turn live
-    <span>Play the 8-step trace: the parse&rarr;apply&rarr;reflect loop, the reflection sub-loop, and source modules</span>
-  </a>
-  <a class="diagram-cta" href="../diagrams/template.html?data=../aider/diagrams/aider.json">
-    Explore the interactive architecture diagram
-    <span>Pan, zoom, and click any node for its source module reference</span>
-  </a>
 </main>
 </body>
 </html>

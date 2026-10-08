@@ -28,19 +28,21 @@
 <circle cx="481" cy="200" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
 <text x="481" y="205" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">2</text>
 <text x="499" y="205" font-size="14" fill="#000000">lookup: NeverAllow &gt; AlwaysAllow &gt; AskBefore</text>
-<rect x="337" y="243" width="443" height="44" rx="8" fill="#d08c4e22" stroke="#d08c4e" stroke-width="1"/>
+<rect x="337" y="243" width="443" height="44" rx="8" fill="#d08c4e" fill-opacity="0.13" stroke="#d08c4e" stroke-width="1"/>
 <text x="559" y="270" text-anchor="middle" font-size="14" fill="#000000">Keyed by full tool name; removing an extension prunes its entries</text>
 <line x1="680" y1="328" x2="910" y2="328" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
 <circle cx="722" cy="314" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
 <text x="722" y="319" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">3</text>
 <text x="740" y="319" font-size="14" fill="#000000">Security -&gt; Egress -&gt; Adversary -&gt; Permission -&gt; Repetition</text>
-<rect x="920" y="360" width="58" height="33" rx="6" fill="none" stroke="#d08c4e" stroke-width="2"/>
-<text x="992" y="380" font-size="14" fill="#000000">Security can only escalate, never relax</text>
+<path d="M 920 379 h 43 v 25 H 930" fill="none" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="941" cy="363" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="941" y="368" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">4</text>
+<text x="973" y="384" font-size="14" fill="#000000">Security can only escalate, never relax</text>
 <line x1="920" y1="432" x2="1151" y2="432" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
 <circle cx="963" cy="418" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
 <text x="963" y="423" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">5</text>
 <text x="981" y="423" font-size="14" fill="#000000">SmartApprove: detect_read_only_requests</text>
-<rect x="819" y="461" width="443" height="44" rx="8" fill="#d08c4e22" stroke="#d08c4e" stroke-width="1"/>
+<rect x="819" y="461" width="443" height="44" rx="8" fill="#d08c4e" fill-opacity="0.13" stroke="#d08c4e" stroke-width="1"/>
 <text x="1041" y="488" text-anchor="middle" font-size="14" fill="#000000">Requests labeled UNTRUSTED TOOL REQUEST DATA; judge failure fails closed</text>
 <line x1="1161" y1="546" x2="930" y2="546" stroke="#8a7a66" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrr)"/>
 <circle cx="963" cy="532" r="11" fill="#ffffff" stroke="#8a7a66" stroke-width="1.5"/>
@@ -50,12 +52,12 @@
 <circle cx="1083" cy="584" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
 <text x="1083" y="589" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">7</text>
 <text x="1101" y="589" font-size="14" fill="#000000">prompt: Allow / Always Allow / Deny / Cancel</text>
-<rect x="819" y="627" width="684" height="44" rx="8" fill="#d08c4e22" stroke="#d08c4e" stroke-width="1"/>
-<text x="1161" y="653" text-anchor="middle" font-size="14" fill="#000000">&quot;Always Allow&quot; withheld when a security inspector attached a warning</text>
+<rect x="819" y="627" width="684" height="44" rx="8" fill="#d08c4e" fill-opacity="0.13" stroke="#d08c4e" stroke-width="1"/>
+<text x="1161" y="654" text-anchor="middle" font-size="14" fill="#000000">&quot;Always Allow&quot; withheld when a security inspector attached a warning</text>
 <line x1="1402" y1="711" x2="208" y2="711" stroke="#8a7a66" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrr)"/>
 <circle cx="722" cy="697" r="11" fill="#ffffff" stroke="#8a7a66" stroke-width="1.5"/>
 <text x="722" y="702" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">8</text>
 <text x="740" y="702" font-size="14" fill="#000000">verdict -&gt; approved / denied</text>
-<rect x="96" y="740" width="1407" height="44" rx="8" fill="#d08c4e22" stroke="#d08c4e" stroke-width="1"/>
+<rect x="96" y="740" width="1407" height="44" rx="8" fill="#d08c4e" fill-opacity="0.13" stroke="#d08c4e" stroke-width="1"/>
 <text x="800" y="767" text-anchor="middle" font-size="14" fill="#000000">Legacy: oneshot pause mid-iteration. State machine: goose.executable effect.</text>
 </svg>

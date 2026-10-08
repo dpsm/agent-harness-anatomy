@@ -73,6 +73,10 @@ lives in the endnotes. </p>
 <li><strong>Claim under test:</strong> "a hardened, minimal, extensible agent harness"</li>
 </ul>
 <p><img alt="pi architecture" src="figures/pi.svg" /></p>
+<a class="diagram-cta" href="../diagrams/template.html?data=../pi/diagrams/pi.json">
+    Explore the interactive architecture diagram
+    <span>Pan, zoom, and click any node for its source module reference</span>
+  </a>
 <h2 id="the-mental-model">The mental model</h2>
 <p>pi is two things with a clean seam between them: a <strong>model-agnostic agent
 loop library</strong> (<code>@earendil-works/pi-agent-core</code>) that knows nothing about
@@ -207,6 +211,10 @@ Same stream feeds RPC and print/JSON modes.<sup id="fnref2:9"><a class="footnote
 run without the loop knowing it exists — but the event schema becomes the
 de-facto API contract. Adding a new event type is a versioning decision,
 not an implementation detail.</p>
+<a class="diagram-cta" href="trace.html">
+    Step through one turn live
+    <span>Play the 8-step trace: representations, loop lanes, and source modules</span>
+  </a>
 <h2 id="subsystem-inventory">Subsystem inventory</h2>
 <ul>
 <li><strong>Tools.</strong> 8 built-ins: <code>read</code>, <code>bash</code>, <code>edit</code>, <code>write</code> are active by
@@ -845,14 +853,6 @@ via <code>tool_search</code>, <code>direct</code> declared up front, configured 
 </li>
 </ol>
 </div>
-  <a class="diagram-cta" href="trace.html">
-    Step through one turn live
-    <span>Play the 8-step trace: representations, loop lanes, and source modules</span>
-  </a>
-  <a class="diagram-cta" href="../diagrams/template.html?data=../pi/diagrams/pi.json">
-    Explore the interactive architecture diagram
-    <span>Pan, zoom, and click any node for its source module reference</span>
-  </a>
 </main>
 </body>
 </html>

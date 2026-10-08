@@ -41,10 +41,12 @@
 <circle cx="296" cy="483" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
 <text x="296" y="488" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">6</text>
 <text x="314" y="488" font-size="14" fill="#000000">subscribeToPartialMessage / subscribeToState</text>
-<rect x="233" y="536" width="68" height="39" rx="6" fill="none" stroke="#d08c4e" stroke-width="2"/>
-<text x="317" y="558" font-size="14" fill="#000000">convergent-replica reducer -&gt; transcript</text>
-<rect x="113" y="592" width="1373" height="44" rx="8" fill="#d08c4e22" stroke="#d08c4e" stroke-width="1"/>
-<text x="800" y="624" text-anchor="middle" font-size="14" fill="#000000">Delivery can be out-of-order, duplicated, or lossy — the reducer converges anyway</text>
+<path d="M 233 559 h 50 v 29 H 243" fill="none" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="258" cy="543" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="258" y="548" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">7</text>
+<text x="293" y="564" font-size="14" fill="#000000">convergent-replica reducer -&gt; transcript</text>
+<rect x="113" y="592" width="1373" height="44" rx="8" fill="#d08c4e" fill-opacity="0.13" stroke="#d08c4e" stroke-width="1"/>
+<text x="800" y="619" text-anchor="middle" font-size="14" fill="#000000">Delivery can be out-of-order, duplicated, or lossy — the reducer converges anyway</text>
 <line x1="1084" y1="692" x2="810" y2="692" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
 <circle cx="864" cy="678" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
 <text x="864" y="683" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">8</text>

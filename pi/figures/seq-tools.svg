@@ -28,8 +28,10 @@
 <circle cx="481" cy="200" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
 <text x="481" y="205" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">2</text>
 <text x="499" y="205" font-size="14" fill="#000000">add(definition)</text>
-<rect x="680" y="247" width="58" height="33" rx="6" fill="none" stroke="#d08c4e" stroke-width="2"/>
-<text x="751" y="266" font-size="14" fill="#000000">exposure check: direct / model-only / …</text>
+<path d="M 680 266 h 43 v 25 H 690" fill="none" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="701" cy="250" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="701" y="255" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">3</text>
+<text x="733" y="271" font-size="14" fill="#000000">exposure check: direct / model-only / …</text>
 <line x1="680" y1="318" x2="910" y2="318" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
 <circle cx="722" cy="304" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
 <text x="722" y="309" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">4</text>
@@ -38,8 +40,10 @@
 <circle cx="963" cy="356" r="11" fill="#ffffff" stroke="#8a7a66" stroke-width="1.5"/>
 <text x="963" y="361" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">5</text>
 <text x="981" y="361" font-size="14" fill="#000000">toolCall block</text>
-<rect x="1161" y="403" width="58" height="33" rx="6" fill="none" stroke="#d08c4e" stroke-width="2"/>
-<text x="1233" y="422" font-size="14" fill="#000000">prepareToolCall: lookup + schema validate</text>
+<path d="M 1161 422 h 43 v 25 H 1171" fill="none" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="1182" cy="406" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="1182" y="411" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">6</text>
+<text x="1214" y="427" font-size="14" fill="#000000">prepareToolCall: lookup + schema validate</text>
 <line x1="1161" y1="474" x2="208" y2="474" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
 <circle cx="602" cy="460" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
 <text x="602" y="465" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">7</text>
@@ -56,8 +60,10 @@
 <circle cx="1204" cy="616" r="11" fill="#ffffff" stroke="#8a7a66" stroke-width="1.5"/>
 <text x="1204" y="621" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">10</text>
 <text x="1222" y="621" font-size="14" fill="#000000">ToolResult {content, details}</text>
-<rect x="1161" y="663" width="58" height="33" rx="6" fill="none" stroke="#d08c4e" stroke-width="2"/>
-<text x="1233" y="682" font-size="14" fill="#000000">afterToolCall → createToolResultMessage</text>
-<rect x="578" y="711" width="925" height="44" rx="8" fill="#d08c4e22" stroke="#d08c4e" stroke-width="1"/>
+<path d="M 1161 682 h 43 v 25 H 1171" fill="none" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="1182" cy="666" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="1182" y="671" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">11</text>
+<text x="1214" y="687" font-size="14" fill="#000000">afterToolCall → createToolResultMessage</text>
+<rect x="578" y="711" width="925" height="44" rx="8" fill="#d08c4e" fill-opacity="0.13" stroke="#d08c4e" stroke-width="1"/>
 <text x="1041" y="738" text-anchor="middle" font-size="14" fill="#000000">toolResult appended to transcript → next provider request</text>
 </svg>

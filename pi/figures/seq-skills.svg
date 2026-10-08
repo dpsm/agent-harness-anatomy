@@ -18,8 +18,10 @@
 <circle cx="377" cy="218" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
 <text x="377" y="223" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">1</text>
 <text x="395" y="223" font-size="14" fill="#000000">prompt(&quot;/skill:review 42&quot;)</text>
-<rect x="628" y="279" width="83" height="47" rx="6" fill="none" stroke="#d08c4e" stroke-width="2"/>
-<text x="730" y="306" font-size="14" fill="#000000">_expandSkillCommand</text>
+<path d="M 628 307 h 61 v 36 H 638" fill="none" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="658" cy="291" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="658" y="296" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">2</text>
+<text x="699" y="312" font-size="14" fill="#000000">_expandSkillCommand</text>
 <line x1="628" y1="381" x2="962" y2="381" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
 <circle cx="722" cy="367" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
 <text x="722" y="372" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">3</text>
@@ -28,10 +30,12 @@
 <circle cx="722" cy="441" r="11" fill="#ffffff" stroke="#8a7a66" stroke-width="1.5"/>
 <text x="722" y="446" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">4</text>
 <text x="740" y="446" font-size="14" fill="#000000">Skill {filePath}</text>
-<rect x="628" y="502" width="83" height="47" rx="6" fill="none" stroke="#d08c4e" stroke-width="2"/>
-<text x="730" y="530" font-size="14" fill="#000000">read file, strip frontmatter → &lt;skill&gt; block</text>
-<rect x="138" y="571" width="1324" height="44" rx="8" fill="#d08c4e22" stroke="#d08c4e" stroke-width="1"/>
-<text x="800" y="610" text-anchor="middle" font-size="14" fill="#000000">Second path: loaded skills also ride the system prompt every turn</text>
+<path d="M 628 530 h 61 v 36 H 638" fill="none" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="658" cy="514" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="658" y="519" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">5</text>
+<text x="699" y="535" font-size="14" fill="#000000">read file, strip frontmatter → &lt;skill&gt; block</text>
+<rect x="138" y="571" width="1324" height="44" rx="8" fill="#d08c4e" fill-opacity="0.13" stroke="#d08c4e" stroke-width="1"/>
+<text x="800" y="598" text-anchor="middle" font-size="14" fill="#000000">Second path: loaded skills also ride the system prompt every turn</text>
 <line x1="628" y1="692" x2="962" y2="692" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
 <circle cx="722" cy="678" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
 <text x="722" y="683" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">6</text>

@@ -34,14 +34,16 @@
 <circle cx="894" cy="516" r="11" fill="#ffffff" stroke="#8a7a66" stroke-width="1.5"/>
 <text x="894" y="521" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">5</text>
 <text x="912" y="521" font-size="14" fill="#000000">lint_errors (or test failures)</text>
-<rect x="483" y="571" width="979" height="44" rx="8" fill="#d08c4e22" stroke="#d08c4e" stroke-width="1"/>
-<text x="972" y="610" text-anchor="middle" font-size="14" fill="#000000">lint errors -&gt; confirm_ask(&#x27;Attempt to fix lint errors?&#x27;)</text>
+<rect x="483" y="571" width="979" height="44" rx="8" fill="#d08c4e" fill-opacity="0.13" stroke="#d08c4e" stroke-width="1"/>
+<text x="972" y="598" text-anchor="middle" font-size="14" fill="#000000">lint errors -&gt; confirm_ask(&#x27;Attempt to fix lint errors?&#x27;)</text>
 <line x1="628" y1="692" x2="293" y2="692" stroke="#8a7a66" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrr)"/>
 <circle cx="377" cy="678" r="11" fill="#ffffff" stroke="#8a7a66" stroke-width="1.5"/>
 <text x="377" y="683" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">6</text>
 <text x="395" y="683" font-size="14" fill="#000000">reflected_message = lint_errors</text>
-<rect x="283" y="739" width="83" height="47" rx="6" fill="none" stroke="#d08c4e" stroke-width="2"/>
-<text x="385" y="767" font-size="14" fill="#000000">num_reflections += 1; message = reflected_message</text>
-<rect x="138" y="808" width="1324" height="44" rx="8" fill="#d08c4e22" stroke="#d08c4e" stroke-width="1"/>
-<text x="800" y="847" text-anchor="middle" font-size="14" fill="#000000">re-prompt re-enters at the model call — cap: &#x27;Only 3 reflections allowed, stopping.&#x27;</text>
+<path d="M 283 767 h 61 v 36 H 293" fill="none" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="313" cy="751" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="313" y="756" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">7</text>
+<text x="354" y="772" font-size="14" fill="#000000">num_reflections += 1; message = reflected_message</text>
+<rect x="138" y="808" width="1324" height="44" rx="8" fill="#d08c4e" fill-opacity="0.13" stroke="#d08c4e" stroke-width="1"/>
+<text x="800" y="835" text-anchor="middle" font-size="14" fill="#000000">re-prompt re-enters at the model call — cap: &#x27;Only 3 reflections allowed, stopping.&#x27;</text>
 </svg>

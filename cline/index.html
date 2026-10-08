@@ -117,6 +117,10 @@ lives in the endnotes.</p>
 Generated artifacts are excluded from the code total
 above — a counting convention applied across the series; the catalog's scale is itself a finding, covered under providers.)<sup id="fnref:1"><a class="footnote-ref" href="#fn:1">1</a></sup></p>
 <p><img alt="Cline architecture" src="figures/cline.svg" /></p>
+<a class="diagram-cta" href="../diagrams/template.html?data=../cline/diagrams/cline.json">
+    Explore the interactive architecture diagram
+    <span>Pan, zoom, and click any node for its source module reference</span>
+  </a>
 <h2 id="the-mental-model">The mental model</h2>
 <p>Cline is an <strong>approval-gated, checkpointed pair programmer that lives
 inside the IDE</strong>: the agent loop is a host-independent SDK
@@ -282,6 +286,10 @@ refuse if HEAD moved past the checkpoint, else <code>update-ref HEAD</code> +
 <code>reset --hard</code> + conditional <code>clean -fd</code> + <code>stash apply</code>, guarded by a
 pre-restore transaction snapshot under
 <code>refs/cline/restore-transactions/{uuid}</code>.<sup id="fnref2:26"><a class="footnote-ref" href="#fn:26">26</a></sup><sup id="fnref:27"><a class="footnote-ref" href="#fn:27">27</a></sup></p>
+<a class="diagram-cta" href="trace.html">
+    Step through one turn live
+    <span>Play the 9-step trace: the approval-gated tool loop, the per-turn checkpoint, and source modules</span>
+  </a>
 <h2 id="the-bridge-host-webview">The bridge: host ↔ webview</h2>
 <p>The extension host and the React webview are two processes that never share
 memory, and the wire between them is a first-class architectural component
@@ -1322,14 +1330,6 @@ resolved at
 </li>
 </ol>
 </div>
-  <a class="diagram-cta" href="trace.html">
-    Step through one turn live
-    <span>Play the 9-step trace: the approval-gated tool loop, the per-turn checkpoint, and source modules</span>
-  </a>
-  <a class="diagram-cta" href="../diagrams/template.html?data=../cline/diagrams/cline.json">
-    Explore the interactive architecture diagram
-    <span>Pan, zoom, and click any node for its source module reference</span>
-  </a>
 </main>
 </body>
 </html>

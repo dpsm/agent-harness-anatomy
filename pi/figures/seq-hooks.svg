@@ -49,8 +49,8 @@
 <circle cx="864" cy="606" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
 <text x="864" y="611" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">8</text>
 <text x="882" y="611" font-size="14" fill="#000000">prompt(messages)</text>
-<rect x="397" y="654" width="1089" height="44" rx="8" fill="#d08c4e22" stroke="#d08c4e" stroke-width="1"/>
-<text x="942" y="685" text-anchor="middle" font-size="14" fill="#000000">Loop runs; every tool call passes through hooks before executing</text>
+<rect x="397" y="654" width="1089" height="44" rx="8" fill="#d08c4e" fill-opacity="0.13" stroke="#d08c4e" stroke-width="1"/>
+<text x="942" y="681" text-anchor="middle" font-size="14" fill="#000000">Loop runs; every tool call passes through hooks before executing</text>
 <line x1="1367" y1="753" x2="526" y2="753" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
 <circle cx="864" cy="739" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
 <text x="864" y="744" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">9</text>

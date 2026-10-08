@@ -81,6 +81,10 @@ The event-driven harness this series set out to dissect — the event bus,
 the microagents, the loop — moved to <code>software-agent-sdk</code>, released the
 morning of this analysis. Everything below is pinned to that repo.</p>
 <p><img alt="OpenHands architecture" src="figures/openhands.svg" /></p>
+<a class="diagram-cta" href="../diagrams/template.html?data=../openhands/diagrams/openhands.json">
+    Explore the interactive architecture diagram
+    <span>Pan, zoom, and click any node for its source module reference</span>
+  </a>
 <h2 id="the-mental-model">The mental model</h2>
 <p>OpenHands is not a CLI with a loop bolted on. It is an <strong>event-sourced agent
 SDK</strong>: everything that happens — user messages, tool calls, tool results,
@@ -383,6 +387,10 @@ and the TypeScript client all consume the same event stream.</p>
 interceptable <em>because</em> it passes through the stream — but the stream is
 also the only path, so a misbehaving hook or a slow event consumer sits in
 line with the loop itself.</p>
+<a class="diagram-cta" href="trace.html">
+    Step through one turn live
+    <span>Play the 8-step trace: message to event stream to view-built prompt, classify, tool batch, and critic-gated finish</span>
+  </a>
 <h2 id="subsystem-inventory">Subsystem inventory</h2>
 <ul>
 <li>
@@ -1377,15 +1385,7 @@ policy rails only. Sandboxing lives in deployment (agent-server
 Docker runtimes, <sup id="fnref2:59"><a class="footnote-ref" href="#fn:59">59</a></sup>).&#160;<a class="footnote-backref" href="#fnref:88" title="Jump back to footnote 88 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:88" title="Jump back to footnote 88 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:88" title="Jump back to footnote 88 in the text">&#8617;</a></p>
 </li>
 </ol>
-</div>
-</div>  <a class="diagram-cta" href="trace.html">
-    Step through one turn live
-    <span>Play the 8-step trace: message to event stream to view-built prompt, classify, tool batch, and critic-gated finish</span>
-  </a>
-  <a class="diagram-cta" href="../diagrams/template.html?data=../openhands/diagrams/openhands.json">
-    Explore the interactive architecture diagram
-    <span>Pan, zoom, and click any node for its source module reference</span>
-  </a>
-</main>
+</div></main>
+
 </body>
 </html>

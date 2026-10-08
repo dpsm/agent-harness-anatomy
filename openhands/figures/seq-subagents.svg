@@ -29,8 +29,8 @@
 <circle cx="864" cy="299" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
 <text x="864" y="304" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">3</text>
 <text x="882" y="304" font-size="14" fill="#000000">load AgentDefinition (markdown frontmatter)</text>
-<rect x="113" y="347" width="1373" height="44" rx="8" fill="#d08c4e22" stroke="#d08c4e" stroke-width="1"/>
-<text x="800" y="379" text-anchor="middle" font-size="14" fill="#000000">AgentDefinition: own tools, skills, MCP config, hooks, condenser, confirmation policy, permission mode, caps</text>
+<rect x="113" y="347" width="1373" height="44" rx="8" fill="#d08c4e" fill-opacity="0.13" stroke="#d08c4e" stroke-width="1"/>
+<text x="800" y="374" text-anchor="middle" font-size="14" fill="#000000">AgentDefinition: own tools, skills, MCP config, hooks, condenser, confirmation policy, permission mode, caps</text>
 <line x1="800" y1="447" x2="1074" y2="447" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
 <circle cx="864" cy="433" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
 <text x="864" y="438" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">4</text>
@@ -43,8 +43,10 @@
 <circle cx="1148" cy="556" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
 <text x="1148" y="561" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">6</text>
 <text x="1166" y="561" font-size="14" fill="#000000">track task (resume support)</text>
-<rect x="1367" y="608" width="68" height="39" rx="6" fill="none" stroke="#d08c4e" stroke-width="2"/>
-<text x="1451" y="631" font-size="14" fill="#000000">run loop to completion</text>
+<path d="M 1367 631 h 50 v 29 H 1377" fill="none" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="1392" cy="615" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="1392" y="620" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">7</text>
+<text x="1427" y="636" font-size="14" fill="#000000">run loop to completion</text>
 <line x1="1367" y1="692" x2="810" y2="692" stroke="#8a7a66" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrr)"/>
 <circle cx="1006" cy="678" r="11" fill="#ffffff" stroke="#8a7a66" stroke-width="1.5"/>
 <text x="1006" y="683" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">8</text>
