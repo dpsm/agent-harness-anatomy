@@ -132,6 +132,33 @@
     </div>
   </div>
 
+  <div class="article">
+    <h2>#7 &mdash; OpenCode: the dual-runtime coding agent</h2>
+    <p>Runs its session loop on two runtimes with Effect-TS dependency
+    injection &mdash; and rebuilds the tool surface per request, so the
+    model only ever sees the tools this turn needs. Permissions are
+    deferred to the moment of use, and compiler feedback arrives
+    <em>inside</em> the tool call via LSP, not as a separate repair loop.</p>
+    <div class="links">
+      <a class="primary" href="opencode/trace.html">Step through a live turn</a>
+      <a class="secondary" href="diagrams/template.html?data=../opencode/diagrams/opencode.json">Interactive diagram</a>
+      <a class="secondary" href="opencode/">Read the article</a>
+    </div>
+  </div>
+
+  <div class="article">
+    <h2>#8 &mdash; Hermes Agent: the self-improving agent</h2>
+    <p>The agent writes its own skills at runtime &mdash; a background
+    review loop distills what worked into new capabilities, and a curator
+    promotes them, on two different timescales. The harness learns from
+    every session without a human in the loop editing prompts.</p>
+    <div class="links">
+      <a class="primary" href="hermes/trace.html">Step through a live turn</a>
+      <a class="secondary" href="diagrams/template.html?data=../hermes/diagrams/hermes.json">Interactive diagram</a>
+      <a class="secondary" href="hermes/">Read the article</a>
+    </div>
+  </div>
+
   <div class="contribute">
     <h2>Found a mistake?</h2>
     <p>These teardowns live or die on their grounding: every behavioral claim
