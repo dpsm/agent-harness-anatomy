@@ -177,10 +177,10 @@
   <section class="loopmap">
     <h3>Loop map</h3>
     <div class="flow" id="flowMain"></div>
-<div class="ret"><b>One pass</b> &mdash; <code>send_message</code> &rarr; hook interception on the event stream &rarr; view-built prompt &rarr; <code>llm.generate</code> &rarr; <code>classify_response</code> &rarr; parallel tool batch &rarr; observations &rarr; critic-gated finish. Everything is an event; the model only ever sees the cached view, never the raw stream.</div>
+<div class="ret"><b>One pass</b> &mdash; user input &rarr; <code>session/prompt.ts</code> runloop &rarr; tool registry &rarr; stream processor &rarr; LLM via AI SDK &rarr; tool execution with deferred permissions &rarr; SQLite persist &rarr; compaction check. The tool surface is rebuilt per request.</div>
     <div class="flow" id="flowBranch"></div>
-<div class="ret"><b>Hooks, not branches</b> &mdash; hooks are stream interceptors, not turn branches: <code>UserPromptSubmit</code>, <code>PreToolUse</code>, and <code>Stop</code> hooks run inside <code>on_event</code>. A deny blocks the message or the action; a Stop-hook deny un-finishes a turn. Hook executors are fail-open.</div>
-<div class="ret" style="border-color:#d08c4e"><b>Outer turn loop</b> &mdash; <code>max_iteration_per_run</code> (500) bounds the loop, but <code>finish</code> is a proposal, not a stop: the critic&rsquo;s iterative refinement and Stop hooks can both veto it. The next user message re-enters at step 1; the event log persists every step as JSONL.</div>
+<div class="ret"><b>Deferred permissions</b> &mdash; permission decisions happen at the moment of use, not upfront. The model proposes; the permission layer disposes — per tool, per call.</div>
+<div class="ret" style="border-color:#d08c4e"><b>Dual runtime</b> &mdash; the session loop runs on two runtimes with Effect-TS dependency injection, and compiler feedback arrives <em>inside</em> the tool call via LSP rather than as a separate repair loop. The next user message re-enters at step 1.</div>
   </section>
 
   <footer>Simplified shapes of real OpenCode types, not verbatim runtime dumps. All module links pin <span id="sha"></span>.</footer>

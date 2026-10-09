@@ -177,10 +177,10 @@
   <section class="loopmap">
     <h3>Loop map</h3>
     <div class="flow" id="flowMain"></div>
-<div class="ret"><b>One pass</b> &mdash; <code>send_message</code> &rarr; hook interception on the event stream &rarr; view-built prompt &rarr; <code>llm.generate</code> &rarr; <code>classify_response</code> &rarr; parallel tool batch &rarr; observations &rarr; critic-gated finish. Everything is an event; the model only ever sees the cached view, never the raw stream.</div>
+<div class="ret"><b>One pass</b> &mdash; CLI/gateway input &rarr; turn lease &rarr; preflight compaction check &rarr; prompt assembly with tool search &rarr; <code>conversation_loop</code> model call &rarr; tool dispatch with approvals &rarr; guardrailed answer. The lease serializes turns; the loop never overlaps itself.</div>
     <div class="flow" id="flowBranch"></div>
-<div class="ret"><b>Hooks, not branches</b> &mdash; hooks are stream interceptors, not turn branches: <code>UserPromptSubmit</code>, <code>PreToolUse</code>, and <code>Stop</code> hooks run inside <code>on_event</code>. A deny blocks the message or the action; a Stop-hook deny un-finishes a turn. Hook executors are fail-open.</div>
-<div class="ret" style="border-color:#d08c4e"><b>Outer turn loop</b> &mdash; <code>max_iteration_per_run</code> (500) bounds the loop, but <code>finish</code> is a proposal, not a stop: the critic&rsquo;s iterative refinement and Stop hooks can both veto it. The next user message re-enters at step 1; the event log persists every step as JSONL.</div>
+<div class="ret"><b>Two learning timescales</b> &mdash; after the turn, a background review distills what worked into candidate skills, and a curator promotes the keepers. The harness gets better at its job without a human editing prompts.</div>
+<div class="ret" style="border-color:#d08c4e"><b>Preflight, not just prompt</b> &mdash; before each turn, compaction state is checked and the tool surface is searched — the model only sees the tools this turn needs. Approvals gate dispatch; guardrails shape the answer. The next user message re-enters at step 1.</div>
   </section>
 
   <footer>Simplified shapes of real Hermes types, not verbatim runtime dumps. All module links pin <span id="sha"></span>.</footer>
