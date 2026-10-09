@@ -132,7 +132,7 @@
 </head>
 <body>
 <main>
-  <nav class="topnav"><a href="./">&larr; OpenHands: the event-sourced agent SDK</a></nav>
+  <nav class="topnav"><a href="./">&larr; OpenCode: the dual-runtime coding agent</a></nav>
   <h1 id="pageTitle">One turn through OpenCode</h1>
   <p class="sub" id="pageSub"></p>
 
@@ -183,7 +183,7 @@
 <div class="ret" style="border-color:#d08c4e"><b>Outer turn loop</b> &mdash; <code>max_iteration_per_run</code> (500) bounds the loop, but <code>finish</code> is a proposal, not a stop: the critic&rsquo;s iterative refinement and Stop hooks can both veto it. The next user message re-enters at step 1; the event log persists every step as JSONL.</div>
   </section>
 
-  <footer>Simplified shapes of real OpenHands types, not verbatim runtime dumps. All module links pin <span id="sha"></span>.</footer>
+  <footer>Simplified shapes of real OpenCode types, not verbatim runtime dumps. All module links pin <span id="sha"></span>.</footer>
 </main>
 
 <script>
@@ -300,8 +300,8 @@
       data = d;
       document.title = d.title + " \u00b7 Agent Harness Anatomy";
       $("pageTitle").textContent = d.title;
-      $("pageSub").textContent = "Follow one concrete user input through OpenHands's event-sourced turn loop. " +
-        "Each step shows the representation OpenHands selects at that boundary and the source modules involved. " + d.note;
+      $("pageSub").textContent = "Follow one concrete user input through OpenCode's dual-runtime session loop. " +
+        "Each step shows the representation OpenCode selects at that boundary and the source modules involved. " + d.note;
       $("sha").textContent = "rust-v0.160.0 (" + d.sha.slice(0, 12) + "\u2026)";
       if (!userInput.value) userInput.value = d.example_input;
       buildRail();
