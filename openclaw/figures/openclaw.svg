@@ -38,7 +38,7 @@
 <path d="M 400 458.0 C 495.0 458.0, 415.0 83.0, 510 83.0" fill="none" stroke="#8a7a66" stroke-width="2" marker-end="url(#arrow)"/>
 <text x="463" y="270" font-size="13" fill="#a89880">route</text>
 <path d="M 1000 848.0 C 860 848.0, 540 198.0, 400 198.0" fill="none" stroke="#8a7a66" stroke-width="2" marker-end="url(#arrow)"/>
-<text x="708" y="523" font-size="13" fill="#a89880">extend</text>
+<text x="905" y="780" font-size="13" fill="#a89880">extend</text>
 <path d="M 1000 978.0 C 905.0 978.0, 985.0 458.0, 890 458.0" fill="none" stroke="#8a7a66" stroke-width="2" marker-end="url(#arrow)"/>
 <text x="750" y="718" font-size="13" fill="#a89880">alternate</text>
 </g><g>
