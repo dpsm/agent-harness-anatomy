@@ -1,0 +1,291 @@
+{
+  "title": "OpenClaw architecture",
+  "repo": "https://github.com/openclaw/openclaw",
+  "sha": "bcfc88812a35243893585dbeca87ca41b48272ca",
+  "nodes": [
+    {
+      "id": "transport",
+      "label": "Transport",
+      "sub": "webhook/polling/WS",
+      "x": 20,
+      "y": 20,
+      "w": 380,
+      "h": 96,
+      "grade": "verified"
+    },
+    {
+      "id": "channel",
+      "label": "ChannelPlugin (Telegram)",
+      "sub": "src/channels/",
+      "x": 20,
+      "y": 150,
+      "w": 380,
+      "h": 96,
+      "grade": "verified"
+    },
+    {
+      "id": "ingress",
+      "label": "Ingress queue",
+      "sub": "SQLite + dead-letters",
+      "x": 20,
+      "y": 280,
+      "w": 380,
+      "h": 96,
+      "grade": "verified"
+    },
+    {
+      "id": "gateway",
+      "label": "Gateway server",
+      "sub": "src/gateway/",
+      "x": 20,
+      "y": 410,
+      "w": 380,
+      "h": 96,
+      "grade": "verified"
+    },
+    {
+      "id": "reply",
+      "label": "Reply pipeline",
+      "sub": "outbound per channel",
+      "x": 20,
+      "y": 540,
+      "w": 380,
+      "h": 96,
+      "grade": "verified"
+    },
+    {
+      "id": "admission",
+      "label": "runChannelTurn",
+      "sub": "7-stage admission",
+      "x": 510,
+      "y": 20,
+      "w": 380,
+      "h": 96,
+      "grade": "verified"
+    },
+    {
+      "id": "resolve",
+      "label": "Conversation resolution",
+      "sub": "message \u2192 session key",
+      "x": 510,
+      "y": 150,
+      "w": 380,
+      "h": 96,
+      "grade": "verified"
+    },
+    {
+      "id": "session",
+      "label": "AgentSession",
+      "sub": "src/agents/",
+      "x": 510,
+      "y": 280,
+      "w": 380,
+      "h": 96,
+      "grade": "verified"
+    },
+    {
+      "id": "runloop",
+      "label": "runAgentLoop",
+      "sub": "packages/agent-core",
+      "x": 510,
+      "y": 410,
+      "w": 380,
+      "h": 96,
+      "grade": "verified"
+    },
+    {
+      "id": "stream",
+      "label": "streamAgentResponse",
+      "sub": "streaming + inline tools",
+      "x": 510,
+      "y": 540,
+      "w": 380,
+      "h": 96,
+      "grade": "verified"
+    },
+    {
+      "id": "store",
+      "label": "Session store",
+      "sub": "2\u00d7 SQLite",
+      "x": 510,
+      "y": 670,
+      "w": 380,
+      "h": 96,
+      "grade": "verified"
+    },
+    {
+      "id": "tools",
+      "label": "Tool registry",
+      "sub": "AnyAgentTool",
+      "x": 1000,
+      "y": 20,
+      "w": 380,
+      "h": 96,
+      "grade": "verified"
+    },
+    {
+      "id": "approval",
+      "label": "Approval authority",
+      "sub": "use-time gate",
+      "x": 1000,
+      "y": 150,
+      "w": 380,
+      "h": 96,
+      "grade": "verified"
+    },
+    {
+      "id": "providers",
+      "label": "Provider registry",
+      "sub": "api-registry",
+      "x": 1000,
+      "y": 280,
+      "w": 380,
+      "h": 96,
+      "grade": "verified"
+    },
+    {
+      "id": "catalog",
+      "label": "Model catalog",
+      "sub": "ref \u2192 provider",
+      "x": 1000,
+      "y": 410,
+      "w": 380,
+      "h": 96,
+      "grade": "verified"
+    },
+    {
+      "id": "memory",
+      "label": "Memory",
+      "sub": "active-memory plugin",
+      "x": 1000,
+      "y": 540,
+      "w": 380,
+      "h": 96,
+      "grade": "verified"
+    },
+    {
+      "id": "compact",
+      "label": "Compaction",
+      "sub": "overflow handling",
+      "x": 1000,
+      "y": 670,
+      "w": 380,
+      "h": 96,
+      "grade": "verified"
+    },
+    {
+      "id": "plugins",
+      "label": "Plugin SDK",
+      "sub": "api.registerX",
+      "x": 1000,
+      "y": 800,
+      "w": 380,
+      "h": 96,
+      "grade": "verified"
+    },
+    {
+      "id": "harness",
+      "label": "AgentHarness interface",
+      "sub": "pluggable harness",
+      "x": 1000,
+      "y": 930,
+      "w": 380,
+      "h": 96,
+      "grade": "verified"
+    }
+  ],
+  "edges": [
+    {
+      "from": "transport",
+      "to": "channel",
+      "label": "raw message"
+    },
+    {
+      "from": "channel",
+      "to": "ingress",
+      "label": "enqueue"
+    },
+    {
+      "from": "ingress",
+      "to": "admission",
+      "label": "dequeue"
+    },
+    {
+      "from": "admission",
+      "to": "resolve",
+      "label": "classify"
+    },
+    {
+      "from": "resolve",
+      "to": "session",
+      "label": "bind session"
+    },
+    {
+      "from": "session",
+      "to": "runloop",
+      "label": "prompt"
+    },
+    {
+      "from": "runloop",
+      "to": "stream",
+      "label": "stream"
+    },
+    {
+      "from": "stream",
+      "to": "tools",
+      "label": "tool calls"
+    },
+    {
+      "from": "tools",
+      "to": "approval",
+      "label": "gate"
+    },
+    {
+      "from": "stream",
+      "to": "providers",
+      "label": "model call"
+    },
+    {
+      "from": "providers",
+      "to": "catalog",
+      "label": "resolve"
+    },
+    {
+      "from": "session",
+      "to": "store",
+      "label": "persist"
+    },
+    {
+      "from": "session",
+      "to": "memory",
+      "label": "recall"
+    },
+    {
+      "from": "session",
+      "to": "compact",
+      "label": "overflow"
+    },
+    {
+      "from": "admission",
+      "to": "reply",
+      "label": "respond"
+    },
+    {
+      "from": "gateway",
+      "to": "admission",
+      "label": "route"
+    },
+    {
+      "from": "plugins",
+      "to": "channel",
+      "label": "extend",
+      "side": "right"
+    },
+    {
+      "from": "harness",
+      "to": "runloop",
+      "label": "alternate",
+      "side": "right"
+    }
+  ]
+}
