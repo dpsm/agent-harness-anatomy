@@ -159,6 +159,22 @@
     </div>
   </div>
 
+  <div class="article">
+    <h2>#9 &mdash; OpenClaw: the channel-first gateway</h2>
+    <p>Telegram, WhatsApp, and Discord are first-class ingress &mdash; every
+    inbound message traverses a seven-stage admission pipeline
+    (<code>runChannelTurn</code>: ingest &rarr; classify &rarr; preflight &rarr;
+    resolve &rarr; assemble &rarr; dispatch &rarr; finalize) before the agent
+    loop ever sees it. A SQLite-backed ingress queue with dead letters keeps
+    turns durable, and Tool Search materializes tool definitions on demand
+    so most tools never enter the model context.</p>
+    <div class="links">
+      <a class="primary" href="openclaw/trace.html">Step through a live turn</a>
+      <a class="secondary" href="diagrams/template.html?data=../openclaw/diagrams/openclaw.json">Interactive diagram</a>
+      <a class="secondary" href="openclaw/">Read the article</a>
+    </div>
+  </div>
+
   <div class="contribute">
     <h2>Found a mistake?</h2>
     <p>These teardowns live or die on their grounding: every behavioral claim

@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body {
+    background: #161210; color: #ece1d3;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    line-height: 1.7; padding: 48px 24px; margin: 0;
+  }
+  main { max-width: 760px; margin: 0 auto; }
+  a { color: #d08c4e; }
+  h1 { font-size: 1.9rem; letter-spacing: -0.02em; line-height: 1.25; margin-bottom: 16px; }
+  h2 { font-size: 1.4rem; margin: 40px 0 12px; padding-top: 8px; border-top: 1px solid #2c231b; }
+  h3 { font-size: 1.1rem; margin: 28px 0 8px; }
+  p, li { margin-bottom: 12px; }
+  blockquote {
+    border-left: 3px solid #d08c4e; padding: 4px 16px; margin: 20px 0;
+    color: #a89880; background: #1f1a15; border-radius: 0 8px 8px 0;
+  }
+  blockquote p { margin-bottom: 6px; }
+  code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.88em; background: #1f1a15; padding: 2px 6px; border-radius: 6px;
+  }
+  pre { background: #1f1a15; border: 1px solid #3a2f26; border-radius: 8px;
+        padding: 16px; overflow-x: auto; }
+  pre code { background: none; padding: 0; }
+  img { max-width: 100%; height: auto; border: 1px solid #3a2f26;
+        border-radius: 12px; margin: 20px 0; background: #1f1a15; }
+  table { border-collapse: collapse; width: 100%; margin: 20px 0; font-size: 0.92rem;
+          display: block; overflow-x: auto; }
+  th, td { border: 1px solid #3a2f26; padding: 10px 12px; text-align: left;
+           vertical-align: top; }
+  th { background: #1f1a15; }
+  ul, ol { padding-left: 24px; }
+  hr { border: none; border-top: 1px solid #2c231b; margin: 32px 0; }
+  .footnote { font-size: 0.88rem; color: #a89880; }
+  .footnote hr { margin: 40px 0 16px; }
+  sup a { text-decoration: none; }
+  .topnav { max-width: 760px; margin: 0 auto 32px; font-size: 0.9rem; }
+  .topnav a { color: #a89880; text-decoration: none; }
+  .topnav a:hover { color: #ece1d3; }
+  .diagram-cta {
+    display: block; text-align: center; margin: 28px 0; padding: 16px;
+    background: #1f1a15; border: 1px solid #3a2f26; border-radius: 12px;
+    color: #ece1d3; text-decoration: none; font-weight: 600;
+  }
+  .diagram-cta:hover { border-color: #d08c4e; }
+  .diagram-cta span { display: block; font-weight: 400; font-size: 0.88rem;
+                      color: #a89880; margin-top: 4px; }
+</style>
+<title>Agent Harness Anatomy #9: OpenClaw — the channel-first gateway</title>
+</head>
+<body>
+<main>
+  <nav class="topnav"><a href="../">&larr; Agent Harness Anatomy</a></nav>
+<h1 id="agent-harness-anatomy-9-openclaw-the-channel-first-gateway">Agent Harness Anatomy #9: OpenClaw — the channel-first gateway</h1>
+<blockquote>
+<p><strong>Series:</strong> Agent Harness Anatomy — top-down dissections of real agent harnesses, grounded in verifiable source code. Every behavioral claim below carries a footnote to a pinned GitHub permalink; the full evidence lives in the endnotes.</p>
+</blockquote>
+<h2 id="version-block">Version block</h2>
+<ul>
+<li><strong>Repo:</strong> <a href="https://github.com/openclaw/openclaw">openclaw/openclaw</a></li>
+<li><strong>Pinned:</strong> tag <code>v2026.9.9</code> → <code>bcfc88812a35243893585dbeca87ca41b48272ca</code> (2026-10-08)</li>
+<li><strong>Language:</strong> TypeScript (pnpm monorepo)</li>
+<li><strong>Claim under test:</strong> "Multi-channel AI gateway with extensible messaging integrations"</li>
+</ul>
+<p><img alt="OpenClaw architecture" src="figures/openclaw.svg" /></p>
+<a class="diagram-cta" href="../diagrams/template.html?data=../openclaw/diagrams/openclaw.json">
+    Explore the interactive architecture diagram
+    <span>19 nodes, 18 edges — pan, zoom, and follow every subsystem link</span>
+  </a>
+<h2 id="the-mental-model">The mental model</h2>
+<p>Every harness in this series so far has been a program you run: a terminal app, an IDE extension, a CLI. OpenClaw inverts the relationship. It is a <strong>long-running gateway server</strong> that <em>hosts</em> agent turns, and the primary way you talk to it is through messaging channels — WhatsApp, Telegram, Discord, Signal, Slack — not a terminal.<sup id="fnref:1"><a class="footnote-ref" href="#fn:1">1</a></sup> The CLI and web UI are secondary surfaces on a system whose core abstraction is the <em>inbound message</em>, not the prompt.</p>
+<p>The architecture follows from that inversion. Where pi has a loop and a TUI, OpenClaw has four nested loop layers, a staged message-admission pipeline, a durable ingress queue with dead-letters, per-channel session binding, and a pluggable harness interface that can dispatch turns to <em>non-OpenClaw</em> harnesses.<sup id="fnref:2"><a class="footnote-ref" href="#fn:2">2</a></sup> It is the broadest harness in the series by a wide margin — ~100 bundled extensions, 550+ config schema files — and the only one whose distinctive question is not "how does the loop work" but "how does a WhatsApp message become an agent turn."<sup id="fnref:3"><a class="footnote-ref" href="#fn:3">3</a></sup></p>
+<p>The governing tradeoff: OpenClaw pays for its breadth with machinery. Every message traverses ingest → classify → preflight → resolve → assemble → dispatch → finalize before the model ever sees it.<sup id="fnref:4"><a class="footnote-ref" href="#fn:4">4</a></sup> You get a multi-tenant, multi-channel agent platform; you pay in pipeline stages, session-binding policy, and operational surface. If you're building a harness, that's OpenClaw's thesis in one sentence: the channel is the product, the loop is a component.</p>
+<h2 id="package-map">Package map</h2>
+<p>The repo is a pnpm monorepo. For this article five areas matter:<sup id="fnref:5"><a class="footnote-ref" href="#fn:5">5</a></sup></p>
+<table>
+<thead>
+<tr>
+<th>Area</th>
+<th>Role</th>
+</tr>
+</thead>
+<tbody>
+<tr><td><code>packages/agent-core/</code></td><td>The model-agnostic loop: <code>runLoop</code>, <code>Agent</code> class, event types</td></tr>
+<tr><td><code>packages/llm-core/</code> + <code>packages/ai/</code></td><td>Provider type contracts and the API registry</td></tr>
+<tr><td><code>src/agents/</code></td><td>Session orchestration, tool surface, harness lifecycle, embedded runner</td></tr>
+<tr><td><code>src/channels/</code></td><td>Channel framework: admission pipeline, ingress queue, session binding</td></tr>
+<tr><td><code>src/gateway/</code></td><td>The long-running server: receive/send, reply pipeline, boot</td></tr>
+<tr><td><code>extensions/</code></td><td>~100 bundled plugins: channels, providers, utilities</td></tr>
+</tbody>
+</table>
+<p>Everything else (<code>apps/</code>, <code>ui/</code>, <code>crates/</code>, <code>deploy/</code>, …) is out of scope for the core trace. The lineage, per <code>VISION.md</code>, runs Warelay → Clawdbot → Moltbot → OpenClaw.<sup id="fnref:6"><a class="footnote-ref" href="#fn:6">6</a></sup></p>
+<h2 id="the-core-loop">The core loop</h2>
+<p>The loop is deliberately factored into <strong>four nested layers</strong>, each adding orchestration around the one below. This is the most layered loop architecture in the series.</p>
+<p><strong>Layer 1 — <code>runLoop()</code>, the raw model→tool loop.</strong> Lives in the model-agnostic <code>@openclaw/agent-core</code> package, which knows nothing about channels or gateways.<sup id="fnref:7"><a class="footnote-ref" href="#fn:7">7</a></sup> Two nested <code>while</code> loops: the outer iterates turns, the inner runs while tool calls or steering messages remain.<sup id="fnref:8"><a class="footnote-ref" href="#fn:8">8</a></sup> Each inner iteration streams the model response and executes tool calls <em>as they arrive in the stream</em> — not after the response completes — via <code>streamAgentResponse</code> with async tool-batch scheduling.<sup id="fnref:9"><a class="footnote-ref" href="#fn:9">9</a></sup> New user messages can be injected mid-loop through the steering queue without restarting it.<sup id="fnref:10"><a class="footnote-ref" href="#fn:10">10</a></sup> Each outer iteration consults two hooks, <code>prepareNextTurn</code> and <code>shouldStopAfterTurn</code> — there is no hard max-turn counter in agent-core itself; loop control is delegated to configuration.<sup id="fnref:11"><a class="footnote-ref" href="#fn:11">11</a></sup> A tool-loop recovery detector watches for pathological tool-call cycles and intervenes.<sup id="fnref:12"><a class="footnote-ref" href="#fn:12">12</a></sup></p>
+<p><strong>Layer 2 — the <code>Agent</code> class, transcript ownership.</strong> <code>packages/agent-core/src/agent.ts</code> (<code>export class Agent</code>, 724 lines) owns the mutable message state, the steering queue, and the follow-up queue, and emits typed <code>AgentEvent</code>s.<sup id="fnref:13"><a class="footnote-ref" href="#fn:13">13</a></sup> <code>prompt()</code> normalizes input and runs the loop; <code>continue()</code> resumes from the transcript tail (which must end in user or tool-result, never assistant).<sup id="fnref:14"><a class="footnote-ref" href="#fn:14">14</a></sup></p>
+<p><strong>Layer 3 — <code>AgentSession</code>, the session orchestrator.</strong> A mixin chain (<code>AgentSession</code> → <code>AgentSessionTree</code> → … → <code>AgentSessionBase</code>) adding prompting, execution, compaction, extensions, and inspection.<sup id="fnref:15"><a class="footnote-ref" href="#fn:15">15</a></sup> <code>runAgentPrompt</code> guards re-entrancy, runs the prepared loop, then handles post-run directives: <code>"continue"</code> runs the agent again, <code>"handoff"</code> ends the turn for handoff.<sup id="fnref:16"><a class="footnote-ref" href="#fn:16">16</a></sup> Execution adds auto-retry with exponential backoff — retryable on rate-limit and server errors, <em>not</em> on context overflow, which routes to compaction instead.<sup id="fnref:17"><a class="footnote-ref" href="#fn:17">17</a></sup></p>
+<p><strong>Layer 4 — gateway execution.</strong> The session run is wrapped in operational machinery: prepared model-runtime leases, per-run abort controllers, lifecycle generation assertions, and work-admission continuations.<sup id="fnref:18"><a class="footnote-ref" href="#fn:18">18</a></sup> The <code>src/gateway/agent-turn/</code> directory holds 54 files covering admission control, dedupe, restart recovery, subagent runs, and terminal outcome production — the loop's execution environment, not the loop itself.</p>
+<p><strong>The notable abstraction: <code>AgentHarness</code>.</strong> OpenClaw defines a pluggable harness interface — <code>runAttempt(params)</code> — and the lifecycle code explicitly handles "Non-OpenClaw harnesses," giving them child run traces.<sup id="fnref:19"><a class="footnote-ref" href="#fn:19">19</a></sup> The gateway can dispatch turns to <em>other</em> agent harnesses through this contract. No other teardown in the series has a harness-abstraction layer; here the harness is itself hostable.</p>
+<p><img alt="Core loop sequence" src="figures/seq-loop.svg" /></p>
+<h2 id="one-turn-end-to-end">One turn, end to end</h2>
+<p>Trace: a Telegram message reading <code>summarize today's standup notes</code> arrives while the gateway is running.</p>
+<p><strong>① Ingress.</strong> The Telegram channel plugin — built with <code>createChatChannelPlugin()</code>, composing ~25 optional adapters (security, pairing, threading, outbound, …) rather than written from scratch<sup id="fnref:20"><a class="footnote-ref" href="#fn:20">20</a></sup> — receives the raw update through its transport (long-poll or webhook) and calls the SDK entry <code>runChannelInboundEvent</code>, a thin wrapper over the admission pipeline.<sup id="fnref:21"><a class="footnote-ref" href="#fn:21">21</a></sup> Channels run <strong>in-process</strong> inside the gateway; each channel's <code>startAccount</code> opens its own transport to the platform.<sup id="fnref:22"><a class="footnote-ref" href="#fn:22">22</a></sup></p>
+<p><strong>② Admission.</strong> Every inbound message traverses <code>runChannelTurn</code>'s staged pipeline: <strong>ingest</strong> (channel-specific raw → normalized input; null → drop) → <strong>classify</strong> (event class; non-turn events like reactions are handled without starting a turn) → <strong>preflight</strong> (admission verdict: <code>dispatch</code> | <code>drop</code> | <code>handled</code> | <code>observeOnly</code>) → <strong>resolveTurn</strong> → <strong>assemble</strong> (binds the message to a session key via route resolution) → <strong>dispatch</strong> → <strong>finalize</strong>.<sup id="fnref:4"><a class="footnote-ref" href="#fn:4">4</a></sup> This is a message-processing architecture grafted onto an agent loop — nothing in the previous eight teardowns looks like it.</p>
+<p><img alt="Channel turn sequence" src="figures/seq-channel-turn.svg" /></p>
+<p><strong>③ Persistence before execution.</strong> The dispatch core, <code>runPreparedChannelTurnCore</code>, applies guards first (outbound-echo drop, bot-loop protection), then <strong>persists the inbound message to the session store before the agent runs</strong> — the turn is durable before it is executed.<sup id="fnref:23"><a class="footnote-ref" href="#fn:23">23</a></sup> For reliability, channels may enqueue into a SQLite-backed ingress queue instead of calling the turn runner directly; the drain claims leases with per-lane serialization, retry, dead-letter, and a stall watchdog for at-least-once ordered delivery.<sup id="fnref:24"><a class="footnote-ref" href="#fn:24">24</a></sup></p>
+<p><strong>④ Session binding.</strong> Route resolution maps the channel, account, and peer to an agent ID and session key; conversation resolution and thread bindings attach the message to the right conversation, with multi-account channels resolving to separate sessions.<sup id="fnref:25"><a class="footnote-ref" href="#fn:25">25</a></sup></p>
+<p><strong>⑤ Execution.</strong> The gateway's agent-turn layer provides the dispatch function, which runs the four-layer loop described above against the bound session — history loaded from the per-agent SQLite store, replay validated, context-window limited, assembled by the context engine.<sup id="fnref:26"><a class="footnote-ref" href="#fn:26">26</a></sup></p>
+<p><strong>⑥ Reply.</strong> Agent output becomes <code>ReplyPayload</code>s shaped per channel by the reply pipeline, sent through a durable sender, and normalized to <code>MessageReceipt</code>s with dead-letter and reconciliation hooks.<sup id="fnref:27"><a class="footnote-ref" href="#fn:27">27</a></sup> Approval prompts, where needed, surface as native channel UI — Telegram inline buttons, for example.<sup id="fnref:28"><a class="footnote-ref" href="#fn:28">28</a></sup></p>
+<p><img alt="Reply pipeline sequence" src="figures/seq-reply.svg" /></p>
+<p>The tradeoff of the pipeline: every message pays the admission cost even when the verdict is trivially <code>dispatch</code> — but the gateway gains uniform policy enforcement, durability, and multi-tenancy. A single-user CLI harness would never build this; a messaging platform must.</p>
+<a class="diagram-cta" href="trace.html">
+    Play the 8-step trace
+    <span>A Telegram message through the 7-stage admission pipeline, the four-layer loop, and the reply pipeline</span>
+  </a>
+<h2 id="subsystem-inventory">Subsystem inventory</h2>
+<ul>
+<li><strong>Tools.</strong> The <code>AnyAgentTool</code> type (TypeBox params, display metadata, catalog mode, execution timeouts, before-call param hooks) is registered through a registrar supporting static declarations <em>and</em> runtime tool factories.<sup id="fnref:29"><a class="footnote-ref" href="#fn:29">29</a></sup> The effective tool surface merges six sources — core, shell, channel, OpenClaw, plugin, and Tool Search — then applies sandbox, profile, provider, sender, group, and sub-agent policy filters.<sup id="fnref:30"><a class="footnote-ref" href="#fn:30">30</a></sup> Channel plugins contribute channel-owned agent tools through the <code>agentTools</code> adapter.<sup id="fnref:20"><a class="footnote-ref" href="#fn:20">20</a></sup></li>
+</ul>
+<p><img alt="Tool dispatch sequence" src="figures/seq-tools.svg" /></p>
+<ul>
+<li><strong>Tool Search catalog.</strong> Most tools never enter the model context. The model uses control tools, and a per-call executor materializes searched tools on demand — a retrieval layer <em>inside</em> the tool system.<sup id="fnref:30"><a class="footnote-ref" href="#fn:30">30</a></sup></li>
+<li><strong>Approvals.</strong> An explicitly ordered policy chain where ordering is behavior: loop admission → owner probes → voice confirmation → trusted policies → approvals → normal hooks → final owner approval.<sup id="fnref:31"><a class="footnote-ref" href="#fn:31">31</a></sup> The gateway adds a use-time authority gate bound to the run's <em>delegated authority</em>, not just the tool name; decisions are audited with hashed receipts, and plugins can request deferred approvals.<sup id="fnref:32"><a class="footnote-ref" href="#fn:32">32</a></sup></li>
+<li><strong>Providers.</strong> <code>packages/llm-core</code> defines the transport-adapter contract (<code>stream</code> / <code>streamSimple</code> returning a normalized async-iterable event stream); <code>packages/ai</code>'s registry maps API IDs to providers, with built-in transports and per-vendor extensions declaring auth, model catalogs, and thinking policies.<sup id="fnref:33"><a class="footnote-ref" href="#fn:33">33</a></sup> The agent loop consumes streaming by default; <code>modelFallback</code> is last-resort chain resolution, never runtime failover on error.<sup id="fnref:34"><a class="footnote-ref" href="#fn:34">34</a></sup></li>
+<li><strong>Sessions and state.</strong> Two SQLite databases via <code>node:sqlite</code>, no external server: a shared state DB (cross-agent state, append-only <code>session_state_events</code> with per-agent cursors, lease/worker mutual exclusion) and a per-agent DB holding the authoritative conversation history as <code>session_nodes</code> → <code>session_windows</code> → <code>transcript_events</code> (append-only, <code>(session_id, seq)</code> keyed, with compressed blobs and FTS indexing).<sup id="fnref:35"><a class="footnote-ref" href="#fn:35">35</a></sup></li>
+<li><strong>Memory.</strong> Layered: a canonical <code>MEMORY.md</code> seed loaded at session start, a vector/keyword index in the agent DB, and the bundled <code>active-memory</code> plugin that proactively surfaces relevant memories before eligible replies, gated by per-session policy — plus a dreaming/curation subsystem.<sup id="fnref:36"><a class="footnote-ref" href="#fn:36">36</a></sup></li>
+</ul>
+<p><img alt="Memory sequence" src="figures/seq-memory.svg" /></p>
+<ul>
+<li><strong>Config.</strong> A 550-file schema-driven system with dot-notation access, prototype-pollution guards, and wizard flows; model config supports merge/replace modes over a provider map.<sup id="fnref:37"><a class="footnote-ref" href="#fn:37">37</a></sup></li>
+</ul>
+<h2 id="extension-points">Extension points</h2>
+<p>OpenClaw's extension model is the most formal in the series: a <strong>capability-typed plugin system</strong> where plugins register capabilities through <code>api.registerX</code> — providers, channels, embeddings, speech, media generation, web fetch, gateway discovery, migrations — and are classified by shape (single-capability, hybrid, hook-only).<sup id="fnref:3"><a class="footnote-ref" href="#fn:3">3</a></sup> Each extension carries an <code>openclaw.plugin.json</code> manifest (id, categories, activation policy, config schema, doctor contract); the Telegram manifest declares <code>activation.onStartup: false</code>, keeping heavy channel imports off the startup hot path via lazy specifiers.<sup id="fnref:38"><a class="footnote-ref" href="#fn:38">38</a></sup> Heavy modules stay lazy throughout the runtime.<sup id="fnref:39"><a class="footnote-ref" href="#fn:39">39</a></sup></p>
+<p>Skills deserve a callout because they invert the Hermes pattern: in OpenClaw, skills are <strong>instruction packs, not tools</strong>. Named folders under <code>skills/</code> hold <code>SKILL.md</code> files with YAML frontmatter; they flow into runs through the prompt system (<code>skillsSnapshot</code>, instruction-delivery caches) and user-invocable chat commands, steering the model <em>toward</em> real tools rather than being callable themselves.<sup id="fnref:40"><a class="footnote-ref" href="#fn:40">40</a></sup> The gateway even supports skill authoring as a first-class flow.<sup id="fnref:41"><a class="footnote-ref" href="#fn:41">41</a></sup></p>
+<h2 id="deliberate-omissions">Deliberate omissions</h2>
+<p>There is no runtime model failover — <code>modelFallback</code> resolves a chain at configuration time and never switches providers mid-run on error.<sup id="fnref:34"><a class="footnote-ref" href="#fn:34">34</a></sup> The agent-core loop has no built-in iteration cap; control is delegated to the <code>shouldStopAfterTurn</code> hook and the gateway's retry budgets.<sup id="fnref:11"><a class="footnote-ref" href="#fn:11">11</a></sup> And the <code>AgentHarness</code> interface notwithstanding, no non-OpenClaw harness implementations ship bundled — it is a contract awaiting implementations, not a working multi-harness router today.<sup id="fnref:19"><a class="footnote-ref" href="#fn:19">19</a></sup></p>
+<p>Read the omissions as scope discipline: OpenClaw's complexity budget is spent on channels, admission, and multi-tenancy. The loop itself stays delegated and hook-driven rather than opinionated.</p>
+<h2 id="comparison-matrix-row">Comparison matrix row</h2>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Dimension</th>
+<th>OpenClaw (v2026.9.9)</th>
+</tr>
+</thead>
+<tbody>
+<tr><td>1</td><td>Agent loop</td><td>4 nested layers; streaming tool exec; steering injection; hook-driven stop (no hard cap) <sup id="fnref:8"><a class="footnote-ref" href="#fn:8">8</a></sup><sup id="fnref:11"><a class="footnote-ref" href="#fn:11">11</a></sup></td></tr>
+<tr><td>2</td><td>Tool system</td><td><code>AnyAgentTool</code> registry + factories; 6-source surface merge; Tool Search catalog <sup id="fnref:29"><a class="footnote-ref" href="#fn:29">29</a></sup><sup id="fnref:30"><a class="footnote-ref" href="#fn:30">30</a></sup></td></tr>
+<tr><td>3</td><td>Model providers</td><td><code>llm-core</code> transport contract; api-registry; per-vendor extensions; no runtime failover <sup id="fnref:33"><a class="footnote-ref" href="#fn:33">33</a></sup><sup id="fnref:34"><a class="footnote-ref" href="#fn:34">34</a></sup></td></tr>
+<tr><td>4</td><td>Prompt construction</td><td>Context-engine assembly; skills via prompt system; session-bound <sup id="fnref:26"><a class="footnote-ref" href="#fn:26">26</a></sup><sup id="fnref:40"><a class="footnote-ref" href="#fn:40">40</a></sup></td></tr>
+<tr><td>5</td><td>Memory/session</td><td>2× SQLite; <code>session_nodes</code>→<code>windows</code>→<code>transcript_events</code>; layered memory + active recall <sup id="fnref:35"><a class="footnote-ref" href="#fn:35">35</a></sup><sup id="fnref:36"><a class="footnote-ref" href="#fn:36">36</a></sup></td></tr>
+<tr><td>6</td><td>Reasoning/planning</td><td>Subagents via harness; tool-loop recovery; retry budgets <sup id="fnref:12"><a class="footnote-ref" href="#fn:12">12</a></sup><sup id="fnref:19"><a class="footnote-ref" href="#fn:19">19</a></sup></td></tr>
+<tr><td>7</td><td>Extensibility</td><td>Capability-typed plugins (<code>api.registerX</code>); ~100 bundled; lazy loading <sup id="fnref:3"><a class="footnote-ref" href="#fn:3">3</a></sup><sup id="fnref:39"><a class="footnote-ref" href="#fn:39">39</a></sup></td></tr>
+<tr><td>8</td><td>Interfaces</td><td><strong>Channel-first</strong>: ~25 channel adapters; Telegram template; CLI/UI secondary <sup id="fnref:1"><a class="footnote-ref" href="#fn:1">1</a></sup><sup id="fnref:20"><a class="footnote-ref" href="#fn:20">20</a></sup></td></tr>
+<tr><td>9</td><td>Failure handling</td><td>Ingress dead-letters; retry with backoff; compaction on overflow (never retry) <sup id="fnref:24"><a class="footnote-ref" href="#fn:24">24</a></sup><sup id="fnref:17"><a class="footnote-ref" href="#fn:17">17</a></sup></td></tr>
+<tr><td>10</td><td>Security model</td><td>Staged admission verdicts; ordered approval chain; hashed-receipt audit; delegated authority <sup id="fnref:4"><a class="footnote-ref" href="#fn:4">4</a></sup><sup id="fnref:31"><a class="footnote-ref" href="#fn:31">31</a></sup><sup id="fnref:32"><a class="footnote-ref" href="#fn:32">32</a></sup></td></tr>
+</tbody>
+</table>
+<h2 id="endnotes">Endnotes</h2>
+<p>All notes VERIFIED against <code>v2026.9.9</code></p>
+<p>(<code>bcfc88812a35243893585dbeca87ca41b48272ca</code>).</p>
+<p><code>GH</code> = <code>https://github.com/openclaw/openclaw/blob/bcfc88812a35243893585dbeca87ca41b48272ca/</code>.</p>
+<div class="footnote">
+<hr />
+<ol>
+<li id="fn:1">
+<p>Package tagline in <a href="https://github.com/openclaw/openclaw/blob/bcfc88812a35243893585dbeca87ca41b48272ca/package.json">GH…/package.json</a> (<code>"description": "Multi-channel AI gateway with extensible messaging integrations"</code>).&#160;<a class="footnote-backref" href="#fnref:1" title="Jump back to footnote 1 in the text">&#8617;</a></p>
+</li>
+<li id="fn:2">
+<p><code>AgentHarness</code> interface with <code>runAttempt</code> at <a href="https://github.com/openclaw/openclaw/blob/bcfc88812a35243893585dbeca87ca41b48272ca/src/agents/harness/types.ts#L437">GH…/src/agents/harness/types.ts#L437</a>; non-OpenClaw harness handling at <a href="https://github.com/openclaw/openclaw/blob/bcfc88812a35243893585dbeca87ca41b48272ca/src/agents/harness/lifecycle.ts#L300">GH…/src/agents/harness/lifecycle.ts#L300</a>.&#160;<a class="footnote-backref" href="#fnref:2" title="Jump back to footnote 2 in the text">&#8617;</a></p>
+</li>
+<li id="fn:3">
+<p>Capability registration model documented in <code>docs/plugins/architecture.md</code> (<a href="https://github.com/openclaw/openclaw/blob/bcfc88812a35243893585dbeca87ca41b48272ca/docs/plugins/architecture.md">GH…/docs/plugins/architecture.md</a>); ~100 extensions under <a href="https://github.com/openclaw/openclaw/blob/bcfc88812a35243893585dbeca87ca41b48272ca/extensions/">GH…/extensions/</a>; 550+ files under <a href="https://github.com/openclaw/openclaw/blob/bcfc88812a35243893585dbeca87ca41b48272ca/src/config/">GH…/src/config/</a>.&#160;<a class="footnote-backref" href="#fnref:3" title="Jump back to footnote 3 in the text">&#8617;</a></p>
+</li>
+<li id="fn:4">
+<p><code>runChannelTurn</code> staged pipeline at <a href="https://github.com/openclaw/openclaw/blob/bcfc88812a35243893585dbeca87ca41b48272ca/src/channels/turn/run-channel-turn.ts#L146">GH…/src/channels/turn/run-channel-turn.ts#L146</a> (ingest → classify → preflight → resolveTurn → assemble → dispatch → finalize).&#160;<a class="footnote-backref" href="#fnref:4" title="Jump back to footnote 4 in the text">&#8617;</a></p>
+</li>
+<li id="fn:5">
+<p>Monorepo layout: <code>packages/agent-core</code>, <code>packages/llm-core</code>, <code>packages/ai</code> (<a href="https://github.com/openclaw/openclaw/blob/bcfc88812a35243893585dbeca87ca41b48272ca/packages/">GH…/packages/</a>); <code>src/agents</code>, <code>src/channels</code>, <code>src/gateway</code> (<a href="https://github.com/openclaw/openclaw/blob/bcfc88812a35243893585dbeca87ca41b48272ca/src/">GH…/src/</a>).&#160;<a class="footnote-backref" href="#fnref:5" title="Jump back to footnote 5 in the text">&#8617;</a></p>
+</li>
+<li id="fn:6">
+<p>Lineage in <a href="https://github.com/openclaw/openclaw/blob/bcfc88812a35243893585dbeca87ca41b48272ca/VISION.md#L13">GH…/VISION.md#L13</a> ("Warelay -&gt; Clawdbot -&gt; Moltbot -&gt; OpenClaw").&#160;<a class="footnote-backref" href="#fnref:6" title="Jump back to footnote 6 in the text">&#8617;</a></p>
+</li>
+<li id="fn:7">
+<p><code>async function runLoop</code> at <a href="https://github.com/openclaw/openclaw/blob/bcfc88812a35243893585dbeca87ca41b48272ca/packages/agent-core/src/agent-loop.ts#L141">GH…/packages/agent-core/src/agent-loop.ts#L141</a>; public wrappers <code>runAgentLoop</code> / <code>runAgentLoopContinue</code> at L68/L81.&#160;<a class="footnote-backref" href="#fnref:7" title="Jump back to footnote 7 in the text">&#8617;</a></p>
+</li>
+<li id="fn:8">
+<p>Nested <code>while</code> structure in <code>runLoop</code> (<a href="https://github.com/openclaw/openclaw/blob/bcfc88812a35243893585dbeca87ca41b48272ca/packages/agent-core/src/agent-loop.ts#L141">GH…/agent-loop.ts#L141</a>).&#160;<a class="footnote-backref" href="#fnref:8" title="Jump back to footnote 8 in the text">&#8617;</a></p>
+</li>
+<li id="fn:9">
+<p><code>streamAgentResponse</code> in <a href="https://github.com/openclaw/openclaw/blob/bcfc88812a35243893585dbeca87ca41b48272ca/packages/agent-core/src/agent-stream-response.ts">GH…/packages/agent-core/src/agent-stream-response.ts</a> executes tool calls as they stream in, with async batch scheduling.&#160;<a class="footnote-backref" href="#fnref:9" title="Jump back to footnote 9 in the text">&#8617;</a></p>
+</li>
+<li id="fn:10">
+<p>Steering via <code>pendingMessages</code> / <code>getSteeringMessages</code> / <code>commitPendingMessages</code> in <a href="https://github.com/openclaw/openclaw/blob/bcfc88812a35243893585dbeca87ca41b48272ca/packages/agent-core/src/agent-loop.ts">GH…/packages/agent-core/src/agent-loop.ts</a>.&#160;<a class="footnote-backref" href="#fnref:10" title="Jump back to footnote 10 in the text">&#8617;</a></p>
+</li>
+<li id="fn:11">
+<p>Outer-loop hooks <code>config.prepareNextTurn?.()</code> and <code>config.shouldStopAfterTurn?.()</code> consulted per iteration in <a href="https://github.com/openclaw/openclaw/blob/bcfc88812a35243893585dbeca87ca41b48272ca/packages/agent-core/src/agent-loop.ts">GH…/packages/agent-core/src/agent-loop.ts</a>; no hard max-turn counter in agent-core (negative finding: grep for <code>maxTurns|maxIterations</code> in <code>packages/agent-core/src</code> returns nothing).&#160;<a class="footnote-backref" href="#fnref:11" title="Jump back to footnote 11 in the text">&#8617;</a></p>
+</li>
+<li id="fn:12">
+<p>Tool-loop recovery via <code>toolLoopRecoveryState.criticalToolLoopSeen</code> in <a href="https://github.com/openclaw/openclaw/blob/bcfc88812a35243893585dbeca87ca41b48272ca/packages/agent-core/src/agent-loop.ts">GH…/packages/agent-core/src/agent-loop.ts</a>.&#160;<a class="footnote-backref" href="#fnref:12" title="Jump back to footnote 12 in the text">&#8617;</a></p>
+</li>
+<li id="fn:13">
+<p><code>export class Agent</code> at <a href="https://github.com/openclaw/openclaw/blob/bcfc88812a35243893585dbeca87ca41b48272ca/packages/agent-core/src/agent.ts#L270">GH…/packages/agent-core/src/agent.ts#L270</a> (724-line file).&#160;<a class="footnote-backref" href="#fnref:13" title="Jump back to footnote 13 in the text">&#8617;</a></p>
+</li>
+<li id="fn:14">
+<p><code>prompt()</code> / <code>continue()</code> transcript-tail requirements in <a href="https://github.com/openclaw/openclaw/blob/bcfc88812a35243893585dbeca87ca41b48272ca/packages/agent-core/src/agent.ts">GH…/packages/agent-core/src/agent.ts</a>.&#160;<a class="footnote-backref" href="#fnref:14" title="Jump back to footnote 14 in the text">&#8617;</a></p>
+</li>
+<li id="fn:15">
+<p>Mixin chain <code>AgentSession</code> → <code>AgentSessionTree</code> → <code>AgentSessionBase</code> in <a href="https://github.com/openclaw/openclaw/blob/bcfc88812a35243893585dbeca87ca41b48272ca/src/agents/sessions/">GH…/src/agents/sessions/</a>.&#160;<a class="footnote-backref" href="#fnref:15" title="Jump back to footnote 15 in the text">&#8617;</a></p>
+</li>
+<li id="fn:16">
+<p><code>runAgentPrompt</code> re-entrancy guard and post-run <code>"continue"</code> / <code>"handoff"</code> handling in <a href="https://github.com/openclaw/openclaw/blob/bcfc88812a35243893585dbeca87ca41b48272ca/src/agents/sessions/agent-session-prompting.ts">GH…/src/agents/sessions/agent-session-prompting.ts</a>.&#160;<a class="footnote-backref" href="#fnref:16" title="Jump back to footnote 16 in the text">&#8617;</a></p>
+</li>
+<li id="fn:17">
+<p>Auto-retry with exponential backoff; retryable on rate-limit/server errors, context overflow → compaction, in <a href="https://github.com/openclaw/openclaw/blob/bcfc88812a35243893585dbeca87ca41b48272ca/src/agents/sessions/agent-session-execution.ts">GH…/src/agents/sessions/agent-session-execution.ts</a>.&#160;<a class="footnote-backref" href="#fnref:17" title="Jump back to footnote 17 in the text">&#8617;</a></p>
+</li>
+<li id="fn:18">
+<p><code>startAgentRunExecution</code> at <a href="https://github.com/openclaw/openclaw/blob/bcfc88812a35243893585dbeca87ca41b48272ca/src/gateway/agent-turn/agent-run-execution-phase.ts#L70">GH…/src/gateway/agent-turn/agent-run-execution-phase.ts#L70</a>; 54 files under <a href="https://github.com/openclaw/openclaw/blob/bcfc88812a35243893585dbeca87ca41b48272ca/src/gateway/agent-turn/">GH…/src/gateway/agent-turn/</a>.&#160;<a class="footnote-backref" href="#fnref:18" title="Jump back to footnote 18 in the text">&#8617;</a></p>
+</li>
+<li id="fn:19">
+<p>Same as <sup id="fnref:2"><a class="footnote-ref" href="#fn:2">2</a></sup>.&#160;<a class="footnote-backref" href="#fnref:19" title="Jump back to footnote 19 in the text">&#8617;</a></p>
+</li>
+<li id="fn:20">
+<p><code>createChatChannelPlugin()</code> at <a href="https://github.com/openclaw/openclaw/blob/bcfc88812a35243893585dbeca87ca41b48272ca/src/plugin-sdk/core.ts#L734">GH…/src/plugin-sdk/core.ts#L734</a>; <code>ChannelPlugin</code> contract (~25 adapters) at <a href="https://github.com/openclaw/openclaw/blob/bcfc88812a35243893585dbeca87ca41b48272ca/src/channels/plugins/types.plugin.ts#L48">GH…/src/channels/plugins/types.plugin.ts#L48</a>; channel-owned agent tools via the <code>agentTools</code> adapter.&#160;<a class="footnote-backref" href="#fnref:20" title="Jump back to footnote 20 in the text">&#8617;</a></p>
+</li>
+<li id="fn:21">
+<p><code>runChannelInboundEvent</code> at <a href="https://github.com/openclaw/openclaw/blob/bcfc88812a35243893585dbeca87ca41b48272ca/src/plugin-sdk/channel-inbound.ts#L240">GH…/src/plugin-sdk/channel-inbound.ts#L240</a>.&#160;<a class="footnote-backref" href="#fnref:21" title="Jump back to footnote 21 in the text">&#8617;</a></p>
+</li>
+<li id="fn:22">
+<p>Channels run in-process; <code>startAccount</code> lifecycle seam in <a href="https://github.com/openclaw/openclaw/blob/bcfc88812a35243893585dbeca87ca41b48272ca/src/gateway/server-channels.ts">GH…/src/gateway/server-channels.ts</a>.&#160;<a class="footnote-backref" href="#fnref:22" title="Jump back to footnote 22 in the text">&#8617;</a></p>
+</li>
+<li id="fn:23">
+<p><code>runPreparedChannelTurnCore</code> at <a href="https://github.com/openclaw/openclaw/blob/bcfc88812a35243893585dbeca87ca41b48272ca/src/channels/turn/execution.ts#L208">GH…/src/channels/turn/execution.ts#L208</a> (guards → <code>recordInboundSession</code> → <code>params.runDispatch()</code>).&#160;<a class="footnote-backref" href="#fnref:23" title="Jump back to footnote 23 in the text">&#8617;</a></p>
+</li>
+<li id="fn:24">
+<p>SQLite-backed <code>ChannelIngressQueue</code> in <a href="https://github.com/openclaw/openclaw/blob/bcfc88812a35243893585dbeca87ca41b48272ca/src/channels/message/ingress-queue.ts">GH…/src/channels/message/ingress-queue.ts</a>; drain with claim leases, per-lane serialization, retry/dead-letter in <code>src/channels/message/ingress-drain.ts</code>.&#160;<a class="footnote-backref" href="#fnref:24" title="Jump back to footnote 24 in the text">&#8617;</a></p>
+</li>
+<li id="fn:25">
+<p>Route resolution <code>resolveAgentRoute</code> in <a href="https://github.com/openclaw/openclaw/blob/bcfc88812a35243893585dbeca87ca41b48272ca/src/routing/resolve-route.ts">GH…/src/routing/resolve-route.ts</a>; conversation resolution in <a href="https://github.com/openclaw/openclaw/blob/bcfc88812a35243893585dbeca87ca41b48272ca/src/channels/conversation-resolution.ts">GH…/src/channels/conversation-resolution.ts</a>.&#160;<a class="footnote-backref" href="#fnref:25" title="Jump back to footnote 25 in the text">&#8617;</a></p>
+</li>
+<li id="fn:26">
+<p>History preparation: <code>prepareEmbeddedAttemptHistory</code> in <a href="https://github.com/openclaw/openclaw/blob/bcfc88812a35243893585dbeca87ca41b48272ca/src/agents/embedded-agent-runner/run/attempt-history-prepare.ts">GH…/src/agents/embedded-agent-runner/run/attempt-history-prepare.ts</a>; retry budget <code>BASE_RUN_RETRY_ITERATIONS = 24</code> in <a href="https://github.com/openclaw/openclaw/blob/bcfc88812a35243893585dbeca87ca41b48272ca/src/agents/embedded-agent-runner/run/helpers.ts#L51">GH…/src/agents/embedded-agent-runner/run/helpers.ts#L51</a>.&#160;<a class="footnote-backref" href="#fnref:26" title="Jump back to footnote 26 in the text">&#8617;</a></p>
+</li>
+<li id="fn:27">
+<p>Reply pipeline in <a href="https://github.com/openclaw/openclaw/blob/bcfc88812a35243893585dbeca87ca41b48272ca/src/channels/message/reply-pipeline.ts">GH…/src/channels/message/reply-pipeline.ts</a>; <code>MessageReceipt</code> normalization in <code>src/channels/message/receipt.ts</code>.&#160;<a class="footnote-backref" href="#fnref:27" title="Jump back to footnote 27 in the text">&#8617;</a></p>
+</li>
+<li id="fn:28">
+<p>Telegram native approval UI in <a href="https://github.com/openclaw/openclaw/blob/bcfc88812a35243893585dbeca87ca41b48272ca/extensions/telegram/src/approval-native.ts">GH…/extensions/telegram/src/approval-native.ts</a>.&#160;<a class="footnote-backref" href="#fnref:28" title="Jump back to footnote 28 in the text">&#8617;</a></p>
+</li>
+<li id="fn:29">
+<p><code>AnyAgentTool</code> type at <a href="https://github.com/openclaw/openclaw/blob/bcfc88812a35243893585dbeca87ca41b48272ca/src/agents/tools/common.ts#L53">GH…/src/agents/tools/common.ts#L53</a>; registry via <code>createToolHookRegistrars</code> in <a href="https://github.com/openclaw/openclaw/blob/bcfc88812a35243893585dbeca87ca41b48272ca/src/plugins/registry-registrars-tools-hooks.ts">GH…/src/plugins/registry-registrars-tools-hooks.ts</a>.&#160;<a class="footnote-backref" href="#fnref:29" title="Jump back to footnote 29 in the text">&#8617;</a></p>
+</li>
+<li id="fn:30">
+<p>Surface assembly merging six tool sources plus policy filters in <a href="https://github.com/openclaw/openclaw/blob/bcfc88812a35243893585dbeca87ca41b48272ca/src/agents/agent-tools.ts">GH…/src/agents/agent-tools.ts</a>; Tool Search on-demand materialization via <code>attempt-tool-search-executor.ts</code>.&#160;<a class="footnote-backref" href="#fnref:30" title="Jump back to footnote 30 in the text">&#8617;</a></p>
+</li>
+<li id="fn:31">
+<p>Approval policy chain ordering ("ordering is behavior") at <a href="https://github.com/openclaw/openclaw/blob/bcfc88812a35243893585dbeca87ca41b48272ca/src/agents/agent-tools.before-tool-call.policy.ts#L4">GH…/src/agents/agent-tools.before-tool-call.policy.ts#L4</a>.&#160;<a class="footnote-backref" href="#fnref:31" title="Jump back to footnote 31 in the text">&#8617;</a></p>
+</li>
+<li id="fn:32">
+<p>Gateway approval authority at <a href="https://github.com/openclaw/openclaw/blob/bcfc88812a35243893585dbeca87ca41b48272ca/src/gateway/agent-runtime-approval-authority.ts#L11">GH…/src/gateway/agent-runtime-approval-authority.ts#L11</a>; hashed-receipt audit in <code>src/audit/</code>.&#160;<a class="footnote-backref" href="#fnref:32" title="Jump back to footnote 32 in the text">&#8617;</a></p>
+</li>
+<li id="fn:33">
+<p><code>packages/llm-core/src/types.ts</code> (<code>StreamFunction</code>, provider contracts); registry <code>createApiRegistry</code> in <a href="https://github.com/openclaw/openclaw/blob/bcfc88812a35243893585dbeca87ca41b48272ca/packages/ai/src/api-registry.ts">GH…/packages/ai/src/api-registry.ts</a>; stream facade in <a href="https://github.com/openclaw/openclaw/blob/bcfc88812a35243893585dbeca87ca41b48272ca/src/llm/stream.ts">GH…/src/llm/stream.ts</a>.&#160;<a class="footnote-backref" href="#fnref:33" title="Jump back to footnote 33 in the text">&#8617;</a></p>
+</li>
+<li id="fn:34">
+<p><code>modelFallback</code> as last-resort chain resolution, never runtime failover, in the provider/model configuration (<a href="https://github.com/openclaw/openclaw/blob/bcfc88812a35243893585dbeca87ca41b48272ca/src/llm/">GH…/src/llm/</a>).&#160;<a class="footnote-backref" href="#fnref:34" title="Jump back to footnote 34 in the text">&#8617;</a></p>
+</li>
+<li id="fn:35">
+<p>Shared state schema in <a href="https://github.com/openclaw/openclaw/blob/bcfc88812a35243893585dbeca87ca41b48272ca/src/state/openclaw-state-schema.sql">GH…/src/state/openclaw-state-schema.sql</a>; per-agent schema in <a href="https://github.com/openclaw/openclaw/blob/bcfc88812a35243893585dbeca87ca41b48272ca/src/state/openclaw-agent-schema.sql">GH…/src/state/openclaw-agent-schema.sql</a> (<code>session_nodes</code>, <code>session_windows</code>, <code>transcript_events</code>); Kysely over <code>node:sqlite</code> in <a href="https://github.com/openclaw/openclaw/blob/bcfc88812a35243893585dbeca87ca41b48272ca/src/infra/kysely-sync.ts">GH…/src/infra/kysely-sync.ts</a>.&#160;<a class="footnote-backref" href="#fnref:35" title="Jump back to footnote 35 in the text">&#8617;</a></p>
+</li>
+<li id="fn:36">
+<p><code>CANONICAL_ROOT_MEMORY_FILENAME = "MEMORY.md"</code> in <a href="https://github.com/openclaw/openclaw/blob/bcfc88812a35243893585dbeca87ca41b48272ca/src/memory/root-memory-files.ts#L7">GH…/src/memory/root-memory-files.ts#L7</a>; <code>active-memory</code> plugin entry in <a href="https://github.com/openclaw/openclaw/blob/bcfc88812a35243893585dbeca87ca41b48272ca/extensions/active-memory/index.ts">GH…/extensions/active-memory/index.ts</a>.&#160;<a class="footnote-backref" href="#fnref:36" title="Jump back to footnote 36 in the text">&#8617;</a></p>
+</li>
+<li id="fn:37">
+<p>550+ files under <a href="https://github.com/openclaw/openclaw/blob/bcfc88812a35243893585dbeca87ca41b48272ca/src/config/">GH…/src/config/</a>; central accessor <code>getRuntimeConfig()</code> in <code>src/config/config.js</code>.&#160;<a class="footnote-backref" href="#fnref:37" title="Jump back to footnote 37 in the text">&#8617;</a></p>
+</li>
+<li id="fn:38">
+<p>Telegram manifest at <a href="https://github.com/openclaw/openclaw/blob/bcfc88812a35243893585dbeca87ca41b48272ca/extensions/telegram/openclaw.plugin.json">GH…/extensions/telegram/openclaw.plugin.json</a> (<code>activation.onStartup: false</code>); bundled entry via <code>defineBundledChannelEntry</code> in <a href="https://github.com/openclaw/openclaw/blob/bcfc88812a35243893585dbeca87ca41b48272ca/extensions/telegram/index.ts#L4">GH…/extensions/telegram/index.ts#L4</a>.&#160;<a class="footnote-backref" href="#fnref:38" title="Jump back to footnote 38 in the text">&#8617;</a></p>
+</li>
+<li id="fn:39">
+<p>Lazy runtime modules via <code>createLazyRuntimeModule</code> in <a href="https://github.com/openclaw/openclaw/blob/bcfc88812a35243893585dbeca87ca41b48272ca/src/plugin-sdk/lazy-runtime.ts">GH…/src/plugin-sdk/lazy-runtime.ts</a>.&#160;<a class="footnote-backref" href="#fnref:39" title="Jump back to footnote 39 in the text">&#8617;</a></p>
+</li>
+<li id="fn:40">
+<p>Skills as prompt-delivered instruction packs: <code>skillsSnapshot</code> and <code>createSkillInstructionDeliveryCache</code> in <code>src/skills/</code>; lifecycle under <a href="https://github.com/openclaw/openclaw/blob/bcfc88812a35243893585dbeca87ca41b48272ca/src/skills/">GH…/src/skills/</a>.&#160;<a class="footnote-backref" href="#fnref:40" title="Jump back to footnote 40 in the text">&#8617;</a></p>
+</li>
+<li id="fn:41">
+<p>Gateway skill authoring via <code>prepareGatewaySkillAuthoring</code> in <a href="https://github.com/openclaw/openclaw/blob/bcfc88812a35243893585dbeca87ca41b48272ca/src/gateway/skill-library-authoring.ts">GH…/src/gateway/skill-library-authoring.ts</a>.&#160;<a class="footnote-backref" href="#fnref:41" title="Jump back to footnote 41 in the text">&#8617;</a></p>
+</li>
+</ol>
+</div>
+</main>
+</body>
+</html>

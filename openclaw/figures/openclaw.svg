@@ -1,0 +1,107 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-40 -70 1480 1136" width="1600" height="1228" font-family="system-ui, -apple-system, sans-serif">
+<defs>
+<marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 1 L 9 5 L 0 9 z" fill="#8a7a66"/></marker>
+</defs>
+<text x="-40" y="-36" font-size="26" font-weight="700" fill="#ece1d3">OpenClaw architecture</text>
+<text x="-40" y="-10" font-size="15" fill="#a89880">openclaw/openclaw @ bcfc888</text>
+<g>
+<path d="M 210.0 116 C 210.0 133.0, 210.0 133.0, 210.0 150" fill="none" stroke="#8a7a66" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="218" y="133" font-size="13" fill="#a89880">raw message</text>
+<path d="M 210.0 246 C 210.0 263.0, 210.0 263.0, 210.0 280" fill="none" stroke="#8a7a66" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="218" y="263" font-size="13" fill="#a89880">enqueue</text>
+<path d="M 400 328.0 C 495.0 328.0, 415.0 53.0, 510 53.0" fill="none" stroke="#8a7a66" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="463" y="190" font-size="13" fill="#a89880">dequeue</text>
+<path d="M 700.0 116 C 700.0 133.0, 700.0 133.0, 700.0 150" fill="none" stroke="#8a7a66" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="708" y="133" font-size="13" fill="#a89880">classify</text>
+<path d="M 700.0 246 C 700.0 263.0, 700.0 263.0, 700.0 280" fill="none" stroke="#8a7a66" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="708" y="263" font-size="13" fill="#a89880">bind session</text>
+<path d="M 650.0 376 C 650.0 393.0, 700.0 393.0, 700.0 410" fill="none" stroke="#8a7a66" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="683" y="393" font-size="13" fill="#a89880">prompt</text>
+<path d="M 700.0 506 C 700.0 523.0, 700.0 523.0, 700.0 540" fill="none" stroke="#8a7a66" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="708" y="523" font-size="13" fill="#a89880">stream</text>
+<path d="M 890 578.0 C 985.0 578.0, 905.0 68.0, 1000 68.0" fill="none" stroke="#8a7a66" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="750" y="323" font-size="13" fill="#a89880">tool calls</text>
+<path d="M 1190.0 116 C 1190.0 133.0, 1190.0 133.0, 1190.0 150" fill="none" stroke="#8a7a66" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="1198" y="133" font-size="13" fill="#a89880">gate</text>
+<path d="M 890 598.0 C 985.0 598.0, 905.0 328.0, 1000 328.0" fill="none" stroke="#8a7a66" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="750" y="463" font-size="13" fill="#a89880">model call</text>
+<path d="M 1190.0 376 C 1190.0 393.0, 1190.0 393.0, 1190.0 410" fill="none" stroke="#8a7a66" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="1198" y="393" font-size="13" fill="#a89880">resolve</text>
+<path d="M 510 328.0 H 475 V 718.0 H 510" fill="none" stroke="#8a7a66" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="467" y="426" font-size="13" fill="#a89880">persist</text>
+<path d="M 890 318.0 C 985.0 318.0, 905.0 588.0, 1000 588.0" fill="none" stroke="#8a7a66" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="953" y="453" font-size="13" fill="#a89880">recall</text>
+<path d="M 890 338.0 C 985.0 338.0, 905.0 718.0, 1000 718.0" fill="none" stroke="#8a7a66" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="953" y="528" font-size="13" fill="#a89880">overflow</text>
+<path d="M 510 68.0 C 415.0 68.0, 495.0 588.0, 400 588.0" fill="none" stroke="#8a7a66" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="463" y="328" font-size="13" fill="#a89880">respond</text>
+<path d="M 400 458.0 C 495.0 458.0, 415.0 83.0, 510 83.0" fill="none" stroke="#8a7a66" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="463" y="270" font-size="13" fill="#a89880">route</text>
+<path d="M 1000 848.0 C 860 848.0, 540 198.0, 400 198.0" fill="none" stroke="#8a7a66" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="905" y="780" font-size="13" fill="#a89880">extend</text>
+<path d="M 1000 978.0 C 905.0 978.0, 985.0 458.0, 890 458.0" fill="none" stroke="#8a7a66" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="750" y="718" font-size="13" fill="#a89880">alternate</text>
+</g><g>
+<rect x="20" y="20" width="380" height="96" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/><rect x="20" y="20" width="5" height="96" rx="2" fill="#d08c4e"/>
+<text x="64" y="48" font-size="15" font-weight="600" fill="#ece1d3">Transport</text><text x="64" y="68" font-size="12" fill="#a89880">webhook/polling/WS</text>
+<text x="34" y="104" font-size="11" fill="#a89880">0 source links · verified</text>
+<rect x="20" y="150" width="380" height="96" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/><rect x="20" y="150" width="5" height="96" rx="2" fill="#d08c4e"/>
+<text x="64" y="178" font-size="15" font-weight="600" fill="#ece1d3">ChannelPlugin (Telegram)</text><text x="64" y="198" font-size="12" fill="#a89880">src/channels/</text>
+<text x="34" y="234" font-size="11" fill="#a89880">0 source links · verified</text>
+<rect x="20" y="280" width="380" height="96" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/><rect x="20" y="280" width="5" height="96" rx="2" fill="#d08c4e"/>
+<text x="64" y="308" font-size="15" font-weight="600" fill="#ece1d3">Ingress queue</text><text x="64" y="328" font-size="12" fill="#a89880">SQLite + dead-letters</text>
+<text x="34" y="364" font-size="11" fill="#a89880">0 source links · verified</text>
+<rect x="20" y="410" width="380" height="96" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/><rect x="20" y="410" width="5" height="96" rx="2" fill="#d08c4e"/>
+<text x="64" y="438" font-size="15" font-weight="600" fill="#ece1d3">Gateway server</text><text x="64" y="458" font-size="12" fill="#a89880">src/gateway/</text>
+<text x="34" y="494" font-size="11" fill="#a89880">0 source links · verified</text>
+<rect x="20" y="540" width="380" height="96" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/><rect x="20" y="540" width="5" height="96" rx="2" fill="#d08c4e"/>
+<text x="64" y="568" font-size="15" font-weight="600" fill="#ece1d3">Reply pipeline</text><text x="64" y="588" font-size="12" fill="#a89880">outbound per channel</text>
+<text x="34" y="624" font-size="11" fill="#a89880">0 source links · verified</text>
+<rect x="510" y="20" width="380" height="96" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/><rect x="510" y="20" width="5" height="96" rx="2" fill="#d08c4e"/>
+<text x="554" y="48" font-size="15" font-weight="600" fill="#ece1d3">runChannelTurn</text><text x="554" y="68" font-size="12" fill="#a89880">7-stage admission</text>
+<text x="524" y="104" font-size="11" fill="#a89880">0 source links · verified</text>
+<rect x="510" y="150" width="380" height="96" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/><rect x="510" y="150" width="5" height="96" rx="2" fill="#d08c4e"/>
+<text x="554" y="178" font-size="15" font-weight="600" fill="#ece1d3">Conversation resolution</text><text x="554" y="198" font-size="12" fill="#a89880">message → session key</text>
+<text x="524" y="234" font-size="11" fill="#a89880">0 source links · verified</text>
+<rect x="510" y="280" width="380" height="96" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/><rect x="510" y="280" width="5" height="96" rx="2" fill="#d08c4e"/>
+<text x="554" y="308" font-size="15" font-weight="600" fill="#ece1d3">AgentSession</text><text x="554" y="328" font-size="12" fill="#a89880">src/agents/</text>
+<text x="524" y="364" font-size="11" fill="#a89880">0 source links · verified</text>
+<rect x="510" y="410" width="380" height="96" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/><rect x="510" y="410" width="5" height="96" rx="2" fill="#d08c4e"/>
+<text x="554" y="438" font-size="15" font-weight="600" fill="#ece1d3">runAgentLoop</text><text x="554" y="458" font-size="12" fill="#a89880">packages/agent-core</text>
+<text x="524" y="494" font-size="11" fill="#a89880">0 source links · verified</text>
+<rect x="510" y="540" width="380" height="96" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/><rect x="510" y="540" width="5" height="96" rx="2" fill="#d08c4e"/>
+<text x="554" y="568" font-size="15" font-weight="600" fill="#ece1d3">streamAgentResponse</text><text x="554" y="588" font-size="12" fill="#a89880">streaming + inline tools</text>
+<text x="524" y="624" font-size="11" fill="#a89880">0 source links · verified</text>
+<rect x="510" y="670" width="380" height="96" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/><rect x="510" y="670" width="5" height="96" rx="2" fill="#d08c4e"/>
+<text x="554" y="698" font-size="15" font-weight="600" fill="#ece1d3">Session store</text><text x="554" y="718" font-size="12" fill="#a89880">2× SQLite</text>
+<text x="524" y="754" font-size="11" fill="#a89880">0 source links · verified</text>
+<rect x="1000" y="20" width="380" height="96" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/><rect x="1000" y="20" width="5" height="96" rx="2" fill="#d08c4e"/>
+<text x="1044" y="48" font-size="15" font-weight="600" fill="#ece1d3">Tool registry</text><text x="1044" y="68" font-size="12" fill="#a89880">AnyAgentTool</text>
+<text x="1014" y="104" font-size="11" fill="#a89880">0 source links · verified</text>
+<rect x="1000" y="150" width="380" height="96" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/><rect x="1000" y="150" width="5" height="96" rx="2" fill="#d08c4e"/>
+<text x="1044" y="178" font-size="15" font-weight="600" fill="#ece1d3">Approval authority</text><text x="1044" y="198" font-size="12" fill="#a89880">use-time gate</text>
+<text x="1014" y="234" font-size="11" fill="#a89880">0 source links · verified</text>
+<rect x="1000" y="280" width="380" height="96" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/><rect x="1000" y="280" width="5" height="96" rx="2" fill="#d08c4e"/>
+<text x="1044" y="308" font-size="15" font-weight="600" fill="#ece1d3">Provider registry</text><text x="1044" y="328" font-size="12" fill="#a89880">api-registry</text>
+<text x="1014" y="364" font-size="11" fill="#a89880">0 source links · verified</text>
+<rect x="1000" y="410" width="380" height="96" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/><rect x="1000" y="410" width="5" height="96" rx="2" fill="#d08c4e"/>
+<text x="1044" y="438" font-size="15" font-weight="600" fill="#ece1d3">Model catalog</text><text x="1044" y="458" font-size="12" fill="#a89880">ref → provider</text>
+<text x="1014" y="494" font-size="11" fill="#a89880">0 source links · verified</text>
+<rect x="1000" y="540" width="380" height="96" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/><rect x="1000" y="540" width="5" height="96" rx="2" fill="#d08c4e"/>
+<text x="1044" y="568" font-size="15" font-weight="600" fill="#ece1d3">Memory</text><text x="1044" y="588" font-size="12" fill="#a89880">active-memory plugin</text>
+<text x="1014" y="624" font-size="11" fill="#a89880">0 source links · verified</text>
+<rect x="1000" y="670" width="380" height="96" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/><rect x="1000" y="670" width="5" height="96" rx="2" fill="#d08c4e"/>
+<text x="1044" y="698" font-size="15" font-weight="600" fill="#ece1d3">Compaction</text><text x="1044" y="718" font-size="12" fill="#a89880">overflow handling</text>
+<text x="1014" y="754" font-size="11" fill="#a89880">0 source links · verified</text>
+<rect x="1000" y="800" width="380" height="96" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/><rect x="1000" y="800" width="5" height="96" rx="2" fill="#d08c4e"/>
+<text x="1044" y="828" font-size="15" font-weight="600" fill="#ece1d3">Plugin SDK</text><text x="1044" y="848" font-size="12" fill="#a89880">api.registerX</text>
+<text x="1014" y="884" font-size="11" fill="#a89880">0 source links · verified</text>
+<rect x="1000" y="930" width="380" height="96" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/><rect x="1000" y="930" width="5" height="96" rx="2" fill="#d08c4e"/>
+<text x="1044" y="958" font-size="15" font-weight="600" fill="#ece1d3">AgentHarness interface</text><text x="1044" y="978" font-size="12" fill="#a89880">pluggable harness</text>
+<text x="1014" y="1014" font-size="11" fill="#a89880">0 source links · verified</text>
+</g>
+<g font-size="12" fill="#a89880">
+<rect x="1110" y="1031" width="12" height="12" rx="2" fill="#d08c4e"/><text x="1127" y="1042">verified</text>
+<rect x="1215" y="1031" width="12" height="12" rx="2" fill="#7c8aa0"/><text x="1232" y="1042">docs</text>
+<rect x="1320" y="1031" width="12" height="12" rx="2" fill="#8a7a66"/><text x="1337" y="1042">inferred</text>
+</g></svg>

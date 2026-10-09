@@ -20,6 +20,7 @@ Companion repo to the Substack series.
 | 6 | OpenHands (v1.53.0) | [openhands/article.md](openhands/article.md) | forthcoming |
 | 7 | OpenCode (v1.18.34) | [opencode/article.md](opencode/article.md) | forthcoming |
 | 8 | Hermes Agent (v2026.9.24) | [hermes/article.md](hermes/article.md) | forthcoming |
+| 9 | OpenClaw (v2026.9.9) | [openclaw/article.md](openclaw/article.md) | forthcoming |
 
 ## What's here
 
