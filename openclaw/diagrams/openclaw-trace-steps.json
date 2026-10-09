@@ -1,1 +1,161 @@
-{"example_input":"summarize today's standup notes","note":"Representations below are simplified shapes of the real types at the pinned SHA, not verbatim dumps.","repo":"https://github.com/openclaw/openclaw","sha":"bcfc88812a35243893585dbeca87ca41b48272ca","steps":[{"code":"src/plugin-sdk/channel-inbound.ts:240; src/plugin-sdk/core.ts:734","narrative":"The Telegram message 'summarize today's standup notes' arrives at the channel plugin's transport — long-poll or webhook — and the Telegram adapter (built with `createChatChannelPlugin()`, composing ~25 optional adapters for security, pairing, threading, and outbound rather than being written from scratch) normalizes the raw update. The SDK entry `runChannelInboundEvent` is a thin wrapper over the admission pipeline. Channels run in-process inside the gateway server; each channel's `startAccount` opens its own transport to the platform, so Telegram, WhatsApp, and Discord are all just tenants of the same gateway.","node":"channel","step":1,"title":"Inbound"},{"code":"src/channels/message/ingress-queue.ts; src/channels/message/ingress-drain.ts","narrative":"For reliability, the normalized message is enqueued into a SQLite-backed ingress queue rather than run immediately. The drain claims leases with per-lane serialization, retry, dead-letters, and a stall watchdog — at-least-once ordered delivery, so a crashed gateway replays what it missed instead of dropping it. This is the first thing that makes OpenClaw a platform rather than a program: the message is durable before anything else happens.","node":"ingress","step":2,"title":"Ingress queue"},{"code":"src/channels/turn/run-channel-turn.ts:146","narrative":"The dequeued message traverses `runChannelTurn`'s staged admission pipeline: ingest (raw → normalized; null → drop) → classify (event class; reactions and edits are handled without starting a turn) → preflight (admission verdict: `dispatch` | `drop` | `handled` | `observeOnly`) → resolveTurn → assemble (binds the message to a session key via route resolution) → dispatch → finalize. Every message pays this admission cost even when the verdict is trivially `dispatch` — the gateway buys uniform policy enforcement, durability, and multi-tenancy. Nothing in the previous eight teardowns looks like this.","node":"admission","step":3,"title":"Admission"},{"code":"src/routing/resolve-route.ts; src/channels/conversation-resolution.ts","narrative":"Route resolution maps the channel, account, and peer to an agent ID and session key; conversation resolution and thread bindings attach the message to the right conversation, with multi-account channels resolving to separate sessions. The bound AgentSession loads its transcript from the per-agent SQLite store, validates the replay, applies the context-window limit, and assembles history through the context engine — with the retry budget (`BASE_RUN_RETRY_ITERATIONS = 24`) armed for the run ahead.","node":"session","step":4,"title":"Session binding"},{"code":"packages/agent-core/src/agent-loop.ts:141","narrative":"The turn runs the four-layer loop: the gateway execution phase wraps the AgentSession, which owns the transcript, which drives `runLoop()` in the model-agnostic agent-core package. Two nested `while` loops: the outer iterates turns, the inner runs while tool calls or steering messages remain. Each inner iteration streams the model response and executes tool calls as they arrive in the stream — not after the response completes — with async tool-batch scheduling. Our standup-summary question needs today's notes, so the model calls into the tool surface (six merged sources: core, shell, channel, OpenClaw, plugin, Tool Search) to find them.","node":"runloop","step":5,"title":"Execution"},{"code":"src/channels/turn/execution.ts:208; extensions/telegram/src/approval-native.ts","narrative":"Before the tools run, the explicitly ordered approval policy chain evaluates: loop admission → owner probes → voice confirmation → trusted policies → approvals → normal hooks → final owner approval — where the ordering itself is behavior. The gateway adds a use-time authority gate bound to the run's delegated authority, not just the tool name; decisions are audited with hashed receipts. Approval prompts surface as native channel UI — Telegram inline buttons, in this case. Our read-only notes lookup sails through; a shell exec would have waited for a tap.","node":"approval","step":6,"title":"Approval"},{"code":"src/channels/message/reply-pipeline.ts","narrative":"The model's answer — the standup summary — becomes `ReplyPayload`s shaped per channel by the reply pipeline: Telegram gets its formatting, chunking, and threading conventions applied. Payloads go through a durable sender and are normalized to `MessageReceipt`s with dead-letter and reconciliation hooks, so a failed send is retried or surfaced rather than silently lost.","node":"reply","step":7,"title":"Reply"},{"code":"src/channels/turn/execution.ts:208","narrative":"The transport delivers the reply to the Telegram chat, and the completed turn persists to the session store — transcript events appended, memory layered (MEMORY.md seed, vector index, and the active-memory plugin's proactive recall all updated). The session is now durable and the next message will pick up exactly where this one left off. Total path: transport → plugin → queue → seven admission stages → session bind → four loop layers → approval chain → reply pipeline → transport. A CLI harness would call this absurd overhead; a messaging platform calls it Tuesday.","node":"store","step":8,"title":"Persist"}],"title":"One turn through OpenClaw — step-by-step"}
+{
+  "example_input": "summarize today's standup notes",
+  "note": "Representations below are simplified shapes of the real types at the pinned SHA, not verbatim dumps.",
+  "repo": "https://github.com/openclaw/openclaw",
+  "sha": "bcfc88812a35243893585dbeca87ca41b48272ca",
+  "steps": [
+    {
+      "code": "src/plugin-sdk/channel-inbound.ts:240; src/plugin-sdk/core.ts:734",
+      "narrative": "The Telegram message 'summarize today's standup notes' arrives at the channel plugin's transport — long-poll or webhook — and the Telegram adapter (built with `createChatChannelPlugin()`, composing ~25 optional adapters for security, pairing, threading, and outbound rather than being written from scratch) normalizes the raw update. The SDK entry `runChannelInboundEvent` is a thin wrapper over the admission pipeline. Channels run in-process inside the gateway server; each channel's `startAccount` opens its own transport to the platform, so Telegram, WhatsApp, and Discord are all just tenants of the same gateway.",
+      "node": "channel",
+      "step": 1,
+      "title": "Inbound",
+      "modules": [
+        {
+          "file": "src/plugin-sdk/channel-inbound.ts",
+          "label": "channel-inbound.ts:240",
+          "line": "240",
+          "url": "https://github.com/openclaw/openclaw/blob/bcfc88812a35243893585dbeca87ca41b48272ca/src/plugin-sdk/channel-inbound.ts#L240"
+        },
+        {
+          "file": "src/plugin-sdk/core.ts",
+          "label": "core.ts:734",
+          "line": "734",
+          "url": "https://github.com/openclaw/openclaw/blob/bcfc88812a35243893585dbeca87ca41b48272ca/src/plugin-sdk/core.ts#L734"
+        }
+      ],
+      "representation": "Telegram update (long-poll / webhook)\n  -> createChatChannelPlugin()  # ~25 composed adapters\n  -> runChannelInboundEvent(raw)   # thin SDK wrapper\n  -> normalized message  # transport-agnostic\n  channels run in-process; Telegram/WhatsApp/Discord are tenants"
+    },
+    {
+      "code": "src/channels/message/ingress-queue.ts; src/channels/message/ingress-drain.ts",
+      "narrative": "For reliability, the normalized message is enqueued into a SQLite-backed ingress queue rather than run immediately. The drain claims leases with per-lane serialization, retry, dead-letters, and a stall watchdog — at-least-once ordered delivery, so a crashed gateway replays what it missed instead of dropping it. This is the first thing that makes OpenClaw a platform rather than a program: the message is durable before anything else happens.",
+      "node": "ingress",
+      "step": 2,
+      "title": "Ingress queue",
+      "modules": [
+        {
+          "file": "src/channels/message/ingress-queue.ts",
+          "label": "ingress-queue.ts",
+          "line": "",
+          "url": "https://github.com/openclaw/openclaw/blob/bcfc88812a35243893585dbeca87ca41b48272ca/src/channels/message/ingress-queue.ts"
+        },
+        {
+          "file": "src/channels/message/ingress-drain.ts",
+          "label": "ingress-drain.ts",
+          "line": "",
+          "url": "https://github.com/openclaw/openclaw/blob/bcfc88812a35243893585dbeca87ca41b48272ca/src/channels/message/ingress-drain.ts"
+        }
+      ],
+      "representation": "normalized message\n  -> ingress-queue.enqueue(msg)      # SQLite-backed\n  -> ingress-drain.claimLease(lane)  # per-lane serialization\n  -> retry / dead-letter / stall watchdog\n  at-least-once ordered delivery; durable before anything runs"
+    },
+    {
+      "code": "src/channels/turn/run-channel-turn.ts:146",
+      "narrative": "The dequeued message traverses `runChannelTurn`'s staged admission pipeline: ingest (raw → normalized; null → drop) → classify (event class; reactions and edits are handled without starting a turn) → preflight (admission verdict: `dispatch` | `drop` | `handled` | `observeOnly`) → resolveTurn → assemble (binds the message to a session key via route resolution) → dispatch → finalize. Every message pays this admission cost even when the verdict is trivially `dispatch` — the gateway buys uniform policy enforcement, durability, and multi-tenancy. Nothing in the previous eight teardowns looks like this.",
+      "node": "admission",
+      "step": 3,
+      "title": "Admission",
+      "modules": [
+        {
+          "file": "src/channels/turn/run-channel-turn.ts",
+          "label": "run-channel-turn.ts:146",
+          "line": "146",
+          "url": "https://github.com/openclaw/openclaw/blob/bcfc88812a35243893585dbeca87ca41b48272ca/src/channels/turn/run-channel-turn.ts#L146"
+        }
+      ],
+      "representation": "dequeued message\n  -> ingest(raw)        # raw -> normalized; null -> drop\n  -> classify(event)      # reactions/edits: no turn started\n  -> preflight()          # dispatch | drop | handled | observeOnly\n  -> resolveTurn() -> assemble()  # bind session key via route\n  -> dispatch() -> finalize()\n  every message pays the admission cost; uniform policy + multi-tenancy"
+    },
+    {
+      "code": "src/routing/resolve-route.ts; src/channels/conversation-resolution.ts",
+      "narrative": "Route resolution maps the channel, account, and peer to an agent ID and session key; conversation resolution and thread bindings attach the message to the right conversation, with multi-account channels resolving to separate sessions. The bound AgentSession loads its transcript from the per-agent SQLite store, validates the replay, applies the context-window limit, and assembles history through the context engine — with the retry budget (`BASE_RUN_RETRY_ITERATIONS = 24`) armed for the run ahead.",
+      "node": "session",
+      "step": 4,
+      "title": "Session binding",
+      "modules": [
+        {
+          "file": "src/routing/resolve-route.ts",
+          "label": "resolve-route.ts",
+          "line": "",
+          "url": "https://github.com/openclaw/openclaw/blob/bcfc88812a35243893585dbeca87ca41b48272ca/src/routing/resolve-route.ts"
+        },
+        {
+          "file": "src/channels/conversation-resolution.ts",
+          "label": "conversation-resolution.ts",
+          "line": "",
+          "url": "https://github.com/openclaw/openclaw/blob/bcfc88812a35243893585dbeca87ca41b48272ca/src/channels/conversation-resolution.ts"
+        }
+      ],
+      "representation": "(channel, account, peer)\n  -> resolveRoute()          # -> agent ID + session key\n  -> conversation-resolution # thread bindings; multi-account -> separate sessions\n  -> AgentSession.loadTranscript()  # per-agent SQLite store\n  -> replay validated, context-window limited, context engine assembles\n  retry budget armed: BASE_RUN_RETRY_ITERATIONS = 24"
+    },
+    {
+      "code": "packages/agent-core/src/agent-loop.ts:141",
+      "narrative": "The turn runs the four-layer loop: the gateway execution phase wraps the AgentSession, which owns the transcript, which drives `runLoop()` in the model-agnostic agent-core package. Two nested `while` loops: the outer iterates turns, the inner runs while tool calls or steering messages remain. Each inner iteration streams the model response and executes tool calls as they arrive in the stream — not after the response completes — with async tool-batch scheduling. Our standup-summary question needs today's notes, so the model calls into the tool surface (six merged sources: core, shell, channel, OpenClaw, plugin, Tool Search) to find them.",
+      "node": "runloop",
+      "step": 5,
+      "title": "Execution",
+      "modules": [
+        {
+          "file": "packages/agent-core/src/agent-loop.ts",
+          "label": "agent-loop.ts:141",
+          "line": "141",
+          "url": "https://github.com/openclaw/openclaw/blob/bcfc88812a35243893585dbeca87ca41b48272ca/packages/agent-core/src/agent-loop.ts#L141"
+        }
+      ],
+      "representation": "gateway execution phase\n  -> AgentSession (owns transcript)\n    -> runLoop()          # model-agnostic, packages/agent-core\n       while turns remain:            # outer loop\n         while tool calls or steering:  # inner loop\n           stream model response\n           execute tool calls as they arrive in the stream\n  tool surface: core + shell + channel + openclaw + plugin + Tool Search"
+    },
+    {
+      "code": "src/channels/turn/execution.ts:208; extensions/telegram/src/approval-native.ts",
+      "narrative": "Before the tools run, the explicitly ordered approval policy chain evaluates: loop admission → owner probes → voice confirmation → trusted policies → approvals → normal hooks → final owner approval — where the ordering itself is behavior. The gateway adds a use-time authority gate bound to the run's delegated authority, not just the tool name; decisions are audited with hashed receipts. Approval prompts surface as native channel UI — Telegram inline buttons, in this case. Our read-only notes lookup sails through; a shell exec would have waited for a tap.",
+      "node": "approval",
+      "step": 6,
+      "title": "Approval",
+      "modules": [
+        {
+          "file": "src/channels/turn/execution.ts",
+          "label": "execution.ts:208",
+          "line": "208",
+          "url": "https://github.com/openclaw/openclaw/blob/bcfc88812a35243893585dbeca87ca41b48272ca/src/channels/turn/execution.ts#L208"
+        },
+        {
+          "file": "extensions/telegram/src/approval-native.ts",
+          "label": "approval-native.ts",
+          "line": "",
+          "url": "https://github.com/openclaw/openclaw/blob/bcfc88812a35243893585dbeca87ca41b48272ca/extensions/telegram/src/approval-native.ts"
+        }
+      ],
+      "representation": "tool call pending\n  -> approval chain (order is behavior):\n     loop admission -> owner probes -> voice confirmation\n     -> trusted policies -> approvals -> normal hooks\n     -> final owner approval\n  -> use-time authority gate  # bound to run's delegated authority\n  -> hashed audit receipts; prompts as Telegram inline buttons\n  read-only lookup: sails through. shell exec: waits for a tap."
+    },
+    {
+      "code": "src/channels/message/reply-pipeline.ts",
+      "narrative": "The model's answer — the standup summary — becomes `ReplyPayload`s shaped per channel by the reply pipeline: Telegram gets its formatting, chunking, and threading conventions applied. Payloads go through a durable sender and are normalized to `MessageReceipt`s with dead-letter and reconciliation hooks, so a failed send is retried or surfaced rather than silently lost.",
+      "node": "reply",
+      "step": 7,
+      "title": "Reply",
+      "modules": [
+        {
+          "file": "src/channels/message/reply-pipeline.ts",
+          "label": "reply-pipeline.ts",
+          "line": "",
+          "url": "https://github.com/openclaw/openclaw/blob/bcfc88812a35243893585dbeca87ca41b48272ca/src/channels/message/reply-pipeline.ts"
+        }
+      ],
+      "representation": "model answer (standup summary)\n  -> reply-pipeline.shape(payload)  # Telegram formatting/chunking/threading\n  -> ReplyPayload[]\n  -> durable sender\n  -> MessageReceipt[]  # dead-letter + reconciliation hooks\n  failed send: retried or surfaced, never silently lost"
+    },
+    {
+      "code": "src/channels/turn/execution.ts:208",
+      "narrative": "The transport delivers the reply to the Telegram chat, and the completed turn persists to the session store — transcript events appended, memory layered (MEMORY.md seed, vector index, and the active-memory plugin's proactive recall all updated). The session is now durable and the next message will pick up exactly where this one left off. Total path: transport → plugin → queue → seven admission stages → session bind → four loop layers → approval chain → reply pipeline → transport. A CLI harness would call this absurd overhead; a messaging platform calls it Tuesday.",
+      "node": "store",
+      "step": 8,
+      "title": "Persist",
+      "modules": [
+        {
+          "file": "src/channels/turn/execution.ts",
+          "label": "execution.ts:208",
+          "line": "208",
+          "url": "https://github.com/openclaw/openclaw/blob/bcfc88812a35243893585dbeca87ca41b48272ca/src/channels/turn/execution.ts#L208"
+        }
+      ],
+      "representation": "reply delivered to Telegram chat\n  -> transcript events appended  # session store\n  -> memory layered:\n     MEMORY.md seed -> vector index -> active-memory plugin recall\n  session durable; next message resumes exactly here\n  transport -> plugin -> queue -> 7 admission stages\n  -> session bind -> 4 loop layers -> approval -> reply -> transport"
+    }
+  ],
+  "title": "One turn through OpenClaw — step-by-step"
+}
