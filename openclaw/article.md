@@ -134,6 +134,8 @@ handled without starting a turn) → **preflight** (admission verdict:
 grafted onto an agent loop — nothing in the previous eight teardowns looks
 like it.
 
+![Channel turn sequence](figures/seq-channel-turn.svg)
+
 **③ Persistence before execution.** The dispatch core,
 `runPreparedChannelTurnCore`, applies guards first (outbound-echo drop,
 bot-loop protection), then **persists the inbound message to the session
@@ -159,6 +161,8 @@ the reply pipeline, sent through a durable sender, and normalized to
 prompts, where needed, surface as native channel UI — Telegram inline
 buttons, for example.[^28]
 
+![Reply pipeline sequence](figures/seq-reply.svg)
+
 The tradeoff of the pipeline: every message pays the admission cost even
 when the verdict is trivially `dispatch` — but the gateway gains uniform
 policy enforcement, durability, and multi-tenancy. A single-user CLI
@@ -174,6 +178,9 @@ harness would never build this; a messaging platform must.
   sandbox, profile, provider, sender, group, and sub-agent policy
   filters.[^30] Channel plugins contribute channel-owned agent tools
   through the `agentTools` adapter.[^20]
+
+![Tool dispatch sequence](figures/seq-tools.svg)
+
 - **Tool Search catalog.** Most tools never enter the model context. The
   model uses control tools, and a per-call executor materializes searched
   tools on demand — a retrieval layer *inside* the tool system.[^30]
@@ -202,17 +209,12 @@ harness would never build this; a messaging platform must.
   `active-memory` plugin that proactively surfaces relevant memories
   before eligible replies, gated by per-session policy — plus a
   dreaming/curation subsystem.[^36]
-- **Config.** A 550-file schema-driven system with dot-notation access,
-  prototype-pollution guards, and wizard flows; model config supports
-  merge/replace modes over a provider map.[^37]
-
-![Channel turn sequence](figures/seq-channel-turn.svg)
-
-![Tool dispatch sequence](figures/seq-tools.svg)
 
 ![Memory sequence](figures/seq-memory.svg)
 
-![Reply pipeline sequence](figures/seq-reply.svg)
+- **Config.** A 550-file schema-driven system with dot-notation access,
+  prototype-pollution guards, and wizard flows; model config supports
+  merge/replace modes over a provider map.[^37]
 
 ## Extension points
 
