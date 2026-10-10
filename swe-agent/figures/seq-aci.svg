@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 898" width="1600" font-family="system-ui, -apple-system, sans-serif">
+<defs><marker id="arrc" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 1 L 9 5 L 0 9 z" fill="#d08c4e"/></marker><marker id="arrr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 1 L 9 5 L 0 9 z" fill="#8a7a66"/></marker></defs>
+<rect x="0" y="0" width="1600" height="898" fill="#f7f2e9"/>
+<text x="77.10843373493975" y="44" font-size="26" font-weight="700" fill="#000000">The ACI pipeline</text>
+<text x="77.10843373493975" y="74" font-size="15" fill="#000000">YAML bundle -&gt; function schema -&gt; shell string -&gt; container</text>
+<line x1="198" y1="110" x2="198" y2="840" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="96" y="82" width="202" height="56" rx="10" fill="#ffffff" stroke="#3a2f26" stroke-width="1.5"/>
+<text x="198" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#000000">BundleYAML</text>
+<line x1="439" y1="110" x2="439" y2="840" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="337" y="82" width="202" height="56" rx="10" fill="#ffffff" stroke="#3a2f26" stroke-width="1.5"/>
+<text x="439" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#000000">Command</text>
+<line x1="680" y1="110" x2="680" y2="840" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="578" y="82" width="202" height="56" rx="10" fill="#ffffff" stroke="#3a2f26" stroke-width="1.5"/>
+<text x="680" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#000000">LiteLLMModel</text>
+<line x1="920" y1="110" x2="920" y2="840" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="819" y="82" width="202" height="56" rx="10" fill="#ffffff" stroke="#3a2f26" stroke-width="1.5"/>
+<text x="920" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#000000">Parser</text>
+<line x1="1161" y1="110" x2="1161" y2="840" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="1060" y="82" width="202" height="56" rx="10" fill="#ffffff" stroke="#3a2f26" stroke-width="1.5"/>
+<text x="1161" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#000000">ToolHandler</text>
+<line x1="1402" y1="110" x2="1402" y2="840" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="1301" y="82" width="202" height="56" rx="10" fill="#ffffff" stroke="#3a2f26" stroke-width="1.5"/>
+<text x="1402" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#000000">SWEEnv</text>
+<rect x="96" y="139" width="1407" height="44" rx="8" fill="#d08c4e" fill-opacity="0.13" stroke="#d08c4e" stroke-width="1"/>
+<text x="800" y="166" text-anchor="middle" font-size="14" fill="#000000">The model never gets a raw shell prompt — only this designed command surface.</text>
+<line x1="198" y1="224" x2="429" y2="224" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="240" cy="210" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="240" y="215" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">1</text>
+<text x="258" y="215" font-size="14" fill="#000000">load config.yaml</text>
+<line x1="439" y1="276" x2="1151" y2="276" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="722" cy="262" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="722" y="267" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">2</text>
+<text x="740" y="267" font-size="14" fill="#000000">register Command</text>
+<line x1="1161" y1="328" x2="1392" y2="328" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="1204" cy="314" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="1204" y="319" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">3</text>
+<text x="1222" y="319" font-size="14" fill="#000000">install: upload bin/</text>
+<line x1="439" y1="380" x2="670" y2="380" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="481" cy="366" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="481" y="371" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">4</text>
+<text x="499" y="371" font-size="14" fill="#000000">get_function_calling_tool()</text>
+<line x1="680" y1="432" x2="449" y2="432" stroke="#8a7a66" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrr)"/>
+<circle cx="481" cy="418" r="11" fill="#ffffff" stroke="#8a7a66" stroke-width="1.5"/>
+<text x="481" y="423" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">5</text>
+<text x="499" y="423" font-size="14" fill="#000000">function schema</text>
+<line x1="439" y1="484" x2="670" y2="484" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="481" cy="470" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="481" y="475" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">6</text>
+<text x="499" y="475" font-size="14" fill="#000000">schemas as tools=</text>
+<line x1="680" y1="536" x2="910" y2="536" stroke="#8a7a66" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrr)"/>
+<circle cx="722" cy="522" r="11" fill="#ffffff" stroke="#8a7a66" stroke-width="1.5"/>
+<text x="722" y="527" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">7</text>
+<text x="740" y="527" font-size="14" fill="#000000">function call</text>
+<line x1="920" y1="588" x2="449" y2="588" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="602" cy="574" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="602" y="579" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">8</text>
+<text x="620" y="579" font-size="14" fill="#000000">render via invoke_format</text>
+<line x1="439" y1="640" x2="910" y2="640" stroke="#8a7a66" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrr)"/>
+<circle cx="602" cy="626" r="11" fill="#ffffff" stroke="#8a7a66" stroke-width="1.5"/>
+<text x="602" y="631" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">9</text>
+<text x="620" y="631" font-size="14" fill="#000000">shell string</text>
+<line x1="920" y1="692" x2="1151" y2="692" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="963" cy="678" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="963" y="683" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">10</text>
+<text x="981" y="683" font-size="14" fill="#000000">parse_actions()</text>
+<line x1="1161" y1="744" x2="1392" y2="744" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="1204" cy="730" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="1204" y="735" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">11</text>
+<text x="1222" y="735" font-size="14" fill="#000000">communicate()</text>
+<rect x="96" y="773" width="1407" height="44" rx="8" fill="#d08c4e" fill-opacity="0.13" stroke="#d08c4e" stroke-width="1"/>
+<text x="800" y="800" text-anchor="middle" font-size="14" fill="#000000">bin/ scripts are real executables in the container — data on the outside, shell on the inside.</text>
+</svg>

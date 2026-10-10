@@ -1,0 +1,82 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 993" width="1600" font-family="system-ui, -apple-system, sans-serif">
+<defs><marker id="arrc" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 1 L 9 5 L 0 9 z" fill="#d08c4e"/></marker><marker id="arrr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 1 L 9 5 L 0 9 z" fill="#8a7a66"/></marker></defs>
+<rect x="0" y="0" width="1600" height="993" fill="#f7f2e9"/>
+<text x="77.10843373493975" y="44" font-size="26" font-weight="700" fill="#000000">One turn through the loop</text>
+<text x="77.10843373493975" y="74" font-size="15" fill="#000000">step() -&gt; forward() -&gt; query, parse, execute, persist</text>
+<line x1="198" y1="110" x2="198" y2="935" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="96" y="82" width="202" height="56" rx="10" fill="#ffffff" stroke="#3a2f26" stroke-width="1.5"/>
+<text x="198" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#000000">DefaultAgent</text>
+<line x1="439" y1="110" x2="439" y2="935" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="337" y="82" width="202" height="56" rx="10" fill="#ffffff" stroke="#3a2f26" stroke-width="1.5"/>
+<text x="439" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#000000">History</text>
+<line x1="680" y1="110" x2="680" y2="935" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="578" y="82" width="202" height="56" rx="10" fill="#ffffff" stroke="#3a2f26" stroke-width="1.5"/>
+<text x="680" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#000000">LiteLLMModel</text>
+<line x1="920" y1="110" x2="920" y2="935" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="819" y="82" width="202" height="56" rx="10" fill="#ffffff" stroke="#3a2f26" stroke-width="1.5"/>
+<text x="920" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#000000">ToolHandler</text>
+<line x1="1161" y1="110" x2="1161" y2="935" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="1060" y="82" width="202" height="56" rx="10" fill="#ffffff" stroke="#3a2f26" stroke-width="1.5"/>
+<text x="1161" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#000000">SWEEnv</text>
+<line x1="1402" y1="110" x2="1402" y2="935" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="1301" y="82" width="202" height="56" rx="10" fill="#ffffff" stroke="#3a2f26" stroke-width="1.5"/>
+<text x="1402" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#000000">Trajectory</text>
+<path d="M 198 162 h 42 v 25 H 208" fill="none" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="219" cy="146" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="219" y="151" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">1</text>
+<text x="250" y="167" font-size="14" fill="#000000">step()</text>
+<line x1="198" y1="214" x2="429" y2="214" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="240" cy="200" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="240" y="205" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">2</text>
+<text x="258" y="205" font-size="14" fill="#000000">self.messages</text>
+<line x1="439" y1="266" x2="208" y2="266" stroke="#8a7a66" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrr)"/>
+<circle cx="240" cy="252" r="11" fill="#ffffff" stroke="#8a7a66" stroke-width="1.5"/>
+<text x="240" y="257" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">3</text>
+<text x="258" y="257" font-size="14" fill="#000000">processed messages</text>
+<line x1="198" y1="318" x2="670" y2="318" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="361" cy="304" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="361" y="309" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">4</text>
+<text x="379" y="309" font-size="14" fill="#000000">query(messages, tools=)</text>
+<line x1="680" y1="370" x2="208" y2="370" stroke="#8a7a66" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrr)"/>
+<circle cx="361" cy="356" r="11" fill="#ffffff" stroke="#8a7a66" stroke-width="1.5"/>
+<text x="361" y="361" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">5</text>
+<text x="379" y="361" font-size="14" fill="#000000">function call</text>
+<line x1="198" y1="422" x2="910" y2="422" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="481" cy="408" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="481" y="413" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">6</text>
+<text x="499" y="413" font-size="14" fill="#000000">parse_actions()</text>
+<line x1="920" y1="474" x2="208" y2="474" stroke="#8a7a66" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrr)"/>
+<circle cx="481" cy="460" r="11" fill="#ffffff" stroke="#8a7a66" stroke-width="1.5"/>
+<text x="481" y="465" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">7</text>
+<text x="499" y="465" font-size="14" fill="#000000">shell string</text>
+<path d="M 198 526 h 42 v 25 H 208" fill="none" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="219" cy="510" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="219" y="515" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">8</text>
+<text x="250" y="531" font-size="14" fill="#000000">guard + blocklist</text>
+<line x1="198" y1="578" x2="1151" y2="578" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="602" cy="564" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="602" y="569" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">9</text>
+<text x="620" y="569" font-size="14" fill="#000000">communicate()</text>
+<line x1="1161" y1="630" x2="208" y2="630" stroke="#8a7a66" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrr)"/>
+<circle cx="602" cy="616" r="11" fill="#ffffff" stroke="#8a7a66" stroke-width="1.5"/>
+<text x="602" y="621" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">10</text>
+<text x="620" y="621" font-size="14" fill="#000000">stdout/stderr</text>
+<path d="M 198 682 h 42 v 25 H 208" fill="none" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="219" cy="666" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="219" y="671" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">11</text>
+<text x="250" y="687" font-size="14" fill="#000000">handle_submission()</text>
+<line x1="198" y1="734" x2="429" y2="734" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="240" cy="720" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="240" y="725" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">12</text>
+<text x="258" y="725" font-size="14" fill="#000000">add_step_to_history()</text>
+<line x1="198" y1="787" x2="1392" y2="787" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="722" cy="773" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="722" y="778" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">13</text>
+<text x="740" y="778" font-size="14" fill="#000000">save_trajectory()</text>
+<rect x="96" y="815" width="1407" height="44" rx="8" fill="#d08c4e" fill-opacity="0.13" stroke="#d08c4e" stroke-width="1"/>
+<text x="800" y="842" text-anchor="middle" font-size="14" fill="#000000">.traj rewritten EVERY step — partial runs stay inspectable and replayable.</text>
+<path d="M 198 900 h 42 v 25 H 208" fill="none" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="219" cy="884" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="219" y="889" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">14</text>
+<text x="250" y="905" font-size="14" fill="#000000">run(): loop while not done</text>
+</svg>
