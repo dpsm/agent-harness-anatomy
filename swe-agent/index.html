@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body {
+    background: #161210; color: #ece1d3;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    line-height: 1.7; padding: 48px 24px; margin: 0;
+  }
+  main { max-width: 760px; margin: 0 auto; }
+  a { color: #d08c4e; }
+  h1 { font-size: 1.9rem; letter-spacing: -0.02em; line-height: 1.25; margin-bottom: 16px; }
+  h2 { font-size: 1.4rem; margin: 40px 0 12px; padding-top: 8px; border-top: 1px solid #2c231b; }
+  h3 { font-size: 1.1rem; margin: 28px 0 8px; }
+  p, li { margin-bottom: 12px; }
+  blockquote {
+    border-left: 3px solid #d08c4e; padding: 4px 16px; margin: 20px 0;
+    color: #a89880; background: #1f1a15; border-radius: 0 8px 8px 0;
+  }
+  blockquote p { margin-bottom: 6px; }
+  code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.88em; background: #1f1a15; padding: 2px 6px; border-radius: 6px;
+  }
+  pre { background: #1f1a15; border: 1px solid #3a2f26; border-radius: 8px;
+        padding: 16px; overflow-x: auto; }
+  pre code { background: none; padding: 0; }
+  img { max-width: 100%; height: auto; border: 1px solid #3a2f26;
+        border-radius: 12px; margin: 20px 0; background: #1f1a15; }
+  table { border-collapse: collapse; width: 100%; margin: 20px 0; font-size: 0.92rem;
+          display: block; overflow-x: auto; }
+  th, td { border: 1px solid #3a2f26; padding: 10px 12px; text-align: left;
+           vertical-align: top; }
+  th { background: #1f1a15; }
+  ul, ol { padding-left: 24px; }
+  hr { border: none; border-top: 1px solid #2c231b; margin: 32px 0; }
+  .footnote { font-size: 0.88rem; color: #a89880; }
+  .footnote hr { margin: 40px 0 16px; }
+  sup a { text-decoration: none; }
+  .topnav { max-width: 760px; margin: 0 auto 32px; font-size: 0.9rem; }
+  .topnav a { color: #a89880; text-decoration: none; }
+  .topnav a:hover { color: #ece1d3; }
+  .diagram-cta {
+    display: block; text-align: center; margin: 28px 0; padding: 16px;
+    background: #1f1a15; border: 1px solid #3a2f26; border-radius: 12px;
+    color: #ece1d3; text-decoration: none; font-weight: 600;
+  }
+  .diagram-cta:hover { border-color: #d08c4e; }
+  .diagram-cta span { display: block; font-weight: 400; font-size: 0.88rem;
+                      color: #a89880; margin-top: 4px; }
+</style>
+<title>Agent Harness Anatomy #11: SWE-agent — the research original</title>
+</head>
+<body>
+<main>
+  <nav class="topnav"><a href="../">&larr; Agent Harness Anatomy</a></nav>
+<h1 id="agent-harness-anatomy-11-swe-agent-the-research-original">Agent Harness Anatomy #11: SWE-agent — the research original</h1>
+<blockquote>
+<p><strong>Series:</strong> Agent Harness Anatomy — top-down dissections of real agent harnesses, grounded in verifiable source code. Every behavioral claim below carries a footnote to a pinned GitHub permalink; the full evidence lives in the endnotes.</p>
+</blockquote>
+<h2 id="version-block">Version block</h2>
+<ul>
+<li><strong>Repo:</strong> <a href="https://github.com/SWE-agent/SWE-agent">SWE-agent/SWE-agent</a></li>
+<li><strong>Pinned:</strong> tag <code>v1.1.0</code> → <code>0f3acafacabc0def8cc76b4e48acb4b6cf302cb9</code> (2025-05-22)</li>
+<li><strong>Language:</strong> Python (≥3.11)</li>
+<li><strong>License:</strong> MIT</li>
+<li><strong>Claim under test:</strong> "the research original" — the SWE-bench lineage</li>
+</ul>
+<p><img alt="SWE-agent architecture" src="figures/swe-agent.svg" /></p>
+<a class="diagram-cta" href="../diagrams/template.html?data=../swe-agent/diagrams/swe-agent.json">
+    Explore the interactive architecture diagram
+    <span>18 nodes, 20 edges — pan, zoom, and follow every subsystem link</span>
+  </a>
+<p>harness, the ancestor OpenHands descends from</p>
+<p>A scope correction first: the repo moved. <code>SWE-bench/SWE-agent</code> now 404s; the project lives under the <code>SWE-agent</code> org, and the pinned checkout's git remote confirms the canonical URL. Everything below is pinned to the new path.<sup id="fnref:1"><a class="footnote-ref" href="#fn:1">1</a></sup></p>
+<p>Size, for orientation: <code>sweagent/</code> is 62 files and ~11,010 lines of Python; the ACI itself is 13 bundle directories of YAML and shell scripts on top; <code>config/</code> adds 15 YAML configs. The big files are <code>agents.py</code> (1,250 lines), <code>models.py</code> (849), <code>reviewer.py</code> (664), <code>tools.py</code> (411), and <code>parsing.py</code> (540). Line counts include blanks and comments — order of magnitude, not precision instruments.<sup id="fnref:2"><a class="footnote-ref" href="#fn:2">2</a></sup></p>
+<h2 id="the-mental-model">The mental model</h2>
+<p>SWE-agent is a <strong>benchmark harness that grew an agent</strong>, not a product that happens to run benchmarks. Read it that way and every design decision clicks: the trajectory file rewritten <em>every step</em> (a crashed run is still data), a replay model that re-executes saved trajectories (results are auditable), trajectory-to-demo conversion (runs become few-shot examples), a reviewer that scores whole attempts and retries (inference-time scaling as a config flag), and cost-limit exits that autosubmit a patch instead of dying empty-handed. The loop itself is deliberately boring — a synchronous <code>while not done</code> — because the interesting machinery sits one level out: the attempt-level retry loop, the autosubmission, the reviewer.<sup id="fnref:9"><a class="footnote-ref" href="#fn:9">9</a></sup><sup id="fnref:10"><a class="footnote-ref" href="#fn:10">10</a></sup><sup id="fnref:12"><a class="footnote-ref" href="#fn:12">12</a></sup></p>
+<p>The distinctive idea, and the one this series is really about, is the <strong>ACI — the agent-computer interface</strong>. The model never sees a raw shell. It sees a <em>designed</em> command surface defined as data: YAML schemas plus container-side shell scripts, converted to LLM function schemas at query time and to shell strings at parse time. The action space is literally edited as text files. Contrast OpenHands, which hardcodes <code>Action</code> and <code>Observation</code> classes on an event stream: SWE-agent's interface is string-in, string-out, and the "type system" is a shell script in a container.<sup id="fnref:3"><a class="footnote-ref" href="#fn:3">3</a></sup><sup id="fnref:21"><a class="footnote-ref" href="#fn:21">21</a></sup></p>
+<p>The governing tradeoff: SWE-agent buys research-grade flexibility — swap the entire ACI by editing YAML — at the cost of indirection and fragility. Everything is strings until the last moment.</p>
+<h2 id="package-map">Package map</h2>
+<table>
+<thead>
+<tr>
+<th>Package</th>
+<th>Role</th>
+<th>Size</th>
+</tr>
+</thead>
+<tbody>
+<tr><td><code>sweagent/agent/</code></td><td>The harness brain: loop, LiteLLM wrapper + cost accounting, reviewer, history processors, action sampler, problem statements, hooks</td><td>10 files, 3,707 lines</td></tr>
+<tr><td><code>sweagent/tools/</code></td><td>The ACI <em>loader</em>: bundle/command schema, 9 output parsers, <code>ToolHandler</code> (install, blocklist, parse, dispatch, state)</td><td>6 files, 1,332 lines</td></tr>
+<tr><td><code>sweagent/environment/</code></td><td><code>SWEEnv</code> — thin wrapper over SWE-ReX deployments (Docker default); repo cloning; persistent bash session</td><td>6 files, 572 lines</td></tr>
+<tr><td><code>sweagent/run/</code></td><td>CLI drivers: single, batch, replay; batch-instance sources; hooks; stats tooling</td><td>21 files, 3,519 lines</td></tr>
+<tr><td><code>sweagent/api/</code></td><td>Flask + SocketIO backend for the web UI</td><td>4 files, 501 lines</td></tr>
+<tr><td><code>sweagent/inspector/</code></td><td>Separate trajectory web inspector</td><td>3 files, 498 lines</td></tr>
+<tr><td><code>sweagent/frontend/</code></td><td>React web UI (48 files under <code>src/</code>)</td><td>—</td></tr>
+<tr><td><code>sweagent/utils/</code></td><td>Config loading, GitHub helpers, patch formatting, logging</td><td>8 files, 611 lines</td></tr>
+<tr><td><code>tools/</code> (top level)</td><td>The ACI <em>content</em>: 13 tool bundles, each <code>config.yaml</code> + <code>bin/</code> scripts</td><td>13 bundle dirs</td></tr>
+<tr><td><code>config/</code></td><td>15 YAML configs: <code>default.yaml</code>, <code>benchmarks/</code>, <code>sweagent_0_7/</code>, <code>exotic/</code>, <code>human/</code></td><td>1,365 lines</td></tr>
+</tbody>
+</table>
+<p>Entry point: <code>pyproject.toml</code> registers <code>sweagent = "sweagent.run.run:main"</code>. Subcommands: <code>run</code>, <code>run-batch</code>, <code>run-replay</code>, <code>traj-to-demo</code>, <code>run-api</code>, <code>merge-preds</code>, <code>inspect</code> (textual TUI trajectory viewer), <code>inspector</code> (web viewer), <code>extract-pred</code>, <code>compare-runs</code>, <code>remove-unfinished</code>, <code>quick-stats</code> — with <code>r</code>/<code>b</code>/<code>i</code>/<code>I</code>/<code>ru</code>/<code>qs</code> aliases.<sup id="fnref:17"><a class="footnote-ref" href="#fn:17">17</a></sup></p>
+<h2 id="the-aci-a-designed-interface-not-a-shell">The ACI: a designed interface, not a shell</h2>
+<p>This section is earned: the ACI is the paper's contribution and the thing that makes SWE-agent unlike every other harness in this series. Four stages, each verifiable in source:</p>
+<ol>
+<li><strong>Declaration.</strong> Each bundle's <code>config.yaml</code> declares its commands:</li>
+</ol>
+<p><code>signature</code>, <code>docstring</code>, typed <code>arguments</code> (required/optional, enum, per-argument <code>argument_format</code> jinja). <code>Bundle</code> loads the YAML; <code>Command</code> validates that signature↔arguments agree and computes <code>invoke_format</code> — the template that renders a parsed call back into a shell string.<sup id="fnref:3"><a class="footnote-ref" href="#fn:3">3</a></sup></p>
+<ol>
+<li><strong>Implementation.</strong> Shell or Python scripts in <code>tools/&lt;bundle&gt;/bin/</code>,</li>
+</ol>
+<p>uploaded into the Docker container at <code>/root/tools/&lt;bundle&gt;/bin</code> and PATH-prepended by <code>ToolHandler.install</code>. Every ACI command is literally an executable the persistent shell session can run.<sup id="fnref:3"><a class="footnote-ref" href="#fn:3">3</a></sup></p>
+<ol>
+<li><strong>Exposure.</strong> Two paths. <em>Function calling (the default)</em>:</li>
+</ol>
+<p><code>Command.get_function_calling_tool()</code> converts the YAML schema to an OpenAI function schema, passed as <code>tools=</code> to <code>litellm.completion</code>; <code>FunctionCallingParser</code> validates exactly one tool call against known commands and required args, then renders the shell string via <code>invoke_format</code>. <em>Text parsers</em> (<code>ThoughtActionParser</code>, <code>XMLFunctionCallingParser</code>, … — nine in total): auto-generated <code>command_docs</code> are injected into the system prompt and the command is pulled out of the model's prose.<sup id="fnref:8"><a class="footnote-ref" href="#fn:8">8</a></sup></p>
+<ol>
+<li><strong>Dispatch.</strong> Parsed action string → <code>guard_multiline_input</code> (heredoc</li>
+</ol>
+<p>wrapping for multiline commands like <code>edit</code>) → blocklist check → <code>SWEEnv.communicate()</code> into the persistent container bash session. State feedback closes the loop: bundles declare <code>state_command</code>s, <code>get_state()</code> runs them and reads <code>/root/state.json</code>, and the resulting dict (<code>working_dir</code>, <code>open_file</code>, <code>diff</code>, …) is rendered into the next observation template.<sup id="fnref:7"><a class="footnote-ref" href="#fn:7">7</a></sup></p>
+<p>The command inventory, read off each bundle's <code>config.yaml</code>: <code>windowed</code> gives <code>open</code>/<code>goto</code>/<code>scroll_up</code>/<code>scroll_down</code>/<code>create</code> (the paper's 100-line file viewer); <code>search</code> gives <code>find_file</code>/<code>search_dir</code>/<code>search_file</code>; three <code>windowed_edit_*</code> bundles give <code>edit</code> variants (+<code>insert</code>); <code>edit_anthropic</code> gives <code>str_replace_editor</code>; <code>submit</code> and <code>review_on_submit_m</code> give <code>submit</code> (the latter with a review checklist); <code>forfeit</code> gives <code>exit_forfeit</code>; <code>filemap</code> gives <code>filemap</code>. <code>registry</code>, <code>diff_state</code>, and <code>multilingual_setup</code> carry env vars, state, and setup scripts rather than commands. Permissions are a blocklist (<code>ToolFilterConfig</code>): vim, emacs, nano, gdb, less, <code>tail -f</code>, <code>python -m venv</code>, make, nohup, bare <code>python</code>/<code>bash</code>/<code>sh</code>/<code>su</code> — and nothing else. No approvals, no allowlist.<sup id="fnref:6"><a class="footnote-ref" href="#fn:6">6</a></sup></p>
+<p>Now the docs-vs-code finding, and it matters for this article's honesty. The docs describe the paper-era windowed ACI — the 100-line viewer, the edit linter, succinct search — as <em>the</em> ACI. But <code>config/default.yaml</code>, the config the <code>sweagent run</code> examples use, loads <code>tools/registry</code> + <code>tools/edit_anthropic</code> + <code>tools/review_on_submit_m</code> with function-calling parsing and the Anthropic filemap enabled. No <code>windowed</code> bundle, no <code>open</code>/<code>goto</code>/<code>scroll</code>. The windowed ACI survives in <code>config/sweagent_0_7/</code> and <code>config/exotic/</code>. The shipped default is the Anthropic computer-use style ACI — code wins over docs.<sup id="fnref:4"><a class="footnote-ref" href="#fn:4">4</a></sup></p>
+<p>One cross-pollination detail worth keeping: <code>tools/edit_anthropic/config.yaml</code> carries the comment "This docstrings was taken from openhands", pointing at OpenHands' old <code>function_calling.py</code>. The ancestor borrowed back from the descendant.<sup id="fnref:5"><a class="footnote-ref" href="#fn:5">5</a></sup></p>
+<h2 id="the-core-loop">The core loop</h2>
+<p><code>DefaultAgent.run()</code> (<code>agents.py:1221</code>) — the loop at line 1240, quoted in full:</p>
+<pre><code>while not step_output.done:
+    step_output = self.step()
+    self.save_trajectory()</code></pre>
+<p>Synchronous <code>while</code>, one model call → one command execution per step, the <code>.traj</code> file rewritten after every one. <code>step()</code> (1191) → <code>forward_with_handling()</code> (1020, the error-requery loop) → <code>forward()</code> (965, one model query + parse + execute) → <code>add_step_to_history()</code> (673) → trajectory bookkeeping.<sup id="fnref:9"><a class="footnote-ref" href="#fn:9">9</a></sup></p>
+<p>Termination conditions, exhaustively — <code>step.done</code> is set only by:</p>
+<ol>
+<li><code>submit</code>: the <code>&lt;&lt;SWE_AGENT_SUBMISSION&gt;&gt;</code> marker in command output →</li>
+</ol>
+<p><code>handle_submission()</code> reads <code>/root/model.patch</code> (written by the <code>submit</code> bundle's script), sets <code>step.submission</code>, <code>done=True</code>, <code>exit_status="submitted"</code>.<sup id="fnref:10"><a class="footnote-ref" href="#fn:10">10</a></sup></p>
+<ol>
+<li>A literal <code>exit</code> action → done, <code>exit_status="exit_command"</code>.<sup id="fnref:10"><a class="footnote-ref" href="#fn:10">10</a></sup></li>
+<li>The <code>###SWE-AGENT-EXIT-FORFEIT###</code> token in command output (emitted by</li>
+</ol>
+<p>the <code>exit_forfeit</code> command).<sup id="fnref:10"><a class="footnote-ref" href="#fn:10">10</a></sup></p>
+<ol>
+<li>Error autosubmission: cost, context, timeout, and runtime errors →</li>
+</ol>
+<p><code>attempt_autosubmission_after_error()</code> diffs the working tree (<code>git add -A &amp;&amp; git diff --cached &gt; /root/model.patch</code>) and returns <code>done=True</code> — a failed run still submits <em>something</em>.<sup id="fnref:10"><a class="footnote-ref" href="#fn:10">10</a></sup></p>
+<ol>
+<li><code>max_requeries=3</code>: repeated format/blocklist/bash-syntax errors →</li>
+</ol>
+<p><code>exit_format</code> autosubmission.<sup id="fnref:10"><a class="footnote-ref" href="#fn:10">10</a></sup></p>
+<ol>
+<li>Cost/call/context limits and wall-clock timeouts</li>
+</ol>
+<p>(<code>total_execution_timeout=1800</code>, three consecutive command timeouts).<sup id="fnref:10"><a class="footnote-ref" href="#fn:10">10</a></sup></p>
+<p>Two deliberate absences, both verified by grep rather than asserted from silence: <strong>there is no step-count cap on the loop itself</strong> — full-<code>agents.py</code> grep shows no step counter; only the indirect <code>per_instance_call_limit</code> (default 0 = unlimited) and the cost limits bind it. The SWE-bench heavy config sets 75 calls. And <strong>there are no approval prompts</strong> — grep for <code>confirm|approv|allowlist|y/n|prompt_user</code> across <code>sweagent/</code> returns only unrelated hits. The permission model is the blocklist, nothing more.<sup id="fnref:11"><a class="footnote-ref" href="#fn:11">11</a></sup></p>
+<p>The outer loop: <code>RetryAgent.run()</code> (agents.py:359) wraps whole <code>DefaultAgent</code> attempts. On each <code>done</code>, it feeds trajectory + info + model stats into the retry loop and asks <code>retry()</code>; the environment is hard-reset between attempts (<code>_next_attempt</code>), and the final <code>.traj</code> merges all attempts stamped with <code>best_attempt_idx</code>. Two retry strategies live in <code>reviewer.py</code>: <code>ScoreRetryLoop</code> (an LM scores each submission, retry while below <code>accept_score</code>, up to <code>max_attempts</code>) and <code>ChooserRetryLoop</code> (an LM picks the best of the attempts). The benchmark heavy config selects this outer loop: <code>agent: type: retry</code> with <code>retry_loop: type: chooser</code>.<sup id="fnref:12"><a class="footnote-ref" href="#fn:12">12</a></sup></p>
+<p>The correction the name invites: <code>reviewer.py</code> sounds like it reviews <em>actions</em>. It never sees one. The <code>reviewer</code> import in <code>agents.py</code> is consumed only by <code>RetryAgent</code>; <code>DefaultAgent</code>'s step path never touches it. Reviewer scores whole attempts (sampled <code>n_sample=5</code> times, averaged), the chooser picks among whole attempts — nothing in the loop filters or scores an individual action.<sup id="fnref:12"><a class="footnote-ref" href="#fn:12">12</a></sup></p>
+<h2 id="one-turn-end-to-end">One turn, end to end</h2>
+<p>Trace one step of <code>DefaultAgent.step()</code>:</p>
+<p><strong>① History assembly.</strong> The <code>messages</code> property filters <code>self.history</code> to this agent's entries and chains the configured <code>HistoryProcessor</code>s (default: the identity processor).</p>
+<p><strong>② Model call.</strong> <code>LiteLLMModel.query()</code> → <code>_single_query()</code>: token-counts the input against the provider's max (raising <code>ContextWindowExceededError</code> before spending a call), then a non-streaming <code>litellm.completion</code> with the function schemas as <code>tools=</code> and the configured temperature (default 0.0). Tenacity retries the call; cost comes from <code>litellm.cost_calculator</code>, and <code>_update_stats()</code> enforces the per-instance cost limit (default $3.00), the total cost limit, and the call limit. When configured, <code>AskColleagues</code> replaces the single query: sample N completions, debate them, execute the winner.<sup id="fnref:13"><a class="footnote-ref" href="#fn:13">13</a></sup><sup id="fnref:19"><a class="footnote-ref" href="#fn:19">19</a></sup></p>
+<p><strong>③ Parse.</strong> <code>tools.parse_actions(output)</code> → <code>FunctionCallingParser</code> validates exactly one tool call, a known command, and required args, then renders the shell string via <code>invoke_format</code>. Failures raise <code>FormatError</code>.<sup id="fnref:8"><a class="footnote-ref" href="#fn:8">8</a></sup></p>
+<p><strong>④ Guard + blocklist.</strong> <code>handle_action()</code>: blocklist hit → <code>_BlockedActionError</code>; literal <code>exit</code> → done; multiline commands get the heredoc guard.<sup id="fnref:9"><a class="footnote-ref" href="#fn:9">9</a></sup></p>
+<p><strong>⑤ Execution.</strong> <code>SWEEnv.communicate(input, timeout=30)</code> runs the string in the persistent container bash session via SWE-ReX. Three in-band tokens steer the loop without polluting history — stripped from the observation when seen: <code>###SWE-AGENT-RETRY-WITH-OUTPUT###</code>, <code>###SWE-AGENT-RETRY-WITHOUT-OUTPUT###</code>, <code>###SWE-AGENT-EXIT-FORFEIT###</code>.<sup id="fnref:10"><a class="footnote-ref" href="#fn:10">10</a></sup></p>
+<p><strong>⑥ Submission check.</strong> <code>handle_submission()</code>: if <code>&lt;&lt;SWE_AGENT_SUBMISSION&gt;&gt;</code> appears in the output, read <code>/root/model.patch</code>, set <code>step.submission</code>, <code>done=True</code>, <code>exit_status="submitted"</code>.<sup id="fnref:10"><a class="footnote-ref" href="#fn:10">10</a></sup></p>
+<p><strong>⑦ Feedback.</strong> <code>add_step_to_history()</code>: assistant entry (thought+action), then the user observation through the next-step template (<code>"Observation: {{observation}}"</code>); over 100k characters → the truncation template with an explicit elided-character count; empty output → the no-output template. A fresh <code>get_state()</code> is merged into the template variables.<sup id="fnref:14"><a class="footnote-ref" href="#fn:14">14</a></sup><sup id="fnref:15"><a class="footnote-ref" href="#fn:15">15</a></sup></p>
+<p><strong>⑧ Bookkeeping.</strong> <code>info["submission"]</code>, <code>info["exit_status"]</code>, <code>edited_files{30,50,70}</code> via <code>PatchFormatter</code>, <code>model_stats</code>; append the <code>TrajectoryStep</code> (action/observation/response/thought/execution_time/state/query/extra_info); <code>save_trajectory()</code> rewrites the <code>.traj</code>.<sup id="fnref:16"><a class="footnote-ref" href="#fn:16">16</a></sup></p>
+<p>Around all of this sits the error-requery inner loop (<code>forward_with_handling</code>): format, blocklist, and bash-syntax errors requery the model with an error template — updating the trajectory but <em>not</em> the permanent history — up to <code>max_requeries=3</code>, then <code>exit_format</code> autosubmits. Fatal errors (context, cost, environment, runtime) skip the requery and go straight to <code>attempt_autosubmission_after_error</code>.<sup id="fnref:10"><a class="footnote-ref" href="#fn:10">10</a></sup></p>
+<a class="diagram-cta" href="trace.html">
+    Play the 8-step trace
+    <span>One turn through SWE-agent — problem statement, ACI assembly, prompt assembly, model call, action parse, container dispatch, observation, submit</span>
+  </a>
+<h2 id="subsystem-inventory">Subsystem inventory</h2>
+<ul>
+<li><strong>Tools.</strong> Covered above — the ACI. Registration is one YAML line naming</li>
+</ul>
+<p>a bundle path; duplicate command names raise. Multiline commands via the heredoc guard; state via the <code>/root/state.json</code> round-trip.<sup id="fnref:3"><a class="footnote-ref" href="#fn:3">3</a></sup><sup id="fnref:6"><a class="footnote-ref" href="#fn:6">6</a></sup><sup id="fnref:7"><a class="footnote-ref" href="#fn:7">7</a></sup></p>
+<ul>
+<li><strong>Model providers.</strong> <code>LiteLLMModel</code> — any provider LiteLLM supports,</li>
+</ul>
+<p>selected by model-name string. API keys as <code>SecretStr</code> via <code>$ENV</code> or <code>:::</code>-separated rotation, with per-thread key pinning for prompt-cache affinity; a <code>fallbacks</code> list; tenacity retries; context-window pre-check before each call. Cost accounting in <code>_update_stats</code> enforces the per-instance ($3.00 default), total, and call limits. Special models: <code>human</code>/<code>human_thought</code> (stdin <em>is</em> the model — human-in-the-loop), <code>replay</code> (re-executes a <code>.traj</code> file), <code>instant_empty_submit</code>, <code>PredeterminedTestModel</code> (tests) — all wired through the <code>get_model()</code> dispatcher.<sup id="fnref:13"><a class="footnote-ref" href="#fn:13">13</a></sup></p>
+<ul>
+<li><strong>Prompt construction.</strong> Jinja2 <code>TemplateConfig</code>: system, instance, and</li>
+</ul>
+<p>next-step templates, plus truncation, no-output, shell-error, and timeout templates. The format dict carries <code>command_docs</code>, tool env vars, the problem statement, and repo info; demonstrations load from <code>.traj</code> or YAML files. History processors (307 lines): identity (default), <code>LastNObservations</code>, <code>ClosedWindowHistoryProcessor</code> (collapses stale file windows), <code>CacheControlHistoryProcessor</code> (Anthropic prompt caching — active in the default config), <code>TagToolCallObservations</code>, <code>RemoveRegex</code>. Note what is <em>not</em> here: no summarization, no compaction — processors can only elide, trim, or tag.<sup id="fnref:14"><a class="footnote-ref" href="#fn:14">14</a></sup></p>
+<ul>
+<li><strong>Memory/session.</strong> No cross-session memory, no compaction — verified</li>
+</ul>
+<p>absence. Session state is the in-memory <code>history</code> list plus the per-step <code>.traj</code> JSON: trajectory steps, the full unprocessed history, <code>info</code> (submission, exit status, model stats, edited-files context at three window sizes, swe-agent/swe-rex version hashes), <code>replay_config</code>, and the environment name. Layout: <code>trajectories/&lt;user&gt;/&lt;config&gt;__&lt;model&gt;___&lt;problem_id&gt;/&lt;instance_id&gt;.traj</code>. Trajectories double as replay inputs and as demonstrations — the research-instrumentation thesis, again.<sup id="fnref:16"><a class="footnote-ref" href="#fn:16">16</a></sup><sup id="fnref:22"><a class="footnote-ref" href="#fn:22">22</a></sup></p>
+<ul>
+<li><strong>Reasoning/planning.</strong> No planner, no sub-agents. Reasoning is the</li>
+</ul>
+<p>model's own discussion text, parsed out as <code>thought</code>. The two inference-time mechanisms are <code>AskColleagues</code> (sample N completions, debate, pick one — plugged into <code>forward()</code>) and the reviewer/chooser attempt-level loops.<sup id="fnref:19"><a class="footnote-ref" href="#fn:19">19</a></sup><sup id="fnref:12"><a class="footnote-ref" href="#fn:12">12</a></sup></p>
+<ul>
+<li><strong>Extensibility.</strong> Everything is config: a new ACI is a new</li>
+</ul>
+<p><code>tools/&lt;bundle&gt;/</code> directory plus one YAML line; a new parser subclasses <code>AbstractParseFunction</code> and sets <code>parse_function.type</code>; a new history processor joins the union; a new problem statement implements the protocol; a new model is a LiteLLM name string. Lifecycle extension via <code>AbstractAgentHook</code> — 13 hook points across init/run/step/model-query/action/history — with <code>CombinedAgentHook</code> fan-out, plus <code>EnvHook</code> and <code>RunHook</code> (e.g. <code>SweBenchEvaluate</code>). Pydantic <code>extra="forbid"</code> everywhere, so config typos fail loudly. <code>SWE_AGENT_CONFIG_ROOT</code> and <code>SWE_AGENT_*</code> env vars override config files.<sup id="fnref:18"><a class="footnote-ref" href="#fn:18">18</a></sup></p>
+<ul>
+<li><strong>Interfaces.</strong> The CLI (<code>run</code>, <code>run-batch</code>, <code>run-replay</code>, <code>traj-to-demo</code>,</li>
+</ul>
+<p><code>merge-preds</code>, <code>extract-pred</code>, <code>compare-runs</code>, <code>remove-unfinished</code>, <code>quick-stats</code>); <code>inspect</code>, a textual TUI trajectory viewer; <code>inspector</code>, a separate web trajectory viewer; <code>run-api</code>, a Flask+SocketIO backend behind <code>start_web_ui.sh</code>'s React frontend. <code>run-batch</code> fans instances over a <code>ThreadPoolExecutor</code> with SWE-bench dataset sources and an eval hook.<sup id="fnref:17"><a class="footnote-ref" href="#fn:17">17</a></sup></p>
+<ul>
+<li><strong>Failure handling.</strong> Layered: parse/blocklist/bash-syntax errors →</li>
+</ul>
+<p>silent requery (≤3) → <code>exit_format</code>; API errors → tenacity; command timeouts → three consecutive → exit; total wall time 1800s; cost, context, and call limits → autosubmit attempt; dead runtime → fall back to the last trajectory state's diff. The <code>.traj</code> rewritten every step means partial runs are always inspectable and replayable; <code>remove-unfinished</code> prunes the ones that never submitted.<sup id="fnref:10"><a class="footnote-ref" href="#fn:10">10</a></sup><sup id="fnref:16"><a class="footnote-ref" href="#fn:16">16</a></sup></p>
+<ul>
+<li><strong>Security.</strong> Sandboxing is the Docker container via SWE-ReX (default</li>
+</ul>
+<p>image <code>python:3.11</code>) — and inside it the agent runs as root. There are zero human approval prompts; the only guardrail is the command blocklist. The web UI ships <code>app.secret_key = "super secret key"</code>. <code>SECURITY.md</code> is a vulnerability-reporting policy, nothing more. The threat model is "researcher running benchmarks," not "user's laptop" — and the code is honest about it.<sup id="fnref:20"><a class="footnote-ref" href="#fn:20">20</a></sup></p>
+<h2 id="deliberate-omissions">Deliberate omissions</h2>
+<p>SWE-agent ships no approval mechanism of any kind — no per-action confirmation, no allowlist, no human gate. It ships no step cap. It ships no context compaction or summarization and no cross-session memory: history processors can only elide, trim, or tag. It ships no git-level safety net — the autosubmission diffs the tree to <em>submit</em>, not to protect it. And it does not try to be a product: the instrumentation (per-step trajectories, replay, reviewer/chooser, cost-limit exits, <code>traj-to-demo</code>) is benchmark tooling, and the interfaces that look product-ish (the React UI, the Flask API) stream runs rather than guard them.<sup id="fnref:11"><a class="footnote-ref" href="#fn:11">11</a></sup><sup id="fnref:20"><a class="footnote-ref" href="#fn:20">20</a></sup><sup id="fnref:22"><a class="footnote-ref" href="#fn:22">22</a></sup></p>
+<p>Read the omissions as the research thesis: the harness is ~11k lines of <em>framework</em>; the agent itself lives in YAML and shell scripts. Config is the product.</p>
+<h2 id="comparison-matrix-row">Comparison matrix row</h2>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Dimension</th>
+<th>SWE-agent (v1.1.0)</th>
+</tr>
+</thead>
+<tbody>
+<tr><td>1</td><td>Agent loop</td><td>Sync <code>while not done</code> — one model call → one command per step; termination = submit/exit/forfeit/error-autosubmit/cost/context/timeout; <strong>no step cap</strong>; optional <code>RetryAgent</code> outer attempt loop <sup id="fnref:9"><a class="footnote-ref" href="#fn:9">9</a></sup><sup id="fnref:11"><a class="footnote-ref" href="#fn:11">11</a></sup><sup id="fnref:12"><a class="footnote-ref" href="#fn:12">12</a></sup></td></tr>
+<tr><td>2</td><td>Tool system</td><td>The ACI: YAML-declared commands → function schemas / shell strings; container-side script implementations; blocklist-only permissions; zero approvals <sup id="fnref:3"><a class="footnote-ref" href="#fn:3">3</a></sup><sup id="fnref:6"><a class="footnote-ref" href="#fn:6">6</a></sup><sup id="fnref:20"><a class="footnote-ref" href="#fn:20">20</a></sup></td></tr>
+<tr><td>3</td><td>Model providers</td><td>LiteLLM, any provider by name string; per-instance/total cost + call limits; <code>human</code>, <code>replay</code>, <code>instant_empty_submit</code> special models <sup id="fnref:13"><a class="footnote-ref" href="#fn:13">13</a></sup></td></tr>
+<tr><td>4</td><td>Prompt construction</td><td>Jinja2 templates + <code>command_docs</code>; 100k observation cap with elision note; history processors (identity/trim/cache-control); no summarization <sup id="fnref:14"><a class="footnote-ref" href="#fn:14">14</a></sup><sup id="fnref:15"><a class="footnote-ref" href="#fn:15">15</a></sup></td></tr>
+<tr><td>5</td><td>Memory/session</td><td>Per-step <code>.traj</code> JSON (trajectory + history + info + replay_config + env); no compaction; no cross-session memory; trajectories double as replays/demos <sup id="fnref:16"><a class="footnote-ref" href="#fn:16">16</a></sup><sup id="fnref:22"><a class="footnote-ref" href="#fn:22">22</a></sup></td></tr>
+<tr><td>6</td><td>Reasoning/planning</td><td>No planner/sub-agents; <code>AskColleagues</code> action sampling; reviewer/chooser score whole <em>attempts</em> and retry — never per-action filtering <sup id="fnref:12"><a class="footnote-ref" href="#fn:12">12</a></sup><sup id="fnref:19"><a class="footnote-ref" href="#fn:19">19</a></sup></td></tr>
+<tr><td>7</td><td>Extensibility</td><td>Config-driven: new bundle = dir + YAML line; parser/processor/problem-statement protocols; 13-point <code>AbstractAgentHook</code>; Pydantic <code>extra="forbid"</code> <sup id="fnref:18"><a class="footnote-ref" href="#fn:18">18</a></sup></td></tr>
+<tr><td>8</td><td>Interfaces</td><td>CLI (run/batch/replay/inspect/inspector/…); Flask+SocketIO API + React UI; textual TUI + web trajectory viewers <sup id="fnref:17"><a class="footnote-ref" href="#fn:17">17</a></sup></td></tr>
+<tr><td>9</td><td>Failure handling</td><td>Format/blocklist/syntax → silent requery ≤3 → exit_format; tenacity; timeout exits; error autosubmission diffs the tree into a patch <sup id="fnref:10"><a class="footnote-ref" href="#fn:10">10</a></sup></td></tr>
+<tr><td>10</td><td>Security model</td><td>Docker via SWE-ReX; runs as root in the container; blocklist-only, zero approvals; hardcoded Flask secret — researcher threat model <sup id="fnref:20"><a class="footnote-ref" href="#fn:20">20</a></sup></td></tr>
+</tbody>
+</table>
+<h2 id="endnotes">Endnotes</h2>
+<p>All notes VERIFIED against <code>v1.1.0</code> (<code>0f3acafacabc0def8cc76b4e48acb4b6cf302cb9</code>) in a local clone of tag <code>v1.1.0</code>, with line anchors re-checked 2026-10-10, unless marked DOCS. <code>GH</code> = <code>https://github.com/SWE-agent/SWE-agent/blob/0f3acafacabc0def8cc76b4e48acb4b6cf302cb9/</code>.</p>
+<div class="footnote">
+<hr />
+<ol>
+<li id="fn:1">
+<p>Repo move, VERIFIED in the pinned checkout: <code>git remote -v</code> shows <code>origin https://github.com/SWE-agent/SWE-agent.git (fetch/push)</code>; the old org path <code>SWE-bench/SWE-agent</code> returns 404. The article cites the new URL throughout. &#160;<a class="footnote-backref" href="#fnref:1" title="Jump back to footnote 1 in the text">&#8617;</a></p>
+</li>
+<li id="fn:2">
+<p>Pin and sizes: tag <code>v1.1.0</code> resolves to <code>0f3acafacabc0def8cc76b4e48acb4b6cf302cb9</code> (<code>git describe --tags</code> / <code>git log --oneline -1</code> = "Doc: Update changelog", 2025-05-22). <code>wc -l</code> over <code>*.py</code>: <code>sweagent/</code> 62 files / 11,010 lines; <code>agents.py</code> 1,250, <code>models.py</code> 849, <code>reviewer.py</code> 664, <code>tools.py</code> 411, <code>parsing.py</code> 540. Python ≥3.11 per <a href="https://github.com/SWE-agent/SWE-agent/blob/0f3acafacabc0def8cc76b4e48acb4b6cf302cb9/pyproject.toml">GH…/pyproject.toml</a>; MIT per <a href="https://github.com/SWE-agent/SWE-agent/blob/0f3acafacabc0def8cc76b4e48acb4b6cf302cb9/LICENSE">GH…/LICENSE</a>. &#160;<a class="footnote-backref" href="#fnref:2" title="Jump back to footnote 2 in the text">&#8617;</a></p>
+</li>
+<li id="fn:3">
+<p>The ACI as data. <code>Bundle</code> (<a href="https://github.com/SWE-agent/SWE-agent/blob/0f3acafacabc0def8cc76b4e48acb4b6cf302cb9/sweagent/tools/bundle.py#L17">GH…/sweagent/tools/bundle.py#L17</a>) loads each bundle's <code>config.yaml</code>. <code>Command</code> (<a href="https://github.com/SWE-agent/SWE-agent/blob/0f3acafacabc0def8cc76b4e48acb4b6cf302cb9/sweagent/tools/commands.py#L78">GH…/sweagent/tools/commands.py#L78</a>) validates signature↔argument consistency and computes <code>invoke_format</code> (L102-L131); <code>get_function_calling_tool</code> at L131 converts the YAML schema to an OpenAI function schema. <code>ToolHandler.install</code> (<a href="https://github.com/SWE-agent/SWE-agent/blob/0f3acafacabc0def8cc76b4e48acb4b6cf302cb9/sweagent/tools/tools.py#L236">GH…/sweagent/tools/tools.py#L236</a>) uploads <code>tools/&lt;bundle&gt;/bin/</code> into the container and PATH-prepends it. Dispatch runs through <code>SWEEnv.communicate</code> (<a href="https://github.com/SWE-agent/SWE-agent/blob/0f3acafacabc0def8cc76b4e48acb4b6cf302cb9/sweagent/environment/swe_env.py#L196">GH…/sweagent/environment/swe_env.py#L196</a>) into the persistent container bash session; the default deployment is Docker, image <code>python:3.11</code> (<a href="https://github.com/SWE-agent/SWE-agent/blob/0f3acafacabc0def8cc76b4e48acb4b6cf302cb9/sweagent/environment/swe_env.py#L28">L28</a>). &#160;<a class="footnote-backref" href="#fnref:3" title="Jump back to footnote 3 in the text">&#8617;</a></p>
+</li>
+<li id="fn:4">
+<p>Docs-vs-code, VERIFIED code vs DOCS. <code>config/default.yaml</code> (<a href="https://github.com/SWE-agent/SWE-agent/blob/0f3acafacabc0def8cc76b4e48acb4b6cf302cb9/config/default.yaml">GH…/config/default.yaml</a>, "Formerly called: anthropic_filemap.yaml") loads exactly three bundles — <code>tools/registry</code>, <code>tools/edit_anthropic</code>, <code>tools/review_on_submit_m</code> — with <code>parse_function: type: function_calling</code>, <code>enable_bash_tool: true</code>, and <code>USE_FILEMAP: 'true'</code>; no <code>windowed</code> bundle, no <code>open</code>/<code>goto</code>/<code>scroll</code> commands. The docs (<code>docs/background/aci.md</code>) describe the paper-era windowed ACI (the 100-line file viewer, edit linter, succinct search) as <em>the</em> ACI. The windowed ACI is preserved in <a href="https://github.com/SWE-agent/SWE-agent/tree/0f3acafacabc0def8cc76b4e48acb4b6cf302cb9/config/sweagent_0_7">GH…/config/sweagent_0_7/</a> and <code>config/exotic/</code>. &#160;<a class="footnote-backref" href="#fnref:4" title="Jump back to footnote 4 in the text">&#8617;</a></p>
+</li>
+<li id="fn:5">
+<p>OpenHands credit, quoted verbatim from <a href="https://github.com/SWE-agent/SWE-agent/blob/0f3acafacabc0def8cc76b4e48acb4b6cf302cb9/tools/edit_anthropic/config.yaml#L5">GH…/tools/edit_anthropic/config.yaml#L5-L6</a>: "# This docstrings was taken from openhands:" followed by the <code>All-Hands-AI/OpenHands</code> <code>function_calling.py</code> URL (sic — the typo is in the source). &#160;<a class="footnote-backref" href="#fnref:5" title="Jump back to footnote 5 in the text">&#8617;</a></p>
+</li>
+<li id="fn:6">
+<p>Command inventory, read off each <code>tools/*/config.yaml</code> at the pinned SHA: <code>windowed</code> (<code>open</code>, <code>goto</code>, <code>scroll_up</code>, <code>scroll_down</code>, <code>create</code>), <code>search</code> (<code>find_file</code>, <code>search_dir</code>, <code>search_file</code>), <code>windowed_edit_linting</code> / <code>windowed_edit_replace</code> / <code>windowed_edit_rewrite</code> (<code>edit</code>, +<code>insert</code>), <code>edit_anthropic</code> (<code>str_replace_editor</code>), <code>submit</code> and <code>review_on_submit_m</code> (<code>submit</code>), <code>forfeit</code> (<code>exit_forfeit</code>), <code>filemap</code> (<code>filemap</code>); <code>registry</code>, <code>diff_state</code>, <code>multilingual_setup</code> declare no commands. Blocklist: <code>ToolFilterConfig</code> (<a href="https://github.com/SWE-agent/SWE-agent/blob/0f3acafacabc0def8cc76b4e48acb4b6cf302cb9/sweagent/tools/tools.py#L28">GH…/sweagent/tools/tools.py#L28</a>, entries through L78) — vim/vi/emacs/nano, gdb, less, <code>tail -f</code>, <code>python -m venv</code>, make, nohup, bare <code>python</code>/<code>python3</code>/<code>ipython</code>/ <code>bash</code>/<code>sh</code>/<code>su</code>. &#160;<a class="footnote-backref" href="#fnref:6" title="Jump back to footnote 6 in the text">&#8617;</a></p>
+</li>
+<li id="fn:7">
+<p>State round-trip: <code>ToolHandler.get_state</code> (<a href="https://github.com/SWE-agent/SWE-agent/blob/0f3acafacabc0def8cc76b4e48acb4b6cf302cb9/sweagent/tools/tools.py#L318">GH…/sweagent/tools/tools.py#L318</a>) runs each bundle's <code>state_command</code> and reads <code>/root/state.json</code>; e.g. <code>edit_anthropic</code> declares <code>state_command: "_state_anthropic"</code> (<a href="https://github.com/SWE-agent/SWE-agent/blob/0f3acafacabc0def8cc76b4e48acb4b6cf302cb9/tools/edit_anthropic/config.yaml#L111">GH…/tools/edit_anthropic/config.yaml#L111</a>). The state dict feeds the next observation template via <code>add_step_to_history</code>. &#160;<a class="footnote-backref" href="#fnref:7" title="Jump back to footnote 7 in the text">&#8617;</a></p>
+</li>
+<li id="fn:8">
+<p>Parsers: nine <code>AbstractParseFunction</code> subclasses in <a href="https://github.com/SWE-agent/SWE-agent/blob/0f3acafacabc0def8cc76b4e48acb4b6cf302cb9/sweagent/tools/parsing.py">GH…/sweagent/tools/parsing.py</a> (<code>ActionParser</code> L72, <code>ActionOnlyParser</code> L97, <code>ThoughtActionParser</code> L109, <code>XMLThoughtActionParser</code> L168, <code>XMLFunctionCallingParser</code> L225, <code>EditFormat</code> L320, <code>FunctionCallingParser</code> L367, <code>JsonParser</code> L444, plus the abstract base). <code>parse_actions</code> at <a href="https://github.com/SWE-agent/SWE-agent/blob/0f3acafacabc0def8cc76b4e48acb4b6cf302cb9/sweagent/tools/tools.py#L359">GH…/sweagent/tools/tools.py#L359</a>; the multiline heredoc guard at <a href="https://github.com/SWE-agent/SWE-agent/blob/0f3acafacabc0def8cc76b4e48acb4b6cf302cb9/sweagent/tools/tools.py#L363">L363</a>. &#160;<a class="footnote-backref" href="#fnref:8" title="Jump back to footnote 8 in the text">&#8617;</a></p>
+</li>
+<li id="fn:9">
+<p>The loop: <code>DefaultAgent.run</code> (<a href="https://github.com/SWE-agent/SWE-agent/blob/0f3acafacabc0def8cc76b4e48acb4b6cf302cb9/sweagent/agent/agents.py#L1221">GH…/sweagent/agent/agents.py#L1221</a>); <code>while not step_output.done: step_output = self.step(); self.save_trajectory()</code> at L1240-L1242. <code>step()</code> at L1191, <code>forward()</code> at L965, <code>forward_with_handling()</code> at L1020, <code>handle_action()</code> at L895 (blocklist check, then literal <code>exit</code> → done at L901-L906, then <code>SWEEnv.communicate</code>). &#160;<a class="footnote-backref" href="#fnref:9" title="Jump back to footnote 9 in the text">&#8617;</a></p>
+</li>
+<li id="fn:10">
+<p>Termination. Submit marker detection: <a href="https://github.com/SWE-agent/SWE-agent/blob/0f3acafacabc0def8cc76b4e48acb4b6cf302cb9/sweagent/tools/tools.py#L355">GH…/sweagent/tools/tools.py#L355</a> (<code>&lt;&lt;SWE_AGENT_SUBMISSION&gt;&gt;</code> in output); <code>handle_submission</code> at <a href="https://github.com/SWE-agent/SWE-agent/blob/0f3acafacabc0def8cc76b4e48acb4b6cf302cb9/sweagent/agent/agents.py#L829">GH…/sweagent/agent/agents.py#L829</a> reads <code>/root/model.patch</code> (L846), sets <code>done=True</code> (L862). Autosubmission: <code>attempt_autosubmission_after_error</code> at L782, including the <code>git add -A &amp;&amp; git diff --cached &gt; /root/model.patch</code> fallback (L815). Requery bound: <code>max_requeries: int = 3</code> (<a href="https://github.com/SWE-agent/SWE-agent/blob/0f3acafacabc0def8cc76b4e48acb4b6cf302cb9/sweagent/agent/agents.py#L150">L150</a>), loop at L1065, <code>exit_format</code> after exhaustion. In-band tokens defined at L193-L195, acted on at L954-L960 (<code>###SWE-AGENT-RETRY-WITH/WITHOUT-OUTPUT###</code>, <code>###SWE-AGENT-EXIT-FORFEIT###</code>). &#160;<a class="footnote-backref" href="#fnref:10" title="Jump back to footnote 10 in the text">&#8617;</a></p>
+</li>
+<li id="fn:11">
+<p>Verified absences (2026-10-10, pinned SHA). No step cap: case-insensitive grep for step-count limiting over all of <code>sweagent/agent/agents.py</code> shows no step counter — the loop is bounded only indirectly by <code>per_instance_call_limit</code> (default 0 = unlimited, <a href="https://github.com/SWE-agent/SWE-agent/blob/0f3acafacabc0def8cc76b4e48acb4b6cf302cb9/sweagent/agent/models.py#L78">GH…/sweagent/agent/models.py#L78</a>) and cost limits; the heavy benchmark config sets <code>per_instance_call_limit: 75</code> (<a href="https://github.com/SWE-agent/SWE-agent/blob/0f3acafacabc0def8cc76b4e48acb4b6cf302cb9/config/benchmarks/250212_sweagent_heavy_sbl.yaml#L15">GH…/config/benchmarks/250212_sweagent_heavy_sbl.yaml#L15</a>). No approvals: grep for <code>confirm|approv|allowlist|y/n|prompt_user</code> across <code>sweagent/</code> returns only unrelated hits — the permission model is the blocklist (<sup id="fnref:6"><a class="footnote-ref" href="#fn:6">6</a></sup>), nothing more. &#160;<a class="footnote-backref" href="#fnref:11" title="Jump back to footnote 11 in the text">&#8617;</a></p>
+</li>
+<li id="fn:12">
+<p>Reviewer as attempt-level loop. <code>agents.py</code> imports <code>ChooserRetryLoop</code>, <code>ScoreRetryLoop</code>, <code>ReviewSubmission</code>, <code>get_retry_loop_from_config</code> from <code>reviewer</code> (<a href="https://github.com/SWE-agent/SWE-agent/blob/0f3acafacabc0def8cc76b4e48acb4b6cf302cb9/sweagent/agent/agents.py#L33">GH…/sweagent/agent/agents.py#L33-L39</a>), but the only consumer is <code>RetryAgent</code>: <code>RetryAgent.run</code> at L359, the attempt loop at L382-L408 (<code>on_submit</code> → <code>ReviewSubmission(trajectory, info, model_stats)</code> → <code>retry()</code>), environment hard-reset via <code>_next_attempt</code> (L290), merged trajectory stamped with <code>best_attempt_idx</code> (L337-L343). <code>DefaultAgent</code>'s step path never touches the reviewer. Retry strategies: <code>ScoreRetryLoopConfig</code> (<code>accept_score</code>, <code>max_attempts</code>) and <code>ChooserRetryLoopConfig</code> (<code>max_attempts</code>, <code>cost_limit</code>) at <a href="https://github.com/SWE-agent/SWE-agent/blob/0f3acafacabc0def8cc76b4e48acb4b6cf302cb9/sweagent/agent/reviewer.py#L242">GH…/sweagent/agent/reviewer.py#L242-L310</a>; <code>ReviewerConfig.n_sample: int = 5</code> at L226; <code>ReviewerResult.accept</code> at L84-L90. The heavy config selects it: <code>agent: type: retry</code> at <a href="https://github.com/SWE-agent/SWE-agent/blob/0f3acafacabc0def8cc76b4e48acb4b6cf302cb9/config/benchmarks/250212_sweagent_heavy_sbl.yaml#L7">GH…/config/benchmarks/250212_sweagent_heavy_sbl.yaml#L7</a>, <code>retry_loop: type: chooser</code> at L136. &#160;<a class="footnote-backref" href="#fnref:12" title="Jump back to footnote 12 in the text">&#8617;</a></p>
+</li>
+<li id="fn:13">
+<p><code>LiteLLMModel</code> (<a href="https://github.com/SWE-agent/SWE-agent/blob/0f3acafacabc0def8cc76b4e48acb4b6cf302cb9/sweagent/agent/models.py#L556">GH…/sweagent/agent/models.py#L556</a>): any LiteLLM-supported provider by model-name string. Cost/call accounting: <code>per_instance_cost_limit</code> default 3.0 (<a href="https://github.com/SWE-agent/SWE-agent/blob/0f3acafacabc0def8cc76b4e48acb4b6cf302cb9/sweagent/agent/models.py#L73">L73</a>), enforced in <code>_update_stats</code> (L604-L647); <code>query</code> at L744 with tenacity <code>Retrying(stop_after_attempt, wait_random_exponential)</code> at L759-L761. Special models via the <code>get_model()</code> dispatcher (L821): <code>HumanModel</code> (L324), <code>ReplayModel</code> (L442), <code>PredeterminedTestModel</code> (L507), <code>InstantEmptySubmitModelConfig</code> (L201). API keys as <code>SecretStr</code> with <code>$ENV</code> / <code>:::</code> rotation and per-thread pinning (L110-L180). &#160;<a class="footnote-backref" href="#fnref:13" title="Jump back to footnote 13 in the text">&#8617;</a></p>
+</li>
+<li id="fn:14">
+<p>Prompt construction: <code>TemplateConfig</code> (<a href="https://github.com/SWE-agent/SWE-agent/blob/0f3acafacabc0def8cc76b4e48acb4b6cf302cb9/sweagent/agent/agents.py#L60">GH…/sweagent/agent/agents.py#L60-L79</a>) with <code>next_step_template</code> default <code>"Observation: {{observation}}"</code> (L67); the render format dict (including <code>command_docs</code>) at L617-L632; demonstrations from <code>.traj</code>/YAML at L584-L615. History processors: <a href="https://github.com/SWE-agent/SWE-agent/blob/0f3acafacabc0def8cc76b4e48acb4b6cf302cb9/sweagent/agent/history_processors.py">GH…/sweagent/agent/history_processors.py</a> (307 lines) — <code>DefaultHistoryProcessor</code> (identity, the default, agents.py:147), <code>LastNObservations</code>, <code>ClosedWindowHistoryProcessor</code>, <code>CacheControlHistoryProcessor</code>, <code>TagToolCallObservations</code>, <code>RemoveRegex</code>. The default config adds <code>cache_control</code> (<code>config/default.yaml</code>, <code>history_processors</code>). &#160;<a class="footnote-backref" href="#fnref:14" title="Jump back to footnote 14 in the text">&#8617;</a></p>
+</li>
+<li id="fn:15">
+<p>Observation cap: <code>max_observation_length: int = 100_000</code> (<a href="https://github.com/SWE-agent/SWE-agent/blob/0f3acafacabc0def8cc76b4e48acb4b6cf302cb9/sweagent/agent/agents.py#L79">GH…/sweagent/agent/agents.py#L79</a>); over the cap → the truncation template with an explicit elided-char count (L691-L697). &#160;<a class="footnote-backref" href="#fnref:15" title="Jump back to footnote 15 in the text">&#8617;</a></p>
+</li>
+<li id="fn:16">
+<p>Trajectories: <code>save_trajectory</code> at <a href="https://github.com/SWE-agent/SWE-agent/blob/0f3acafacabc0def8cc76b4e48acb4b6cf302cb9/sweagent/agent/agents.py#L738">GH…/sweagent/agent/agents.py#L738</a>, called every step from the <code>run()</code> loop (L1241). The <code>.traj</code> carries trajectory steps, the full history, <code>info</code>, <code>replay_config</code>, and the environment name (<a href="https://github.com/SWE-agent/SWE-agent/blob/0f3acafacabc0def8cc76b4e48acb4b6cf302cb9/sweagent/agent/agents.py#L721">L721-L736</a>). <code>TrajectoryStep</code> fields at <a href="https://github.com/SWE-agent/SWE-agent/blob/0f3acafacabc0def8cc76b4e48acb4b6cf302cb9/sweagent/types.py#L42">GH…/sweagent/types.py#L42-L52</a>. Output layout <code>trajectories/&lt;user&gt;/&lt;config&gt;__&lt;model&gt;___&lt;problem_id&gt;/&lt;instance_id&gt;.traj</code> at <a href="https://github.com/SWE-agent/SWE-agent/blob/0f3acafacabc0def8cc76b4e48acb4b6cf302cb9/sweagent/run/run_single.py#L84">GH…/sweagent/run/run_single.py#L84-L97</a>. &#160;<a class="footnote-backref" href="#fnref:16" title="Jump back to footnote 16 in the text">&#8617;</a></p>
+</li>
+<li id="fn:17">
+<p>Interfaces: CLI subcommand dispatch in <a href="https://github.com/SWE-agent/SWE-agent/blob/0f3acafacabc0def8cc76b4e48acb4b6cf302cb9/sweagent/run/run.py#L44">GH…/sweagent/run/run.py#L44-L78</a> (<code>run</code>, <code>run-batch</code>, <code>run-replay</code>, <code>traj-to-demo</code>, <code>run-api</code>, <code>merge-preds</code>, <code>inspect</code>, <code>inspector</code>, <code>extract-pred</code>, <code>compare-runs</code>, <code>remove-unfinished</code>, <code>quick-stats</code>), <code>main()</code> at L59. <code>inspect</code> is the textual TUI (<code>sweagent/run/inspector_cli.py</code>); <code>inspector</code> the web viewer (<code>sweagent/inspector/server.py</code>). <code>run-api</code> serves the Flask+SocketIO backend (<code>sweagent/api/server.py</code>) behind <code>start_web_ui.sh</code>'s React frontend (<code>sweagent/frontend/src</code>, 48 files). <code>run-batch</code> fans out over a <code>ThreadPoolExecutor</code> (<a href="https://github.com/SWE-agent/SWE-agent/blob/0f3acafacabc0def8cc76b4e48acb4b6cf302cb9/sweagent/run/run_batch.py#L276">GH…/sweagent/run/run_batch.py#L276</a>). &#160;<a class="footnote-backref" href="#fnref:17" title="Jump back to footnote 17 in the text">&#8617;</a></p>
+</li>
+<li id="fn:18">
+<p>Extensibility: <code>AbstractAgentHook</code> (<a href="https://github.com/SWE-agent/SWE-agent/blob/0f3acafacabc0def8cc76b4e48acb4b6cf302cb9/sweagent/agent/hooks/abstract.py#L10">GH…/sweagent/agent/hooks/abstract.py#L10-L53</a>, 13 hook points across init/run/step/model-query/action/history) with <code>CombinedAgentHook</code> fan-out; <code>EnvHook</code> (<code>sweagent/environment/hooks/</code>) and <code>RunHook</code> (<code>sweagent/run/hooks/</code>, e.g. <code>SweBenchEvaluate</code>). New ACI = new <code>tools/&lt;bundle&gt;/</code> dir + one bundle path in config; new parser = subclass <code>AbstractParseFunction</code> + <code>parse_function.type</code>; Pydantic <code>extra="forbid"</code> throughout, so config typos fail loudly. <code>SWE_AGENT_CONFIG_ROOT</code> and <code>SWE_AGENT_*</code> env overrides in <code>sweagent/utils/config.py</code>. &#160;<a class="footnote-backref" href="#fnref:18" title="Jump back to footnote 18 in the text">&#8617;</a></p>
+</li>
+<li id="fn:19">
+<p><code>AskColleagues</code> action sampler at <a href="https://github.com/SWE-agent/SWE-agent/blob/0f3acafacabc0def8cc76b4e48acb4b6cf302cb9/sweagent/agent/action_sampler.py#L32">GH…/sweagent/agent/action_sampler.py#L32</a>, plugged into <code>forward()</code> at <a href="https://github.com/SWE-agent/SWE-agent/blob/0f3acafacabc0def8cc76b4e48acb4b6cf302cb9/sweagent/agent/agents.py#L989">GH…/sweagent/agent/agents.py#L989-L997</a>: sample N completions, debate, execute the winner. &#160;<a class="footnote-backref" href="#fnref:19" title="Jump back to footnote 19 in the text">&#8617;</a></p>
+</li>
+<li id="fn:20">
+<p>Security: sandboxing is the Docker container via SWE-ReX (<sup id="fnref:3"><a class="footnote-ref" href="#fn:3">3</a></sup>); the agent runs as root (<code>/root/...</code> paths throughout). Zero human approval prompts — verified absence, <sup id="fnref:11"><a class="footnote-ref" href="#fn:11">11</a></sup>. Only guardrail is the blocklist (<sup id="fnref:6"><a class="footnote-ref" href="#fn:6">6</a></sup>). Web UI: <code>app.secret_key = "super secret key"</code> at <a href="https://github.com/SWE-agent/SWE-agent/blob/0f3acafacabc0def8cc76b4e48acb4b6cf302cb9/sweagent/api/server.py#L34">GH…/sweagent/api/server.py#L34</a> — research-grade, not production. <code>SECURITY.md</code> is a vulnerability-reporting policy only. &#160;<a class="footnote-backref" href="#fnref:20" title="Jump back to footnote 20 in the text">&#8617;</a></p>
+</li>
+<li id="fn:21">
+<p>Series-internal comparison, graded as a comparative observation across two pinned trees (not a single-source claim): OpenHands' <code>software-agent-sdk</code> hardcodes <code>Action</code>/<code>Observation</code> event classes on an event stream (see the OpenHands installment, #6), while SWE-agent's action space is YAML-declared strings rendered to shell at parse time (<sup id="fnref:3"><a class="footnote-ref" href="#fn:3">3</a></sup>). &#160;<a class="footnote-backref" href="#fnref:21" title="Jump back to footnote 21 in the text">&#8617;</a></p>
+</li>
+<li id="fn:22">
+<p>Verified absence (2026-10-10, pinned SHA): no summarization or compaction anywhere in <code>history_processors.py</code> (307 lines — elision, trimming, and tagging only, <sup id="fnref:14"><a class="footnote-ref" href="#fn:14">14</a></sup>); no cross-session memory in <code>sweagent/</code> — session state is the in-memory <code>history</code> list plus <code>.traj</code> files (<sup id="fnref:16"><a class="footnote-ref" href="#fn:16">16</a></sup>). &#160;<a class="footnote-backref" href="#fnref:22" title="Jump back to footnote 22 in the text">&#8617;</a></p>
+</li>
+</ol>
+</div>
+</main>
+</body>
+</html>
