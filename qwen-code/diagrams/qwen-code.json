@@ -1,0 +1,416 @@
+{
+ "edges": [
+  {
+   "from": "input",
+   "label": "submitQuery",
+   "to": "client"
+  },
+  {
+   "from": "client",
+   "label": "stream events",
+   "to": "loopguard"
+  },
+  {
+   "from": "loopguard",
+   "label": "guard clear",
+   "to": "provider"
+  },
+  {
+   "from": "provider",
+   "label": "content generator",
+   "to": "turn"
+  },
+  {
+   "from": "turn",
+   "label": "ToolCallRequest",
+   "to": "scheduler"
+  },
+  {
+   "from": "scheduler",
+   "label": "evaluatePermissionFlow",
+   "to": "permissions"
+  },
+  {
+   "from": "permissions",
+   "label": "execute",
+   "to": "tools"
+  },
+  {
+   "from": "tools",
+   "label": "ToolResult",
+   "label_t": 0.05,
+   "to": "client"
+  },
+  {
+   "from": "serve",
+   "label": "ACP drives sessions",
+   "to": "client",
+   "label_dx": -80
+  },
+  {
+   "from": "client",
+   "label": "per-query extraction",
+   "label_dx": -80,
+   "to": "memory"
+  },
+  {
+   "from": "memory",
+   "label": "recall -> system-reminder",
+   "to": "context"
+  },
+  {
+   "from": "context",
+   "label": "system instruction",
+   "to": "client",
+   "label_dx": -80
+  },
+  {
+   "from": "client",
+   "label": "hard-tier rescue",
+   "label_dx": -80,
+   "to": "compaction"
+  },
+  {
+   "from": "scheduler",
+   "label": "PreToolUse / PostToolUse",
+   "to": "hooks",
+   "label_dx": -80
+  },
+  {
+   "from": "client",
+   "label": "Stop / MessageDisplay",
+   "to": "hooks",
+   "label_dx": -80
+  },
+  {
+   "from": "scheduler",
+   "label": "deferred tool lookup",
+   "to": "toolsearch",
+   "label_dx": -80
+  },
+  {
+   "from": "scheduler",
+   "label": "agent + team tools",
+   "to": "subagents",
+   "label_dx": -80
+  },
+  {
+   "from": "subagents",
+   "label": "permission bridge",
+   "to": "permissions",
+   "label_dx": -80
+  },
+  {
+   "from": "scheduler",
+   "label": "MCP tool calls",
+   "label_t": 0.75,
+   "to": "mcp",
+   "label_dx": -80
+  }
+ ],
+ "nodes": [
+  {
+   "excerpt": "const submitQuery = useCallback(\n  async (\n    query: PartListUnion,\n    submitType: SendMessageType = SendMessageType.UserQuery,",
+   "grade": "verified",
+   "h": 96,
+   "id": "input",
+   "label": "Ink TUI",
+   "links": [
+    {
+     "label": "use-llm-stream.ts:3557-3560",
+     "url": "https://github.com/QwenLM/qwen-code/blob/6788c035698a0ada471c958d1e789e96c6cddd9b/packages/cli/src/ui/hooks/use-llm-stream.ts#L3557-L3560"
+    }
+   ],
+   "step": 1,
+   "sub": "submitQuery, SendMessageType.UserQuery",
+   "w": 380,
+   "x": 20,
+   "y": 20
+  },
+  {
+   "excerpt": "const MAX_TURNS = 100;\n\nasync *sendMessageStream(\n  request: PartListUnion,\n  callerSignal: AbortSignal,\n  prompt_id: string,\n  options?: SendMessageOptions,\n  turns: number = MAX_TURNS,",
+   "grade": "verified",
+   "h": 96,
+   "id": "client",
+   "label": "LlmClient",
+   "links": [
+    {
+     "label": "client.ts:207",
+     "url": "https://github.com/QwenLM/qwen-code/blob/6788c035698a0ada471c958d1e789e96c6cddd9b/packages/core/src/core/client.ts#L207"
+    },
+    {
+     "label": "client.ts:3437-3445",
+     "url": "https://github.com/QwenLM/qwen-code/blob/6788c035698a0ada471c958d1e789e96c6cddd9b/packages/core/src/core/client.ts#L3437-L3445"
+    }
+   ],
+   "step": 2,
+   "sub": "sendMessageStream, MAX_TURNS=100",
+   "w": 380,
+   "x": 20,
+   "y": 150
+  },
+  {
+   "excerpt": "const TOOL_CALL_LOOP_THRESHOLD = 5;\n\nexport const DEFAULT_MAX_TOOL_CALLS_PER_TURN = 100;",
+   "grade": "verified",
+   "h": 96,
+   "id": "loopguard",
+   "label": "Loop Detector",
+   "links": [
+    {
+     "label": "loopDetectionService.ts:71",
+     "url": "https://github.com/QwenLM/qwen-code/blob/6788c035698a0ada471c958d1e789e96c6cddd9b/packages/core/src/services/loopDetectionService.ts#L71"
+    },
+    {
+     "label": "loopDetectionService.ts:190-191",
+     "url": "https://github.com/QwenLM/qwen-code/blob/6788c035698a0ada471c958d1e789e96c6cddd9b/packages/core/src/services/loopDetectionService.ts#L190-L191"
+    }
+   ],
+   "step": 3,
+   "sub": "always-on safeties, 2-tier",
+   "w": 380,
+   "x": 20,
+   "y": 280
+  },
+  {
+   "excerpt": "const exactRoute = model.endsWith('\\0')\n  ? await this.config\n      .getBaseLlmClient()\n      .resolveForModel(model.slice(0, -1), { failClosed: true })",
+   "grade": "verified",
+   "h": 96,
+   "id": "provider",
+   "label": "Provider registry",
+   "links": [
+    {
+     "label": "client.ts:4361-4366",
+     "url": "https://github.com/QwenLM/qwen-code/blob/6788c035698a0ada471c958d1e789e96c6cddd9b/packages/core/src/core/client.ts#L4361-L4366"
+    }
+   ],
+   "step": 4,
+   "sub": "resolveForModel, 13 presets",
+   "w": 380,
+   "x": 20,
+   "y": 410
+  },
+  {
+   "excerpt": "// The run method yields simpler events suitable for server logic\nasync *run(\n  model: string,\n  req: PartListUnion,\n  signal: AbortSignal,\n): AsyncGenerator<ServerLlmStreamEvent> {",
+   "grade": "verified",
+   "h": 96,
+   "id": "turn",
+   "label": "Turn",
+   "links": [
+    {
+     "label": "turn.ts:714-719",
+     "url": "https://github.com/QwenLM/qwen-code/blob/6788c035698a0ada471c958d1e789e96c6cddd9b/packages/core/src/core/turn.ts#L714-L719"
+    }
+   ],
+   "step": 5,
+   "sub": "Turn.run, LlmChat stream",
+   "w": 380,
+   "x": 20,
+   "y": 540
+  },
+  {
+   "excerpt": "export type ValidatingToolCall = {\n  status: 'validating';\n  request: ToolCallRequestInfo;\n  tool: AnyDeclarativeTool;\n  invocation: AnyToolInvocation;",
+   "grade": "verified",
+   "h": 96,
+   "id": "scheduler",
+   "label": "Tool scheduler",
+   "links": [
+    {
+     "label": "coreToolScheduler.ts:605-611",
+     "url": "https://github.com/QwenLM/qwen-code/blob/6788c035698a0ada471c958d1e789e96c6cddd9b/packages/core/src/core/coreToolScheduler.ts#L605-L611"
+    }
+   ],
+   "step": 6,
+   "sub": "Validating->Scheduled->Executing",
+   "w": 380,
+   "x": 20,
+   "y": 670
+  },
+  {
+   "excerpt": "// L3: Tool's default permission\nconst defaultPermission = await invocation.getDefaultPermission(signal);\n// L4: PermissionManager override\nconst pm = config.getPermissionManager?.();\n\n// L5.1: edits within the workspace skip the classifier.",
+   "grade": "verified",
+   "h": 96,
+   "id": "permissions",
+   "label": "PermissionManager",
+   "links": [
+    {
+     "label": "permissionFlow.ts:64-74",
+     "url": "https://github.com/QwenLM/qwen-code/blob/6788c035698a0ada471c958d1e789e96c6cddd9b/packages/core/src/core/permissionFlow.ts#L64-L74"
+    },
+    {
+     "label": "autoMode.ts:806-812",
+     "url": "https://github.com/QwenLM/qwen-code/blob/6788c035698a0ada471c958d1e789e96c6cddd9b/packages/core/src/permissions/autoMode.ts#L806-L812"
+    }
+   ],
+   "step": 7,
+   "sub": "L3->L4->L5, AUTO classifier",
+   "w": 380,
+   "x": 20,
+   "y": 800
+  },
+  {
+   "excerpt": "// Handle tool response submission immediately when tools complete\nawait handleCompletedTools(\n  completedToolCallsFromScheduler as TrackedToolCall[],\n);",
+   "grade": "verified",
+   "h": 96,
+   "id": "tools",
+   "label": "Tool execution",
+   "links": [
+    {
+     "label": "use-llm-stream.ts:1131-1134",
+     "url": "https://github.com/QwenLM/qwen-code/blob/6788c035698a0ada471c958d1e789e96c6cddd9b/packages/cli/src/ui/hooks/use-llm-stream.ts#L1131-L1134"
+    }
+   ],
+   "step": 8,
+   "sub": "functionResponse, ToolResult",
+   "w": 380,
+   "x": 20,
+   "y": 930
+  },
+  {
+   "excerpt": "import { createServer, type Server } from 'node:http';\nimport * as https from 'node:https';\nimport express, {\n  type Application,\n\nimport {\n  DEFAULT_RING_SIZE,\n  type BridgeEvent,\n} from '@qwen-code/acp-bridge/eventBus';",
+   "grade": "verified",
+   "h": 96,
+   "id": "serve",
+   "label": "qwen serve daemon",
+   "links": [
+    {
+     "label": "run-qwen-serve.ts:16-22",
+     "url": "https://github.com/QwenLM/qwen-code/blob/6788c035698a0ada471c958d1e789e96c6cddd9b/packages/cli/src/serve/run-qwen-serve.ts#L16-L22"
+    },
+    {
+     "label": "run-qwen-serve.ts:51-54",
+     "url": "https://github.com/QwenLM/qwen-code/blob/6788c035698a0ada471c958d1e789e96c6cddd9b/packages/cli/src/serve/run-qwen-serve.ts#L51-L54"
+    }
+   ],
+   "sub": "ACP HTTP+SSE+WS, acp-bridge",
+   "w": 380,
+   "x": 560,
+   "y": 20
+  },
+  {
+   "excerpt": "const record = makeTaskRecord(\n  'extract',\n  params.projectRoot,\n  params.sessionId,\n);",
+   "grade": "verified",
+   "h": 96,
+   "id": "memory",
+   "label": "MemoryManager",
+   "links": [
+    {
+     "label": "memory/manager.ts:1104-1109",
+     "url": "https://github.com/QwenLM/qwen-code/blob/6788c035698a0ada471c958d1e789e96c6cddd9b/packages/core/src/memory/manager.ts#L1104-L1109"
+    }
+   ],
+   "sub": "extract/dream/recall, 3 layers",
+   "w": 380,
+   "x": 560,
+   "y": 150
+  },
+  {
+   "excerpt": "return `You are Qwen Code, ${role} developed by Alibaba Group, ${focus}. ...`;\n\n/**\n * Volatile layer: the managed auto-memory section, rewritten in-session on\n * every memory save. Always last, so a save invalidates the shortest\n * possible cached prompt prefix.\n */",
+   "grade": "verified",
+   "h": 96,
+   "id": "context",
+   "label": "QWEN.md + prompt",
+   "links": [
+    {
+     "label": "prompts.ts:106",
+     "url": "https://github.com/QwenLM/qwen-code/blob/6788c035698a0ada471c958d1e789e96c6cddd9b/packages/core/src/core/prompts.ts#L106"
+    },
+    {
+     "label": "prompts.ts:859-863",
+     "url": "https://github.com/QwenLM/qwen-code/blob/6788c035698a0ada471c958d1e789e96c6cddd9b/packages/core/src/core/prompts.ts#L859-L863"
+    }
+   ],
+   "sub": "6 layers, built at startChat",
+   "w": 380,
+   "x": 560,
+   "y": 280
+  },
+  {
+   "excerpt": "export const DEFAULT_PCT = 0.85;\nexport const AUTOCOMPACT_BUFFER = 13_000;\nexport const WARN_BUFFER = 20_000;\nexport const HARD_BUFFER = 3_000;",
+   "grade": "verified",
+   "h": 96,
+   "id": "compaction",
+   "label": "Compaction",
+   "links": [
+    {
+     "label": "chatCompressionService.ts:109-136",
+     "url": "https://github.com/QwenLM/qwen-code/blob/6788c035698a0ada471c958d1e789e96c6cddd9b/packages/core/src/services/chatCompressionService.ts#L109-L136"
+    }
+   ],
+   "sub": "3-tier, in-place, compactionModel",
+   "w": 380,
+   "x": 560,
+   "y": 410
+  },
+  {
+   "excerpt": "export enum HookEventName {\n  // PreToolUse - Before tool execution\n  PreToolUse = 'PreToolUse',\n  // PostToolUse - After tool execution\n  PostToolUse = 'PostToolUse',",
+   "grade": "verified",
+   "h": 96,
+   "id": "hooks",
+   "label": "Hooks (22)",
+   "links": [
+    {
+     "label": "hooks/types.ts:24-32",
+     "url": "https://github.com/QwenLM/qwen-code/blob/6788c035698a0ada471c958d1e789e96c6cddd9b/packages/core/src/hooks/types.ts#L24-L32"
+    }
+   ],
+   "sub": "command/http/function/prompt",
+   "w": 380,
+   "x": 560,
+   "y": 540
+  },
+  {
+   "excerpt": "ToolSearch - discovery tool for reviewing deferred tool schemas on demand.\nOnly a curated set of core tools are included in the initial\nfunction-declaration list sent to the model; tools marked `shouldDefer=true`\nare hidden to keep the system prompt small.",
+   "grade": "verified",
+   "h": 96,
+   "id": "toolsearch",
+   "label": "ToolSearchTool",
+   "links": [
+    {
+     "label": "tool-search.ts:8-14",
+     "url": "https://github.com/QwenLM/qwen-code/blob/6788c035698a0ada471c958d1e789e96c6cddd9b/packages/core/src/tools/tool-search.ts#L8-L14"
+    }
+   ],
+   "sub": "shouldDefer schema hiding",
+   "w": 380,
+   "x": 560,
+   "y": 670
+  },
+  {
+   "excerpt": "Owns the Backend, subscribes to agent events, coordinates lifecycle,\nhandles message routing with priority, idle detection, and auto\ntask claiming.\nFollows the ArenaManager pattern.",
+   "grade": "verified",
+   "h": 96,
+   "id": "subagents",
+   "label": "Subagents / teams",
+   "links": [
+    {
+     "label": "TeamManager.ts:9-15",
+     "url": "https://github.com/QwenLM/qwen-code/blob/6788c035698a0ada471c958d1e789e96c6cddd9b/packages/core/src/agents/team/TeamManager.ts#L9-L15"
+    }
+   ],
+   "sub": "agent tool, TeamManager, mailbox",
+   "w": 380,
+   "x": 560,
+   "y": 800
+  },
+  {
+   "excerpt": "@param opts.applyConfigFilters Whether to apply `includeTools` /\n  `excludeTools` filtering and set the `trust` field on returned\n  tools at discovery time. Defaults to `true`.",
+   "grade": "verified",
+   "h": 96,
+   "id": "mcp",
+   "label": "MCP",
+   "links": [
+    {
+     "label": "mcp-client.ts:736-740",
+     "url": "https://github.com/QwenLM/qwen-code/blob/6788c035698a0ada471c958d1e789e96c6cddd9b/packages/core/src/tools/mcp-client.ts#L736-L740"
+    }
+   ],
+   "sub": "discovery, include/exclude filters",
+   "w": 380,
+   "x": 560,
+   "y": 930
+  }
+ ],
+ "repo": "https://github.com/QwenLM/qwen-code",
+ "sha": "6788c035698a0ada471c958d1e789e96c6cddd9b",
+ "title": "Qwen Code architecture"
+}

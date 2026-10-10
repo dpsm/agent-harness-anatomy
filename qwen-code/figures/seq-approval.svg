@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 889" width="1600" font-family="system-ui, -apple-system, sans-serif">
+<defs><marker id="arrc" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 1 L 9 5 L 0 9 z" fill="#d08c4e"/></marker><marker id="arrr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 1 L 9 5 L 0 9 z" fill="#8a7a66"/></marker></defs>
+<rect x="0" y="0" width="1600" height="889" fill="#f7f2e9"/>
+<text x="77.10843373493975" y="44" font-size="26" font-weight="700" fill="#000000">Qwen Code: tool approval pipeline</text>
+<text x="77.10843373493975" y="74" font-size="15" fill="#000000">rule-string PermissionManager + fail-closed LLM AUTO classifier; no TOML engine</text>
+<line x1="198" y1="110" x2="198" y2="831" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="96" y="82" width="202" height="56" rx="10" fill="#ffffff" stroke="#3a2f26" stroke-width="1.5"/>
+<text x="198" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#000000">ToolScheduler</text>
+<line x1="439" y1="110" x2="439" y2="831" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="337" y="82" width="202" height="56" rx="10" fill="#ffffff" stroke="#3a2f26" stroke-width="1.5"/>
+<text x="439" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#000000">PermissionFlow</text>
+<line x1="680" y1="110" x2="680" y2="831" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="578" y="82" width="202" height="56" rx="10" fill="#ffffff" stroke="#3a2f26" stroke-width="1.5"/>
+<text x="680" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#000000">PermissionManager</text>
+<line x1="920" y1="110" x2="920" y2="831" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="819" y="82" width="202" height="56" rx="10" fill="#ffffff" stroke="#3a2f26" stroke-width="1.5"/>
+<text x="920" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#000000">AutoClassifier</text>
+<line x1="1161" y1="110" x2="1161" y2="831" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="1060" y="82" width="202" height="56" rx="10" fill="#ffffff" stroke="#3a2f26" stroke-width="1.5"/>
+<text x="1161" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#000000">Hooks</text>
+<line x1="1402" y1="110" x2="1402" y2="831" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="1301" y="82" width="202" height="56" rx="10" fill="#ffffff" stroke="#3a2f26" stroke-width="1.5"/>
+<text x="1402" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#000000">TUI Dialog</text>
+<line x1="198" y1="162" x2="429" y2="162" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="240" cy="148" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="240" y="153" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">1</text>
+<text x="258" y="153" font-size="14" fill="#000000">evaluatePermissionFlow(call)</text>
+<path d="M 439 214 h 42 v 25 H 449" fill="none" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="460" cy="198" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="460" y="203" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">2</text>
+<text x="491" y="219" font-size="14" fill="#000000">L3: tool.getDefaultPermission()</text>
+<line x1="439" y1="266" x2="670" y2="266" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="481" cy="252" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="481" y="257" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">3</text>
+<text x="499" y="257" font-size="14" fill="#000000">L4: rule-string match</text>
+<line x1="680" y1="318" x2="449" y2="318" stroke="#8a7a66" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrr)"/>
+<circle cx="481" cy="304" r="11" fill="#ffffff" stroke="#8a7a66" stroke-width="1.5"/>
+<text x="481" y="309" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">4</text>
+<text x="499" y="309" font-size="14" fill="#000000">deny &gt; ask &gt; allow &gt; default</text>
+<line x1="439" y1="370" x2="1151" y2="370" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="722" cy="356" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="722" y="361" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">5</text>
+<text x="740" y="361" font-size="14" fill="#000000">PermissionRequest hook</text>
+<line x1="439" y1="422" x2="910" y2="422" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="602" cy="408" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="602" y="413" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">6</text>
+<text x="620" y="413" font-size="14" fill="#000000">L5 AUTO: 3-layer + LLM classify</text>
+<path d="M 920 474 h 42 v 25 H 930" fill="none" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="942" cy="458" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="942" y="463" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">7</text>
+<text x="973" y="479" font-size="14" fill="#000000">fast-paths, destructive guard, fail-closed LLM</text>
+<line x1="920" y1="526" x2="1151" y2="526" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="963" cy="512" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="963" y="517" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">8</text>
+<text x="981" y="517" font-size="14" fill="#000000">PermissionDenied on classifier block</text>
+<line x1="920" y1="578" x2="449" y2="578" stroke="#8a7a66" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrr)"/>
+<circle cx="602" cy="564" r="11" fill="#ffffff" stroke="#8a7a66" stroke-width="1.5"/>
+<text x="602" y="569" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">9</text>
+<text x="620" y="569" font-size="14" fill="#000000">allow | block</text>
+<rect x="337" y="607" width="925" height="44" rx="8" fill="#d08c4e" fill-opacity="0.13" stroke="#d08c4e" stroke-width="1"/>
+<text x="800" y="634" text-anchor="middle" font-size="14" fill="#000000">denial tracking</text>
+<line x1="439" y1="692" x2="1392" y2="692" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="842" cy="678" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="842" y="683" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">10</text>
+<text x="860" y="683" font-size="14" fill="#000000">ask -&gt; confirmation dialog</text>
+<line x1="1402" y1="744" x2="449" y2="744" stroke="#8a7a66" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrr)"/>
+<circle cx="842" cy="730" r="11" fill="#ffffff" stroke="#8a7a66" stroke-width="1.5"/>
+<text x="842" y="735" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">11</text>
+<text x="860" y="735" font-size="14" fill="#000000">proceed_always -&gt; persist settings.json rule</text>
+<line x1="439" y1="796" x2="208" y2="796" stroke="#8a7a66" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrr)"/>
+<circle cx="240" cy="782" r="11" fill="#ffffff" stroke="#8a7a66" stroke-width="1.5"/>
+<text x="240" y="787" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">12</text>
+<text x="258" y="787" font-size="14" fill="#000000">final decision: allow | deny</text>
+</svg>

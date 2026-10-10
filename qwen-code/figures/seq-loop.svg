@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 950" width="1600" font-family="system-ui, -apple-system, sans-serif">
+<defs><marker id="arrc" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 1 L 9 5 L 0 9 z" fill="#d08c4e"/></marker><marker id="arrr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 1 L 9 5 L 0 9 z" fill="#8a7a66"/></marker></defs>
+<rect x="0" y="0" width="1600" height="950" fill="#f7f2e9"/>
+<text x="77.10843373493975" y="44" font-size="26" font-weight="700" fill="#000000">Qwen Code: one turn of the agent loop</text>
+<text x="77.10843373493975" y="74" font-size="15" fill="#000000">recursive sendMessageStream re-entry; no processTurn; 8 SendMessageTypes</text>
+<line x1="198" y1="110" x2="198" y2="893" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="96" y="82" width="202" height="56" rx="10" fill="#ffffff" stroke="#3a2f26" stroke-width="1.5"/>
+<text x="198" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#000000">User / TUI</text>
+<line x1="439" y1="110" x2="439" y2="893" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="337" y="82" width="202" height="56" rx="10" fill="#ffffff" stroke="#3a2f26" stroke-width="1.5"/>
+<text x="439" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#000000">LlmClient</text>
+<line x1="680" y1="110" x2="680" y2="893" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="578" y="82" width="202" height="56" rx="10" fill="#ffffff" stroke="#3a2f26" stroke-width="1.5"/>
+<text x="680" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#000000">LoopDetector</text>
+<line x1="920" y1="110" x2="920" y2="893" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="819" y="82" width="202" height="56" rx="10" fill="#ffffff" stroke="#3a2f26" stroke-width="1.5"/>
+<text x="920" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#000000">ProviderRegistry</text>
+<line x1="1161" y1="110" x2="1161" y2="893" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="1060" y="82" width="202" height="56" rx="10" fill="#ffffff" stroke="#3a2f26" stroke-width="1.5"/>
+<text x="1161" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#000000">Turn</text>
+<line x1="1402" y1="110" x2="1402" y2="893" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="1301" y="82" width="202" height="56" rx="10" fill="#ffffff" stroke="#3a2f26" stroke-width="1.5"/>
+<text x="1402" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#000000">ToolScheduler</text>
+<line x1="198" y1="162" x2="429" y2="162" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="240" cy="148" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="240" y="153" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">1</text>
+<text x="258" y="153" font-size="14" fill="#000000">submitQuery: SendMessageType.UserQuery</text>
+<path d="M 439 214 h 42 v 25 H 449" fill="none" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="460" cy="198" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="460" y="203" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">2</text>
+<text x="491" y="219" font-size="14" fill="#000000">boundedTurns = min(turns, 100)</text>
+<line x1="439" y1="266" x2="670" y2="266" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="481" cy="252" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="481" y="257" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">3</text>
+<text x="499" y="257" font-size="14" fill="#000000">feed stream events</text>
+<line x1="680" y1="318" x2="449" y2="318" stroke="#8a7a66" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrr)"/>
+<circle cx="481" cy="304" r="11" fill="#ffffff" stroke="#8a7a66" stroke-width="1.5"/>
+<text x="481" y="309" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">4</text>
+<text x="499" y="309" font-size="14" fill="#000000">guard clear (5-call / 8-streak / caps)</text>
+<line x1="439" y1="370" x2="910" y2="370" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="602" cy="356" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="602" y="361" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">5</text>
+<text x="620" y="361" font-size="14" fill="#000000">resolveForModel(model)</text>
+<line x1="920" y1="422" x2="449" y2="422" stroke="#8a7a66" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrr)"/>
+<circle cx="602" cy="408" r="11" fill="#ffffff" stroke="#8a7a66" stroke-width="1.5"/>
+<text x="602" y="413" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">6</text>
+<text x="620" y="413" font-size="14" fill="#000000">content generator (no router)</text>
+<line x1="439" y1="474" x2="1151" y2="474" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="722" cy="460" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="722" y="465" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">7</text>
+<text x="740" y="465" font-size="14" fill="#000000">turn.run(model, req)</text>
+<line x1="1161" y1="526" x2="449" y2="526" stroke="#8a7a66" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrr)"/>
+<circle cx="722" cy="512" r="11" fill="#ffffff" stroke="#8a7a66" stroke-width="1.5"/>
+<text x="722" y="517" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">8</text>
+<text x="740" y="517" font-size="14" fill="#000000">stream: text + ToolCallRequest</text>
+<rect x="96" y="555" width="1407" height="44" rx="8" fill="#d08c4e" fill-opacity="0.13" stroke="#d08c4e" stroke-width="1"/>
+<text x="800" y="582" text-anchor="middle" font-size="14" fill="#000000">streaming hooks</text>
+<line x1="439" y1="640" x2="1392" y2="640" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="842" cy="626" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="842" y="631" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">9</text>
+<text x="860" y="631" font-size="14" fill="#000000">scheduler.schedule(toolCalls)</text>
+<path d="M 1402 692 h 42 v 25 H 1412" fill="none" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="1424" cy="676" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="1424" y="681" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">10</text>
+<text x="1455" y="697" font-size="14" fill="#000000">Validating -&gt; Scheduled -&gt; Executing</text>
+<line x1="1402" y1="744" x2="449" y2="744" stroke="#8a7a66" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrr)"/>
+<circle cx="842" cy="730" r="11" fill="#ffffff" stroke="#8a7a66" stroke-width="1.5"/>
+<text x="842" y="735" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">11</text>
+<text x="860" y="735" font-size="14" fill="#000000">functionResponse parts</text>
+<path d="M 439 796 h 42 v 25 H 449" fill="none" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="460" cy="780" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="460" y="785" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">12</text>
+<text x="491" y="801" font-size="14" fill="#000000">handleCompletedTools -&gt; submitQuery(ToolResult)</text>
+<rect x="96" y="825" width="1407" height="44" rx="8" fill="#d08c4e" fill-opacity="0.13" stroke="#d08c4e" stroke-width="1"/>
+<text x="800" y="852" text-anchor="middle" font-size="14" fill="#000000">termination</text>
+</svg>
