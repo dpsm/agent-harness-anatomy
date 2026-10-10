@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body {
+    background: #161210; color: #ece1d3;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    line-height: 1.7; padding: 48px 24px; margin: 0;
+  }
+  main { max-width: 760px; margin: 0 auto; }
+  a { color: #d08c4e; }
+  h1 { font-size: 1.9rem; letter-spacing: -0.02em; line-height: 1.25; margin-bottom: 16px; }
+  h2 { font-size: 1.4rem; margin: 40px 0 12px; padding-top: 8px; border-top: 1px solid #2c231b; }
+  h3 { font-size: 1.1rem; margin: 28px 0 8px; }
+  p, li { margin-bottom: 12px; }
+  blockquote {
+    border-left: 3px solid #d08c4e; padding: 4px 16px; margin: 20px 0;
+    color: #a89880; background: #1f1a15; border-radius: 0 8px 8px 0;
+  }
+  blockquote p { margin-bottom: 6px; }
+  code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.88em; background: #1f1a15; padding: 2px 6px; border-radius: 6px;
+  }
+  pre { background: #1f1a15; border: 1px solid #3a2f26; border-radius: 8px;
+        padding: 16px; overflow-x: auto; }
+  pre code { background: none; padding: 0; }
+  img { max-width: 100%; height: auto; border: 1px solid #3a2f26;
+        border-radius: 12px; margin: 20px 0; background: #1f1a15; }
+  table { border-collapse: collapse; width: 100%; margin: 20px 0; font-size: 0.92rem;
+          display: block; overflow-x: auto; }
+  th, td { border: 1px solid #3a2f26; padding: 10px 12px; text-align: left;
+           vertical-align: top; }
+  th { background: #1f1a15; }
+  ul, ol { padding-left: 24px; }
+  hr { border: none; border-top: 1px solid #2c231b; margin: 32px 0; }
+  .footnote { font-size: 0.88rem; color: #a89880; }
+  .footnote hr { margin: 40px 0 16px; }
+  sup a { text-decoration: none; }
+  .topnav { max-width: 760px; margin: 0 auto 32px; font-size: 0.9rem; }
+  .topnav a { color: #a89880; text-decoration: none; }
+  .topnav a:hover { color: #ece1d3; }
+  .diagram-cta {
+    display: block; text-align: center; margin: 28px 0; padding: 16px;
+    background: #1f1a15; border: 1px solid #3a2f26; border-radius: 12px;
+    color: #ece1d3; text-decoration: none; font-weight: 600;
+  }
+  .diagram-cta:hover { border-color: #d08c4e; }
+  .diagram-cta span { display: block; font-weight: 400; font-size: 0.88rem;
+                      color: #a89880; margin-top: 4px; }
+</style>
+<title>Agent Harness Anatomy #10: Gemini CLI — the routed, policy-gated terminal agent</title>
+</head>
+<body>
+<main>
+  <nav class="topnav"><a href="../">&larr; Agent Harness Anatomy</a></nav>
+<h1 id="agent-harness-anatomy-10-gemini-cli-the-routed-policy-gated-terminal-agent">Agent Harness Anatomy #10: Gemini CLI — the routed, policy-gated terminal agent</h1>
+<blockquote>
+<p><strong>Series:</strong> Agent Harness Anatomy — top-down dissections of real agent harnesses, grounded in verifiable source code. Every behavioral claim below carries a footnote to a pinned GitHub permalink; the full evidence lives in the endnotes.</p>
+</blockquote>
+<h2 id="version-block">Version block</h2>
+<ul>
+<li><strong>Repo:</strong> <a href="https://github.com/google-gemini/gemini-cli">google-gemini/gemini-cli</a></li>
+<li><strong>Pinned:</strong> tag <code>v0.63.0</code> → <code>573846625af9e93b3b968e0e0b86bb093a4c9b16</code> (2026-10-06)</li>
+<li><strong>Language:</strong> TypeScript (npm workspaces monorepo)</li>
+<li><strong>License:</strong> Apache-2.0</li>
+<li><strong>Claim under test:</strong> "An open-source AI agent that brings the power of Gemini directly into your terminal"</li>
+</ul>
+<p><img alt="Gemini CLI architecture" src="figures/gemini-cli.svg" /></p>
+<a class="diagram-cta" href="../diagrams/template.html?data=../gemini-cli/diagrams/gemini-cli.json">
+    Explore the interactive architecture diagram
+    <span>14 nodes, 15 edges — pan, zoom, and follow every subsystem link</span>
+  </a>
+<h2 id="the-mental-model">The mental model</h2>
+<p>Every CLI harness in this series so far has been a program with <em>one</em> model, <em>one</em> loop, and <em>one</em> policy. Gemini CLI breaks all three assumptions. It is Google's terminal coding agent — the third lab-built CLI in the series after Codex CLI — and its architecture is organized around <strong>delegation</strong>: a per-turn model router picks which model answers, a tool scheduler with explicit lifecycle states executes calls, a TOML policy engine with priority tiers decides what needs asking, and eleven hook types let extensions rewrite tool arguments, LLM requests, and even streamed responses mid-flight.<sup id="fnref:1"><a class="footnote-ref" href="#fn:1">1</a></sup></p>
+<p>The governing idea: the core loop doesn't decide much. <code>GeminiClient.sendMessageStream</code> is a thin orchestrator — it checks turn budgets, runs loop detection, asks the router which model to use, and streams events.<sup id="fnref:2"><a class="footnote-ref" href="#fn:2">2</a></sup> The intelligence lives in the surrounding machinery: the router's composite strategy chain (fallback → override → approval-mode → classifiers → default), the scheduler's Validating → Scheduled → executing → terminal lifecycle, and a confirmation bus that decouples policy decisions from the UI that renders them.<sup id="fnref:3"><a class="footnote-ref" href="#fn:3">3</a></sup></p>
+<p>The tradeoff is machinery for control. Where pi has a loop and extensions, Gemini CLI has a router, a scheduler, a policy engine, a hook system, a context manager, a compression service, a recording service, and a background memory-extraction service — roughly 138,000 lines in <code>packages/core</code> alone.<sup id="fnref:4"><a class="footnote-ref" href="#fn:4">4</a></sup> You get per-turn model selection, learned approval policies, and eleven interception points; you pay in the number of systems you must understand to predict what a turn will do.</p>
+<h2 id="package-map">Package map</h2>
+<p>The repo is an npm workspaces monorepo. For this article five areas matter:<sup id="fnref:5"><a class="footnote-ref" href="#fn:5">5</a></sup></p>
+<table>
+<thead>
+<tr>
+<th>Area</th>
+<th>Role</th>
+<th>Scale</th>
+</tr>
+</thead>
+<tbody>
+<tr><td><code>packages/core/src/core/</code></td><td>The client: <code>GeminiClient</code>, <code>Turn</code>, <code>GeminiChat</code> — the loop</td><td>client.ts (1,313 lines), turn.ts, geminiChat.ts (1,881 lines)</td></tr>
+<tr><td><code>packages/core/src/scheduler/</code></td><td>Tool execution: lifecycle scheduler, policy, confirmation</td><td>scheduler.ts (1,003 lines)</td></tr>
+<tr><td><code>packages/core/src/tools/</code></td><td>26 built-in tools, registry, MCP client</td><td>39 tool files</td></tr>
+<tr><td><code>packages/core/src/policy/</code> + <code>safety/</code> + <code>sandbox/</code></td><td>TOML policy engine, checkers, per-OS sandboxes</td><td>policies/*.toml</td></tr>
+<tr><td><code>packages/core/src/routing/</code></td><td>Per-turn model router (composite strategies)</td><td>modelRouterService.ts</td></tr>
+<tr><td><code>packages/core/src/hooks/</code></td><td>11 hook event types, command + runtime hooks</td><td>hooks/types.ts</td></tr>
+<tr><td><code>packages/core/src/agents/</code></td><td>Subagents: registry, <code>invoke_agent</code>, isolated executors</td><td>local-executor.ts</td></tr>
+<tr><td><code>packages/core/src/context/</code> + <code>services/</code></td><td>Compression, recording, memory, context manager</td><td>chatCompressionService.ts</td></tr>
+<tr><td><code>packages/cli/src/</code></td><td>Ink TUI, non-interactive mode, ACP, stream consumption</td><td>364 files</td></tr>
+</tbody>
+</table>
+<h2 id="the-core-loop">The core loop</h2>
+<p>The loop lives in <code>GeminiClient.sendMessageStream</code> (<code>packages/core/src/core/client.ts:908</code>). Its shape:<sup id="fnref:6"><a class="footnote-ref" href="#fn:6">6</a></sup></p>
+<pre><code>const MAX_TURNS = 100;  // client.ts:79
+
+async *sendMessageStream(request, signal, prompt_id, turns = MAX_TURNS, ...) {
+  // ... hooks, loop-detector reset ...
+  const boundedTurns = Math.min(turns, MAX_TURNS);
+  let turn = new Turn(this.getChat(), prompt_id);
+  turn = yield* this.processTurn(request, signal, prompt_id, boundedTurns, ...);
+  // ... AfterAgent hooks, continuation handling ...
+}</code></pre>
+<p><code>processTurn</code> (<code>client.ts:627</code>) does the per-turn work: increment the session turn counter (bail with <code>MaxSessionTurns</code> if exceeded), render history through the context manager, check for context overflow, consult the <strong>loop detector</strong>, then <strong>route the model</strong>:<sup id="fnref:7"><a class="footnote-ref" href="#fn:7">7</a></sup></p>
+<pre><code>const router = this.config.getModelRouterService();
+const decision = await router.route(routingContext);
+modelToUse = decision.model;
+// ... unless currentSequenceModel is sticky from a previous turn</code></pre>
+<p>The router itself is a composite strategy chain — order matters: <code>FallbackStrategy</code> → <code>OverrideStrategy</code> → <code>ApprovalModeStrategy</code> → <code>GemmaClassifierStrategy</code> (opt-in) → <code>ClassifierStrategy</code> → <code>NumericalClassifierStrategy</code> → <code>DefaultStrategy</code>.<sup id="fnref:8"><a class="footnote-ref" href="#fn:8">8</a></sup> Every turn re-routes unless a sequence model is pinned, which means the model answering turn N+1 can differ from turn N — by design, not accident.</p>
+<p><code>Turn.run</code> (<code>core/turn.ts:271</code>) streams one model call and yields typed events: <code>Thought</code>, <code>Content</code>, <code>ToolCallRequest</code> (one per function call, accumulated in <code>pendingToolCalls</code>), <code>Citation</code>, <code>Finished</code>, <code>Retry</code>, <code>Error</code>.<sup id="fnref:9"><a class="footnote-ref" href="#fn:9">9</a></sup> Function-call IDs are synthesized as <code>${name}__${rawCallId}</code> when the API doesn't supply one.<sup id="fnref:10"><a class="footnote-ref" href="#fn:10">10</a></sup></p>
+<p>Tool calls don't execute in core. The CLI's <code>useGeminiStream</code> hook collects <code>ToolCallRequest</code> events, then <code>useToolScheduler.scheduleToolCalls</code> hands them to the core scheduler; when the batch completes, <code>handleCompletedTools</code> calls <code>submitQuery(responsesToSend, { isContinuation: true })</code>, which re-enters <code>sendMessageStream</code> with <code>functionResponse</code> parts.<sup id="fnref:11"><a class="footnote-ref" href="#fn:11">11</a></sup> The loop is split across the package boundary: <strong>core streams and decides, the CLI schedules and feeds back</strong>.</p>
+<p>Termination comes from five directions: no pending tool calls (plus a next-speaker LLM check — see trace), <code>MAX_TURNS</code> (100), the loop detector (repeated event patterns), <code>MaxSessionTurns</code>, or user abort.<sup id="fnref:12"><a class="footnote-ref" href="#fn:12">12</a></sup> The next-speaker check is the subtle one: when a turn ends with no tool calls, a separate LLM call decides whether the <em>model</em> should continue ("Please continue.") or the turn is done.<sup id="fnref:13"><a class="footnote-ref" href="#fn:13">13</a></sup> And if the model returns empty text after executing tools, the CLI auto-nudges: <code>"[System: You successfully executed a tool but returned an empty response. Please analyze the tool output...]"</code>.<sup id="fnref:14"><a class="footnote-ref" href="#fn:14">14</a></sup></p>
+<p><img alt="One turn of the agent loop" src="figures/seq-loop.svg" /></p>
+<p><img alt="Per-turn model routing" src="figures/seq-routing.svg" /></p>
+<h2 id="trace-one-turn">Trace one turn</h2>
+<p>Trace <code>Summarize the changes in this repo</code> through the interactive CLI:<sup id="fnref:15"><a class="footnote-ref" href="#fn:15">15</a></sup></p>
+<ol>
+<li><strong>Input.</strong> The Ink TUI captures the prompt; <code>submitQuery</code> calls <code>geminiClient.sendMessageStream(request, signal, prompt_id)</code>. <code>BeforeAgent</code> hooks fire once per <code>prompt_id</code> (dedup-guarded); a hook can stop the turn, block it, or inject <code>&lt;hook_context&gt;</code>.<sup id="fnref:16"><a class="footnote-ref" href="#fn:16">16</a></sup></li>
+<li><strong>Turn budget.</strong> <code>processTurn</code> increments <code>sessionTurnCount</code> and bails with <code>MaxSessionTurns</code> if the session cap is exceeded. The context manager renders history (or the legacy path compresses if over threshold). <code>boundedTurns = Math.min(turns, 100)</code>.<sup id="fnref:17"><a class="footnote-ref" href="#fn:17">17</a></sup></li>
+<li><strong>Loop guard.</strong> <code>loopDetector.turnStarted()</code> — repeated prompt patterns abort here with <code>LoopDetected</code> before the model is ever called.<sup id="fnref:18"><a class="footnote-ref" href="#fn:18">18</a></sup></li>
+<li><strong>Route the model.</strong> The composite strategy chain picks the model for <em>this</em> turn; the decision (model, source strategy, latency, reasoning) is telemetry-logged as a <code>ModelRoutingEvent</code>.<sup id="fnref:19"><a class="footnote-ref" href="#fn:19">19</a></sup> <code>setTools(modelToUse)</code> refreshes model-dependent tool descriptions.</li>
+<li><strong>Model call.</strong> <code>Turn.run</code> → <code>GeminiChat.sendMessageStream</code> → the Gemini API. <code>BeforeModel</code> hooks can rewrite the outgoing request (model, config, contents); <code>AfterModel</code> hooks see each streamed chunk and can replace it.<sup id="fnref:20"><a class="footnote-ref" href="#fn:20">20</a></sup> The model emits text plus a <code>run_shell_command</code> call (<code>git log --oneline -10</code>).</li>
+<li><strong>Tool request.</strong> <code>Turn</code> yields <code>ToolCallRequest</code>; the CLI collects it and <code>scheduleToolCalls</code> enqueues it in the core scheduler. The scheduler moves it through lifecycle states: <code>Validating</code> → (policy + confirmation) → <code>Scheduled</code> → executing → terminal.<sup id="fnref:21"><a class="footnote-ref" href="#fn:21">21</a></sup></li>
+<li><strong>Approval.</strong> <code>_processToolCall</code>: <code>BeforeTool</code> hook first (can rewrite args — flagged <code>inputModifiedByHook</code> — or force ask), then <code>checkPolicy</code> (ALLOW/DENY/ASK_USER from the TOML engine), then taint-risk escalation (build-file edits force ASK_USER), then <code>resolveConfirmation</code> over the message bus → the TUI dialog. "Always allow" publishes <code>UPDATE_POLICY</code>, persisting to the autosaved TOML.<sup id="fnref:22"><a class="footnote-ref" href="#fn:22">22</a></sup></li>
+<li><strong>Execute and feed back.</strong> The tool runs; output is truncated if over threshold and converted to <code>functionResponse</code> parts. <code>handleCompletedTools</code> calls <code>submitQuery(responses, {isContinuation: true})</code> → back to step 2 with <code>boundedTurns - 1</code>. When a turn ends with no tool calls, the next-speaker check decides: model continues or turn ends.<sup id="fnref:23"><a class="footnote-ref" href="#fn:23">23</a></sup></li>
+</ol>
+<p><img alt="Tool approval pipeline" src="figures/seq-approval.svg" /></p>
+<a class="diagram-cta" href="trace.html">
+    Play the 8-step trace
+    <span>One turn through Gemini CLI — input, turn budget, loop guard, routing, model call, scheduling, approval, execution</span>
+  </a>
+<h2 id="subsystem-inventory">Subsystem inventory</h2>
+<p><strong>Tool system.</strong> 26 built-in tools in the main registry (<code>read_file</code>, <code>replace</code>, <code>write_file</code>, <code>run_shell_command</code>, <code>grep_search</code>, <code>glob</code>, <code>web_fetch</code>, <code>google_web_search</code>, <code>ask_user</code>, <code>write_todos</code>, <code>invoke_agent</code>, plan-mode tools, tracker tools, background-process tools, MCP resource tools).<sup id="fnref:24"><a class="footnote-ref" href="#fn:24">24</a></sup> <code>ToolRegistry.sortTools()</code> orders by priority: 0 = built-in, 1 = project-discovered, 2 = MCP.<sup id="fnref:25"><a class="footnote-ref" href="#fn:25">25</a></sup> There is <strong>no tool search or dynamic retrieval</strong> — every active tool is serialized into <code>getFunctionDeclarations()</code> and sent to the model on every turn.<sup id="fnref:26"><a class="footnote-ref" href="#fn:26">26</a></sup> Every object-typed schema gets an injected <code>wait_for_previous</code> boolean so the model can force sequential execution.<sup id="fnref:27"><a class="footnote-ref" href="#fn:27">27</a></sup> Tool declarations are model-family-aware: <code>CoreToolSet</code> maps families (<code>default-legacy</code>, <code>gemini-3</code>) to per-tool declaration overrides.<sup id="fnref:28"><a class="footnote-ref" href="#fn:28">28</a></sup></p>
+<p><strong>Policy engine.</strong> TOML rules with match dimensions (tool name/wildcards, args regex, annotations, approval-mode scoping, interactivity) sorted by priority — first match wins.<sup id="fnref:29"><a class="footnote-ref" href="#fn:29">29</a></sup> Priority tiers are structural: Default=1 &lt; Extension=2 &lt; Workspace=3 &lt; User=4 &lt; Admin=5, so an admin rule always beats a user rule regardless of numeric priority.<sup id="fnref:30"><a class="footnote-ref" href="#fn:30">30</a></sup> Bundled policies cover read-only allows, write asks, yolo/headless/plan-mode behavior, and a sandbox default.<sup id="fnref:31"><a class="footnote-ref" href="#fn:31">31</a></sup> Shell commands get special treatment: wrappers stripped, compound commands split and each subcommand recursively checked, redirections downgrade ALLOW → ASK_USER, dangerous commands force ASK_USER.<sup id="fnref:32"><a class="footnote-ref" href="#fn:32">32</a></sup> Extension-supplied policies are sanitized — ALLOW rules and yolo-mode rules are dropped.<sup id="fnref:33"><a class="footnote-ref" href="#fn:33">33</a></sup></p>
+<p><strong>Confirmation bus.</strong> <code>MessageBus</code> (an <code>EventEmitter</code>) decouples policy from UI: tools publish <code>TOOL_CONFIRMATION_REQUEST</code> with a correlation ID; the bus runs the policy engine first, then auto-responds (ALLOW/DENY) or emits to subscribers (the TUI dialog, ACP sessions).<sup id="fnref:34"><a class="footnote-ref" href="#fn:34">34</a></sup> Subagent buses are <em>untrusted</em> — <code>forcedDecision</code> and server names are stripped before forwarding to the parent bus, preventing policy bypass.<sup id="fnref:35"><a class="footnote-ref" href="#fn:35">35</a></sup> Confirmation requests time out after 30s, defaulting to ask.<sup id="fnref:36"><a class="footnote-ref" href="#fn:36">36</a></sup></p>
+<p><strong>Safety checkers.</strong> Named checkers attach to tool calls and run after the policy decision; failures fail closed to DENY.<sup id="fnref:37"><a class="footnote-ref" href="#fn:37">37</a></sup> Two in-process checkers (<code>allowed-path</code>, <code>conseca</code>) plus external checkers spawned as child processes with a JSON protocol (5s timeout, any failure → DENY).<sup id="fnref:38"><a class="footnote-ref" href="#fn:38">38</a></sup> <strong>Conseca</strong> is the notable one: a Gemini Flash model generates a least-privilege per-tool security policy from the conversation, then enforces it per call — an LLM-written, LLM-enforced policy. It's gated behind a setting, <strong>default off</strong>, and fail-open when disabled.<sup id="fnref:39"><a class="footnote-ref" href="#fn:39">39</a></sup></p>
+<p><strong>Sandbox.</strong> Per-OS managers: macOS Seatbelt (strict-allowlist SBPL profile, <code>(deny default)</code>), Linux bubblewrap (<code>--unshare-all</code>, <code>--ro-bind / /</code>), Windows restricted tokens + job objects via a C# helper.<sup id="fnref:40"><a class="footnote-ref" href="#fn:40">40</a></sup> Sandbox TOML configures per-mode (plan/default/accepting_edits) network, readonly, and approved tools.<sup id="fnref:41"><a class="footnote-ref" href="#fn:41">41</a></sup></p>
+<p><strong>Model router.</strong> Covered in the loop section — the composite strategy chain is the distinctive mechanism. Worth adding: routing decisions are telemetry-logged with source strategy and reasoning, so routing is auditable after the fact.<sup id="fnref:42"><a class="footnote-ref" href="#fn:42">42</a></sup></p>
+<p><strong>Memory.</strong> Sessions persist as <strong>JSONL</strong> under <code>~/.gemini/tmp/&lt;projectHash&gt;/chats/</code> — one JSON object per line, full API parts, tool-call records with token summaries; <code>$rewindTo</code> records support history truncation on resume.<sup id="fnref:43"><a class="footnote-ref" href="#fn:43">43</a></sup> Two compaction paths: the legacy <code>ChatCompressionService</code> (triggers at 0.5 × token limit, summarizes the oldest 70% into a structured <code>&lt;state_snapshot&gt;</code> XML with a two-pass self-correction probe, keeps the newest 30% verbatim)<sup id="fnref:44"><a class="footnote-ref" href="#fn:44">44</a></sup> and the experimental opt-in <code>ContextManager</code> (65k-token budget, node aging, async snapshot pipeline).<sup id="fnref:45"><a class="footnote-ref" href="#fn:45">45</a></sup> Cross-session memory is <strong>GEMINI.md files in four tiers</strong>: global → system instruction; extension + project → first-user-message bootstrap; per-directory → JIT injection into tool output on path access.<sup id="fnref:46"><a class="footnote-ref" href="#fn:46">46</a></sup> No vector DB, no SQLite, no embeddings — memory is markdown concatenated into the prompt.<sup id="fnref:47"><a class="footnote-ref" href="#fn:47">47</a></sup> A <strong>background extraction service</strong> mines old session JSONLs (every 30 min, ≥10 user messages, ≥3h idle, lock-coordinated across CLI instances) proposing skill patches and memory updates.<sup id="fnref:48"><a class="footnote-ref" href="#fn:48">48</a></sup></p>
+<p><img alt="Session persistence and memory" src="figures/seq-memory.svg" /></p>
+<p><strong>Hooks.</strong> 11 event types: <code>BeforeTool</code> / <code>AfterTool</code>, <code>BeforeAgent</code> / <code>AfterAgent</code>, <code>BeforeModel</code> / <code>AfterModel</code>, <code>BeforeToolSelection</code>, <code>Notification</code>, <code>SessionStart</code> / <code>SessionEnd</code>, <code>PreCompress</code>.<sup id="fnref:49"><a class="footnote-ref" href="#fn:49">49</a></sup> Command hooks (shell subprocess, JSON over stdin, 60s timeout) or runtime hooks (in-process). They can block, rewrite tool args (re-validated), append <code>&lt;hook_context&gt;</code>, replace streamed LLM chunks, restrict the tool set per request, or stop the whole agent.<sup id="fnref:50"><a class="footnote-ref" href="#fn:50">50</a></sup> Failures are non-fatal — logged, telemetry-recorded, execution continues.<sup id="fnref:51"><a class="footnote-ref" href="#fn:51">51</a></sup> Project hooks are dropped in untrusted folders.<sup id="fnref:52"><a class="footnote-ref" href="#fn:52">52</a></sup></p>
+<p><strong>Subagents.</strong> The model spawns subagents through one tool, <code>invoke_agent</code> (<code>{agent_name, prompt}</code>).<sup id="fnref:53"><a class="footnote-ref" href="#fn:53">53</a></sup> Each runs in a <code>LocalAgentExecutor</code> with <strong>isolated registries</strong> (fresh tool/prompt/resource registries cloned from the parent's allowlist), a derived untrusted message bus, and its own <code>GeminiChat</code>.<sup id="fnref:54"><a class="footnote-ref" href="#fn:54">54</a></sup> <strong>No nesting</strong>: <code>Kind.Agent</code> tools are excluded from subagent registries.<sup id="fnref:55"><a class="footnote-ref" href="#fn:55">55</a></sup> Every subagent must call the mandatory <code>complete_task</code> tool to terminate normally; output is schema-validated.<sup id="fnref:56"><a class="footnote-ref" href="#fn:56">56</a></sup> Budgets: <code>maxTurns</code> (default 30), <code>maxTimeMinutes</code> (default 10, confirmation waits pause the clock), 60s grace period for final <code>complete_task</code>.<sup id="fnref:57"><a class="footnote-ref" href="#fn:57">57</a></sup> User-authored agents are Markdown files with YAML frontmatter in <code>.gemini/agents/</code> (project, trust-gated with hash acknowledgement) or <code>~/.gemini/agents/</code>.<sup id="fnref:58"><a class="footnote-ref" href="#fn:58">58</a></sup> Remote agents speak A2A.<sup id="fnref:59"><a class="footnote-ref" href="#fn:59">59</a></sup></p>
+<p><img alt="Subagent invocation" src="figures/seq-subagent.svg" /></p>
+<p><strong>MCP.</strong> Servers declared in settings (or contributed by extensions); <code>McpClientManager</code> owns one client per server (keyed by config hash).<sup id="fnref:60"><a class="footnote-ref" href="#fn:60">60</a></sup> Discovered tools become <code>DiscoveredMCPTool</code>s namespaced <code>mcp_&lt;server&gt;_&lt;tool&gt;</code> (63-char API limit, <code>...</code> truncation), registered into the main tool registry — the model sees them as ordinary tools.<sup id="fnref:61"><a class="footnote-ref" href="#fn:61">61</a></sup> <code>list_changed</code> notifications trigger re-discovery and registry swap.<sup id="fnref:62"><a class="footnote-ref" href="#fn:62">62</a></sup> stdio servers are refused in untrusted folders; stdio env is sanitized with dangerous vars blocked.<sup id="fnref:63"><a class="footnote-ref" href="#fn:63">63</a></sup></p>
+<p><strong>Skills.</strong> <code>SKILL.md</code> files (frontmatter <code>name</code> + <code>description</code>, markdown body), discovered built-in → extension → user → project with precedence and trust gating.<sup id="fnref:64"><a class="footnote-ref" href="#fn:64">64</a></sup> Two-stage loading: the system prompt lists name/description/location only; the model calls <code>activate_skill</code>, which (after user confirmation for non-built-ins) injects the full body wrapped in <code>&lt;activated_skill&gt;</code> tags.<sup id="fnref:65"><a class="footnote-ref" href="#fn:65">65</a></sup> A background skill-extraction agent proposes <em>new</em> skills from session history — authoring, not execution.<sup id="fnref:66"><a class="footnote-ref" href="#fn:66">66</a></sup></p>
+<p><strong>Interfaces.</strong> Ink TUI (interactive), non-interactive <code>gemini -p</code> mode, ACP (agent-client protocol) sessions, an A2A server package, a programmatic SDK, and a VS Code IDE companion.<sup id="fnref:67"><a class="footnote-ref" href="#fn:67">67</a></sup></p>
+<h2 id="what-it-deliberately-omits">What it deliberately omits</h2>
+<ul>
+<li><strong>No tool search.</strong> Every active tool rides every request. At 26 built-ins plus MCP servers, the context cost is real — and the codebase has no retrieval layer. (Contrast Goose, Hermes, OpenClaw.)</li>
+<li><strong>No vector memory.</strong> Sessions are JSONL, memory is markdown. Semantic recall doesn't exist; the background extractor compensates with batch mining.</li>
+<li><strong>No multi-turn planning primitive.</strong> Subagents are the composition unit; there's no plan-mode planner beyond the approval-mode gate and <code>write_todos</code> tracking.</li>
+<li><strong>YOLO is CLI-only.</strong> It cannot be set from a settings file — a deliberate friction against persistent foot-guns.<sup id="fnref:68"><a class="footnote-ref" href="#fn:68">68</a></sup></li>
+</ul>
+<h2 id="comparison-matrix-row">Comparison matrix row</h2>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Dimension</th>
+<th>Gemini CLI (v0.63.0)</th>
+</tr>
+</thead>
+<tbody>
+<tr><td>1</td><td>Agent loop</td><td><code>sendMessageStream</code> → <code>processTurn</code> → <code>Turn.run</code>; <code>MAX_TURNS=100</code>; per-turn model router; loop detector; next-speaker LLM check; BeforeAgent/AfterAgent hooks</td></tr>
+<tr><td>2</td><td>Tool system</td><td>26 built-ins; <code>ToolRegistry</code> with priority sort; <strong>no tool search</strong> — all tools sent every turn; <code>wait_for_previous</code> injected; model-family declaration overrides</td></tr>
+<tr><td>3</td><td>Model providers</td><td>Gemini API via <code>@google/genai</code>; per-turn composite router (fallback → override → approval-mode → classifiers → default); sequence-model stickiness</td></tr>
+<tr><td>4</td><td>Prompt construction</td><td>System prompt + tiered GEMINI.md injection; per-turn tool refresh; <code>BeforeModel</code> hooks can rewrite the request</td></tr>
+<tr><td>5</td><td>Memory/session</td><td>JSONL session recording; legacy compression (0.5 threshold, <code>&lt;state_snapshot&gt;</code>, two-pass probe) + opt-in ContextManager; 4-tier GEMINI.md; background extraction service</td></tr>
+<tr><td>6</td><td>Reasoning/planning</td><td>No separate planner; subagents via <code>invoke_agent</code> (isolated registries, <code>complete_task</code> mandatory, no nesting); <code>write_todos</code> tracking</td></tr>
+<tr><td>7</td><td>Extensibility</td><td>MCP (namespaced <code>mcp_</code>); skills (two-stage <code>activate_skill</code>); 11 hook types; extensions contribute servers/skills/agents/hooks</td></tr>
+<tr><td>8</td><td>Interfaces</td><td>Ink TUI; non-interactive CLI; ACP; A2A server; SDK; VS Code companion</td></tr>
+<tr><td>9</td><td>Failure handling</td><td>Retry with backoff; loop detector; taint escalation; hook fail-open; compression-failure fallback to truncation</td></tr>
+<tr><td>10</td><td>Security model</td><td>4 approval modes; TOML policy engine (tiered priorities); confirmation bus; per-OS sandbox; Conseca (opt-in, default off); trust-gated everything</td></tr>
+</tbody>
+</table>
+<h2 id="endnotes">Endnotes</h2>
+<p>All notes VERIFIED against <code>v0.63.0</code></p>
+<p>(<code>573846625af9e93b3b968e0e0b86bb093a4c9b16</code>).</p>
+<p><code>GH</code> = <code>https://github.com/google-gemini/gemini-cli/blob/573846625af9e93b3b968e0e0b86bb093a4c9b16/</code>.</p>
+<div class="footnote">
+<hr />
+<ol>
+<li id="fn:1">
+<p><a href="https://github.com/google-gemini/gemini-cli/blob/573846625af9e93b3b968e0e0b86bb093a4c9b16/packages/core/src/routing/modelRouterService.ts#L40-L70">GH…/packages/core/src/routing/modelRouterService.ts#L40-L70</a> (strategy chain); <a href="https://github.com/google-gemini/gemini-cli/blob/573846625af9e93b3b968e0e0b86bb093a4c9b16/packages/core/src/scheduler/scheduler.ts#L446">GH…/packages/core/src/scheduler/scheduler.ts#L446</a> (lifecycle loop); <a href="https://github.com/google-gemini/gemini-cli/blob/573846625af9e93b3b968e0e0b86bb093a4c9b16/packages/core/src/policy/config.ts#L70-L89">GH…/packages/core/src/policy/config.ts#L70-L89</a> (tiers); <a href="https://github.com/google-gemini/gemini-cli/blob/573846625af9e93b3b968e0e0b86bb093a4c9b16/packages/core/src/hooks/types.ts#L43-L52">GH…/packages/core/src/hooks/types.ts#L43-L52</a> (11 events). &#160;<a class="footnote-backref" href="#fnref:1" title="Jump back to footnote 1 in the text">&#8617;</a></p>
+</li>
+<li id="fn:2">
+<p><a href="https://github.com/google-gemini/gemini-cli/blob/573846625af9e93b3b968e0e0b86bb093a4c9b16/packages/core/src/core/client.ts#L908-L975">GH…/packages/core/src/core/client.ts#L908-L975</a> (<code>sendMessageStream</code> orchestration). &#160;<a class="footnote-backref" href="#fnref:2" title="Jump back to footnote 2 in the text">&#8617;</a></p>
+</li>
+<li id="fn:3">
+<p><a href="https://github.com/google-gemini/gemini-cli/blob/573846625af9e93b3b968e0e0b86bb093a4c9b16/packages/core/src/confirmation-bus/message-bus.ts#L97-L164">GH…/packages/core/src/confirmation-bus/message-bus.ts#L97-L164</a> (bus flow). &#160;<a class="footnote-backref" href="#fnref:3" title="Jump back to footnote 3 in the text">&#8617;</a></p>
+</li>
+<li id="fn:4">
+<p>479 non-test <a href="https://github.com/google-gemini/gemini-cli/blob/573846625af9e93b3b968e0e0b86bb093a4c9b16/packages/core/src/.ts">GH…/packages/core/src/.ts</a> files in <a href="https://github.com/google-gemini/gemini-cli/blob/573846625af9e93b3b968e0e0b86bb093a4c9b16/packages/core/src">GH…/packages/core/src</a>, ~137,643 lines (counted at the pinned tag; includes blanks/comments). &#160;<a class="footnote-backref" href="#fnref:4" title="Jump back to footnote 4 in the text">&#8617;</a></p>
+</li>
+<li id="fn:5">
+<p>Package sizes counted at the pinned tag; <a href="https://github.com/google-gemini/gemini-cli/blob/573846625af9e93b3b968e0e0b86bb093a4c9b16/packages/cli">GH…/packages/cli</a> holds the TUI and stream consumption. &#160;<a class="footnote-backref" href="#fnref:5" title="Jump back to footnote 5 in the text">&#8617;</a></p>
+</li>
+<li id="fn:6">
+<p><a href="https://github.com/google-gemini/gemini-cli/blob/573846625af9e93b3b968e0e0b86bb093a4c9b16/packages/core/src/core/client.ts#L79">GH…/packages/core/src/core/client.ts#L79</a> (<code>MAX_TURNS</code>); <a href="https://github.com/google-gemini/gemini-cli/blob/573846625af9e93b3b968e0e0b86bb093a4c9b16/packages/core/src/core/client.ts#L908">GH…/packages/core/src/core/client.ts#L908</a> (<code>sendMessageStream</code> signature). &#160;<a class="footnote-backref" href="#fnref:6" title="Jump back to footnote 6 in the text">&#8617;</a></p>
+</li>
+<li id="fn:7">
+<p><a href="https://github.com/google-gemini/gemini-cli/blob/573846625af9e93b3b968e0e0b86bb093a4c9b16/packages/core/src/core/client.ts#L627-L700">GH…/packages/core/src/core/client.ts#L627-L700</a> (<code>processTurn</code>: turn count, context render, loop detector). &#160;<a class="footnote-backref" href="#fnref:7" title="Jump back to footnote 7 in the text">&#8617;</a></p>
+</li>
+<li id="fn:8">
+<p><a href="https://github.com/google-gemini/gemini-cli/blob/573846625af9e93b3b968e0e0b86bb093a4c9b16/packages/core/src/routing/modelRouterService.ts#L40-L70">GH…/packages/core/src/routing/modelRouterService.ts#L40-L70</a> (strategy order); <a href="https://github.com/google-gemini/gemini-cli/blob/573846625af9e93b3b968e0e0b86bb093a4c9b16/packages/core/src/routing/modelRouterService.ts#L75-L140">GH…/packages/core/src/routing/modelRouterService.ts#L75-L140</a> (<code>route()</code>). &#160;<a class="footnote-backref" href="#fnref:8" title="Jump back to footnote 8 in the text">&#8617;</a></p>
+</li>
+<li id="fn:9">
+<p><a href="https://github.com/google-gemini/gemini-cli/blob/573846625af9e93b3b968e0e0b86bb093a4c9b16/packages/core/src/core/turn.ts#L271-L300">GH…/packages/core/src/core/turn.ts#L271-L300</a> (<code>Turn.run</code> event loop); <a href="https://github.com/google-gemini/gemini-cli/blob/573846625af9e93b3b968e0e0b86bb093a4c9b16/packages/core/src/core/turn.ts#L254-L270">GH…/packages/core/src/core/turn.ts#L254-L270</a> (fields). &#160;<a class="footnote-backref" href="#fnref:9" title="Jump back to footnote 9 in the text">&#8617;</a></p>
+</li>
+<li id="fn:10">
+<p><a href="https://github.com/google-gemini/gemini-cli/blob/573846625af9e93b3b968e0e0b86bb093a4c9b16/packages/core/src/core/turn.ts#L470-L480">GH…/packages/core/src/core/turn.ts#L470-L480</a> (call ID synthesis). &#160;<a class="footnote-backref" href="#fnref:10" title="Jump back to footnote 10 in the text">&#8617;</a></p>
+</li>
+<li id="fn:11">
+<p><a href="https://github.com/google-gemini/gemini-cli/blob/573846625af9e93b3b968e0e0b86bb093a4c9b16/packages/cli/src/ui/hooks/useGeminiStream.ts#L1540-L1640">GH…/packages/cli/src/ui/hooks/useGeminiStream.ts#L1540-L1640</a> (event consumption); <a href="https://github.com/google-gemini/gemini-cli/blob/573846625af9e93b3b968e0e0b86bb093a4c9b16/packages/cli/src/ui/hooks/useGeminiStream.ts#L1972-L2190">GH…/packages/cli/src/ui/hooks/useGeminiStream.ts#L1972-L2190</a> (<code>handleCompletedTools</code> → <code>submitQuery</code> continuation). &#160;<a class="footnote-backref" href="#fnref:11" title="Jump back to footnote 11 in the text">&#8617;</a></p>
+</li>
+<li id="fn:12">
+<p><a href="https://github.com/google-gemini/gemini-cli/blob/573846625af9e93b3b968e0e0b86bb093a4c9b16/packages/core/src/core/client.ts#L636-L650">GH…/packages/core/src/core/client.ts#L636-L650</a> (session turns, <code>MaxSessionTurns</code>); <a href="https://github.com/google-gemini/gemini-cli/blob/573846625af9e93b3b968e0e0b86bb093a4c9b16/packages/core/src/core/client.ts#L840-L880">GH…/packages/core/src/core/client.ts#L840-L880</a> (loop detector in stream). &#160;<a class="footnote-backref" href="#fnref:12" title="Jump back to footnote 12 in the text">&#8617;</a></p>
+</li>
+<li id="fn:13">
+<p><a href="https://github.com/google-gemini/gemini-cli/blob/573846625af9e93b3b968e0e0b86bb093a4c9b16/packages/core/src/core/client.ts#L890-L910">GH…/packages/core/src/core/client.ts#L890-L910</a> (<code>checkNextSpeaker</code>, "Please continue."). &#160;<a class="footnote-backref" href="#fnref:13" title="Jump back to footnote 13 in the text">&#8617;</a></p>
+</li>
+<li id="fn:14">
+<p><a href="https://github.com/google-gemini/gemini-cli/blob/573846625af9e93b3b968e0e0b86bb093a4c9b16/packages/cli/src/ui/hooks/useGeminiStream.ts#L1640-L1665">GH…/packages/cli/src/ui/hooks/useGeminiStream.ts#L1640-L1665</a> (auto-nudge). &#160;<a class="footnote-backref" href="#fnref:14" title="Jump back to footnote 14 in the text">&#8617;</a></p>
+</li>
+<li id="fn:15">
+<p>Trace reconstructed from the code paths cited per step; no live run was performed. &#160;<a class="footnote-backref" href="#fnref:15" title="Jump back to footnote 15 in the text">&#8617;</a></p>
+</li>
+<li id="fn:16">
+<p><a href="https://github.com/google-gemini/gemini-cli/blob/573846625af9e93b3b968e0e0b86bb093a4c9b16/packages/core/src/core/client.ts#L165-L216">GH…/packages/core/src/core/client.ts#L165-L216</a> (<code>fireBeforeAgentHookSafe</code>, dedup, <code>&lt;hook_context&gt;</code>). &#160;<a class="footnote-backref" href="#fnref:16" title="Jump back to footnote 16 in the text">&#8617;</a></p>
+</li>
+<li id="fn:17">
+<p><a href="https://github.com/google-gemini/gemini-cli/blob/573846625af9e93b3b968e0e0b86bb093a4c9b16/packages/core/src/core/client.ts#L627-L660">GH…/packages/core/src/core/client.ts#L627-L660</a> (turn count, context render, <code>boundedTurns</code>). &#160;<a class="footnote-backref" href="#fnref:17" title="Jump back to footnote 17 in the text">&#8617;</a></p>
+</li>
+<li id="fn:18">
+<p><a href="https://github.com/google-gemini/gemini-cli/blob/573846625af9e93b3b968e0e0b86bb093a4c9b16/packages/core/src/core/client.ts#L760-L775">GH…/packages/core/src/core/client.ts#L760-L775</a> (<code>loopDetector.turnStarted</code>). &#160;<a class="footnote-backref" href="#fnref:18" title="Jump back to footnote 18 in the text">&#8617;</a></p>
+</li>
+<li id="fn:19">
+<p><a href="https://github.com/google-gemini/gemini-cli/blob/573846625af9e93b3b968e0e0b86bb093a4c9b16/packages/core/src/routing/modelRouterService.ts#L75-L140">GH…/packages/core/src/routing/modelRouterService.ts#L75-L140</a> (<code>route()</code>, <code>ModelRoutingEvent</code> telemetry). &#160;<a class="footnote-backref" href="#fnref:19" title="Jump back to footnote 19 in the text">&#8617;</a></p>
+</li>
+<li id="fn:20">
+<p><a href="https://github.com/google-gemini/gemini-cli/blob/573846625af9e93b3b968e0e0b86bb093a4c9b16/packages/core/src/core/geminiChat.ts#L992-L1062">GH…/packages/core/src/core/geminiChat.ts#L992-L1062</a> (<code>fireBeforeModelEvent</code>, <code>fireBeforeToolSelectionEvent</code>); <a href="https://github.com/google-gemini/gemini-cli/blob/573846625af9e93b3b968e0e0b86bb093a4c9b16/packages/core/src/core/geminiChat.ts#L1466-L1482">GH…/packages/core/src/core/geminiChat.ts#L1466-L1482</a> (<code>fireAfterModelEvent</code>, chunk replacement). &#160;<a class="footnote-backref" href="#fnref:20" title="Jump back to footnote 20 in the text">&#8617;</a></p>
+</li>
+<li id="fn:21">
+<p><a href="https://github.com/google-gemini/gemini-cli/blob/573846625af9e93b3b968e0e0b86bb093a4c9b16/packages/core/src/scheduler/scheduler.ts#L446-L560">GH…/packages/core/src/scheduler/scheduler.ts#L446-L560</a> (<code>_processQueue</code>, <code>_processNextItem</code>, lifecycle states). &#160;<a class="footnote-backref" href="#fnref:21" title="Jump back to footnote 21 in the text">&#8617;</a></p>
+</li>
+<li id="fn:22">
+<p><a href="https://github.com/google-gemini/gemini-cli/blob/573846625af9e93b3b968e0e0b86bb093a4c9b16/packages/core/src/scheduler/scheduler.ts#L628-L760">GH…/packages/core/src/scheduler/scheduler.ts#L628-L760</a> (<code>_processToolCall</code>: hook → policy → taint → confirmation → policy update). &#160;<a class="footnote-backref" href="#fnref:22" title="Jump back to footnote 22 in the text">&#8617;</a></p>
+</li>
+<li id="fn:23">
+<p><a href="https://github.com/google-gemini/gemini-cli/blob/573846625af9e93b3b968e0e0b86bb093a4c9b16/packages/cli/src/ui/hooks/useGeminiStream.ts#L2185-L2195">GH…/packages/cli/src/ui/hooks/useGeminiStream.ts#L2185-L2195</a> (continuation <code>submitQuery</code>). &#160;<a class="footnote-backref" href="#fnref:23" title="Jump back to footnote 23 in the text">&#8617;</a></p>
+</li>
+<li id="fn:24">
+<p><a href="https://github.com/google-gemini/gemini-cli/blob/573846625af9e93b3b968e0e0b86bb093a4c9b16/packages/core/src/config/config.ts#L4009-L4123">GH…/packages/core/src/config/config.ts#L4009-L4123</a> (registration); <a href="https://github.com/google-gemini/gemini-cli/blob/573846625af9e93b3b968e0e0b86bb093a4c9b16/packages/core/src/tools/tool-names.ts#L203-L231">GH…/packages/core/src/tools/tool-names.ts#L203-L231</a> (name list; see recon for registry discrepancies). &#160;<a class="footnote-backref" href="#fnref:24" title="Jump back to footnote 24 in the text">&#8617;</a></p>
+</li>
+<li id="fn:25">
+<p><a href="https://github.com/google-gemini/gemini-cli/blob/573846625af9e93b3b968e0e0b86bb093a4c9b16/packages/core/src/tools/tool-registry.ts#L307-L348">GH…/packages/core/src/tools/tool-registry.ts#L307-L348</a> (<code>sortTools</code> priorities). &#160;<a class="footnote-backref" href="#fnref:25" title="Jump back to footnote 25 in the text">&#8617;</a></p>
+</li>
+<li id="fn:26">
+<p>Negative grep for <code>toolsearch|tool_search|search_tool</code> over <a href="https://github.com/google-gemini/gemini-cli/blob/573846625af9e93b3b968e0e0b86bb093a4c9b16/packages/core/src/tools/">GH…/packages/core/src/tools/</a>, <a href="https://github.com/google-gemini/gemini-cli/blob/573846625af9e93b3b968e0e0b86bb093a4c9b16/packages/core/src/scheduler/">GH…/packages/core/src/scheduler/</a>, <a href="https://github.com/google-gemini/gemini-cli/blob/573846625af9e93b3b968e0e0b86bb093a4c9b16/packages/core/src/config/config.ts">GH…/packages/core/src/config/config.ts</a> — no hits; <a href="https://github.com/google-gemini/gemini-cli/blob/573846625af9e93b3b968e0e0b86bb093a4c9b16/packages/core/src/tools/tool-registry.ts#L663-L705">GH…/packages/core/src/tools/tool-registry.ts#L663-L705</a> sends all active tools. &#160;<a class="footnote-backref" href="#fnref:26" title="Jump back to footnote 26 in the text">&#8617;</a></p>
+</li>
+<li id="fn:27">
+<p><a href="https://github.com/google-gemini/gemini-cli/blob/573846625af9e93b3b968e0e0b86bb093a4c9b16/packages/core/src/tools/tools.ts#L585-L625">GH…/packages/core/src/tools/tools.ts#L585-L625</a> (<code>wait_for_previous</code> injection). &#160;<a class="footnote-backref" href="#fnref:27" title="Jump back to footnote 27 in the text">&#8617;</a></p>
+</li>
+<li id="fn:28">
+<p><a href="https://github.com/google-gemini/gemini-cli/blob/573846625af9e93b3b968e0e0b86bb093a4c9b16/packages/core/src/tools/definitions/types.ts#L21-L44">GH…/packages/core/src/tools/definitions/types.ts#L21-L44</a>, <a href="https://github.com/google-gemini/gemini-cli/blob/573846625af9e93b3b968e0e0b86bb093a4c9b16/packages/core/src/tools/definitions/coreTools.ts#L69-L77">GH…/packages/core/src/tools/definitions/coreTools.ts#L69-L77</a>, <a href="https://github.com/google-gemini/gemini-cli/blob/573846625af9e93b3b968e0e0b86bb093a4c9b16/packages/core/src/tools/definitions/resolver.ts#L14-L29">GH…/packages/core/src/tools/definitions/resolver.ts#L14-L29</a> (model-family overrides). &#160;<a class="footnote-backref" href="#fnref:28" title="Jump back to footnote 28 in the text">&#8617;</a></p>
+</li>
+<li id="fn:29">
+<p><a href="https://github.com/google-gemini/gemini-cli/blob/573846625af9e93b3b968e0e0b86bb093a4c9b16/packages/core/src/policy/policy-engine.ts#L610-L660">GH…/packages/core/src/policy/policy-engine.ts#L610-L660</a> (<code>check</code>); <a href="https://github.com/google-gemini/gemini-cli/blob/573846625af9e93b3b968e0e0b86bb093a4c9b16/packages/core/src/policy/types.ts#L110-L186">GH…/packages/core/src/policy/types.ts#L110-L186</a> (match dimensions). &#160;<a class="footnote-backref" href="#fnref:29" title="Jump back to footnote 29 in the text">&#8617;</a></p>
+</li>
+<li id="fn:30">
+<p><a href="https://github.com/google-gemini/gemini-cli/blob/573846625af9e93b3b968e0e0b86bb093a4c9b16/packages/core/src/policy/config.ts#L70-L89">GH…/packages/core/src/policy/config.ts#L70-L89</a> (tier constants and composition). &#160;<a class="footnote-backref" href="#fnref:30" title="Jump back to footnote 30 in the text">&#8617;</a></p>
+</li>
+<li id="fn:31">
+<p><a href="https://github.com/google-gemini/gemini-cli/blob/573846625af9e93b3b968e0e0b86bb093a4c9b16/packages/core/src/policy/policies/read-only.toml">GH…/packages/core/src/policy/policies/read-only.toml</a>, <a href="https://github.com/google-gemini/gemini-cli/blob/573846625af9e93b3b968e0e0b86bb093a4c9b16/packages/core/src/policy/policies/write.toml">GH…/packages/core/src/policy/policies/write.toml</a>, <a href="https://github.com/google-gemini/gemini-cli/blob/573846625af9e93b3b968e0e0b86bb093a4c9b16/packages/core/src/policy/policies/yolo.toml">GH…/packages/core/src/policy/policies/yolo.toml</a>, <a href="https://github.com/google-gemini/gemini-cli/blob/573846625af9e93b3b968e0e0b86bb093a4c9b16/packages/core/src/policy/policies/non-interactive.toml">GH…/packages/core/src/policy/policies/non-interactive.toml</a>, <a href="https://github.com/google-gemini/gemini-cli/blob/573846625af9e93b3b968e0e0b86bb093a4c9b16/packages/core/src/policy/policies/plan.toml">GH…/packages/core/src/policy/policies/plan.toml</a>, <a href="https://github.com/google-gemini/gemini-cli/blob/573846625af9e93b3b968e0e0b86bb093a4c9b16/packages/core/src/policy/policies/sandbox-default.toml">GH…/packages/core/src/policy/policies/sandbox-default.toml</a>. &#160;<a class="footnote-backref" href="#fnref:31" title="Jump back to footnote 31 in the text">&#8617;</a></p>
+</li>
+<li id="fn:32">
+<p><a href="https://github.com/google-gemini/gemini-cli/blob/573846625af9e93b3b968e0e0b86bb093a4c9b16/packages/core/src/policy/policy-engine.ts#L365-L606">GH…/packages/core/src/policy/policy-engine.ts#L365-L606</a> (shell heuristics, subcommand recursion, redirection downgrade). &#160;<a class="footnote-backref" href="#fnref:32" title="Jump back to footnote 32 in the text">&#8617;</a></p>
+</li>
+<li id="fn:33">
+<p><a href="https://github.com/google-gemini/gemini-cli/blob/573846625af9e93b3b968e0e0b86bb093a4c9b16/packages/core/src/policy/config.ts#L236-L280">GH…/packages/core/src/policy/config.ts#L236-L280</a> (<code>loadExtensionPolicies</code> sanitization). &#160;<a class="footnote-backref" href="#fnref:33" title="Jump back to footnote 33 in the text">&#8617;</a></p>
+</li>
+<li id="fn:34">
+<p><a href="https://github.com/google-gemini/gemini-cli/blob/573846625af9e93b3b968e0e0b86bb093a4c9b16/packages/core/src/confirmation-bus/message-bus.ts#L18-L24">GH…/packages/core/src/confirmation-bus/message-bus.ts#L18-L24</a> (types); <a href="https://github.com/google-gemini/gemini-cli/blob/573846625af9e93b3b968e0e0b86bb093a4c9b16/packages/core/src/confirmation-bus/message-bus.ts#L97-L164">GH…/packages/core/src/confirmation-bus/message-bus.ts#L97-L164</a> (publish flow). &#160;<a class="footnote-backref" href="#fnref:34" title="Jump back to footnote 34 in the text">&#8617;</a></p>
+</li>
+<li id="fn:35">
+<p><a href="https://github.com/google-gemini/gemini-cli/blob/573846625af9e93b3b968e0e0b86bb093a4c9b16/packages/core/src/confirmation-bus/message-bus.ts#L44-L90">GH…/packages/core/src/confirmation-bus/message-bus.ts#L44-L90</a> (untrusted bus stripping). &#160;<a class="footnote-backref" href="#fnref:35" title="Jump back to footnote 35 in the text">&#8617;</a></p>
+</li>
+<li id="fn:36">
+<p><a href="https://github.com/google-gemini/gemini-cli/blob/573846625af9e93b3b968e0e0b86bb093a4c9b16/packages/core/src/tools/tools.ts#L359">GH…/packages/core/src/tools/tools.ts#L359</a> (30s timeout, default ask). &#160;<a class="footnote-backref" href="#fnref:36" title="Jump back to footnote 36 in the text">&#8617;</a></p>
+</li>
+<li id="fn:37">
+<p><a href="https://github.com/google-gemini/gemini-cli/blob/573846625af9e93b3b968e0e0b86bb093a4c9b16/packages/core/src/policy/types.ts#L189-L241">GH…/packages/core/src/policy/types.ts#L189-L241</a> (<code>SafetyCheckerRule</code>); <a href="https://github.com/google-gemini/gemini-cli/blob/573846625af9e93b3b968e0e0b86bb093a4c9b16/packages/core/src/safety/checker-runner.ts#L99-L104">GH…/packages/core/src/safety/checker-runner.ts#L99-L104</a> (fail-closed). &#160;<a class="footnote-backref" href="#fnref:37" title="Jump back to footnote 37 in the text">&#8617;</a></p>
+</li>
+<li id="fn:38">
+<p><a href="https://github.com/google-gemini/gemini-cli/blob/573846625af9e93b3b968e0e0b86bb093a4c9b16/packages/core/src/safety/protocol.ts#L20-L68">GH…/packages/core/src/safety/protocol.ts#L20-L68</a> (external checker protocol); <a href="https://github.com/google-gemini/gemini-cli/blob/573846625af9e93b3b968e0e0b86bb093a4c9b16/packages/core/src/safety/checker-runner.ts#L114-L236">GH…/packages/core/src/safety/checker-runner.ts#L114-L236</a> (5s timeout, DENY on failure). &#160;<a class="footnote-backref" href="#fnref:38" title="Jump back to footnote 38 in the text">&#8617;</a></p>
+</li>
+<li id="fn:39">
+<p><a href="https://github.com/google-gemini/gemini-cli/blob/573846625af9e93b3b968e0e0b86bb093a4c9b16/packages/core/src/safety/conseca/conseca.ts#L60-L116">GH…/packages/core/src/safety/conseca/conseca.ts#L60-L116</a> (generate + enforce); <a href="https://github.com/google-gemini/gemini-cli/blob/573846625af9e93b3b968e0e0b86bb093a4c9b16/packages/cli/src/config/settingsSchema.ts#L2007-L2017">GH…/packages/cli/src/config/settingsSchema.ts#L2007-L2017</a> (default false); <a href="https://github.com/google-gemini/gemini-cli/blob/573846625af9e93b3b968e0e0b86bb093a4c9b16/packages/core/src/policy/policies/conseca.toml#L1-L6">GH…/packages/core/src/policy/policies/conseca.toml#L1-L6</a> (priority 100). &#160;<a class="footnote-backref" href="#fnref:39" title="Jump back to footnote 39 in the text">&#8617;</a></p>
+</li>
+<li id="fn:40">
+<p><a href="https://github.com/google-gemini/gemini-cli/blob/573846625af9e93b3b968e0e0b86bb093a4c9b16/packages/core/src/sandbox/macos/MacOsSandboxManager.ts#L46">GH…/packages/core/src/sandbox/macos/MacOsSandboxManager.ts#L46</a>; <a href="https://github.com/google-gemini/gemini-cli/blob/573846625af9e93b3b968e0e0b86bb093a4c9b16/packages/core/src/sandbox/linux/LinuxSandboxManager.ts#L144">GH…/packages/core/src/sandbox/linux/LinuxSandboxManager.ts#L144</a>; <a href="https://github.com/google-gemini/gemini-cli/blob/573846625af9e93b3b968e0e0b86bb093a4c9b16/packages/core/src/sandbox/windows/WindowsSandboxManager.ts#L61">GH…/packages/core/src/sandbox/windows/WindowsSandboxManager.ts#L61</a>; <a href="https://github.com/google-gemini/gemini-cli/blob/573846625af9e93b3b968e0e0b86bb093a4c9b16/packages/core/src/services/sandboxManager.ts#L289">GH…/packages/core/src/services/sandboxManager.ts#L289</a> (noop fallback). &#160;<a class="footnote-backref" href="#fnref:40" title="Jump back to footnote 40 in the text">&#8617;</a></p>
+</li>
+<li id="fn:41">
+<p><a href="https://github.com/google-gemini/gemini-cli/blob/573846625af9e93b3b968e0e0b86bb093a4c9b16/packages/core/src/policy/sandboxPolicyManager.ts#L19-L43">GH…/packages/core/src/policy/sandboxPolicyManager.ts#L19-L43</a> (per-mode config); <a href="https://github.com/google-gemini/gemini-cli/blob/573846625af9e93b3b968e0e0b86bb093a4c9b16/packages/core/src/policy/policies/sandbox-default.toml">GH…/packages/core/src/policy/policies/sandbox-default.toml</a>. &#160;<a class="footnote-backref" href="#fnref:41" title="Jump back to footnote 41 in the text">&#8617;</a></p>
+</li>
+<li id="fn:42">
+<p><a href="https://github.com/google-gemini/gemini-cli/blob/573846625af9e93b3b968e0e0b86bb093a4c9b16/packages/core/src/routing/modelRouterService.ts#L120-L140">GH…/packages/core/src/routing/modelRouterService.ts#L120-L140</a> (<code>ModelRoutingEvent</code> logging). &#160;<a class="footnote-backref" href="#fnref:42" title="Jump back to footnote 42 in the text">&#8617;</a></p>
+</li>
+<li id="fn:43">
+<p><a href="https://github.com/google-gemini/gemini-cli/blob/573846625af9e93b3b968e0e0b86bb093a4c9b16/packages/core/src/services/chatRecordingService.ts#L480-L564">GH…/packages/core/src/services/chatRecordingService.ts#L480-L564</a> (paths, JSONL format); <a href="https://github.com/google-gemini/gemini-cli/blob/573846625af9e93b3b968e0e0b86bb093a4c9b16/packages/core/src/services/chatRecordingTypes.ts#L44-L103">GH…/packages/core/src/services/chatRecordingTypes.ts#L44-L103</a> (record shapes). &#160;<a class="footnote-backref" href="#fnref:43" title="Jump back to footnote 43 in the text">&#8617;</a></p>
+</li>
+<li id="fn:44">
+<p><a href="https://github.com/google-gemini/gemini-cli/blob/573846625af9e93b3b968e0e0b86bb093a4c9b16/packages/core/src/context/chatCompressionService.ts#L45">GH…/packages/core/src/context/chatCompressionService.ts#L45</a> (0.5 threshold); <a href="https://github.com/google-gemini/gemini-cli/blob/573846625af9e93b3b968e0e0b86bb093a4c9b16/packages/core/src/context/chatCompressionService.ts#L269">GH…/packages/core/src/context/chatCompressionService.ts#L269</a> (30% preserve); <a href="https://github.com/google-gemini/gemini-cli/blob/573846625af9e93b3b968e0e0b86bb093a4c9b16/packages/core/src/prompts/snippets.ts#L898-L980">GH…/packages/core/src/prompts/snippets.ts#L898-L980</a> (<code>&lt;state_snapshot&gt;</code>); <a href="https://github.com/google-gemini/gemini-cli/blob/573846625af9e93b3b968e0e0b86bb093a4c9b16/packages/core/src/context/chatCompressionService.ts#L588-L643">GH…/packages/core/src/context/chatCompressionService.ts#L588-L643</a> (two-pass probe). &#160;<a class="footnote-backref" href="#fnref:44" title="Jump back to footnote 44 in the text">&#8617;</a></p>
+</li>
+<li id="fn:45">
+<p><a href="https://github.com/google-gemini/gemini-cli/blob/573846625af9e93b3b968e0e0b86bb093a4c9b16/packages/core/src/config/config.ts#L1205-L1206">GH…/packages/core/src/config/config.ts#L1205-L1206</a> (opt-in default off); <a href="https://github.com/google-gemini/gemini-cli/blob/573846625af9e93b3b968e0e0b86bb093a4c9b16/packages/core/src/context/contextManager.ts#L352-L440">GH…/packages/core/src/context/contextManager.ts#L352-L440</a> (65k budget, aging). &#160;<a class="footnote-backref" href="#fnref:45" title="Jump back to footnote 45 in the text">&#8617;</a></p>
+</li>
+<li id="fn:46">
+<p><a href="https://github.com/google-gemini/gemini-cli/blob/573846625af9e93b3b968e0e0b86bb093a4c9b16/packages/core/src/tools/memoryTool.ts#L11-L12">GH…/packages/core/src/tools/memoryTool.ts#L11-L12</a> (file names); <a href="https://github.com/google-gemini/gemini-cli/blob/573846625af9e93b3b968e0e0b86bb093a4c9b16/packages/core/src/utils/memoryDiscovery.ts#L317-L427">GH…/packages/core/src/utils/memoryDiscovery.ts#L317-L427</a> (scopes); <a href="https://github.com/google-gemini/gemini-cli/blob/573846625af9e93b3b968e0e0b86bb093a4c9b16/packages/core/src/config/config.ts#L2590-L2634">GH…/packages/core/src/config/config.ts#L2590-L2634</a> (tiered injection); <a href="https://github.com/google-gemini/gemini-cli/blob/573846625af9e93b3b968e0e0b86bb093a4c9b16/packages/core/src/context/memoryContextManager.ts#L125-L158">GH…/packages/core/src/context/memoryContextManager.ts#L125-L158</a> (JIT). &#160;<a class="footnote-backref" href="#fnref:46" title="Jump back to footnote 46 in the text">&#8617;</a></p>
+</li>
+<li id="fn:47">
+<p>Negative grep for <code>sqlite|embedding|chroma|faiss</code> on memory/session paths — no hits. &#160;<a class="footnote-backref" href="#fnref:47" title="Jump back to footnote 47 in the text">&#8617;</a></p>
+</li>
+<li id="fn:48">
+<p><a href="https://github.com/google-gemini/gemini-cli/blob/573846625af9e93b3b968e0e0b86bb093a4c9b16/packages/core/src/services/memoryService.ts#L56-L62">GH…/packages/core/src/services/memoryService.ts#L56-L62</a> (cadence gates); <a href="https://github.com/google-gemini/gemini-cli/blob/573846625af9e93b3b968e0e0b86bb093a4c9b16/packages/core/src/services/memoryService.ts#L1133-L1180">GH…/packages/core/src/services/memoryService.ts#L1133-L1180</a> (lock coordination); <a href="https://github.com/google-gemini/gemini-cli/blob/573846625af9e93b3b968e0e0b86bb093a4c9b16/packages/core/src/services/memoryService.ts#L1372-L1402">GH…/packages/core/src/services/memoryService.ts#L1372-L1402</a> (outputs). &#160;<a class="footnote-backref" href="#fnref:48" title="Jump back to footnote 48 in the text">&#8617;</a></p>
+</li>
+<li id="fn:49">
+<p><a href="https://github.com/google-gemini/gemini-cli/blob/573846625af9e93b3b968e0e0b86bb093a4c9b16/packages/core/src/hooks/types.ts#L43-L52">GH…/packages/core/src/hooks/types.ts#L43-L52</a> (enum); <a href="https://github.com/google-gemini/gemini-cli/blob/573846625af9e93b3b968e0e0b86bb093a4c9b16/packages/core/src/hooks/types.ts#L578-L752">GH…/packages/core/src/hooks/types.ts#L578-L752</a> (per-event inputs). &#160;<a class="footnote-backref" href="#fnref:49" title="Jump back to footnote 49 in the text">&#8617;</a></p>
+</li>
+<li id="fn:50">
+<p><a href="https://github.com/google-gemini/gemini-cli/blob/573846625af9e93b3b968e0e0b86bb093a4c9b16/packages/core/src/core/coreToolHookTriggers.ts#L64-L234">GH…/packages/core/src/core/coreToolHookTriggers.ts#L64-L234</a> (tool hook powers); <a href="https://github.com/google-gemini/gemini-cli/blob/573846625af9e93b3b968e0e0b86bb093a4c9b16/packages/core/src/core/geminiChat.ts#L999-L1045">GH…/packages/core/src/core/geminiChat.ts#L999-L1045</a> (BeforeModel rewrite); <a href="https://github.com/google-gemini/gemini-cli/blob/573846625af9e93b3b968e0e0b86bb093a4c9b16/packages/core/src/hooks/types.ts#L130-L211">GH…/packages/core/src/hooks/types.ts#L130-L211</a> (decisions). &#160;<a class="footnote-backref" href="#fnref:50" title="Jump back to footnote 50 in the text">&#8617;</a></p>
+</li>
+<li id="fn:51">
+<p><a href="https://github.com/google-gemini/gemini-cli/blob/573846625af9e93b3b968e0e0b86bb093a4c9b16/packages/core/src/hooks/hookEventHandler.ts#L389-L404">GH…/packages/core/src/hooks/hookEventHandler.ts#L389-L404</a>; <a href="https://github.com/google-gemini/gemini-cli/blob/573846625af9e93b3b968e0e0b86bb093a4c9b16/packages/core/src/hooks/hookSystem.ts#L261-L307">GH…/packages/core/src/hooks/hookSystem.ts#L261-L307</a> (safe defaults). &#160;<a class="footnote-backref" href="#fnref:51" title="Jump back to footnote 51 in the text">&#8617;</a></p>
+</li>
+<li id="fn:52">
+<p><a href="https://github.com/google-gemini/gemini-cli/blob/573846625af9e93b3b968e0e0b86bb093a4c9b16/packages/core/src/hooks/hookRegistry.ts#L178-L185">GH…/packages/core/src/hooks/hookRegistry.ts#L178-L185</a> (untrusted-folder drop). &#160;<a class="footnote-backref" href="#fnref:52" title="Jump back to footnote 52 in the text">&#8617;</a></p>
+</li>
+<li id="fn:53">
+<p><a href="https://github.com/google-gemini/gemini-cli/blob/573846625af9e93b3b968e0e0b86bb093a4c9b16/packages/core/src/tools/tool-names.ts#L191">GH…/packages/core/src/tools/tool-names.ts#L191</a> (<code>invoke_agent</code>); <a href="https://github.com/google-gemini/gemini-cli/blob/573846625af9e93b3b968e0e0b86bb093a4c9b16/packages/core/src/agents/agent-tool.ts#L43-L122">GH…/packages/core/src/agents/agent-tool.ts#L43-L122</a> (<code>AgentTool</code>, prompt smart-mapping). &#160;<a class="footnote-backref" href="#fnref:53" title="Jump back to footnote 53 in the text">&#8617;</a></p>
+</li>
+<li id="fn:54">
+<p><a href="https://github.com/google-gemini/gemini-cli/blob/573846625af9e93b3b968e0e0b86bb093a4c9b16/packages/core/src/agents/local-executor.ts#L168-L282">GH…/packages/core/src/agents/local-executor.ts#L168-L282</a> (isolated registries, derived bus). &#160;<a class="footnote-backref" href="#fnref:54" title="Jump back to footnote 54 in the text">&#8617;</a></p>
+</li>
+<li id="fn:55">
+<p><a href="https://github.com/google-gemini/gemini-cli/blob/573846625af9e93b3b968e0e0b86bb093a4c9b16/packages/core/src/agents/local-executor.ts#L206-L213">GH…/packages/core/src/agents/local-executor.ts#L206-L213</a> (Agent-kind exclusion). &#160;<a class="footnote-backref" href="#fnref:55" title="Jump back to footnote 55 in the text">&#8617;</a></p>
+</li>
+<li id="fn:56">
+<p><a href="https://github.com/google-gemini/gemini-cli/blob/573846625af9e93b3b968e0e0b86bb093a4c9b16/packages/core/src/agents/local-executor.ts#L271-L276">GH…/packages/core/src/agents/local-executor.ts#L271-L276</a> (mandatory <code>complete_task</code>, schema validation). &#160;<a class="footnote-backref" href="#fnref:56" title="Jump back to footnote 56 in the text">&#8617;</a></p>
+</li>
+<li id="fn:57">
+<p><a href="https://github.com/google-gemini/gemini-cli/blob/573846625af9e93b3b968e0e0b86bb093a4c9b16/packages/core/src/agents/types.ts#L54-L66">GH…/packages/core/src/agents/types.ts#L54-L66</a> (budgets); <a href="https://github.com/google-gemini/gemini-cli/blob/573846625af9e93b3b968e0e0b86bb093a4c9b16/packages/core/src/agents/local-executor.ts#L602-L616">GH…/packages/core/src/agents/local-executor.ts#L602-L616</a> (deadline timer); <a href="https://github.com/google-gemini/gemini-cli/blob/573846625af9e93b3b968e0e0b86bb093a4c9b16/packages/core/src/agents/local-executor.ts#L109">GH…/packages/core/src/agents/local-executor.ts#L109</a> (grace period). &#160;<a class="footnote-backref" href="#fnref:57" title="Jump back to footnote 57 in the text">&#8617;</a></p>
+</li>
+<li id="fn:58">
+<p><a href="https://github.com/google-gemini/gemini-cli/blob/573846625af9e93b3b968e0e0b86bb093a4c9b16/packages/core/src/agents/agentLoader.ts#L87-L115">GH…/packages/core/src/agents/agentLoader.ts#L87-L115</a> (frontmatter schema); <a href="https://github.com/google-gemini/gemini-cli/blob/573846625af9e93b3b968e0e0b86bb093a4c9b16/packages/core/src/agents/registry.ts#L158-L276">GH…/packages/core/src/agents/registry.ts#L158-L276</a> (load order); <a href="https://github.com/google-gemini/gemini-cli/blob/573846625af9e93b3b968e0e0b86bb093a4c9b16/packages/core/src/agents/registry.ts#L173-L202">GH…/packages/core/src/agents/registry.ts#L173-L202</a> (trust gating). &#160;<a class="footnote-backref" href="#fnref:58" title="Jump back to footnote 58 in the text">&#8617;</a></p>
+</li>
+<li id="fn:59">
+<p><a href="https://github.com/google-gemini/gemini-cli/blob/573846625af9e93b3b968e0e0b86bb093a4c9b16/packages/core/src/agents/remote-invocation.ts">GH…/packages/core/src/agents/remote-invocation.ts</a>; <a href="https://github.com/google-gemini/gemini-cli/blob/573846625af9e93b3b968e0e0b86bb093a4c9b16/packages/core/src/agents/auth-provider/">GH…/packages/core/src/agents/auth-provider/</a>. &#160;<a class="footnote-backref" href="#fnref:59" title="Jump back to footnote 59 in the text">&#8617;</a></p>
+</li>
+<li id="fn:60">
+<p><a href="https://github.com/google-gemini/gemini-cli/blob/573846625af9e93b3b968e0e0b86bb093a4c9b16/packages/core/src/config/config.ts#L805-L1077">GH…/packages/core/src/config/config.ts#L805-L1077</a> (server config); <a href="https://github.com/google-gemini/gemini-cli/blob/573846625af9e93b3b968e0e0b86bb093a4c9b16/packages/core/src/tools/mcp-client-manager.ts#L305-L408">GH…/packages/core/src/tools/mcp-client-manager.ts#L305-L408</a> (keyed clients, discovery). &#160;<a class="footnote-backref" href="#fnref:60" title="Jump back to footnote 60 in the text">&#8617;</a></p>
+</li>
+<li id="fn:61">
+<p><a href="https://github.com/google-gemini/gemini-cli/blob/573846625af9e93b3b968e0e0b86bb093a4c9b16/packages/core/src/tools/mcp-tool.ts#L501-L538">GH…/packages/core/src/tools/mcp-tool.ts#L501-L538</a> (<code>DiscoveredMCPTool</code>); <a href="https://github.com/google-gemini/gemini-cli/blob/573846625af9e93b3b968e0e0b86bb093a4c9b16/packages/core/src/tools/mcp-tool.ts#L541-L573">GH…/packages/core/src/tools/mcp-tool.ts#L541-L573</a> (<code>generateValidName</code>, 63-char limit). &#160;<a class="footnote-backref" href="#fnref:61" title="Jump back to footnote 61 in the text">&#8617;</a></p>
+</li>
+<li id="fn:62">
+<p><a href="https://github.com/google-gemini/gemini-cli/blob/573846625af9e93b3b968e0e0b86bb093a4c9b16/packages/core/src/tools/mcp-client.ts#L698-L768">GH…/packages/core/src/tools/mcp-client.ts#L698-L768</a> (<code>refreshTools</code> on <code>list_changed</code>). &#160;<a class="footnote-backref" href="#fnref:62" title="Jump back to footnote 62 in the text">&#8617;</a></p>
+</li>
+<li id="fn:63">
+<p><a href="https://github.com/google-gemini/gemini-cli/blob/573846625af9e93b3b968e0e0b86bb093a4c9b16/packages/core/src/tools/mcp-client.ts#L2317">GH…/packages/core/src/tools/mcp-client.ts#L2317</a> (stdio refused untrusted); <a href="https://github.com/google-gemini/gemini-cli/blob/573846625af9e93b3b968e0e0b86bb093a4c9b16/packages/core/src/tools/mcp-client.ts#L2320-L2365">GH…/packages/core/src/tools/mcp-client.ts#L2320-L2365</a> (env sanitization). &#160;<a class="footnote-backref" href="#fnref:63" title="Jump back to footnote 63 in the text">&#8617;</a></p>
+</li>
+<li id="fn:64">
+<p><a href="https://github.com/google-gemini/gemini-cli/blob/573846625af9e93b3b968e0e0b86bb093a4c9b16/packages/core/src/skills/skillLoader.ts#L16-L30">GH…/packages/core/src/skills/skillLoader.ts#L16-L30</a> (<code>SkillDefinition</code>); <a href="https://github.com/google-gemini/gemini-cli/blob/573846625af9e93b3b968e0e0b86bb093a4c9b16/packages/core/src/skills/skillManager.ts#L54-L111">GH…/packages/core/src/skills/skillManager.ts#L54-L111</a> (precedence); <a href="https://github.com/google-gemini/gemini-cli/blob/573846625af9e93b3b968e0e0b86bb093a4c9b16/packages/core/src/skills/skillManager.ts#L82-L87">GH…/packages/core/src/skills/skillManager.ts#L82-L87</a> (trust gate). &#160;<a class="footnote-backref" href="#fnref:64" title="Jump back to footnote 64 in the text">&#8617;</a></p>
+</li>
+<li id="fn:65">
+<p><a href="https://github.com/google-gemini/gemini-cli/blob/573846625af9e93b3b968e0e0b86bb093a4c9b16/packages/core/src/prompts/snippets.ts#L314-L325">GH…/packages/core/src/prompts/snippets.ts#L314-L325</a> (<code>renderAgentSkills</code>); <a href="https://github.com/google-gemini/gemini-cli/blob/573846625af9e93b3b968e0e0b86bb093a4c9b16/packages/core/src/tools/activate-skill.ts#L85-L158">GH…/packages/core/src/tools/activate-skill.ts#L85-L158</a> (confirmation, <code>&lt;activated_skill&gt;</code> injection). &#160;<a class="footnote-backref" href="#fnref:65" title="Jump back to footnote 65 in the text">&#8617;</a></p>
+</li>
+<li id="fn:66">
+<p><a href="https://github.com/google-gemini/gemini-cli/blob/573846625af9e93b3b968e0e0b86bb093a4c9b16/packages/core/src/agents/skill-extraction-agent.ts#L27-L91">GH…/packages/core/src/agents/skill-extraction-agent.ts#L27-L91</a>. &#160;<a class="footnote-backref" href="#fnref:66" title="Jump back to footnote 66 in the text">&#8617;</a></p>
+</li>
+<li id="fn:67">
+<p><a href="https://github.com/google-gemini/gemini-cli/blob/573846625af9e93b3b968e0e0b86bb093a4c9b16/packages/cli/src/gemini.tsx">GH…/packages/cli/src/gemini.tsx</a> (TUI); <a href="https://github.com/google-gemini/gemini-cli/blob/573846625af9e93b3b968e0e0b86bb093a4c9b16/packages/cli/src/nonInteractiveCli.ts">GH…/packages/cli/src/nonInteractiveCli.ts</a>; <a href="https://github.com/google-gemini/gemini-cli/blob/573846625af9e93b3b968e0e0b86bb093a4c9b16/packages/cli/src/acp/">GH…/packages/cli/src/acp/</a>; <a href="https://github.com/google-gemini/gemini-cli/blob/573846625af9e93b3b968e0e0b86bb093a4c9b16/packages/a2a-server/">GH…/packages/a2a-server/</a>; <a href="https://github.com/google-gemini/gemini-cli/blob/573846625af9e93b3b968e0e0b86bb093a4c9b16/packages/sdk/">GH…/packages/sdk/</a>; <a href="https://github.com/google-gemini/gemini-cli/blob/573846625af9e93b3b968e0e0b86bb093a4c9b16/packages/vscode-ide-companion/">GH…/packages/vscode-ide-companion/</a>. &#160;<a class="footnote-backref" href="#fnref:67" title="Jump back to footnote 67 in the text">&#8617;</a></p>
+</li>
+<li id="fn:68">
+<p><a href="https://github.com/google-gemini/gemini-cli/blob/573846625af9e93b3b968e0e0b86bb093a4c9b16/packages/cli/src/config/settingsSchema.ts#L238">GH…/packages/cli/src/config/settingsSchema.ts#L238</a> (YOLO CLI-only). &#160;<a class="footnote-backref" href="#fnref:68" title="Jump back to footnote 68 in the text">&#8617;</a></p>
+</li>
+</ol>
+</div>
+</main>
+</body>
+</html>

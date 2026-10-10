@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 735" width="1600" font-family="system-ui, -apple-system, sans-serif">
+<defs><marker id="arrc" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 1 L 9 5 L 0 9 z" fill="#d08c4e"/></marker><marker id="arrr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 1 L 9 5 L 0 9 z" fill="#8a7a66"/></marker></defs>
+<rect x="0" y="0" width="1600" height="735" fill="#f7f2e9"/>
+<text x="67.01570680628272" y="44" font-size="26" font-weight="700" fill="#000000">Gemini CLI: session persistence and memory</text>
+<text x="67.01570680628272" y="74" font-size="15" fill="#000000">JSONL recording → 0.5-threshold compression → &lt;state_snapshot&gt;; background extraction mines old sessions</text>
+<line x1="172" y1="110" x2="172" y2="685" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="84" y="82" width="176" height="56" rx="10" fill="#ffffff" stroke="#3a2f26" stroke-width="1.5"/>
+<text x="172" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#000000">GeminiClient</text>
+<line x1="381" y1="110" x2="381" y2="685" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="293" y="82" width="176" height="56" rx="10" fill="#ffffff" stroke="#3a2f26" stroke-width="1.5"/>
+<text x="381" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#000000">ChatRecordingService</text>
+<line x1="591" y1="110" x2="591" y2="685" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="503" y="82" width="176" height="56" rx="10" fill="#ffffff" stroke="#3a2f26" stroke-width="1.5"/>
+<text x="591" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#000000">Session JSONL</text>
+<line x1="800" y1="110" x2="800" y2="685" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="712" y="82" width="176" height="56" rx="10" fill="#ffffff" stroke="#3a2f26" stroke-width="1.5"/>
+<text x="800" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#000000">ChatCompressionService</text>
+<line x1="1009" y1="110" x2="1009" y2="685" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="921" y="82" width="176" height="56" rx="10" fill="#ffffff" stroke="#3a2f26" stroke-width="1.5"/>
+<text x="1009" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#000000">Model</text>
+<line x1="1219" y1="110" x2="1219" y2="685" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="1131" y="82" width="176" height="56" rx="10" fill="#ffffff" stroke="#3a2f26" stroke-width="1.5"/>
+<text x="1219" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#000000">MemoryService</text>
+<line x1="1428" y1="110" x2="1428" y2="685" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="1340" y="82" width="176" height="56" rx="10" fill="#ffffff" stroke="#3a2f26" stroke-width="1.5"/>
+<text x="1428" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#000000">Memory inbox</text>
+<line x1="172" y1="141" x2="371" y2="141" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="198" cy="127" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="198" y="132" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">1</text>
+<text x="216" y="132" font-size="14" fill="#000000">turn events (text, toolCalls, tokens)</text>
+<line x1="381" y1="186" x2="581" y2="186" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="408" cy="172" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="408" y="177" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">2</text>
+<text x="426" y="177" font-size="14" fill="#000000">append JSONL record {id, timestamp, content, toolCalls}</text>
+<path d="M 172 231 h 37 v 22 H 182" fill="none" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="190" cy="215" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="190" y="220" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">3</text>
+<text x="219" y="236" font-size="14" fill="#000000">lastPromptTokenCount &gt;= 0.5 × tokenLimit?</text>
+<rect x="84" y="256" width="804" height="44" rx="8" fill="#d08c4e" fill-opacity="0.13" stroke="#d08c4e" stroke-width="1"/>
+<text x="486" y="283" text-anchor="middle" font-size="14" fill="#000000">compression trigger</text>
+<line x1="172" y1="330" x2="790" y2="330" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="408" cy="316" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="408" y="321" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">4</text>
+<text x="426" y="321" font-size="14" fill="#000000">tryCompressChat(): split at 70% by chars</text>
+<line x1="800" y1="375" x2="999" y2="375" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="827" cy="361" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="827" y="366" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">5</text>
+<text x="845" y="366" font-size="14" fill="#000000">Phase 1: summarize → &lt;state_snapshot&gt; XML</text>
+<line x1="800" y1="421" x2="999" y2="421" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="827" cy="407" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="827" y="412" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">6</text>
+<text x="845" y="412" font-size="14" fill="#000000">Phase 2: probe — self-correct omissions</text>
+<line x1="1009" y1="466" x2="810" y2="466" stroke="#8a7a66" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrr)"/>
+<circle cx="827" cy="452" r="11" fill="#ffffff" stroke="#8a7a66" stroke-width="1.5"/>
+<text x="827" y="457" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">7</text>
+<text x="845" y="457" font-size="14" fill="#000000">verified snapshot {goal, constraints, artifacts...}</text>
+<line x1="800" y1="511" x2="182" y2="511" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="408" cy="497" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="408" y="502" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">8</text>
+<text x="426" y="502" font-size="14" fill="#000000">startChat([user: snapshot, model: ack, ...kept 30%])</text>
+<rect x="84" y="536" width="1014" height="44" rx="8" fill="#d08c4e" fill-opacity="0.13" stroke="#d08c4e" stroke-width="1"/>
+<text x="591" y="563" text-anchor="middle" font-size="14" fill="#000000">alternative pipeline</text>
+<path d="M 1219 610 h 37 v 22 H 1229" fill="none" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="1237" cy="594" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="1237" y="599" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">9</text>
+<text x="1266" y="615" font-size="14" fill="#000000">every 30 min: ≥10 msgs, ≥3h idle, lock acquired</text>
+<line x1="1219" y1="655" x2="1418" y2="655" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="1246" cy="641" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="1246" y="646" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">10</text>
+<text x="1264" y="646" font-size="14" fill="#000000">mine session JSONLs → skill patches + memory updates</text>
+</svg>

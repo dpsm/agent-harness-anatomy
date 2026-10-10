@@ -1,0 +1,80 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1002" width="1600" font-family="system-ui, -apple-system, sans-serif">
+<defs><marker id="arrc" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 1 L 9 5 L 0 9 z" fill="#d08c4e"/></marker><marker id="arrr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 1 L 9 5 L 0 9 z" fill="#8a7a66"/></marker></defs>
+<rect x="0" y="0" width="1600" height="1002" fill="#f7f2e9"/>
+<text x="77.10843373493975" y="44" font-size="26" font-weight="700" fill="#000000">Gemini CLI: one turn of the agent loop</text>
+<text x="77.10843373493975" y="74" font-size="15" fill="#000000">sendMessageStream → processTurn → Turn.run → scheduler → submitQuery continuation</text>
+<line x1="198" y1="110" x2="198" y2="945" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="96" y="82" width="202" height="56" rx="10" fill="#ffffff" stroke="#3a2f26" stroke-width="1.5"/>
+<text x="198" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#000000">User/TUI</text>
+<line x1="439" y1="110" x2="439" y2="945" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="337" y="82" width="202" height="56" rx="10" fill="#ffffff" stroke="#3a2f26" stroke-width="1.5"/>
+<text x="439" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#000000">GeminiClient</text>
+<line x1="680" y1="110" x2="680" y2="945" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="578" y="82" width="202" height="56" rx="10" fill="#ffffff" stroke="#3a2f26" stroke-width="1.5"/>
+<text x="680" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#000000">ModelRouter</text>
+<line x1="920" y1="110" x2="920" y2="945" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="819" y="82" width="202" height="56" rx="10" fill="#ffffff" stroke="#3a2f26" stroke-width="1.5"/>
+<text x="920" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#000000">Turn</text>
+<line x1="1161" y1="110" x2="1161" y2="945" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="1060" y="82" width="202" height="56" rx="10" fill="#ffffff" stroke="#3a2f26" stroke-width="1.5"/>
+<text x="1161" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#000000">GeminiChat/API</text>
+<line x1="1402" y1="110" x2="1402" y2="945" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="1301" y="82" width="202" height="56" rx="10" fill="#ffffff" stroke="#3a2f26" stroke-width="1.5"/>
+<text x="1402" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#000000">ToolScheduler</text>
+<line x1="198" y1="162" x2="429" y2="162" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="240" cy="148" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="240" y="153" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">1</text>
+<text x="258" y="153" font-size="14" fill="#000000">prompt(text)</text>
+<line x1="439" y1="214" x2="1392" y2="214" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="842" cy="200" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="842" y="205" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">2</text>
+<text x="860" y="205" font-size="14" fill="#000000">fireBeforeAgentEvent(prompt_id)</text>
+<path d="M 439 266 h 42 v 25 H 449" fill="none" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="460" cy="250" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="460" y="255" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">3</text>
+<text x="491" y="271" font-size="14" fill="#000000">processTurn: turnCount++, renderHistory()</text>
+<path d="M 439 318 h 42 v 25 H 449" fill="none" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="460" cy="302" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="460" y="307" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">4</text>
+<text x="491" y="323" font-size="14" fill="#000000">loopDetector.turnStarted()</text>
+<line x1="439" y1="370" x2="670" y2="370" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="481" cy="356" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="481" y="361" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">5</text>
+<text x="499" y="361" font-size="14" fill="#000000">route(routingContext)</text>
+<line x1="680" y1="422" x2="449" y2="422" stroke="#8a7a66" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrr)"/>
+<circle cx="481" cy="408" r="11" fill="#ffffff" stroke="#8a7a66" stroke-width="1.5"/>
+<text x="481" y="413" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">6</text>
+<text x="499" y="413" font-size="14" fill="#000000">decision {model, strategy, reasoning}</text>
+<line x1="439" y1="474" x2="910" y2="474" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="602" cy="460" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="602" y="465" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">7</text>
+<text x="620" y="465" font-size="14" fill="#000000">turn.run(modelToUse)</text>
+<line x1="920" y1="526" x2="1151" y2="526" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="963" cy="512" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="963" y="517" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">8</text>
+<text x="981" y="517" font-size="14" fill="#000000">sendMessageStream → Gemini API</text>
+<line x1="1161" y1="578" x2="930" y2="578" stroke="#8a7a66" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrr)"/>
+<circle cx="963" cy="564" r="11" fill="#ffffff" stroke="#8a7a66" stroke-width="1.5"/>
+<text x="963" y="569" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">9</text>
+<text x="981" y="569" font-size="14" fill="#000000">stream: Thought, Content, ToolCallRequest...</text>
+<line x1="920" y1="630" x2="449" y2="630" stroke="#8a7a66" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrr)"/>
+<circle cx="602" cy="616" r="11" fill="#ffffff" stroke="#8a7a66" stroke-width="1.5"/>
+<text x="602" y="621" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">10</text>
+<text x="620" y="621" font-size="14" fill="#000000">yield ToolCallRequest events</text>
+<rect x="96" y="659" width="1407" height="44" rx="8" fill="#d08c4e" fill-opacity="0.13" stroke="#d08c4e" stroke-width="1"/>
+<text x="800" y="686" text-anchor="middle" font-size="14" fill="#000000">tool calls collected</text>
+<line x1="439" y1="744" x2="1392" y2="744" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="842" cy="730" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="842" y="735" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">11</text>
+<text x="860" y="735" font-size="14" fill="#000000">scheduler.schedule(toolCalls)</text>
+<line x1="1402" y1="796" x2="449" y2="796" stroke="#8a7a66" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrr)"/>
+<circle cx="842" cy="782" r="11" fill="#ffffff" stroke="#8a7a66" stroke-width="1.5"/>
+<text x="842" y="787" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">12</text>
+<text x="860" y="787" font-size="14" fill="#000000">execute → results</text>
+<path d="M 439 848 h 42 v 25 H 449" fill="none" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="460" cy="832" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="460" y="837" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">13</text>
+<text x="491" y="853" font-size="14" fill="#000000">submitQuery(responses, isContinuation:true)</text>
+<rect x="96" y="877" width="1407" height="44" rx="8" fill="#d08c4e" fill-opacity="0.13" stroke="#d08c4e" stroke-width="1"/>
+<text x="800" y="904" text-anchor="middle" font-size="14" fill="#000000">termination</text>
+</svg>

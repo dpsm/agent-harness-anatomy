@@ -1,0 +1,233 @@
+{
+ "edges": [
+  {
+   "from": "tui",
+   "label": "prompt",
+   "to": "client"
+  },
+  {
+   "from": "client",
+   "label": "route() per turn",
+   "to": "router"
+  },
+  {
+   "from": "router",
+   "label": "selected model",
+   "to": "turn"
+  },
+  {
+   "from": "turn",
+   "label": "stream request",
+   "to": "chat"
+  },
+  {
+   "from": "chat",
+   "label": "tool calls",
+   "to": "scheduler",
+   "label_t": 0.22
+  },
+  {
+   "from": "scheduler",
+   "label": "checkPolicy",
+   "to": "policy"
+  },
+  {
+   "from": "policy",
+   "label": "ASK_USER",
+   "to": "confirm"
+  },
+  {
+   "from": "confirm",
+   "label": "outcome",
+   "side": "right",
+   "to": "scheduler",
+   "label_t": 0.35
+  },
+  {
+   "from": "scheduler",
+   "label": "execute",
+   "to": "tools",
+   "label_t": 0.3
+  },
+  {
+   "from": "tools",
+   "label": "discovered",
+   "to": "mcp"
+  },
+  {
+   "from": "scheduler",
+   "label": "BeforeTool / AfterTool",
+   "to": "hooks",
+   "label_t": 0.28
+  },
+  {
+   "from": "client",
+   "label": "BeforeAgent / AfterAgent",
+   "to": "hooks",
+   "label_t": 0.62
+  },
+  {
+   "from": "client",
+   "label": "record / compress",
+   "to": "memory",
+   "label_t": 0.3
+  },
+  {
+   "from": "scheduler",
+   "label": "invoke_agent",
+   "to": "subagents",
+   "label_t": 0.3
+  },
+  {
+   "from": "policy",
+   "label": "shell policy",
+   "to": "sandbox",
+   "label_t": 0.7
+  }
+ ],
+ "nodes": [
+  {
+   "grade": "verified",
+   "h": 96,
+   "id": "tui",
+   "label": "Ink TUI",
+   "sub": "input, stream render",
+   "w": 380,
+   "x": 20,
+   "y": 20
+  },
+  {
+   "grade": "verified",
+   "h": 96,
+   "id": "client",
+   "label": "GeminiClient",
+   "sub": "sendMessageStream, MAX_TURNS=100",
+   "w": 380,
+   "x": 20,
+   "y": 150
+  },
+  {
+   "grade": "verified",
+   "h": 96,
+   "id": "router",
+   "label": "Model Router",
+   "sub": "composite strategy chain",
+   "w": 380,
+   "x": 20,
+   "y": 280
+  },
+  {
+   "grade": "verified",
+   "h": 96,
+   "id": "turn",
+   "label": "Turn",
+   "sub": "one model call, typed events",
+   "w": 380,
+   "x": 20,
+   "y": 410
+  },
+  {
+   "grade": "verified",
+   "h": 96,
+   "id": "chat",
+   "label": "GeminiChat",
+   "sub": "API stream, model hooks",
+   "w": 380,
+   "x": 20,
+   "y": 540
+  },
+  {
+   "grade": "verified",
+   "h": 96,
+   "id": "scheduler",
+   "label": "Tool Scheduler",
+   "sub": "lifecycle state machine",
+   "w": 380,
+   "x": 510,
+   "y": 540
+  },
+  {
+   "grade": "verified",
+   "h": 96,
+   "id": "policy",
+   "label": "Policy Engine",
+   "sub": "TOML tiers, shell heuristics",
+   "w": 380,
+   "x": 510,
+   "y": 670
+  },
+  {
+   "grade": "verified",
+   "h": 96,
+   "id": "confirm",
+   "label": "Confirmation Bus",
+   "sub": "EventEmitter, UI dialogs",
+   "w": 380,
+   "x": 510,
+   "y": 800
+  },
+  {
+   "grade": "verified",
+   "h": 96,
+   "id": "memory",
+   "label": "Memory",
+   "sub": "JSONL, GEMINI.md, compression",
+   "w": 380,
+   "x": 1000,
+   "y": 150
+  },
+  {
+   "grade": "verified",
+   "h": 96,
+   "id": "hooks",
+   "label": "Hooks (11)",
+   "sub": "rewrite args, requests, chunks",
+   "w": 380,
+   "x": 1000,
+   "y": 280
+  },
+  {
+   "grade": "verified",
+   "h": 96,
+   "id": "sandbox",
+   "label": "Sandbox",
+   "sub": "Seatbelt / bwrap / tokens",
+   "w": 380,
+   "x": 1000,
+   "y": 410
+  },
+  {
+   "grade": "verified",
+   "h": 96,
+   "id": "tools",
+   "label": "Tool Registry",
+   "sub": "26 built-ins, no tool search",
+   "w": 380,
+   "x": 1000,
+   "y": 540
+  },
+  {
+   "grade": "verified",
+   "h": 96,
+   "id": "mcp",
+   "label": "MCP",
+   "sub": "mcp_ namespaced servers",
+   "w": 380,
+   "x": 1000,
+   "y": 670
+  },
+  {
+   "grade": "verified",
+   "h": 96,
+   "id": "subagents",
+   "label": "Subagents",
+   "sub": "invoke_agent, isolated registries",
+   "w": 380,
+   "x": 1000,
+   "y": 800
+  }
+ ],
+ "repo": "https://github.com/google-gemini/gemini-cli",
+ "sha": "573846625af9e93b3b968e0e0b86bb093a4c9b16",
+ "title": "Gemini CLI architecture"
+}
