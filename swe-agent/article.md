@@ -107,6 +107,8 @@ stages, each verifiable in source:
    dict (`working_dir`, `open_file`, `diff`, …) is rendered into the next
    observation template.[^7]
 
+![The ACI pipeline: YAML bundle to function schema to shell string to container](figures/seq-aci.svg)
+
 The command inventory, read off each bundle's `config.yaml`: `windowed`
 gives `open`/`goto`/`scroll_up`/`scroll_down`/`create` (the paper's 100-line
 file viewer); `search` gives `find_file`/`search_dir`/`search_file`; three
@@ -152,6 +154,8 @@ Synchronous `while`, one model call → one command execution per step, the
 (965, one model query + parse + execute) → `add_step_to_history()` (673) →
 trajectory bookkeeping.[^9]
 
+![One turn through the loop: step to forward to query, parse, execute, persist](figures/seq-loop.svg)
+
 Termination conditions, exhaustively — `step.done` is set only by:
 
 1. `submit`: the `<<SWE_AGENT_SUBMISSION>>` marker in command output →
@@ -170,6 +174,8 @@ Termination conditions, exhaustively — `step.done` is set only by:
 6. Cost/call/context limits and wall-clock timeouts
    (`total_execution_timeout=1800`, three consecutive command timeouts).[^10]
 
+![Submitting a patch: submission marker in output to model.patch to trajectory write](figures/seq-submit.svg)
+
 Two deliberate absences, both verified by grep rather than asserted from
 silence: **there is no step-count cap on the loop itself** — full-`agents.py`
 grep shows no step counter; only the indirect `per_instance_call_limit`
@@ -187,6 +193,8 @@ attempts stamped with `best_attempt_idx`. Two retry strategies live in
 below `accept_score`, up to `max_attempts`) and `ChooserRetryLoop` (an LM
 picks the best of the attempts). The benchmark heavy config selects this
 outer loop: `agent: type: retry` with `retry_loop: type: chooser`.[^12]
+
+![The reviewer retry loop: attempt to score to retry decision to reset to attempt again](figures/seq-reviewer.svg)
 
 The correction the name invites: `reviewer.py` sounds like it reviews
 *actions*. It never sees one. The `reviewer` import in `agents.py` is
@@ -269,6 +277,8 @@ requery and go straight to `attempt_autosubmission_after_error`.[^10]
   `replay` (re-executes a `.traj` file), `instant_empty_submit`,
   `PredeterminedTestModel` (tests) — all wired through the `get_model()`
   dispatcher.[^13]
+
+![Replaying a trajectory: .traj in to recorded actions out to re-executed live](figures/seq-replay.svg)
 
 - **Prompt construction.** Jinja2 `TemplateConfig`: system, instance, and
   next-step templates, plus truncation, no-output, shell-error, and
