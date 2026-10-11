@@ -42,7 +42,7 @@
       "label": "run_conversation",
       "sub": "agent/conversation_loop.py:1605",
       "x": 20,
-      "y": 280,
+      "y": 410,
       "w": 380,
       "h": 96,
       "grade": "verified",
@@ -59,7 +59,7 @@
       "label": "Messaging gateway",
       "sub": "gateway/run.py:5794",
       "x": 20,
-      "y": 410,
+      "y": 280,
       "w": 380,
       "h": 96,
       "grade": "verified",
@@ -126,7 +126,7 @@
       "id": "dispatch",
       "label": "handle_function_call",
       "sub": "model_tools.py:872",
-      "x": 470,
+      "x": 540,
       "y": 20,
       "w": 380,
       "h": 96,
@@ -143,7 +143,7 @@
       "id": "registry",
       "label": "ToolRegistry",
       "sub": "tools/registry.py:427",
-      "x": 470,
+      "x": 540,
       "y": 150,
       "w": 380,
       "h": 96,
@@ -160,7 +160,7 @@
       "id": "toolsearch",
       "label": "Tool Search bridge",
       "sub": "model_tools.py:219",
-      "x": 470,
+      "x": 540,
       "y": 280,
       "w": 380,
       "h": 96,
@@ -177,7 +177,7 @@
       "id": "approval",
       "label": "Approval queue",
       "sub": "tools/approval.py:138",
-      "x": 470,
+      "x": 540,
       "y": 410,
       "w": 380,
       "h": 96,
@@ -194,7 +194,7 @@
       "id": "delegate",
       "label": "delegate_task",
       "sub": "tools/delegate_tool.py:71",
-      "x": 470,
+      "x": 540,
       "y": 540,
       "w": 380,
       "h": 96,
@@ -211,7 +211,7 @@
       "id": "curator",
       "label": "Curator",
       "sub": "agent/curator.py:1150",
-      "x": 920,
+      "x": 1060,
       "y": 20,
       "w": 380,
       "h": 96,
@@ -228,7 +228,7 @@
       "id": "bg_review",
       "label": "Background review",
       "sub": "agent/background_review.py",
-      "x": 920,
+      "x": 1060,
       "y": 150,
       "w": 380,
       "h": 96,
@@ -245,7 +245,7 @@
       "id": "skill_manage",
       "label": "skill_manage tool",
       "sub": "tools/skill_manager_tool.py:762",
-      "x": 920,
+      "x": 1060,
       "y": 280,
       "w": 380,
       "h": 96,
@@ -262,7 +262,7 @@
       "id": "skills",
       "label": "Skill library",
       "sub": "skills/",
-      "x": 920,
+      "x": 1060,
       "y": 410,
       "w": 380,
       "h": 96,
@@ -279,7 +279,7 @@
       "id": "sessiondb",
       "label": "SessionDB",
       "sub": "hermes_state.py",
-      "x": 920,
+      "x": 1060,
       "y": 540,
       "w": 380,
       "h": 96,
@@ -296,7 +296,7 @@
       "id": "memory",
       "label": "MemoryProvider",
       "sub": "agent/memory_provider.py:84",
-      "x": 920,
+      "x": 1060,
       "y": 670,
       "w": 380,
       "h": 96,
@@ -313,7 +313,7 @@
       "id": "providers",
       "label": "Provider profiles",
       "sub": "providers/base.py:42",
-      "x": 920,
+      "x": 1060,
       "y": 800,
       "w": 380,
       "h": 96,
@@ -341,22 +341,25 @@
     {
       "from": "gateway",
       "to": "conv_loop",
-      "label": "session key \u2192 turn"
+      "label": "session key -> turn"
     },
     {
       "from": "conv_loop",
       "to": "turn_phases",
-      "label": null
+      "label": "phase handlers",
+      "side": "right"
     },
     {
       "from": "conv_loop",
       "to": "turn_lease",
-      "label": null
+      "label": "acquire lease",
+      "side": "right"
     },
     {
       "from": "conv_loop",
       "to": "compaction",
-      "label": null
+      "label": "compact context",
+      "side": "right"
     },
     {
       "from": "conv_loop",
@@ -386,7 +389,8 @@
     {
       "from": "delegate",
       "to": "conv_loop",
-      "label": "child turn"
+      "label": "child turn",
+      "label_t": 0.7
     },
     {
       "from": "conv_loop",
