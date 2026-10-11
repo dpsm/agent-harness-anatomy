@@ -1,0 +1,453 @@
+{
+  "edges": [
+    {
+      "from": "boot",
+      "label": "starts router task",
+      "to": "router",
+      "label_dx": -60
+    },
+    {
+      "from": "boot",
+      "label": "binds publish",
+      "to": "scheduler",
+      "label_dx": -30
+    },
+    {
+      "from": "boot",
+      "label": "conditional init",
+      "to": "agent",
+      "label_dx": -60
+    },
+    {
+      "from": "im-cloud",
+      "label": "inbound updates",
+      "to": "im-gw",
+      "label_dx": -30
+    },
+    {
+      "from": "im-gw",
+      "label": "publish_message",
+      "to": "router",
+      "label_dx": -30
+    },
+    {
+      "from": "router",
+      "label": "send_message",
+      "to": "im-gw",
+      "label_dx": -30
+    },
+    {
+      "from": "scheduler",
+      "label": "trigger events",
+      "to": "router",
+      "label_t": 0.65,
+      "label_dx": -30
+    },
+    {
+      "from": "router",
+      "label": "call_cap / run_script",
+      "to": "fastpath",
+      "label_t": 0.75,
+      "label_dx": -60
+    },
+    {
+      "from": "router",
+      "label": "run_agent async",
+      "to": "agent",
+      "label_dx": -30,
+      "label_dy": 20
+    },
+    {
+      "from": "agent",
+      "label": "out_message",
+      "to": "router",
+      "label_dx": -30,
+      "label_dy": -20
+    },
+    {
+      "from": "agent",
+      "label": "POST (no stream)",
+      "to": "llm-cloud",
+      "label_dx": -60
+    },
+    {
+      "from": "llm-cloud",
+      "label": "tool calls",
+      "to": "agent"
+    },
+    {
+      "from": "agent",
+      "label": "executes tool call",
+      "to": "caps",
+      "label_dx": -60
+    },
+    {
+      "from": "agent",
+      "label": "persists context",
+      "to": "memory",
+      "label_dx": -30
+    },
+    {
+      "from": "memory",
+      "label": "providers inject",
+      "to": "agent",
+      "label_dx": -60
+    },
+    {
+      "from": "caps",
+      "label": "lua_run_script (+async)",
+      "to": "lua",
+      "label_dx": -60,
+      "label_dy": 18
+    },
+    {
+      "from": "lua",
+      "label": "event_publisher.publish",
+      "to": "router",
+      "label_t": 0.25,
+      "label_dx": -60
+    },
+    {
+      "from": "fastpath",
+      "label": "run_script",
+      "to": "lua"
+    },
+    {
+      "from": "caps",
+      "label": "mcp_call_tool",
+      "to": "mcp-client",
+      "label_dx": -30
+    },
+    {
+      "from": "mcp-client",
+      "label": "mDNS discover + call_tool",
+      "to": "mcp-server",
+      "label_dx": -60
+    },
+    {
+      "from": "skills",
+      "label": "cap_groups unlock",
+      "to": "caps",
+      "label_dx": -30
+    },
+    {
+      "from": "skills",
+      "label": "skills_list provider",
+      "to": "agent",
+      "label_dx": -60
+    }
+  ],
+  "nodes": [
+    {
+      "cloud": true,
+      "excerpt": "#define CAP_IM_TG_API_BASE            \"https://api.telegram.org\"",
+      "grade": "verified",
+      "h": 120,
+      "id": "im-cloud",
+      "label": "IM cloud endpoints",
+      "links": [
+        {
+          "label": "cap_im_tg.c:35",
+          "url": "https://github.com/espressif/esp-claw/blob/142bf3f318781708700aed51793a12ea47f46150/components/claw_capabilities/cap_im_platform/src/cap_im_tg.c#L35"
+        }
+      ],
+      "sub": "Telegram/QQ/Feishu/WeChat APIs",
+      "w": 220,
+      "x": 60,
+      "y": 100
+    },
+    {
+      "excerpt": "ESP_ERROR_CHECK(app_claw_start(s_claw_config));",
+      "grade": "verified",
+      "h": 120,
+      "id": "boot",
+      "label": "Boot wiring",
+      "links": [
+        {
+          "label": "main.c:316",
+          "url": "https://github.com/espressif/esp-claw/blob/142bf3f318781708700aed51793a12ea47f46150/application/edge_agent/main/main.c#L316"
+        },
+        {
+          "label": "main.c:419",
+          "url": "https://github.com/espressif/esp-claw/blob/142bf3f318781708700aed51793a12ea47f46150/application/edge_agent/main/main.c#L419"
+        },
+        {
+          "label": "app_claw.c:390",
+          "url": "https://github.com/espressif/esp-claw/blob/142bf3f318781708700aed51793a12ea47f46150/components/common/app_claw/app_claw.c#L390"
+        },
+        {
+          "label": "app_claw.c:528-531",
+          "url": "https://github.com/espressif/esp-claw/blob/142bf3f318781708700aed51793a12ea47f46150/components/common/app_claw/app_claw.c#L528-L531"
+        }
+      ],
+      "sub": "app_claw.c / main.c",
+      "w": 220,
+      "x": 450,
+      "y": 100
+    },
+    {
+      "excerpt": "static esp_err_t cap_scheduler_publish_entry_locked(cap_scheduler_entry_t *entry,",
+      "grade": "verified",
+      "h": 120,
+      "id": "scheduler",
+      "label": "Scheduler",
+      "links": [
+        {
+          "label": "cap_scheduler.c:426-519",
+          "url": "https://github.com/espressif/esp-claw/blob/142bf3f318781708700aed51793a12ea47f46150/components/claw_capabilities/cap_scheduler/src/cap_scheduler.c#L426-L519"
+        }
+      ],
+      "sub": "cap_scheduler",
+      "w": 220,
+      "x": 840,
+      "y": 100
+    },
+    {
+      "excerpt": "return claw_event_router_publish_message(\"tg_gateway\",",
+      "grade": "verified",
+      "h": 120,
+      "id": "im-gw",
+      "label": "IM gateways",
+      "links": [
+        {
+          "label": "cap_im_tg.c:252-261",
+          "url": "https://github.com/espressif/esp-claw/blob/142bf3f318781708700aed51793a12ea47f46150/components/claw_capabilities/cap_im_platform/src/cap_im_tg.c#L252-L261"
+        },
+        {
+          "label": "cap_im_tg.c:269-295",
+          "url": "https://github.com/espressif/esp-claw/blob/142bf3f318781708700aed51793a12ea47f46150/components/claw_capabilities/cap_im_platform/src/cap_im_tg.c#L269-L295"
+        }
+      ],
+      "sub": "cap_im_tg/qq/feishu/wechat/local",
+      "w": 220,
+      "x": 60,
+      "y": 254
+    },
+    {
+      "excerpt": "CLAW_EVENT_ROUTER_ACTION_CALL_CAP = 0,\nCLAW_EVENT_ROUTER_ACTION_RUN_AGENT = 1,\nCLAW_EVENT_ROUTER_ACTION_RUN_SCRIPT = 2,",
+      "grade": "verified",
+      "h": 120,
+      "id": "router",
+      "label": "Event router",
+      "links": [
+        {
+          "label": "claw_event_router.c:2258-2285",
+          "url": "https://github.com/espressif/esp-claw/blob/142bf3f318781708700aed51793a12ea47f46150/components/claw_modules/claw_event_router/src/claw_event_router.c#L2258-L2285"
+        },
+        {
+          "label": "claw_event_router.h:55-62",
+          "url": "https://github.com/espressif/esp-claw/blob/142bf3f318781708700aed51793a12ea47f46150/components/claw_modules/claw_event_router/include/claw_event_router.h#L55-L62"
+        },
+        {
+          "label": "claw_event_router.c:1739-1760",
+          "url": "https://github.com/espressif/esp-claw/blob/142bf3f318781708700aed51793a12ea47f46150/components/claw_modules/claw_event_router/src/claw_event_router.c#L1739-L1760"
+        }
+      ],
+      "sub": "claw_event_router + rules JSON",
+      "w": 220,
+      "x": 450,
+      "y": 254
+    },
+    {
+      "excerpt": "if (xQueueReceive(core->request_queue, &request, portMAX_DELAY) != pdTRUE) {",
+      "grade": "verified",
+      "h": 120,
+      "id": "agent",
+      "label": "Agent loop",
+      "links": [
+        {
+          "label": "claw_core_agent_loop.c:93-121",
+          "url": "https://github.com/espressif/esp-claw/blob/142bf3f318781708700aed51793a12ea47f46150/components/claw_modules/claw_core/src/claw_core_agent_loop.c#L93-L121"
+        },
+        {
+          "label": "claw_core_context.c:473-480",
+          "url": "https://github.com/espressif/esp-claw/blob/142bf3f318781708700aed51793a12ea47f46150/components/claw_modules/claw_core/src/claw_core_context.c#L473-L480"
+        },
+        {
+          "label": "claw_core_events.c:156-173",
+          "url": "https://github.com/espressif/esp-claw/blob/142bf3f318781708700aed51793a12ea47f46150/components/claw_modules/claw_core/src/claw_core_events.c#L156-L173"
+        }
+      ],
+      "sub": "claw_core agent loop task",
+      "w": 220,
+      "x": 840,
+      "y": 254
+    },
+    {
+      "cloud": true,
+      "excerpt": "ESP_LOGD(TAG, \"POST %s\", request->url);\nerr = esp_http_client_perform(client);",
+      "grade": "verified",
+      "h": 120,
+      "id": "llm-cloud",
+      "label": "Cloud LLM backends",
+      "links": [
+        {
+          "label": "claw_llm_http_transport.c:335-342",
+          "url": "https://github.com/espressif/esp-claw/blob/142bf3f318781708700aed51793a12ea47f46150/components/claw_modules/claw_core/src/llm/claw_llm_http_transport.c#L335-L342"
+        },
+        {
+          "label": "cap_llm_config.c:49-53",
+          "url": "https://github.com/espressif/esp-claw/blob/142bf3f318781708700aed51793a12ea47f46150/components/claw_capabilities/cap_llm_config/src/cap_llm_config.c#L49-L53"
+        }
+      ],
+      "sub": "openai / anthropic / custom",
+      "w": 220,
+      "x": 1230,
+      "y": 254
+    },
+    {
+      "excerpt": "CLAW_EVENT_ROUTER_ACTION_CALL_CAP = 0,\nCLAW_EVENT_ROUTER_ACTION_RUN_SCRIPT = 2,",
+      "grade": "verified",
+      "h": 120,
+      "id": "fastpath",
+      "label": "Local fast path",
+      "links": [
+        {
+          "label": "claw_event_router.h:55-62",
+          "url": "https://github.com/espressif/esp-claw/blob/142bf3f318781708700aed51793a12ea47f46150/components/claw_modules/claw_event_router/include/claw_event_router.h#L55-L62"
+        }
+      ],
+      "sub": "call_cap / run_script, no LLM",
+      "w": 220,
+      "x": 60,
+      "y": 562
+    },
+    {
+      "excerpt": "#define CLAW_MEMORY_RECORDS_FILE                 \"memory_records.jsonl\"",
+      "grade": "verified",
+      "h": 120,
+      "id": "memory",
+      "label": "Memory",
+      "links": [
+        {
+          "label": "claw_memory_internal.h:28",
+          "url": "https://github.com/espressif/esp-claw/blob/142bf3f318781708700aed51793a12ea47f46150/components/claw_modules/claw_memory/src/claw_memory_internal.h#L28"
+        },
+        {
+          "label": "claw_memory_storage.c:478",
+          "url": "https://github.com/espressif/esp-claw/blob/142bf3f318781708700aed51793a12ea47f46150/components/claw_modules/claw_memory/src/claw_memory_storage.c#L478"
+        },
+        {
+          "label": "claw_memory_storage.c:605",
+          "url": "https://github.com/espressif/esp-claw/blob/142bf3f318781708700aed51793a12ea47f46150/components/claw_modules/claw_memory/src/claw_memory_storage.c#L605"
+        }
+      ],
+      "sub": "JSONL + index + compaction",
+      "w": 220,
+      "x": 450,
+      "y": 408
+    },
+    {
+      "excerpt": "if (!claw_cap_descriptor_is_available(slot)) {\n        return CLAW_CAP_AUTH_NOT_AVAILABLE;\n    }",
+      "grade": "verified",
+      "h": 120,
+      "id": "caps",
+      "label": "Capability registry",
+      "links": [
+        {
+          "label": "claw_cap.c:605-650",
+          "url": "https://github.com/espressif/esp-claw/blob/142bf3f318781708700aed51793a12ea47f46150/components/claw_modules/claw_cap/src/claw_cap.c#L605-L650"
+        },
+        {
+          "label": "claw_cap.c:337-345",
+          "url": "https://github.com/espressif/esp-claw/blob/142bf3f318781708700aed51793a12ea47f46150/components/claw_modules/claw_cap/src/claw_cap.c#L337-L345"
+        },
+        {
+          "label": "app_capabilities.c:681-690",
+          "url": "https://github.com/espressif/esp-claw/blob/142bf3f318781708700aed51793a12ea47f46150/components/common/app_claw/app_capabilities.c#L681-L690"
+        }
+      ],
+      "sub": "claw_cap gate chain",
+      "w": 220,
+      "x": 840,
+      "y": 408
+    },
+    {
+      "excerpt": "\"Call a tool on a remote MCP server.\"",
+      "grade": "verified",
+      "h": 120,
+      "id": "mcp-client",
+      "label": "MCP client",
+      "links": [
+        {
+          "label": "cap_mcp_client.c:230-252",
+          "url": "https://github.com/espressif/esp-claw/blob/142bf3f318781708700aed51793a12ea47f46150/components/claw_capabilities/cap_mcp_client/src/cap_mcp_client.c#L230-L252"
+        },
+        {
+          "label": "cap_mcp_discover_core.c:72-80",
+          "url": "https://github.com/espressif/esp-claw/blob/142bf3f318781708700aed51793a12ea47f46150/components/claw_capabilities/cap_mcp_client/src/cap_mcp_discover_core.c#L72-L80"
+        }
+      ],
+      "sub": "cap_mcp_client (edge_agent)",
+      "w": 220,
+      "x": 1230,
+      "y": 408
+    },
+    {
+      "excerpt": "lua_sethook(L, cap_lua_timeout_hook, LUA_MASKCOUNT, 100);",
+      "grade": "verified",
+      "h": 120,
+      "id": "lua",
+      "label": "Lua VM",
+      "links": [
+        {
+          "label": "cap_lua_runtime.c:426-432",
+          "url": "https://github.com/espressif/esp-claw/blob/142bf3f318781708700aed51793a12ea47f46150/components/claw_capabilities/cap_lua/src/cap_lua_runtime.c#L426-L432"
+        },
+        {
+          "label": "cap_lua.c:683-690",
+          "url": "https://github.com/espressif/esp-claw/blob/142bf3f318781708700aed51793a12ea47f46150/components/claw_capabilities/cap_lua/src/cap_lua.c#L683-L690"
+        }
+      ],
+      "sub": "cap_lua + 36 lua modules",
+      "w": 220,
+      "x": 450,
+      "y": 562
+    },
+    {
+      "excerpt": "json_dup_optional_unique_string_array(metadata, \"cap_groups\", &entry->cap_groups, &entry->cap_group_count);",
+      "grade": "verified",
+      "h": 120,
+      "id": "skills",
+      "label": "Skills",
+      "links": [
+        {
+          "label": "claw_skill.c:657",
+          "url": "https://github.com/espressif/esp-claw/blob/142bf3f318781708700aed51793a12ea47f46150/components/claw_modules/claw_skill/src/claw_skill.c#L657"
+        },
+        {
+          "label": "claw_skill.c:41",
+          "url": "https://github.com/espressif/esp-claw/blob/142bf3f318781708700aed51793a12ea47f46150/components/claw_modules/claw_skill/src/claw_skill.c#L41"
+        }
+      ],
+      "sub": "claw_skill SKILL.md scan",
+      "w": 220,
+      "x": 840,
+      "y": 562
+    },
+    {
+      "excerpt": ".name = \"lua.run_script\",",
+      "grade": "verified",
+      "h": 120,
+      "id": "mcp-server",
+      "label": "MCP server",
+      "links": [
+        {
+          "label": "cap_mcp_lua.c:270-280",
+          "url": "https://github.com/espressif/esp-claw/blob/142bf3f318781708700aed51793a12ea47f46150/application/mcp_server_point/components/mcp_server_point_tools/cap_mcp_lua.c#L270-L280"
+        },
+        {
+          "label": "cap_mcp_server/idf_component.yml:1-4",
+          "url": "https://github.com/espressif/esp-claw/blob/142bf3f318781708700aed51793a12ea47f46150/components/claw_capabilities/cap_mcp_server/idf_component.yml#L1-L4"
+        }
+      ],
+      "sub": "mcp_server_point firmware",
+      "w": 220,
+      "x": 1230,
+      "y": 562
+    }
+  ],
+  "repo": "https://github.com/espressif/esp-claw",
+  "sha": "142bf3f318781708700aed51793a12ea47f46150",
+  "title": "esp-claw \u2014 event bus, on-demand agent loop, Lua on the edge"
+}

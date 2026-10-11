@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Embedded Harness Anatomy</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #161210; color: #ece1d3;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    line-height: 1.6; padding: 48px 24px;
+  }
+  main { max-width: 720px; margin: 0 auto; }
+  .topnav { margin-bottom: 24px; }
+  .topnav a { color: #a89880; text-decoration: none; font-size: 0.95rem; }
+  .topnav a:hover { color: #ece1d3; }
+  h1 { font-size: 2rem; letter-spacing: -0.02em; margin-bottom: 8px; }
+  h1 .accent { color: #d08c4e; }
+  .tagline { color: #a89880; font-size: 1.05rem; margin-bottom: 40px; }
+  .article {
+    border: 1px solid #3a2f26; border-radius: 12px;
+    padding: 24px; margin-bottom: 20px; background: #1f1a15;
+  }
+  .article h2 { font-size: 1.25rem; margin-bottom: 6px; }
+  .article p { color: #a89880; font-size: 0.95rem; margin-bottom: 16px; }
+  .links { display: flex; gap: 12px; flex-wrap: wrap; }
+  .links a {
+    display: inline-block; padding: 8px 16px; border-radius: 8px;
+    font-size: 0.9rem; text-decoration: none; font-weight: 600;
+  }
+  .links a.primary { background: #d08c4e; color: #161210; }
+  .links a.primary:hover { background: #e0a266; }
+  .links a.secondary { border: 1px solid #3a2f26; color: #ece1d3; }
+  .links a.secondary:hover { border-color: #a89880; }
+  footer { margin-top: 48px; color: #a89880; font-size: 0.85rem; }
+  footer a { color: #a89880; }
+</style>
+</head>
+<body>
+<main>
+  <nav class="topnav"><a href="../">&larr; Agent Harness Anatomy</a></nav>
+  <h1>Embedded Harness <span class="accent">Anatomy</span></h1>
+  <p class="tagline">Top-down dissections of agent harnesses that run on
+  milliwatts. Same discipline as the main series — pinned source, every claim
+  verifiable — adapted for event-driven systems under physical constraints:
+  power budgets, KB-scale memory, no guaranteed connectivity.</p>
+
+  <div class="article">
+    <h2>E1 &mdash; ESP-Claw: the agent loop that waits for an invitation</h2>
+    <p>A reactive embedded system first and an agent second. Every input &mdash;
+    an instant message, a schedule tick, a boot event &mdash; lands on an event
+    bus; router rules decide what happens next, and the fast paths complete in
+    milliseconds with no LLM involved. The LLM is cloud-only, safety is
+    architectural rather than gated, and Lua is not sandboxed. Espressif's
+    reference design for agents on the ESP32.</p>
+    <div class="links">
+      <a class="primary" href="esp-claw/trace.html">Follow one sensor event</a>
+      <a class="secondary" href="../diagrams/template.html?data=../embedded/esp-claw/diagrams/esp-claw.json">Interactive diagram</a>
+      <a class="secondary" href="esp-claw/">Read the article</a>
+    </div>
+  </div>
+
+  <footer>
+    Part of <a href="../">Agent Harness Anatomy</a> ·
+    <a href="https://github.com/dpsm/agent-harness-anatomy">GitHub repo</a>
+  </footer>
+</main>
+</body>
+</html>

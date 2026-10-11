@@ -1,0 +1,100 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="20 10 1470 712" width="1600" height="774" font-family="system-ui, -apple-system, sans-serif">
+<defs>
+<marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 1 L 9 5 L 0 9 z" fill="#8a7a66"/></marker>
+</defs>
+<text x="20" y="44" font-size="26" font-weight="700" fill="#ece1d3">esp-claw — event bus, on-demand agent loop, Lua on the edge</text>
+<text x="20" y="70" font-size="15" fill="#a89880">espressif/esp-claw @ 142bf3f</text>
+<g>
+<path d="M 560.0 220 C 560.0 237.0, 560.0 237.0, 560.0 254" fill="none" stroke="#8a7a66" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="508" y="237" font-size="13" fill="#a89880">starts router task</text>
+<path d="M 670 146.0 C 795.0 146.0, 715.0 146.0, 840 146.0" fill="none" stroke="#8a7a66" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="733" y="146" font-size="13" fill="#a89880">binds publish</text>
+<path d="M 670 174.0 C 795.0 174.0, 715.0 286.0, 840 286.0" fill="none" stroke="#8a7a66" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="703" y="230" font-size="13" fill="#a89880">conditional init</text>
+<path d="M 170.0 220 C 170.0 237.0, 170.0 237.0, 170.0 254" fill="none" stroke="#8a7a66" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="148" y="237" font-size="13" fill="#a89880">inbound updates</text>
+<path d="M 280 300.0 C 405.0 300.0, 325.0 293.0, 450 293.0" fill="none" stroke="#8a7a66" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="343" y="296" font-size="13" fill="#a89880">publish_message</text>
+<path d="M 450 314.0 C 325.0 314.0, 405.0 328.0, 280 328.0" fill="none" stroke="#8a7a66" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="343" y="321" font-size="13" fill="#a89880">send_message</text>
+<path d="M 840 174.0 C 715.0 174.0, 795.0 288.8, 670 288.8" fill="none" stroke="#8a7a66" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="721" y="256" font-size="13" fill="#a89880">trigger events</text>
+<path d="M 450 335.0 C 325.0 335.0, 405.0 608.0, 280 608.0" fill="none" stroke="#8a7a66" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="290" y="565" font-size="13" fill="#a89880">call_cap / run_script</text>
+<path d="M 670 305.6 C 795.0 305.6, 715.0 300.0, 840 300.0" fill="none" stroke="#8a7a66" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="733" y="323" font-size="13" fill="#a89880">run_agent async</text>
+<path d="M 840 314.0 C 715.0 314.0, 795.0 322.4, 670 322.4" fill="none" stroke="#8a7a66" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="733" y="298" font-size="13" fill="#a89880">out_message</text>
+<path d="M 1060 293.0 C 1185.0 293.0, 1105.0 300.0, 1230 300.0" fill="none" stroke="#8a7a66" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="1093" y="296" font-size="13" fill="#a89880">POST (no stream)</text>
+<path d="M 1230 328.0 C 1105.0 328.0, 1185.0 314.0, 1060 314.0" fill="none" stroke="#8a7a66" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="1153" y="321" font-size="13" fill="#a89880">tool calls</text>
+<path d="M 950.0 374 C 950.0 391.0, 950.0 391.0, 950.0 408" fill="none" stroke="#8a7a66" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="898" y="391" font-size="13" fill="#a89880">executes tool call</text>
+<path d="M 840 328.0 C 715.0 328.0, 795.0 454.0, 670 454.0" fill="none" stroke="#8a7a66" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="733" y="391" font-size="13" fill="#a89880">persists context</text>
+<path d="M 670 482.0 C 795.0 482.0, 715.0 342.0, 840 342.0" fill="none" stroke="#8a7a66" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="703" y="412" font-size="13" fill="#a89880">providers inject</text>
+<path d="M 840 468.0 C 715.0 468.0, 795.0 608.0, 670 608.0" fill="none" stroke="#8a7a66" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="703" y="556" font-size="13" fill="#a89880">lua_run_script (+async)</text>
+<path d="M 670 636.0 C 766.712 636.0, 766.712 339.2, 670 339.2" fill="none" stroke="#8a7a66" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="672" y="590" font-size="13" fill="#a89880">event_publisher.publish</text>
+<path d="M 280 636.0 C 405.0 636.0, 325.0 622.0, 450 622.0" fill="none" stroke="#8a7a66" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="373" y="629" font-size="13" fill="#a89880">run_script</text>
+<path d="M 1060 454.0 C 1185.0 454.0, 1105.0 468.0, 1230 468.0" fill="none" stroke="#8a7a66" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="1123" y="461" font-size="13" fill="#a89880">mcp_call_tool</text>
+<path d="M 1340.0 528 C 1340.0 545.0, 1340.0 545.0, 1340.0 562" fill="none" stroke="#8a7a66" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="1288" y="545" font-size="13" fill="#a89880">mDNS discover + call_tool</text>
+<path d="M 1060 608.0 C 1141.34 608.0, 1141.34 482.0, 1060 482.0" fill="none" stroke="#8a7a66" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="1099" y="545" font-size="13" fill="#a89880">cap_groups unlock</text>
+<path d="M 1060 636.0 C 1157.09 636.0, 1157.09 335.0, 1060 335.0" fill="none" stroke="#8a7a66" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="1081" y="486" font-size="13" fill="#a89880">skills_list provider</text>
+</g><g>
+<rect x="60" y="100" width="220" height="120" rx="10" fill="#1f1a15" stroke="#8a7a66" stroke-width="1.5" stroke-dasharray="7 4"/><rect x="60" y="100" width="5" height="120" rx="2" fill="#d08c4e"/><text x="272" y="118" text-anchor="end" font-size="11" fill="#8a7a66">cloud</text>
+<text x="104" y="128" font-size="15" font-weight="600" fill="#ece1d3">IM cloud endpoints</text><text x="104" y="148" font-size="12" fill="#a89880">Telegram/QQ/Feishu/WeChat APIs</text>
+<text x="74" y="208" font-size="11" fill="#a89880">1 source link · verified</text>
+<rect x="450" y="100" width="220" height="120" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/><rect x="450" y="100" width="5" height="120" rx="2" fill="#d08c4e"/>
+<text x="494" y="128" font-size="15" font-weight="600" fill="#ece1d3">Boot wiring</text><text x="494" y="148" font-size="12" fill="#a89880">app_claw.c / main.c</text>
+<text x="464" y="208" font-size="11" fill="#a89880">4 source links · verified</text>
+<rect x="840" y="100" width="220" height="120" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/><rect x="840" y="100" width="5" height="120" rx="2" fill="#d08c4e"/>
+<text x="884" y="128" font-size="15" font-weight="600" fill="#ece1d3">Scheduler</text><text x="884" y="148" font-size="12" fill="#a89880">cap_scheduler</text>
+<text x="854" y="208" font-size="11" fill="#a89880">1 source link · verified</text>
+<rect x="60" y="254" width="220" height="120" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/><rect x="60" y="254" width="5" height="120" rx="2" fill="#d08c4e"/>
+<text x="104" y="282" font-size="15" font-weight="600" fill="#ece1d3">IM gateways</text><text x="104" y="302" font-size="12" fill="#a89880">cap_im_tg/qq/feishu/wechat/local</text>
+<text x="74" y="362" font-size="11" fill="#a89880">2 source links · verified</text>
+<rect x="450" y="254" width="220" height="120" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/><rect x="450" y="254" width="5" height="120" rx="2" fill="#d08c4e"/>
+<text x="494" y="282" font-size="15" font-weight="600" fill="#ece1d3">Event router</text><text x="494" y="302" font-size="12" fill="#a89880">claw_event_router + rules JSON</text>
+<text x="464" y="362" font-size="11" fill="#a89880">3 source links · verified</text>
+<rect x="840" y="254" width="220" height="120" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/><rect x="840" y="254" width="5" height="120" rx="2" fill="#d08c4e"/>
+<text x="884" y="282" font-size="15" font-weight="600" fill="#ece1d3">Agent loop</text><text x="884" y="302" font-size="12" fill="#a89880">claw_core agent loop task</text>
+<text x="854" y="362" font-size="11" fill="#a89880">3 source links · verified</text>
+<rect x="1230" y="254" width="220" height="120" rx="10" fill="#1f1a15" stroke="#8a7a66" stroke-width="1.5" stroke-dasharray="7 4"/><rect x="1230" y="254" width="5" height="120" rx="2" fill="#d08c4e"/><text x="1442" y="272" text-anchor="end" font-size="11" fill="#8a7a66">cloud</text>
+<text x="1274" y="282" font-size="15" font-weight="600" fill="#ece1d3">Cloud LLM backends</text><text x="1274" y="302" font-size="12" fill="#a89880">openai / anthropic / custom</text>
+<text x="1244" y="362" font-size="11" fill="#a89880">2 source links · verified</text>
+<rect x="60" y="562" width="220" height="120" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/><rect x="60" y="562" width="5" height="120" rx="2" fill="#d08c4e"/>
+<text x="104" y="590" font-size="15" font-weight="600" fill="#ece1d3">Local fast path</text><text x="104" y="610" font-size="12" fill="#a89880">call_cap / run_script, no LLM</text>
+<text x="74" y="670" font-size="11" fill="#a89880">1 source link · verified</text>
+<rect x="450" y="408" width="220" height="120" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/><rect x="450" y="408" width="5" height="120" rx="2" fill="#d08c4e"/>
+<text x="494" y="436" font-size="15" font-weight="600" fill="#ece1d3">Memory</text><text x="494" y="456" font-size="12" fill="#a89880">JSONL + index + compaction</text>
+<text x="464" y="516" font-size="11" fill="#a89880">3 source links · verified</text>
+<rect x="840" y="408" width="220" height="120" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/><rect x="840" y="408" width="5" height="120" rx="2" fill="#d08c4e"/>
+<text x="884" y="436" font-size="15" font-weight="600" fill="#ece1d3">Capability registry</text><text x="884" y="456" font-size="12" fill="#a89880">claw_cap gate chain</text>
+<text x="854" y="516" font-size="11" fill="#a89880">3 source links · verified</text>
+<rect x="1230" y="408" width="220" height="120" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/><rect x="1230" y="408" width="5" height="120" rx="2" fill="#d08c4e"/>
+<text x="1274" y="436" font-size="15" font-weight="600" fill="#ece1d3">MCP client</text><text x="1274" y="456" font-size="12" fill="#a89880">cap_mcp_client (edge_agent)</text>
+<text x="1244" y="516" font-size="11" fill="#a89880">2 source links · verified</text>
+<rect x="450" y="562" width="220" height="120" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/><rect x="450" y="562" width="5" height="120" rx="2" fill="#d08c4e"/>
+<text x="494" y="590" font-size="15" font-weight="600" fill="#ece1d3">Lua VM</text><text x="494" y="610" font-size="12" fill="#a89880">cap_lua + 36 lua modules</text>
+<text x="464" y="670" font-size="11" fill="#a89880">2 source links · verified</text>
+<rect x="840" y="562" width="220" height="120" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/><rect x="840" y="562" width="5" height="120" rx="2" fill="#d08c4e"/>
+<text x="884" y="590" font-size="15" font-weight="600" fill="#ece1d3">Skills</text><text x="884" y="610" font-size="12" fill="#a89880">claw_skill SKILL.md scan</text>
+<text x="854" y="670" font-size="11" fill="#a89880">2 source links · verified</text>
+<rect x="1230" y="562" width="220" height="120" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/><rect x="1230" y="562" width="5" height="120" rx="2" fill="#d08c4e"/>
+<text x="1274" y="590" font-size="15" font-weight="600" fill="#ece1d3">MCP server</text><text x="1274" y="610" font-size="12" fill="#a89880">mcp_server_point firmware</text>
+<text x="1244" y="670" font-size="11" fill="#a89880">2 source links · verified</text>
+</g>
+<g font-size="12" fill="#a89880">
+<rect x="1160" y="687" width="12" height="12" rx="2" fill="#d08c4e"/><text x="1177" y="698">verified</text>
+<rect x="1265" y="687" width="12" height="12" rx="2" fill="#7c8aa0"/><text x="1282" y="698">docs</text>
+<rect x="1370" y="687" width="12" height="12" rx="2" fill="#8a7a66"/><text x="1387" y="698">inferred</text>
+</g></svg>

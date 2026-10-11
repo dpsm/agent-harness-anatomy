@@ -35,6 +35,16 @@ By **David P. S. Marques** — [LinkedIn](https://ca.linkedin.com/in/dpsmarques)
 | 17 | Grok Build (2bdd1d6) | [grok-build/article.md](grok-build/article.md) | [Read on Substack](https://agentharnessanatomy.substack.com/p/grok-build-the-harness-whose-control) |
 | 18 | Harness² (1cfe254) | [harness2/article.md](harness2/article.md) | [Read on Substack](https://agentharnessanatomy.substack.com/p/harness-the-harness-is-the-thing) |
 
+## Embedded Harness Anatomy
+
+A companion series under [`embedded/`](embedded/) — top-down dissections of
+agent harnesses that run on milliwatts, adapted for event-driven systems under
+physical constraints.
+
+| # | Harness | Article | Trace |
+|---|---------|---------|-------|
+| E1 | ESP-Claw (v0.1.0) | [embedded/esp-claw/article.md](embedded/esp-claw/article.md) | [Follow one sensor event](embedded/esp-claw/trace.html) |
+
 ## What's here
 
 - `<harness>/article.md` — the full article text with evidence endnotes
