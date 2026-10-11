@@ -21,6 +21,7 @@ Companion repo to the Substack series.
 | 7 | OpenCode (v1.18.34) | [opencode/article.md](opencode/article.md) | forthcoming |
 | 8 | Hermes Agent (v2026.9.24) | [hermes/article.md](hermes/article.md) | forthcoming |
 | 9 | OpenClaw (v2026.9.9) | [openclaw/article.md](openclaw/article.md) | forthcoming |
+| 10 | Gemini CLI (v0.63.0) | [gemini-cli/article.md](gemini-cli/article.md) | forthcoming |
 
 ## What's here
 
