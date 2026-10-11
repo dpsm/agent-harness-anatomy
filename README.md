@@ -22,6 +22,7 @@ Companion repo to the Substack series.
 | 8 | Hermes Agent (v2026.9.24) | [hermes/article.md](hermes/article.md) | forthcoming |
 | 9 | OpenClaw (v2026.9.9) | [openclaw/article.md](openclaw/article.md) | forthcoming |
 | 10 | Gemini CLI (v0.63.0) | [gemini-cli/article.md](gemini-cli/article.md) | forthcoming |
+| 11 | SWE-agent (v1.1.0) | [swe-agent/article.md](swe-agent/article.md) | forthcoming |
 
 ## What's here
 
