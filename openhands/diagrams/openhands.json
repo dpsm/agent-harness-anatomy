@@ -639,7 +639,9 @@
     {
       "from": "dispatch",
       "to": "exec",
-      "label": "batch"
+      "label": "batch",
+      "label_dx": 0,
+      "label_dy": -22
     },
     {
       "from": "exec",
@@ -684,7 +686,9 @@
     {
       "from": "stophooks",
       "to": "terminate",
-      "label": "deny -> RUNNING"
+      "label": "deny -> RUNNING",
+      "label_dx": -60,
+      "label_dy": 0
     },
     {
       "from": "hookproc",
@@ -714,7 +718,9 @@
     {
       "from": "toolregistry",
       "to": "dispatch",
-      "label": "resolve"
+      "label": "resolve",
+      "label_dx": 0,
+      "label_dy": 25
     },
     {
       "from": "mcp",
@@ -724,7 +730,9 @@
     {
       "from": "secgate",
       "to": "dispatch",
-      "label": "confirmation gate"
+      "label": "confirmation gate",
+      "label_dx": 0,
+      "label_dy": -25
     },
     {
       "from": "critic",

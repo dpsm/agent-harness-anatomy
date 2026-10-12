@@ -13,13 +13,11 @@
   {
    "from": "sampling",
    "label": "read scores, children_count",
-   "label_dy": 122,
    "to": "archive"
   },
   {
    "from": "outer",
    "label": "JSONL checkpoint",
-   "label_dy": 170,
    "to": "archive"
   },
   {
@@ -87,8 +85,8 @@
   {
    "from": "inner",
    "label": "Sonnet 3.5",
-   "label_dx": -80,
-   "label_dy": 100,
+   "label_dx": 0,
+   "label_dy": 40,
    "to": "llms"
   }
  ],
