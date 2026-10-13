@@ -76,7 +76,9 @@
    "from": "scheduler",
    "label": "invoke_agent",
    "to": "subagents",
-   "label_t": 0.3
+   "label_t": 0.3,
+   "label_dx": -60,
+   "label_dy": 0
   },
   {
    "from": "policy",

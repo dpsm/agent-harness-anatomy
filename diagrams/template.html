@@ -262,12 +262,17 @@ function render(data) {
     }
     return [best, b];
   }
-  function placeLabel(a, b, p1, p2, text) {
+  function placeLabel(a, b, p1, p2, e) {
+    const text = e.label;
     const w = labC.measureText(text).width, h = 13;
+    // Hand-tuned pixel nudges from the JSON are honored so regens reproduce
+    // hand fixes (label_dx/dy are geometry-agnostic; label_t is not honored:
+    // it slid along the old exporter's curves, which this placer replaces).
+    const dx = e.label_dx || 0, dy = e.label_dy || 0;
     let best = null, bestB = null;
     for (const tc of [0.3, 0.7, 0.5, 0.2, 0.8, 0.42, 0.58]) {
       const ep = edgePath(a, b, p1, p2, tc);
-      const [c, bb] = boxClear(ep.lx + 6, ep.ly - 4, w, h);
+      const [c, bb] = boxClear(ep.lx + 6 + dx, ep.ly - 4 + dy, w, h);
       if (!best || c > best) { best = c; bestB = bb; }
       if (c > 14) break;
     }
@@ -288,7 +293,7 @@ function render(data) {
     p.dataset.from = e.from; p.dataset.to = e.to;
     gE.appendChild(p);
     if (e.label) {
-      const bb = placeLabel(a, b, p1, p2, e.label);
+      const bb = placeLabel(a, b, p1, p2, e);
       const t = document.createElementNS(NS, "text");
       t.setAttribute("x", bb[0]); t.setAttribute("y", bb[3] - 3);
       t.setAttribute("class", "edge-label"); t.textContent = e.label;
@@ -383,7 +388,11 @@ function exportSvg(data) {
   src.forEach((el, k) => {
     if (el.closest("defs")) return;
     const cs = getComputedStyle(el);
-    for (const prop of PROPS) dst[k].setAttribute(prop, cs.getPropertyValue(prop));
+    for (const prop of PROPS) {
+      const v = cs.getPropertyValue(prop);
+      // unitless numbers: keeps the project's geometric linter working on exports
+      dst[k].setAttribute(prop, /^-?[\d.]+px$/.test(v) ? parseFloat(v) : v);
+    }
     dst[k].removeAttribute("class");
   });
   out.querySelectorAll("[data-id], [data-from], [data-to]").forEach(el => {

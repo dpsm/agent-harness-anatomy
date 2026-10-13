@@ -253,7 +253,9 @@
     {
       "from": "session",
       "to": "store",
-      "label": "persist"
+      "label": "persist",
+      "label_dx": 10,
+      "label_dy": 28
     },
     {
       "from": "session",
