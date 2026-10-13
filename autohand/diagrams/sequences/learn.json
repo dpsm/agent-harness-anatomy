@@ -1,0 +1,57 @@
+{
+ "title": "/learn update: regeneration on project drift",
+ "subtitle": "Cache invalidation by hash, not learning from experience",
+ "participants": [
+  "User",
+  "learn.ts",
+  "LearnAdvisor",
+  "Generated skills"
+ ],
+ "messages": [
+  {
+   "from": 0,
+   "to": 1,
+   "label": "/learn update"
+  },
+  {
+   "from": 1,
+   "to": 3,
+   "label": "read skills: source = llm-generated"
+  },
+  {
+   "from": 3,
+   "to": 1,
+   "label": "stored agentskill-project-hash",
+   "dashed": true
+  },
+  {
+   "from": 1,
+   "to": 1,
+   "label": "computeProjectHash() \u2014 fresh"
+  },
+  {
+   "note": "span",
+   "span": [
+    0,
+    3
+   ],
+   "text": "Stored hash differs -> drifted. Same hash -> reported up to date, untouched"
+  },
+  {
+   "from": 1,
+   "to": 2,
+   "label": "regenerate drifted skills only"
+  },
+  {
+   "from": 2,
+   "to": 3,
+   "label": "rewrite SKILL.md in place"
+  },
+  {
+   "from": 2,
+   "to": 0,
+   "label": "updated / already up to date",
+   "dashed": true
+  }
+ ]
+}
