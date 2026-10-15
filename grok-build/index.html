@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body {
+    background: #161210; color: #ece1d3;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    line-height: 1.7; padding: 48px 24px; margin: 0;
+  }
+  main { max-width: 760px; margin: 0 auto; }
+  a { color: #d08c4e; }
+  h1 { font-size: 1.9rem; letter-spacing: -0.02em; line-height: 1.25; margin-bottom: 16px; }
+  h2 { font-size: 1.4rem; margin: 40px 0 12px; padding-top: 8px; border-top: 1px solid #2c231b; }
+  h3 { font-size: 1.1rem; margin: 28px 0 8px; }
+  p, li { margin-bottom: 12px; }
+  blockquote {
+    border-left: 3px solid #d08c4e; padding: 4px 16px; margin: 20px 0;
+    color: #a89880; background: #1f1a15; border-radius: 0 8px 8px 0;
+  }
+  blockquote p { margin-bottom: 6px; }
+  code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.88em; background: #1f1a15; padding: 2px 6px; border-radius: 6px;
+  }
+  pre { background: #1f1a15; border: 1px solid #3a2f26; border-radius: 8px;
+        padding: 16px; overflow-x: auto; }
+  pre code { background: none; padding: 0; }
+  img { max-width: 100%; height: auto; border: 1px solid #3a2f26;
+        border-radius: 12px; margin: 20px 0; background: #1f1a15; }
+  table { border-collapse: collapse; width: 100%; margin: 20px 0; font-size: 0.92rem;
+          display: block; overflow-x: auto; }
+  th, td { border: 1px solid #3a2f26; padding: 10px 12px; text-align: left;
+           vertical-align: top; }
+  th { background: #1f1a15; }
+  ul, ol { padding-left: 24px; }
+  hr { border: none; border-top: 1px solid #2c231b; margin: 32px 0; }
+  .footnote { font-size: 0.88rem; color: #a89880; }
+  .footnote hr { margin: 40px 0 16px; }
+  sup a { text-decoration: none; }
+  .topnav { max-width: 760px; margin: 0 auto 32px; font-size: 0.9rem; }
+  .topnav a { color: #a89880; text-decoration: none; }
+  .topnav a:hover { color: #ece1d3; }
+  .diagram-cta {
+    display: block; text-align: center; margin: 28px 0; padding: 16px;
+    background: #1f1a15; border: 1px solid #3a2f26; border-radius: 12px;
+    color: #ece1d3; text-decoration: none; font-weight: 600;
+  }
+  .diagram-cta:hover { border-color: #d08c4e; }
+  .diagram-cta span { display: block; font-weight: 400; font-size: 0.88rem;
+                      color: #a89880; margin-top: 4px; }
+</style>
+<title>Agent Harness Anatomy #17: Grok Build — the harness whose control plane lives on a server</title>
+</head>
+<body>
+<main>
+<nav class="topnav"><a href="../#grok-build">&larr; Agent Harness Anatomy</a></nav>
+<h1 id="agent-harness-anatomy-17-grok-build-a-monorepo-scale-harness-with-a-server-held-control-plane">Agent Harness Anatomy #17: Grok Build — a monorepo-scale harness with a server-held control plane</h1>
+<blockquote>
+<p><strong>Series:</strong> Agent Harness Anatomy — top-down dissections of real agent harnesses, grounded in verifiable source code. Every behavioral claim below carries a footnote to a pinned GitHub permalink; the full evidence lives in the endnotes.</p>
+</blockquote>
+<h2 id="version-block">Version block</h2>
+<ul>
+<li><strong>Repo:</strong> <a href="https://github.com/xai-org/grok-build">xai-org/grok-build</a></li>
+<li><strong>Pinned:</strong> commit <code>2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8</code> (2026-09-29) — <strong>by commit, because there is nothing else to pin to.</strong> This repository has no tags and no releases; it is a one-way sync from an internal monorepo, every commit squashed to "Synced from monorepo." The repo's own provenance file, <code>SOURCE_REV</code>, records the internal revision the sync was generated from: <code>559751fdcec02d413e4c57c8832ab275e4f44980</code>.<sup id="fnref:1"><a class="footnote-ref" href="#fn:1">1</a></sup></li>
+<li><strong>Language:</strong> Rust (toolchain pinned to 1.94.0) — 103 crates, 3,689 <code>.rs</code> files, ≈820,000 lines of Rust counted at the pin.<sup id="fnref:2"><a class="footnote-ref" href="#fn:2">2</a></sup></li>
+<li><strong>License:</strong> Apache-2.0</li>
+<li><strong>Claim under test:</strong> a terminal AI coding agent that runs interactively as a full-screen TUI, headlessly for scripting and CI, or embedded in editors over ACP.</li>
+</ul>
+<p>Two framing notes before the dissection. First, the sync model means this tree is a snapshot of a much larger internal codebase at one revision; some subsystems arrive as complete implementations, others as wire types whose producers live elsewhere — a distinction that matters a great deal in the data-egress section below. Second, this teardown was read-only: the source was cloned and read, never built or executed, so every claim is about what the code at this commit does, not about what any shipped binary or server does today.</p>
+<p><img alt="Grok Build architecture" src="figures/grok-build.svg" /></p>
+<p><a class="diagram-cta" href="../diagrams/template.html?data=../grok-build/diagrams/grok-build.json">Explore the interactive architecture diagram<span>18 nodes, 21 edges — pan, zoom, and follow every subsystem link</span></a></p>
+<h2 id="the-mental-model">The mental model</h2>
+<p>Grok Build is three programs wearing one binary. The <strong>pager</strong> (<code>xai-grok-pager</code>, the largest crate at ~551K lines) is the full-screen terminal interface. The <strong>shell</strong> (<code>xai-grok-shell</code>, ~430K lines) is the agent runtime: session actor, turn loop, model wiring, permissions glue, uploads. The <strong>workspace</strong> (<code>xai-grok-workspace</code>, ~125K lines) is the host side: file system, version control, command execution, checkpoints, and the permission manager. Around them sit focused crates for the agent definitions and prompt assembly (<code>xai-grok-agent</code>), the tools (<code>xai-grok-tools</code>), the model client (<code>xai-grok-sampler</code>), configuration (<code>xai-grok-config</code>), sandboxing, memory, and telemetry.</p>
+<p>The second thing to hold in mind is <em>where decisions live</em>. Most harnesses in this series resolve their behavior locally: a config file, an environment variable, a default in code. Grok Build has all of those — and one more tier above them in practice: at startup the client fetches <strong>remote settings</strong> from its service (<code>GET /v1/settings</code> on the cli-chat-proxy), and that payload can enable features, set the telemetry mode, turn trace upload on, enable the session registry, and even carry a server-decided consent notice.<sup id="fnref:3"><a class="footnote-ref" href="#fn:3">3</a></sup> The recurring precedence shape is: an administrator's requirements pin first, then environment, then local config, then the remote settings, then the built-in default. The defaults in this source tree are mostly conservative; the remote tier is the one a local reader cannot see the value of, and this teardown flags every place where that tier is load-bearing rather than guessing at what the server sends.</p>
+<h2 id="crate-map">Crate map</h2>
+<table>
+<thead>
+<tr>
+<th>Crate</th>
+<th>Lines</th>
+<th>Role</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>xai-grok-pager</code></td>
+<td>551,396</td>
+<td>TUI; also ships the user guide (<code>docs/user-guide/</code>, 27 documents)</td>
+</tr>
+<tr>
+<td><code>xai-grok-shell</code></td>
+<td>430,485</td>
+<td>Agent runtime: session actor, turn loop, entry points (leader / stdio / headless), upload stack</td>
+</tr>
+<tr>
+<td><code>xai-grok-tools</code></td>
+<td>165,257</td>
+<td>Tool implementations in three toolsets, plus in-tree ports from Codex and OpenCode</td>
+</tr>
+<tr>
+<td><code>xai-grok-workspace</code></td>
+<td>124,763</td>
+<td>Host file system, VCS, execution, permission manager, checkpoints</td>
+</tr>
+<tr>
+<td><code>xai-grok-sandbox</code></td>
+<td>31,270</td>
+<td>OS confinement profiles (Landlock / Seatbelt / bubblewrap)</td>
+</tr>
+<tr>
+<td><code>xai-grok-memory</code></td>
+<td>29,784</td>
+<td>File-based memory store, embeddings, background consolidation</td>
+</tr>
+<tr>
+<td><code>xai-grok-config</code></td>
+<td>28,414</td>
+<td>Config loading, endpoints, remote settings</td>
+</tr>
+<tr>
+<td><code>xai-grok-telemetry</code></td>
+<td>27,058</td>
+<td>Telemetry modes, event taxonomy, internal OTEL, Sentry</td>
+</tr>
+<tr>
+<td><code>xai-grok-agent</code></td>
+<td>23,744</td>
+<td>Agent definitions, prompt assembly, tool filtering</td>
+</tr>
+<tr>
+<td><code>xai-grok-sampler</code></td>
+<td>17,947</td>
+<td>Model client: three wire formats, retries, doom-loop policy</td>
+</tr>
+<tr>
+<td><code>xai-chat-state</code></td>
+<td>15,690</td>
+<td>Conversation state and compaction modes</td>
+</tr>
+<tr>
+<td><code>xai-grok-cloud-config</code></td>
+<td>5,584</td>
+<td>Managed (enterprise) configuration</td>
+</tr>
+<tr>
+<td><code>xai-grok-egress-proxy</code></td>
+<td>4,593</td>
+<td>Local HTTP/CONNECT proxy for per-origin network policy</td>
+</tr>
+</tbody>
+</table>
+<p>The root <code>Cargo.toml</code> is generated — the README directs readers to treat it as read-only — and the build expects DotSlash and protoc. External contributions are not accepted; this is a published mirror, not a community project layout.</p>
+<h2 id="the-core-loop">The core loop</h2>
+<p>The turn loop is an explicit <code>loop {}</code> inside <code>process_conversation_turn_inner</code> in the shell's ACP session implementation, emitting a <code>LoopStarted</code> event with the loop index on every iteration.<sup id="fnref:4"><a class="footnote-ref" href="#fn:4">4</a></sup> Each iteration makes exactly one model round-trip: the loop hands the conversation to the sampler actor through <code>run_turn_via_sampler</code>, streams the response, and then dispatches any tool calls the response carried.<sup id="fnref:5"><a class="footnote-ref" href="#fn:5">5</a></sup></p>
+<p>The stop rule is the familiar one — <strong>a response with no tool calls ends the turn</strong> — but it sits behind an unusual amount of machinery:<sup id="fnref:6"><a class="footnote-ref" href="#fn:6">6</a></sup></p>
+<ul>
+<li><strong>No default turn budget.</strong> <code>max_turns</code> is an optional field on the agent definition (and a headless-only CLI flag); when set, the loop returns <code>MaxTurnsReached</code> once the next tool turn would exceed it. When unset — the default — no count-based cap binds the loop.<sup id="fnref:7"><a class="footnote-ref" href="#fn:7">7</a></sup></li>
+<li><strong>A stationarity guard is the real brake.</strong> Each sampling step's tool calls are hashed into a signature that ignores argument key order and call order within the step. Eight consecutive identical steps (four for read and plan/todo calls, which the code treats as "problematic" repeats) earn the model a nudge; twelve (eight problematic) end the turn outright. A separate counter stops runs of "true no-op" steps — calls that succeed without changing anything, like a polling command — at four.<sup id="fnref:8"><a class="footnote-ref" href="#fn:8">8</a></sup><sup id="fnref:9"><a class="footnote-ref" href="#fn:9">9</a></sup></li>
+<li><strong>Length salvage.</strong> A response cut off at the output limit can be continued a budgeted number of times instead of ending the turn truncated.</li>
+<li><strong>Compaction with a prefire.</strong> Auto-compaction triggers at 85% of the model's context window by default (the threshold itself resolves through the usual tiers, remote settings included), and a first-pass summary is prepared in the background while the turn is still running so the second pass is cheap when the threshold hits.<sup id="fnref:10"><a class="footnote-ref" href="#fn:10">10</a></sup></li>
+</ul>
+<p><img alt="The stationarity guard stopping a looping run" src="figures/seq-stationarity.svg" /></p>
+<p>Interjections — messages the user sends mid-turn — are drained at safe points in the loop, and memory reminders are injected between iterations.</p>
+<h3 id="the-model-client">The model client</h3>
+<p>The sampler speaks three wire formats — Chat Completions, Messages, and Responses — as separate stream modules, and each model catalog entry declares which backend it uses.<sup id="fnref:11"><a class="footnote-ref" href="#fn:11">11</a></sup> Where requests go depends on the credential: with OAuth or session auth, inference is proxied through <code>https://cli-chat-proxy.grok.com/v1</code>; with an API key, it goes to <code>https://api.x.ai/v1</code>, and the auxiliary services (settings, feedback, trace upload, managed config, telemetry) resolve to the proxy either way.<sup id="fnref:12"><a class="footnote-ref" href="#fn:12">12</a></sup><sup id="fnref:13"><a class="footnote-ref" href="#fn:13">13</a></sup></p>
+<p>Custom models are first-class rather than an afterthought: a catalog entry carries its own base URL, API key or environment-variable key, extra headers, and a context-window size the user must supply (auto-compaction depends on it).<sup id="fnref:14"><a class="footnote-ref" href="#fn:14">14</a></sup> The sampler also applies a server-delivered doom-loop policy: a response header (<code>x-grok-doom-loop-check</code>) carries the policy, and the sampler performs trigger parsing and confident-signal resampling client-side — a second, server-tuned loop guard layered over the local stationarity check.<sup id="fnref:15"><a class="footnote-ref" href="#fn:15">15</a></sup></p>
+<h2 id="one-turn-end-to-end">One turn, end to end</h2>
+<p>A concrete pass: the user asks Grok to find why a test fails and fix it.</p>
+<ol>
+<li><strong>Prompt assembly.</strong> The session actor builds the request from the agent definition: system prompt, project instructions, the tool schemas for the agent's toolset (filtered by its allowlist/denylist), memory reminders, and the conversation state held in <code>xai-chat-state</code>.</li>
+<li><strong>Sampling.</strong> <code>run_turn_via_sampler</code> submits the request to the sampler actor, which opens the stream on the model's declared backend — through the cli-chat-proxy for a signed-in user — and streams tokens back to the TUI.</li>
+<li><strong>Tool calls arrive.</strong> The response carries a <code>grep</code> call and a <code>read_file</code> call. The stationarity guard hashes the step's signature and starts a run count.</li>
+<li><strong>Authorization.</strong> Both calls are read-only tools, so they pass the permission pipeline without a prompt (a matching <code>ask</code> rule or hook could still intervene). The calls execute in the workspace crate against the host file system.</li>
+<li><strong>Results return.</strong> Tool results are appended to the conversation; the loop iterates, <code>LoopStarted</code> fires again, and the model — now holding the failing test's source — proposes an edit.</li>
+<li><strong>The edit prompts.</strong> In the default mode, <code>search_replace</code> is not on the read-only list, so the permission manager evaluates rules and remembered grants, finds none, and prompts. The user approves with "always allow in this project," and the decision is stored as a per-project grant outside the repository.</li>
+<li><strong>Verification.</strong> The model runs the test suite through the terminal tool. The chained command is split into segments and each is checked; the test runner is not a read-only command, but the earlier grant covers the prompt. Output streams back as the next tool result.</li>
+<li><strong>The turn ends.</strong> The model's next response contains no tool calls. The optional todo gate stays quiet (it is remote-gated and off by default), the turn completes, and — this matters for the egress section — the turn-end path runs trace completion: <em>if</em> trace upload is enabled, the turn's messages, permission events, and session state are packaged for upload; if it is not, nothing leaves.</li>
+</ol>
+<p><img alt="One turn, end to end" src="figures/seq-turn.svg" /></p>
+<p><a class="diagram-cta" href="trace.html">Play the 8-step trace<span>follow one turn — find the failing test, fix it — through Grok Build's loop, permission pipeline, and upload decision, step by step</span></a></p>
+<h2 id="tools">Tools</h2>
+<p>The native toolset covers the expected ground: a terminal, file read/edit (<code>search_replace</code>), content search, directory listing, todos, web search and fetch, plan mode entry/exit, an ask-the-user tool, LSP queries, scheduling, background-task control, image and video generation, and the <code>task</code> tool for subagents. Two alternate toolsets ship alongside it — a concise variant and a hashline variant — and the crate also carries in-tree ports of tool implementations from openai/codex and sst/opencode, disclosed in <code>THIRD-PARTY-NOTICES</code>.<sup id="fnref:16"><a class="footnote-ref" href="#fn:16">16</a></sup></p>
+<p>Registration is declarative: tools are rows in a registry, and an agent definition's <code>tools</code> allowlist and <code>disallowed_tools</code> denylist filter them, with a compatibility mapping so vendor tool names in imported agent definitions still resolve to the corresponding Grok tool kinds.<sup id="fnref:17"><a class="footnote-ref" href="#fn:17">17</a></sup> MCP tools join the same registry and pass through the same permission pipeline as built-ins. Subagents spawned through <code>task</code> can be isolated in a fresh git worktree, inherit or override the parent's turn budget, and be messaged, waited on, and killed through companion tools.</p>
+<h2 id="approvals-and-the-sandbox">Approvals and the sandbox</h2>
+<p>Six permission modes span the usual range — <code>default</code> (ask), <code>acceptEdits</code>, <code>auto</code>, <code>dontAsk</code>, <code>bypassPermissions</code> (always-approve), and <code>plan</code>.<sup id="fnref:18"><a class="footnote-ref" href="#fn:18">18</a></sup> Within any mode, a tool call is authorized in a fixed order, as the shipped user guide describes it and the workspace permission code implements it:<sup id="fnref:19"><a class="footnote-ref" href="#fn:19">19</a></sup></p>
+<ol>
+<li><strong><code>PreToolUse</code> hooks</strong> may deny the call outright (an approving hook does not skip the remaining checks).</li>
+<li><strong>Permission rules</strong> — <code>deny</code> wins over <code>ask</code> wins over <code>allow</code> — merged from CLI flags, global and per-directory <code>.grok/config.toml</code> files, Claude-compatible <code>.claude/settings.json</code> files, and managed configuration.</li>
+<li><strong>Remembered grants</strong> from earlier prompts, scoped per project; commands on a dangerous list re-prompt instead of reusing a grant.</li>
+<li><strong>Built-in auto-approvals</strong> for read-only tools and a fixed list of read-only shell commands, evaluated per segment after splitting chained commands — with deliberate exceptions: constructs that can smuggle execution (<code>git -c</code> config overrides, <code>sort --compress-program</code>, <code>rg --pre</code>) push the call back to a prompt.</li>
+<li><strong>The mode's policy.</strong> Always-approve short-circuits after step 2; deny rules, hooks, and shell <code>ask</code> rules still apply inside it.</li>
+</ol>
+<p><img alt="A permission decision through the pipeline" src="figures/seq-permission.svg" /></p>
+<p>The <code>auto</code> mode replaces the step-5 prompt with a background <strong>LLM transcript classifier</strong> (with safe fast paths for clearly routine calls): what the classifier allows proceeds, what it does not is escalated to a prompt interactively or refused in non-interactive runs.<sup id="fnref:20"><a class="footnote-ref" href="#fn:20">20</a></sup> Administrators can lock always-approve off entirely through a requirements file, including a system-level copy users cannot remove.</p>
+<p>Sandboxing is a separate, opt-in layer with an unusual property: it confines the <strong>whole agent process</strong>, not individual commands. Passing <code>--sandbox &lt;profile&gt;</code> makes the binary apply OS confinement to itself at startup, before the agent boots — Landlock on Linux, Seatbelt on macOS, with a bubblewrap re-exec providing read-deny mounts on Linux.<sup id="fnref:21"><a class="footnote-ref" href="#fn:21">21</a></sup><sup id="fnref:22"><a class="footnote-ref" href="#fn:22">22</a></sup> Profiles run from <code>workspace</code> (read anywhere, write to the working directory and temp) through <code>read-only</code> to <code>strict</code> (read only the working directory plus system paths; child network blocked on Linux). Custom profiles can add kernel-enforced deny globs — the guide's example is <code>**/.env</code> — and under the stricter profiles Grok's own global configuration, hooks, and trust files are write-denied, so a running session cannot rewrite the policy that governs it. Child-process network blocking is seccomp-based and, as the guide states plainly, a no-op on macOS. A second, per-command sandbox layer exists in the code — gated by a remote <code>sandbox_mode</code> of off/observe/enforce and paired with a local egress proxy that enforces per-origin website policies — but the whole-process profile is the mechanism a user can switch on today. Without <code>--sandbox</code>, commands run unconfined and the permission system is the only gate.</p>
+<p><img alt="Sandbox applied at process startup" src="figures/seq-sandbox.svg" /></p>
+<h3 id="what-leaves-the-machine">What leaves the machine</h3>
+<p>This product was open-sourced days after a disclosure that earlier CLI versions had uploaded users' entire repositories — including <code>.env</code> files — to a cloud storage bucket. The right question for this tree is narrow and checkable: at this commit, what upload code exists, what does it send, what gates it, and is the repository-upload path reachable? The answers below are from the code at the pin, not from coverage of the disclosure.</p>
+<p><strong>The upload stack is real and substantial.</strong> A dedicated upload module in the shell (trace assembly, a manifest at schema v3, a drain pass at exit) sits on a transport crate with a durable, disk-spilling upload queue and three destination shapes: direct-to-bucket with a service-account key, through the cli-chat-proxy with the user's bearer token, or direct to S3. Destination resolution prefers a deployment's own configured bucket, then the proxy, then a configured service-account key; there is no compiled-in default bucket in this source tree (the default is read from a build-time environment variable that is unset here).<sup id="fnref:23"><a class="footnote-ref" href="#fn:23">23</a></sup><sup id="fnref:24"><a class="footnote-ref" href="#fn:24">24</a></sup><sup id="fnref:25"><a class="footnote-ref" href="#fn:25">25</a></sup></p>
+<p><strong>What a session trace contains.</strong> When trace upload is on, each completed turn packages the turn's messages and full prompt text, the session's chat history (the session-state archive's payload is <code>chat_history.jsonl</code> — session files, not workspace files), the turn's permission events, trace metadata enriched with the git repository root and remote URL, and — under a separate gate described below — the memory directory as a tar archive.<sup id="fnref:26"><a class="footnote-ref" href="#fn:26">26</a></sup><sup id="fnref:27"><a class="footnote-ref" href="#fn:27">27</a></sup></p>
+<p><strong>The repository-upload path is stubbed out at this pin.</strong> The wire types for collecting a repository survive intact: a request type that asks for commits ahead of a base <em>with patches</em>, uncommitted changes, and untracked files with base64 content (capped at 1 MiB per file, larger files excluded rather than truncated), including a <code>force_include_paths</code> field documented as capturing paths "even when gitignored"; the server still advertises upload limits for it; the restore-side dedup types remain.<sup id="fnref:28"><a class="footnote-ref" href="#fn:28">28</a></sup> But both producer entry points — the workspace operation and the ACP extension method <code>x.ai/git/serialize_changes</code> — return an error at this commit: "git collect changes is unavailable in this build."<sup id="fnref:29"><a class="footnote-ref" href="#fn:29">29</a></sup> The exclusion lists that would have governed collection remain in the transport crate; read closely, they skip a directory <em>named</em> <code>.env</code> but include no <code>.env</code> file pattern — a detail that is moot while the producer is stubbed, and worth recording precisely because it is the list a re-enabled producer would use.<sup id="fnref:30"><a class="footnote-ref" href="#fn:30">30</a></sup></p>
+<p><strong>The gates on what does upload are layered, and the defaults in this tree are closed.</strong></p>
+<ul>
+<li>The privacy state arrives with the auth profile: a team-level zero-data-retention flag, or the user's coding-data-retention opt-out. The opt-out's default — the value used when the state is unknown — is <code>true</code>: unknown means opted out, until the server's profile response says otherwise.<sup id="fnref:31"><a class="footnote-ref" href="#fn:31">31</a></sup> Collection paths consult a fail-closed check on this state.<sup id="fnref:32"><a class="footnote-ref" href="#fn:32">32</a></sup></li>
+<li>Trace upload resolves through the standard tiers — distribution capability, requirements pin, environment, config, then a remote <code>trace_upload_enabled</code> flag — and its final default is "the telemetry mode is Enabled." The telemetry mode's own final default, in this source, is Disabled. So a build of this tree uploads no traces unless some tier turns telemetry on; the remote tier is one of the tiers that can, and what xAI's production settings endpoint returns for a given account is not determinable from this repository.<sup id="fnref:33"><a class="footnote-ref" href="#fn:33">33</a></sup><sup id="fnref:34"><a class="footnote-ref" href="#fn:34">34</a></sup></li>
+<li>Where the traces go changes the privacy rule: when the destination is xAI (proxy mode), the coding-data opt-out blocks the upload; when a deployment configures its <em>own</em> bucket, the opt-out does not apply — only zero-data-retention blocks every destination. The code states this distinction in a comment, deliberately.<sup id="fnref:35"><a class="footnote-ref" href="#fn:35">35</a></sup></li>
+<li>Uploads that spill to the local queue are reconciled at startup against the current verdict: if data collection is disabled, spilled uploads from a previous run are purged rather than sent.<sup id="fnref:36"><a class="footnote-ref" href="#fn:36">36</a></sup></li>
+<li>The memory archive has its own gate: it uploads only when the session registry is enabled (by local config or the remote <code>session_registry_enabled</code> setting), and the skip is recorded in the turn's manifest when it is not.<sup id="fnref:37"><a class="footnote-ref" href="#fn:37">37</a></sup></li>
+</ul>
+<p><img alt="Trace-upload resolution: the tiers decide" src="figures/seq-upload.svg" /></p>
+<p><strong>Feedback is the consent on-ramp.</strong> The one path designed to turn sharing on is a feedback card: remote-gated, never offered to zero-retention teams, never with a deployment key or a custom trace destination. Accepting it issues a one-shot upload configuration that deliberately ignores the cached opt-out and the live trace flag — fresh consent supersedes both — and fails closed when the privacy state cannot be established.<sup id="fnref:38"><a class="footnote-ref" href="#fn:38">38</a></sup><sup id="fnref:39"><a class="footnote-ref" href="#fn:39">39</a></sup></p>
+<p><strong>The remaining streams are separate and narrower.</strong> Product analytics (Mixpanel events) require telemetry enabled and a non-ZDR team.<sup id="fnref:40"><a class="footnote-ref" href="#fn:40">40</a></sup> Internal tracing spans go to the proxy by default and can be disabled with <code>OTEL_TRACES_EXPORTER=none</code>. The external OTEL stream the user guide describes — exports to the user's <em>own</em> collector, off by default, double opt-in, with prompt and tool-content gates defaulting off — is kept structurally separate from the xAI-side streams in the endpoint code, and <code>/privacy</code> governs the xAI-side retention settings, not that stream.</p>
+<p>The precise summary for this commit: the machinery to upload conversations exists and is carefully gated, with defaults in the source tree set to closed and an unknown privacy state treated as opted out; the machinery to upload a repository exists only as types and server limits, with its producers disabled in this build. Both halves of that sentence are properties of this snapshot — the gates are tiered, and the tiers above the local ones are held server-side.</p>
+<h2 id="memory-and-sessions">Memory and sessions</h2>
+<p>Sessions persist under <code>~/.grok/sessions/</code>, one directory per working directory and one subdirectory per session, holding an append-only <code>updates.jsonl</code>, a <code>summary.json</code>, the <code>chat_history.jsonl</code>, and per-prompt files.<sup id="fnref:41"><a class="footnote-ref" href="#fn:41">41</a></sup> Resume is by session id or title, with forking supported; file-state checkpoints (<code>rewind_points.jsonl</code>) let a session rewind its workspace edits. Cross-session memory is a real subsystem rather than a transcript search: a file-based store (default root <code>~/.grok/memory</code>) with chunking, embeddings, and a background consolidation pass, whose reminders the turn loop injects. Session search across past sessions is a separate small crate.</p>
+<h2 id="extensions">Extensions</h2>
+<p>Hooks follow the familiar event model (PreToolUse, PostToolUse, UserPromptSubmit, SessionStart, Stop, SubagentStop) with command hooks and matchers, and project hooks are gated by folder trust. MCP is client-side, with elicitation support, and MCP tools pass through the same rules system (<code>MCPTool(...)</code> patterns). Custom agents are definitions — tools, model, turn budget, permission mode — loaded from <code>.grok/agents</code> and from Claude-compatible settings, which this codebase reads natively in several places (settings, agents, permission rules). Skills are invocable through the tool surface, and a plugin marketplace crate handles plugin distribution.</p>
+<h2 id="interfaces">Interfaces</h2>
+<ul>
+<li><strong>TUI:</strong> the default <code>grok</code> — full-screen, with a session picker, mode cycling, and a <code>/privacy</code> command that opens the coding-data and retention settings.</li>
+<li><strong>Headless:</strong> <code>grok -p "&lt;prompt&gt;"</code>, with plain/JSON/streaming output formats, <code>--max-turns</code>, tool allow/deny lists, permission rules on the command line, and resume flags — the scripting and CI surface.</li>
+<li><strong>ACP and agent servers:</strong> <code>grok agent stdio</code> for editor embedding, and <code>grok agent serve</code> for a token-guarded local server; ACP clients can request always-approve per session via <code>_meta</code>.</li>
+<li><strong>Leader mode:</strong> one leader process can host sessions that other <code>grok</code> processes attach to, with a relay channel for remote control.</li>
+</ul>
+<h2 id="observations">Observations</h2>
+<ul>
+<li><strong>Scale is the first fact.</strong> At ~820K lines of Rust this is the largest tree in the series by a wide margin, and the size is not accidental bloat: much of it is the surface area of a product that must be a TUI, a headless CLI, an editor backend, and an enterprise-managed deployment at once. The crate boundaries are correspondingly fine — 103 crates — and the load-bearing logic concentrates in three of them.</li>
+<li><strong>The control plane is a feature, treated as such.</strong> Remote settings, managed config, requirements pins, server-delivered feature flags, and even a server-carried doom-loop policy are not scaffolding around the harness; they are how the harness is operated. Reading this codebase well means tracking, for every behavior, which tier decides it.</li>
+<li><strong>The loop's safety story is about repetition, not just budgets.</strong> There is no default turn cap; there is a precise, order-insensitive stationarity guard with different thresholds for reads and plan writes than for other tools — a design that encodes production experience with how agents actually loop.</li>
+<li><strong>The permission system is the deepest subsystem relative to its visibility.</strong> Segment-wise shell analysis, execution-smuggling exceptions, per-project grants, a classifier-backed auto mode, and administrator locks make it closer to a policy engine than a prompt dialog.</li>
+<li><strong>The egress code reads as post-incident engineering.</strong> Fail-closed defaults, consent that supersedes caches, purge-on-disable for queued uploads, manifest-recorded skips: whether or not one credits the intent, the mechanisms are specific and checkable, and the repository-collection producer is disabled in this build while its types remain — a combination a reader can verify rather than trust.</li>
+</ul>
+<h2 id="tradeoffs">Tradeoffs</h2>
+<ul>
+<li><strong>Server-held tiers buy operability and cost local legibility.</strong> A behavior can be changed for every user without a release — and a user (or an auditor) reading the source cannot determine the production value of the switches that matter most. The code is unusually transparent about the mechanism; the mechanism's inputs are not in the repo.</li>
+<li><strong>Whole-process sandboxing is strong and blunt.</strong> Confining the agent process itself closes the gaps per-command wrappers leave, at the price of an all-or-nothing profile chosen at launch, platform asymmetry (child-network blocking is Linux-only), and policy files that must be write-protected against the process they govern.</li>
+<li><strong>Compatibility is a strategy with a maintenance tail.</strong> Reading Claude-format settings, agents, and rules natively — plus tool implementations ported from two other harnesses — lowers switching costs and multiplies the surfaces that must stay correct.</li>
+<li><strong>A stubbed producer with live types is a snapshot, not a settlement.</strong> Disabling repository collection in this build is verifiable; the retained types, limits, and restore code mean the capability's shape remains in the tree, and a future sync could change the verdict. Teardowns pin a commit for exactly this reason.</li>
+</ul>
+<h2 id="comparison-matrix-row">Comparison matrix row</h2>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Dimension</th>
+<th>Grok Build (grok) (<code>2bdd1d6</code>)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>Agent loop</td>
+<td>Explicit <code>loop {}</code> in the shell session actor; one sampler round-trip per iteration; turn ends on a response with no tool calls; <strong>no default turn cap</strong> (<code>max_turns</code> is per-agent-definition / CLI); stationarity guard nudges at 8 identical steps (4 for reads/plan) and hard-stops at 12 (8); length-salvage continuations; two-pass compaction prefired at 85% of window</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Tool system</td>
+<td>Registry-declared tools in three toolsets (native, concise, hashline) plus in-tree Codex/OpenCode ports; per-agent allowlist/denylist with vendor-name compatibility mapping; MCP tools join the same registry and permission pipeline; subagents via <code>task</code> with optional worktree isolation</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Model providers</td>
+<td>First-party via cli-chat-proxy (session/OAuth) or api.x.ai (API key); three wire backends (chat completions, messages, responses) chosen per catalog entry; BYOK custom models with own base URL/key/headers/context window</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Prompt construction</td>
+<td>Agent definition + project instructions + filtered tool schemas + memory reminders assembled per turn; interjections drained at safe points; compaction summaries replace history at threshold</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Memory/session</td>
+<td>Per-cwd session dirs under <code>~/.grok/sessions</code> (updates.jsonl, summary, chat_history.jsonl); resume/fork; file-state rewind points; separate file-based memory store with embeddings and background consolidation; session search crate</td>
+</tr>
+<tr>
+<td>6</td>
+<td>Reasoning/planning</td>
+<td>Todo tool + plan mode (enter/exit tools); TodoGate nudge (remote-gated, default off); subagent delegation with message/wait/kill controls; goals and workflows tooling</td>
+</tr>
+<tr>
+<td>7</td>
+<td>Extensibility</td>
+<td>Hooks (Claude-style events, folder-trust gated); MCP client with elicitation; custom agent definitions incl. Claude-compatible formats; skills; plugin marketplace; feature registry resolved pin → env → config → remote → default</td>
+</tr>
+<tr>
+<td>8</td>
+<td>Interfaces</td>
+<td>Full-screen TUI; headless <code>-p</code> with JSON/streaming output; ACP over stdio and a token-guarded local server; leader mode with relay for remote control</td>
+</tr>
+<tr>
+<td>9</td>
+<td>Failure handling</td>
+<td>Sampler retries with wait budgets and parked turns on uncharged 401s; server doom-loop header policy with resampling; upload queue spills to disk with startup reconcile (re-enqueue or purge by current privacy verdict); torn-state recovery for sessions</td>
+</tr>
+<tr>
+<td>10</td>
+<td>Security model</td>
+<td>Six permission modes; hooks → rules (deny&gt;ask&gt;allow) → per-project grants → read-only auto-approvals → mode policy; LLM-classifier auto mode; admin requirements locks; opt-in whole-process OS sandbox (Landlock/Seatbelt, off by default); trace upload off by default in-tree with fail-closed privacy defaults; whole-repo collection stubbed out at this pin</td>
+</tr>
+</tbody>
+</table>
+<h2 id="endnotes">Endnotes</h2>
+<p>All notes are VERIFIED against <code>2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8</code> unless marked otherwise. <code>GH</code> = <code>https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/</code>.</p>
+<div class="footnote">
+<hr />
+<ol>
+<li id="fn:1">
+<p>Provenance: <a href="https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/SOURCE_REV">GH…/SOURCE_REV</a> contains the single line <code>559751fdcec02d413e4c57c8832ab275e4f44980</code>. No tags or releases exist (GitHub API, checked 2026-10-14); the pinned commit's message is "Synced from monorepo" (2026-09-29).&#160;<a class="footnote-backref" href="#fnref:1" title="Jump back to footnote 1 in the text">&#8617;</a></p>
+</li>
+<li id="fn:2">
+<p>Counts at the pin: 4,487 tracked files, 3,689 <code>.rs</code> files, 819,658 lines of Rust, 103 crates with a <code>Cargo.toml</code> across <code>crates/build/</code>, <code>crates/codegen/</code>, and <code>crates/common/</code>. Toolchain pin: <a href="https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/rust-toolchain.toml">GH…/rust-toolchain.toml</a> (1.94.0).&#160;<a class="footnote-backref" href="#fnref:2" title="Jump back to footnote 2 in the text">&#8617;</a></p>
+</li>
+<li id="fn:3">
+<p>Remote settings: <a href="https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-config/src/remote_settings.rs#L1">GH…/crates/codegen/xai-grok-config/src/remote_settings.rs#L1</a> — "Remote settings fetched from cli-chat-proxy <code>GET /v1/settings</code>". The payload includes a server-decided consent-gate notice and a remote sandbox kill switch (same file).&#160;<a class="footnote-backref" href="#fnref:3" title="Jump back to footnote 3 in the text">&#8617;</a></p>
+</li>
+<li id="fn:4">
+<p>The turn loop: <a href="https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-shell/src/session/acp_session_impl/turn.rs#L2747">GH…/crates/codegen/xai-grok-shell/src/session/acp_session_impl/turn.rs#L2747</a> (<code>loop {}</code> in <code>process_conversation_turn_inner</code>, emitting <code>Event::LoopStarted { loop_index }</code>).&#160;<a class="footnote-backref" href="#fnref:4" title="Jump back to footnote 4 in the text">&#8617;</a></p>
+</li>
+<li id="fn:5">
+<p>One round-trip per iteration: <a href="https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-shell/src/session/acp_session_impl/sampler_turn.rs#L1716">GH…/crates/codegen/xai-grok-shell/src/session/acp_session_impl/sampler_turn.rs#L1716</a> (<code>run_turn_via_sampler</code>).&#160;<a class="footnote-backref" href="#fnref:5" title="Jump back to footnote 5 in the text">&#8617;</a></p>
+</li>
+<li id="fn:6">
+<p>Turn ends on an empty tool-call set: <a href="https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-shell/src/session/acp_session_impl/turn.rs#L3623">GH…/crates/codegen/xai-grok-shell/src/session/acp_session_impl/turn.rs#L3623</a> (<code>if tool_calls.is_empty()</code>, after the length-salvage handling above it).&#160;<a class="footnote-backref" href="#fnref:6" title="Jump back to footnote 6 in the text">&#8617;</a></p>
+</li>
+<li id="fn:7">
+<p><code>max_turns</code> is an agent-definition field: <a href="https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-agent/src/config.rs#L740">GH…/crates/codegen/xai-grok-agent/src/config.rs#L740</a> (<code>pub max_turns: Option&lt;u32&gt;</code>, default <code>None</code> in the definition defaults); enforcement inside the loop: <a href="https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-shell/src/session/acp_session_impl/turn.rs#L3853">GH…/crates/codegen/xai-grok-shell/src/session/acp_session_impl/turn.rs#L3853</a>.&#160;<a class="footnote-backref" href="#fnref:7" title="Jump back to footnote 7 in the text">&#8617;</a></p>
+</li>
+<li id="fn:8">
+<p>Stationarity thresholds: <a href="https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-shell/src/session/acp_session_impl/turn.rs#L3896-L3900">GH…/crates/codegen/xai-grok-shell/src/session/acp_session_impl/turn.rs#L3896-L3900</a> — <code>NUDGE_AFTER_IDENTICAL_PROBLEMATIC_TOOL_CALLS = 4</code>, <code>NUDGE_AFTER_IDENTICAL_TOOL_CALLS = 8</code>, <code>MAX_CONSECUTIVE_IDENTICAL_PROBLEMATIC_TOOL_CALLS = 8</code>, <code>MAX_CONSECUTIVE_IDENTICAL_TOOL_CALLS = 12</code>, <code>MAX_CONSECUTIVE_TRUE_NOOPS = 4</code>.&#160;<a class="footnote-backref" href="#fnref:8" title="Jump back to footnote 8 in the text">&#8617;</a></p>
+</li>
+<li id="fn:9">
+<p>The run tracker and its order-insensitive step signature: <a href="https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-shell/src/session/acp_session_impl/turn.rs#L3960">GH…/crates/codegen/xai-grok-shell/src/session/acp_session_impl/turn.rs#L3960</a> (<code>struct IdenticalToolCallRun</code>); reads and plan writes are the "problematic" kinds (<code>is_problematically_repeating_kind</code>, same file).&#160;<a class="footnote-backref" href="#fnref:9" title="Jump back to footnote 9 in the text">&#8617;</a></p>
+</li>
+<li id="fn:10">
+<p>Auto-compact threshold: <a href="https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-shell/src/agent/config.rs#L1083-L1086">GH…/crates/codegen/xai-grok-shell/src/agent/config.rs#L1083-L1086</a> — the resolver "falls through to remote tiers and then the hardcoded default 85".&#160;<a class="footnote-backref" href="#fnref:10" title="Jump back to footnote 10 in the text">&#8617;</a></p>
+</li>
+<li id="fn:11">
+<p>Three sampler wire formats: <code>crates/codegen/xai-grok-sampler/src/stream/{chat_completions,messages,responses}.rs</code>; per-model backend selection (<code>api_backend</code>: <code>"chat_completions"</code> default, <code>"responses"</code>) on the catalog entry at <a href="https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-shell/src/agent/config.rs#L3279">GH…/crates/codegen/xai-grok-shell/src/agent/config.rs#L3279</a>.&#160;<a class="footnote-backref" href="#fnref:11" title="Jump back to footnote 11 in the text">&#8617;</a></p>
+</li>
+<li id="fn:12">
+<p>Production endpoints: <a href="https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-env/src/lib.rs#L20-L26">GH…/crates/codegen/xai-grok-env/src/lib.rs#L20-L26</a> — <code>cli_chat_proxy_base_url: "https://cli-chat-proxy.grok.com/v1"</code>, plus the relay and gateway WebSocket URLs.&#160;<a class="footnote-backref" href="#fnref:12" title="Jump back to footnote 12 in the text">&#8617;</a></p>
+</li>
+<li id="fn:13">
+<p>Auxiliary services resolve to the proxy; only API-key inference uses the xAI API base: <a href="https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-config/src/endpoints.rs#L1-L4">GH…/crates/codegen/xai-grok-config/src/endpoints.rs#L1-L4</a>; <code>XAI_API_BASE_URL_DEFAULT = "https://api.x.ai/v1"</code> at <a href="https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-config/src/endpoints.rs#L270">GH…/crates/codegen/xai-grok-config/src/endpoints.rs#L270</a>.&#160;<a class="footnote-backref" href="#fnref:13" title="Jump back to footnote 13 in the text">&#8617;</a></p>
+</li>
+<li id="fn:14">
+<p>Custom model entries carry <code>base_url</code>, <code>api_key</code> / <code>env_key</code>, extra headers for BYOK, and a required context-window field: the <code>ModelEntryConfig</code> struct at <a href="https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-shell/src/agent/config.rs#L3266">GH…/crates/codegen/xai-grok-shell/src/agent/config.rs#L3266</a>.&#160;<a class="footnote-backref" href="#fnref:14" title="Jump back to footnote 14 in the text">&#8617;</a></p>
+</li>
+<li id="fn:15">
+<p>Server-side doom-loop policy: <a href="https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-shell/src/agent/config.rs#L1960">GH…/crates/codegen/xai-grok-shell/src/agent/config.rs#L1960</a> — "It covers the <code>x-grok-doom-loop-check</code> header, trigger parsing, and confident-signal resampling, all applied by the sampler."&#160;<a class="footnote-backref" href="#fnref:15" title="Jump back to footnote 15 in the text">&#8617;</a></p>
+</li>
+<li id="fn:16">
+<p>Toolset layout and third-party ports: <code>crates/codegen/xai-grok-tools/src/implementations/</code> holds <code>grok_build/</code>, <code>grok_build_concise/</code>, <code>grok_build_hashline/</code>, <code>codex/</code>, and <code>opencode/</code>; the ports are disclosed in <a href="https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/THIRD-PARTY-NOTICES">GH…/THIRD-PARTY-NOTICES</a>.&#160;<a class="footnote-backref" href="#fnref:16" title="Jump back to footnote 16 in the text">&#8617;</a></p>
+</li>
+<li id="fn:17">
+<p>Allowlist/denylist filtering with vendor-name compatibility: <a href="https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-agent/src/tool_list.rs#L1">GH…/crates/codegen/xai-grok-agent/src/tool_list.rs#L1</a> — "Which toolset tools an agent's <code>tools</code> allowlist keeps and its <code>disallowed_tools</code> denylist removes", backed by the shared vendor-to-Grok tool registry in <code>xai-grok-tools</code>.&#160;<a class="footnote-backref" href="#fnref:17" title="Jump back to footnote 17 in the text">&#8617;</a></p>
+</li>
+<li id="fn:18">
+<p>Permission modes: <a href="https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-agent/src/config.rs#L921-L931">GH…/crates/codegen/xai-grok-agent/src/config.rs#L921-L931</a> — <code>Default</code>, <code>AcceptEdits</code>, <code>Auto</code>, <code>DontAsk</code>, <code>BypassPermissions</code>, <code>Plan</code>.&#160;<a class="footnote-backref" href="#fnref:18" title="Jump back to footnote 18 in the text">&#8617;</a></p>
+</li>
+<li id="fn:19">
+<p>The authorization pipeline as documented by the project: <a href="https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-pager/docs/user-guide/22-permissions-and-safety.md">GH…/crates/codegen/xai-grok-pager/docs/user-guide/22-permissions-and-safety.md</a> ("How a tool call is authorized", steps 1–5, including the always-approve short-circuit and the read-only command list with its execution-smuggling exceptions); implemented across <code>xai-grok-workspace/src/permission/</code> and <code>xai-grok-permission-rules</code>.&#160;<a class="footnote-backref" href="#fnref:19" title="Jump back to footnote 19 in the text">&#8617;</a></p>
+</li>
+<li id="fn:20">
+<p>Auto mode: <a href="https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-workspace/src/permission/auto_mode/mod.rs#L1-L3">GH…/crates/codegen/xai-grok-workspace/src/permission/auto_mode/mod.rs#L1-L3</a> — "Auto permission mode: LLM transcript classifier with safe fast-paths."&#160;<a class="footnote-backref" href="#fnref:20" title="Jump back to footnote 20 in the text">&#8617;</a></p>
+</li>
+<li id="fn:21">
+<p>Sandbox applied to the process at startup: <a href="https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-pager-bin/src/main.rs#L2202">GH…/crates/codegen/xai-grok-pager-bin/src/main.rs#L2202</a> (<code>xai_grok_shell::config::apply_sandbox(...)</code> before the agent boots); profiles and platform notes in the shipped guide, <a href="https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-pager/docs/user-guide/18-sandbox.md">GH…/crates/codegen/xai-grok-pager/docs/user-guide/18-sandbox.md</a>.&#160;<a class="footnote-backref" href="#fnref:21" title="Jump back to footnote 21 in the text">&#8617;</a></p>
+</li>
+<li id="fn:22">
+<p>Bubblewrap re-exec for read-deny/read-only mounts on Linux: <a href="https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-sandbox/src/lib.rs#L292">GH…/crates/codegen/xai-grok-sandbox/src/lib.rs#L292</a> (<code>bwrap_reexec_command</code>).&#160;<a class="footnote-backref" href="#fnref:22" title="Jump back to footnote 22 in the text">&#8617;</a></p>
+</li>
+<li id="fn:23">
+<p>Upload destinations: <a href="https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-file-utils/src/upload_config.rs#L10">GH…/crates/codegen/xai-file-utils/src/upload_config.rs#L10</a> (<code>pub enum UploadMethod</code> — <code>Direct</code>, <code>Proxy</code>, <code>S3</code>).&#160;<a class="footnote-backref" href="#fnref:23" title="Jump back to footnote 23 in the text">&#8617;</a></p>
+</li>
+<li id="fn:24">
+<p>Destination resolution order (deployment bucket → proxy → configured service-account key → none): <code>crates/codegen/xai-grok-shell/src/agent/config.rs</code> L206–227 (<code>resolve</code> on the trace-upload endpoints), read at the pin.&#160;<a class="footnote-backref" href="#fnref:24" title="Jump back to footnote 24 in the text">&#8617;</a></p>
+</li>
+<li id="fn:25">
+<p>No compiled-in default bucket in this tree: <a href="https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-shell/src/upload/gcs.rs#L93-L94">GH…/crates/codegen/xai-grok-shell/src/upload/gcs.rs#L93-L94</a> — <code>SESSION_TRACES_BUCKET: Option&lt;&amp;str&gt; = option_env!("GROK_SESSION_TRACES_BUCKET_DEFAULT")</code>, unset when building from this source. Whether the shipped release build sets it is an open item (see RECON).&#160;<a class="footnote-backref" href="#fnref:25" title="Jump back to footnote 25 in the text">&#8617;</a></p>
+</li>
+<li id="fn:26">
+<p>Per-turn trace assembly: <a href="https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-shell/src/upload/turn.rs#L253">GH…/crates/codegen/xai-grok-shell/src/upload/turn.rs#L253</a> (<code>complete_prompt_trace</code>).&#160;<a class="footnote-backref" href="#fnref:26" title="Jump back to footnote 26 in the text">&#8617;</a></p>
+</li>
+<li id="fn:27">
+<p>Session-state archive payload is the chat history only (<code>build_chat_history_session_state</code> / <code>compress_chat_history_archive</code>), and trace metadata is enriched with the git root and remote URL: <code>crates/codegen/xai-grok-shell/src/upload/trace.rs</code>, read at the pin. The harness-session-archive uploader in the same file is a stub returning <code>false</code>.&#160;<a class="footnote-backref" href="#fnref:27" title="Jump back to footnote 27 in the text">&#8617;</a></p>
+</li>
+<li id="fn:28">
+<p>Repository-collection wire type: <a href="https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-workspace-types/src/rpc/git.rs#L799">GH…/crates/codegen/xai-grok-workspace-types/src/rpc/git.rs#L799</a> (<code>pub struct GitCollectChangesReq</code>); <code>force_include_paths</code> ("captured even when gitignored") at <a href="https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-workspace-types/src/rpc/git.rs#L824">GH…/crates/codegen/xai-grok-workspace-types/src/rpc/git.rs#L824</a>; the 1 MiB untracked-content cap at <a href="https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-workspace-types/src/rpc/git.rs#L1027">GH…/crates/codegen/xai-grok-workspace-types/src/rpc/git.rs#L1027</a>. Server-advertised limits: <code>UploadLimits</code> at <a href="https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-file-utils/src/storage_client.rs#L296">GH…/crates/codegen/xai-file-utils/src/storage_client.rs#L296</a>.&#160;<a class="footnote-backref" href="#fnref:28" title="Jump back to footnote 28 in the text">&#8617;</a></p>
+</li>
+<li id="fn:29">
+<p>Both producers stubbed: <a href="https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-workspace/src/workspace_ops.rs#L615">GH…/crates/codegen/xai-grok-workspace/src/workspace_ops.rs#L615</a> ("git collect changes is unavailable in this build") and <a href="https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-shell/src/extensions/git.rs#L306">GH…/crates/codegen/xai-grok-shell/src/extensions/git.rs#L306</a> ("git serialize_changes is unavailable in this build").&#160;<a class="footnote-backref" href="#fnref:29" title="Jump back to footnote 29 in the text">&#8617;</a></p>
+</li>
+<li id="fn:30">
+<p>Exclusion lists: <a href="https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-file-utils/src/upload_config.rs#L49">GH…/crates/codegen/xai-file-utils/src/upload_config.rs#L49</a> (<code>SKIP_DIR_NAMES</code>, includes a <code>.env</code> directory name) and <a href="https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-file-utils/src/upload_config.rs#L91">GH…/crates/codegen/xai-file-utils/src/upload_config.rs#L91</a> (<code>SKIP_FILE_PATTERNS</code> — build artifacts and swap files; no <code>.env</code> file pattern as read at the pin).&#160;<a class="footnote-backref" href="#fnref:30" title="Jump back to footnote 30 in the text">&#8617;</a></p>
+</li>
+<li id="fn:31">
+<p>Privacy defaults: <a href="https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-login/src/model.rs#L22">GH…/crates/codegen/xai-grok-login/src/model.rs#L22</a> (<code>default_coding_data_retention_opt_out()</code> returns <code>true</code>) and <a href="https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-login/src/model.rs#L194">GH…/crates/codegen/xai-grok-login/src/model.rs#L194</a> (<code>is_data_collection_disabled()</code> = ZDR team or retention opt-out).&#160;<a class="footnote-backref" href="#fnref:31" title="Jump back to footnote 31 in the text">&#8617;</a></p>
+</li>
+<li id="fn:32">
+<p>Fail-closed collection check: <a href="https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-login/src/manager.rs#L800">GH…/crates/codegen/xai-grok-login/src/manager.rs#L800</a> (<code>AuthManager::allows_data_collection</code>).&#160;<a class="footnote-backref" href="#fnref:32" title="Jump back to footnote 32 in the text">&#8617;</a></p>
+</li>
+<li id="fn:33">
+<p>Trace-upload resolution: <a href="https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-shell/src/agent/config.rs#L1883">GH…/crates/codegen/xai-grok-shell/src/agent/config.rs#L1883</a> (<code>resolve_trace_upload</code>; the remote tier is the <code>trace_upload_enabled</code> field at <a href="https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-config/src/remote_settings.rs#L562">GH…/crates/codegen/xai-grok-config/src/remote_settings.rs#L562</a>).&#160;<a class="footnote-backref" href="#fnref:33" title="Jump back to footnote 33 in the text">&#8617;</a></p>
+</li>
+<li id="fn:34">
+<p>Telemetry-mode default: <a href="https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-telemetry/src/config.rs#L10-L15">GH…/crates/codegen/xai-grok-telemetry/src/config.rs#L10-L15</a> — <code>TelemetryMode</code> defaults to <code>Disabled</code>; the mode resolver is <code>resolve_telemetry_mode</code> at <a href="https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-shell/src/agent/config.rs#L1855">GH…/crates/codegen/xai-grok-shell/src/agent/config.rs#L1855</a>.&#160;<a class="footnote-backref" href="#fnref:34" title="Jump back to footnote 34 in the text">&#8617;</a></p>
+</li>
+<li id="fn:35">
+<p>Destination-dependent privacy rule: <a href="https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-shell/src/agent/config.rs#L239">GH…/crates/codegen/xai-grok-shell/src/agent/config.rs#L239</a> (<code>is_trace_upload_blocked_for</code>); the trait comment at L164–165 of the same file states that a deployment's own bucket is exempt from the opt-out while ZDR blocks all destinations.&#160;<a class="footnote-backref" href="#fnref:35" title="Jump back to footnote 35 in the text">&#8617;</a></p>
+</li>
+<li id="fn:36">
+<p>Startup reconcile purges spilled uploads when collection is disabled: <a href="https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-shell/src/upload/trace.rs#L1113">GH…/crates/codegen/xai-grok-shell/src/upload/trace.rs#L1113</a> (<code>spawn_startup_spill_reconcile</code> — "purge them when data collection is disabled").&#160;<a class="footnote-backref" href="#fnref:36" title="Jump back to footnote 36 in the text">&#8617;</a></p>
+</li>
+<li id="fn:37">
+<p>Memory-upload gate: <a href="https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-shell/src/upload/memory.rs#L103-L104">GH…/crates/codegen/xai-grok-shell/src/upload/memory.rs#L103-L104</a> — skipped when <code>session_registry_enabled=false</code>, with the skip recorded in the manifest; the registry itself is enabled by local config or the remote setting (<code>build_registry_config</code>, <code>crates/codegen/xai-grok-shell/src/agent/mvp_agent/agent_ops.rs</code>).&#160;<a class="footnote-backref" href="#fnref:37" title="Jump back to footnote 37 in the text">&#8617;</a></p>
+</li>
+<li id="fn:38">
+<p>Feedback offer conditions: <a href="https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-shell/src/agent/mvp_agent/agent_ops.rs#L3583">GH…/crates/codegen/xai-grok-shell/src/agent/mvp_agent/agent_ops.rs#L3583</a> (<code>feedback_trace_offer</code>); the feature's default is <code>false</code> with a remote tier: <a href="https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-config-types/src/registry.rs#L221">GH…/crates/codegen/xai-grok-config-types/src/registry.rs#L221</a> (<code>Feature::FeedbackTraceCard</code>).&#160;<a class="footnote-backref" href="#fnref:38" title="Jump back to footnote 38 in the text">&#8617;</a></p>
+</li>
+<li id="fn:39">
+<p>One-shot consent upload: <a href="https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-shell/src/agent/mvp_agent/agent_ops.rs#L3621">GH…/crates/codegen/xai-grok-shell/src/agent/mvp_agent/agent_ops.rs#L3621</a> (<code>one_shot_feedback_gcs_config</code> — proxy-only, ZDR-blocked, ignores the cached opt-out and live trace flag, fails closed on unknown privacy state).&#160;<a class="footnote-backref" href="#fnref:39" title="Jump back to footnote 39 in the text">&#8617;</a></p>
+</li>
+<li id="fn:40">
+<p>Product analytics gate: <a href="https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-shell/src/agent/config.rs#L1831">GH…/crates/codegen/xai-grok-shell/src/agent/config.rs#L1831</a> — <code>product_analytics_enabled</code> = telemetry enabled and not a ZDR team; the client posts to Mixpanel (<code>crates/codegen/xai-mixpanel</code>).&#160;<a class="footnote-backref" href="#fnref:40" title="Jump back to footnote 40 in the text">&#8617;</a></p>
+</li>
+<li id="fn:41">
+<p>Session directory layout: <a href="https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-shell/src/session/persistence.rs#L966-L968">GH…/crates/codegen/xai-grok-shell/src/session/persistence.rs#L966-L968</a> (<code>session_dir_in</code> — per-cwd sessions directory joined with the session id).&#160;<a class="footnote-backref" href="#fnref:41" title="Jump back to footnote 41 in the text">&#8617;</a></p>
+</li>
+</ol>
+</div>
+</main>
+<script src="../assets/storybook.js" data-kind="article"></script>
+</body>
+</html>
