@@ -16,7 +16,7 @@ Hermes Agent is the largest harness this series has covered by star count — ov
 
 ## The mental model
 
-Hermes is a **multi-tenant agent with a learning loop bolted onto a synchronous core**. One gateway process multiplexes Telegram, Discord, WhatsApp, Slack, and Signal users into session-key namespaces; each session runs the same turn loop: take a lease, compact preemptively, call the model up to 500 times, dispatch tools through a single funnel, persist to SQLite, and then — the distinctive part — fork the agent in a background thread to decide what the turn just taught it.[^5][^6][^20] A second, slower loop — the curator — wakes on inactivity (default: 7 days idle) to pin, archive, or consolidate skills. It never deletes; archival is recoverable by design.[^12]
+Hermes is a **multi-tenant agent with a learning loop bolted onto a synchronous core**. One gateway process multiplexes Telegram, Discord, WhatsApp, Slack, and Signal users into session-key namespaces; each session runs the same turn loop: take a lease, compact preemptively, call the model with no default iteration cap, dispatch tools through a single funnel, persist to SQLite, and then — the distinctive part — fork the agent in a background thread to decide what the turn just taught it.[^5][^6][^20] A second, slower loop — the curator — wakes on inactivity (default: 7 days idle) to pin, archive, or consolidate skills. It never deletes; archival is recoverable by design.[^12]
 
 The governing tradeoff: Hermes buys long-horizon self-maintenance at the cost of running extra agent loops nobody asked for. Every turn potentially spawns a second model call (the review fork); every idle week potentially spawns a third (the curator). The bet is that an agent which curates its own skills compounds — and that the compounding is worth the tokens.
 
@@ -46,7 +46,7 @@ while (s.api_call_count < agent.max_iterations
     ...
 ```
 
-`max_iterations` defaults to 500 and is shared with subagents (children get 250).[^26] Each phase of an iteration is its own sibling module — `turn_preflight`, `turn_request_assembly`, `turn_tool_round`, `turn_overflow`, `turn_context_compaction`, `turn_stop_gates`, `turn_finalizer` — so a change to overflow handling touches one file, not the loop.[^7] Messages are OpenAI-format dicts; reasoning content rides in `assistant_msg["reasoning"]`.
+`max_iterations` defaults to unlimited (`sys.maxsize` at `run_agent.py:266`); subagents default to 250 via `delegation.max_iterations`.[^26] Each phase of an iteration is its own sibling module — `turn_preflight`, `turn_request_assembly`, `turn_tool_round`, `turn_overflow`, `turn_context_compaction`, `turn_stop_gates`, `turn_finalizer` — so a change to overflow handling touches one file, not the loop.[^7] Messages are OpenAI-format dicts; reasoning content rides in `assistant_msg["reasoning"]`.
 
 The loop's load-bearing invariant is **prompt-cache stability**: the system prompt is byte-stable for the life of a conversation. The only context mutation allowed mid-conversation is compression — anything that must inject content (skill invocations, subdirectory hints) rides a user message or a tool result, never the system prompt.[^8] This is why skill slash commands build a *user message* rather than appending to the system prompt: the prefix cache must never break.
 
@@ -112,7 +112,7 @@ The tradeoff visible across all eight steps: Hermes spends model calls to save f
 
 | Subsystem | What it does | Key file |
 |---|---|---|
-| Turn loop | One synchronous turn; `max_iterations` 500; per-phase sibling modules | `agent/conversation_loop.py` |
+| Turn loop | One synchronous turn; `max_iterations` unlimited (`sys.maxsize`); per-phase sibling modules | `agent/conversation_loop.py` |
 | Turn lease | Serializes concurrent prompts per session | `agent/turn_facade_lease.py` |
 | Background review | Post-turn forked review daemon; proposes skill/memory writes | `agent/background_review.py` |
 | Curator | Inactivity-triggered skill lifecycle; archive-never-delete | `agent/curator.py` |
@@ -157,7 +157,7 @@ This teardown covers the turn loop, the learning loop, tools, gateway, sessions,
 
 | # | Dimension | Hermes Agent (v2026.9.24) |
 |---|---|---|
-| 1 | Agent loop | Synchronous one-turn `run_conversation`; `max_iterations` 500 (subagents 250); per-phase sibling modules; interrupt-checked |
+| 1 | Agent loop | Synchronous one-turn `run_conversation`; `max_iterations` unlimited by default — `sys.maxsize` (subagents 250 via `delegation.max_iterations`); per-phase sibling modules; interrupt-checked |
 | 2 | Tool system | Import-time self-registration; single `handle_function_call` funnel; Tool Search bridge collapses 100+ tools out of the prompt; MCP discovery deferred out of import |
 | 3 | Model providers | ~40 providers as lazily-discovered plugins; `ProviderProfile` with `chat_completions` / `codex_responses` API modes |
 | 4 | Prompt construction | Byte-stable system prompt (prefix-cache invariant); skill invocations ride user messages; tool schemas memoized per registry generation |
@@ -182,7 +182,7 @@ All notes are VERIFIED against `v2026.9.24` (`f97608f178d1ffeca59860195ab7da295f
 
 [^5]: run_conversation runs one turn — GH…/agent/conversation_loop.py#L1605.
 
-[^6]: In-turn loop with max_iterations default 500 — GH…/agent/conversation_loop.py#L1546.
+[^6]: In-turn loop condition — GH…/agent/conversation_loop.py#L1546; unlimited default — GH…/run_agent.py#L266 (`max_iterations: int = sys.maxsize`, see also agent/session_activity.py#L52).
 
 [^7]: Per-phase sibling modules documented in GH…/agent/AGENTS.md (DOCS).
 

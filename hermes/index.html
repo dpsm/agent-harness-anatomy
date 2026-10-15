@@ -93,7 +93,7 @@ conventional synchronous tool-calling loop.<sup id="fnref:9"><a class="footnote-
 synchronous core</strong>. One gateway process multiplexes Telegram,
 Discord, WhatsApp, Slack, and Signal users into session-key namespaces;
 each session runs the same turn loop: take a lease, compact preemptively,
-call the model up to 500 times, dispatch tools through a single funnel,
+call the model with no default iteration cap, dispatch tools through a single funnel,
 persist to SQLite, and then — the distinctive part — fork the agent in a
 background thread to decide what the turn just taught it.<sup id="fnref:5"><a class="footnote-ref" href="#fn:5">5</a></sup><sup id="fnref:6"><a class="footnote-ref" href="#fn:6">6</a></sup><sup id="fnref:20"><a class="footnote-ref" href="#fn:20">20</a></sup>
 A second, slower loop — the curator — wakes on inactivity (default: 7
@@ -159,8 +159,8 @@ session drivers. The in-turn loop is synchronous and explicit:</p>
     if self._interrupt_requested: break
     response = client.chat.completions.create(...)
     ...</code></pre>
-<p><code>max_iterations</code> defaults to 500 and is shared with subagents
-(children get 250).<sup id="fnref:26"><a class="footnote-ref" href="#fn:26">26</a></sup>
+<p><code>max_iterations</code> defaults to unlimited (<code>sys.maxsize</code>);
+subagents default to 250 via <code>delegation.max_iterations</code>.<sup id="fnref:26"><a class="footnote-ref" href="#fn:26">26</a></sup>
 Each phase of an iteration is its own sibling module — <code>turn_preflight</code>,
 <code>turn_request_assembly</code>, <code>turn_tool_round</code>,
 <code>turn_overflow</code>, <code>turn_context_compaction</code>,
@@ -309,7 +309,7 @@ itself outperforms one that merely remembers.</p>
 <tbody>
 <tr>
 <td>Turn loop</td>
-<td>One synchronous turn; <code>max_iterations</code> 500; per-phase sibling modules</td>
+<td>One synchronous turn; <code>max_iterations</code> unlimited (<code>sys.maxsize</code>); per-phase sibling modules</td>
 <td><code>agent/conversation_loop.py</code></td>
 </tr>
 <tr>
@@ -429,7 +429,7 @@ scope.</p>
 </tr>
 </thead>
 <tbody>
-<tr><td>1</td><td>Agent loop</td><td>Synchronous one-turn <code>run_conversation</code>; <code>max_iterations</code> 500 (subagents 250); per-phase sibling modules; interrupt-checked</td></tr>
+<tr><td>1</td><td>Agent loop</td><td>Synchronous one-turn <code>run_conversation</code>; <code>max_iterations</code> unlimited by default — <code>sys.maxsize</code> (subagents 250 via <code>delegation.max_iterations</code>); per-phase sibling modules; interrupt-checked</td></tr>
 <tr><td>2</td><td>Tool system</td><td>Import-time self-registration; single <code>handle_function_call</code> funnel; Tool Search bridge collapses 100+ tools out of the prompt; MCP discovery deferred out of import</td></tr>
 <tr><td>3</td><td>Model providers</td><td>~40 providers as lazily-discovered plugins; <code>ProviderProfile</code> with <code>chat_completions</code> / <code>codex_responses</code> API modes</td></tr>
 <tr><td>4</td><td>Prompt construction</td><td>Byte-stable system prompt (prefix-cache invariant); skill invocations ride user messages; tool schemas memoized per registry generation</td></tr>
@@ -472,8 +472,9 @@ committed 2026-09-24T10:08:47Z; ~15,075 files at the tag.&#160;<a class="footnot
 <a href="https://github.com/NousResearch/hermes-agent/blob/f97608f178d1ffeca59860195ab7da295f7c8e5f/agent/conversation_loop.py#L1605">GH…/agent/conversation_loop.py#L1605</a>.&#160;<a class="footnote-backref" href="#fnref:5" title="Jump back to footnote 5 in the text">&#8617;</a></p>
 </li>
 <li id="fn:6">
-<p>In-turn loop with <code>max_iterations</code> default 500 —
-<a href="https://github.com/NousResearch/hermes-agent/blob/f97608f178d1ffeca59860195ab7da295f7c8e5f/agent/conversation_loop.py#L1546">GH…/agent/conversation_loop.py#L1546</a>.&#160;<a class="footnote-backref" href="#fnref:6" title="Jump back to footnote 6 in the text">&#8617;</a></p>
+<p>In-turn loop condition —
+<a href="https://github.com/NousResearch/hermes-agent/blob/f97608f178d1ffeca59860195ab7da295f7c8e5f/agent/conversation_loop.py#L1546">GH…/agent/conversation_loop.py#L1546</a>; unlimited default —
+<a href="https://github.com/NousResearch/hermes-agent/blob/f97608f178d1ffeca59860195ab7da295f7c8e5f/run_agent.py#L266">GH…/run_agent.py#L266</a> (<code>max_iterations: int = sys.maxsize</code>, see also agent/session_activity.py#L52).&#160;<a class="footnote-backref" href="#fnref:6" title="Jump back to footnote 6 in the text">&#8617;</a></p>
 </li>
 <li id="fn:7">
 <p>Per-phase sibling modules documented in
