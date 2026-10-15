@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 733" width="1600" font-family="system-ui, -apple-system, sans-serif">
+<defs><marker id="arrc" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 1 L 9 5 L 0 9 z" fill="#d08c4e"/></marker><marker id="arrr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 1 L 9 5 L 0 9 z" fill="#8a7a66"/></marker></defs>
+<rect x="0" y="0" width="1600" height="733" fill="#f7f2e9"/>
+<text x="77.10843373493975" y="44" font-size="26" font-weight="700" fill="#000000">Preset composition at startup</text>
+<text x="77.10843373493975" y="74" font-size="15" fill="#000000">dsh web — layers of YAML become a running plugin tree</text>
+<line x1="198" y1="110" x2="198" y2="675" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="96" y="82" width="202" height="56" rx="10" fill="#ffffff" stroke="#3a2f26" stroke-width="1.5"/>
+<text x="198" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#000000">CLI</text>
+<line x1="439" y1="110" x2="439" y2="675" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="337" y="82" width="202" height="56" rx="10" fill="#ffffff" stroke="#3a2f26" stroke-width="1.5"/>
+<text x="439" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#000000">Loader</text>
+<line x1="680" y1="110" x2="680" y2="675" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="578" y="82" width="202" height="56" rx="10" fill="#ffffff" stroke="#3a2f26" stroke-width="1.5"/>
+<text x="680" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#000000">Base bundle</text>
+<line x1="920" y1="110" x2="920" y2="675" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="819" y="82" width="202" height="56" rx="10" fill="#ffffff" stroke="#3a2f26" stroke-width="1.5"/>
+<text x="920" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#000000">Preset patch</text>
+<line x1="1161" y1="110" x2="1161" y2="675" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="1060" y="82" width="202" height="56" rx="10" fill="#ffffff" stroke="#3a2f26" stroke-width="1.5"/>
+<text x="1161" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#000000">Cordis</text>
+<line x1="1402" y1="110" x2="1402" y2="675" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="1301" y="82" width="202" height="56" rx="10" fill="#ffffff" stroke="#3a2f26" stroke-width="1.5"/>
+<text x="1402" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#000000">Plugin fibers</text>
+<line x1="198" y1="162" x2="429" y2="162" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="240" cy="148" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="240" y="153" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">1</text>
+<text x="258" y="153" font-size="14" fill="#000000">boot profile: web</text>
+<line x1="439" y1="214" x2="670" y2="214" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="481" cy="200" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="481" y="205" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">2</text>
+<text x="499" y="205" font-size="14" fill="#000000">apply bundle layers</text>
+<line x1="439" y1="266" x2="910" y2="266" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="602" cy="252" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="602" y="257" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">3</text>
+<text x="620" y="257" font-size="14" fill="#000000">apply profile + preset patches</text>
+<line x1="920" y1="318" x2="449" y2="318" stroke="#8a7a66" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrr)"/>
+<circle cx="602" cy="304" r="11" fill="#ffffff" stroke="#8a7a66" stroke-width="1.5"/>
+<text x="602" y="309" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">4</text>
+<text x="620" y="309" font-size="14" fill="#000000">row diffs (PTC adds one row)</text>
+<line x1="439" y1="370" x2="1151" y2="370" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="722" cy="356" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="722" y="361" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">5</text>
+<text x="740" y="361" font-size="14" fill="#000000">assembled config (95 base rows)</text>
+<line x1="1161" y1="422" x2="1392" y2="422" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="1204" cy="408" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="1204" y="413" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">6</text>
+<text x="1222" y="413" font-size="14" fill="#000000">mount rows as fibers</text>
+<path d="M 1402 474 h 42 v 25 H 1412" fill="none" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="1424" cy="458" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="1424" y="463" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">7</text>
+<text x="1455" y="479" font-size="14" fill="#000000">PENDING -&gt; LOADING</text>
+<line x1="1402" y1="526" x2="1171" y2="526" stroke="#8a7a66" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrr)"/>
+<circle cx="1204" cy="512" r="11" fill="#ffffff" stroke="#8a7a66" stroke-width="1.5"/>
+<text x="1204" y="517" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">8</text>
+<text x="1222" y="517" font-size="14" fill="#000000">provide ctx.llm, ctx.tools, ...</text>
+<path d="M 1161 578 h 42 v 25 H 1171" fill="none" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="1183" cy="562" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="1183" y="567" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">9</text>
+<text x="1214" y="583" font-size="14" fill="#000000">agent-loop row ACTIVE — kick()</text>
+<rect x="96" y="607" width="1407" height="44" rx="8" fill="#d08c4e" fill-opacity="0.13" stroke="#d08c4e" stroke-width="1"/>
+<text x="800" y="634" text-anchor="middle" font-size="14" fill="#000000">An unsatisfied injection fails at load time, not at runtime</text>
+</svg>

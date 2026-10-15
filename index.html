@@ -255,6 +255,22 @@
     </div>
   </div>
 
+  <div class="article" id="deepseek-harness">
+    <h2>#15 &mdash; DeepSeek Harness (dsh): the harness where even the loop is a plugin</h2>
+    <p>DeepSeek's harness composes itself from YAML: the agent loop, the
+    session service, the sandbox, and the Web UI are all plugin rows in a
+    bundle, and the four run modes are plugin-list diffs &mdash; Standard and
+    PTC differ by exactly one row. The session is an append-only event log
+    that everything else folds over, approvals fail closed on any answerer
+    malfunction, and a session-log upload to the official API is on by
+    default.</p>
+    <div class="links">
+      <a class="primary" href="deepseek-harness/trace.html">Step through a live turn</a>
+      <a class="secondary" href="diagrams/template.html?data=../deepseek-harness/diagrams/deepseek-harness.json">Interactive diagram</a>
+      <a class="secondary" href="deepseek-harness/">Read the article</a>
+    </div>
+  </div>
+
   <div class="contribute">
     <h2>Found a mistake?</h2>
     <p>These teardowns live or die on their grounding: every behavioral claim

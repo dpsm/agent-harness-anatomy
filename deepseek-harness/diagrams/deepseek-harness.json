@@ -1,0 +1,525 @@
+{
+ "edges": [
+  {
+   "from": "plugins-ext",
+   "label": "installs into the profile",
+   "to": "composition",
+   "label_dx": -45
+  },
+  {
+   "from": "plugins-ext",
+   "label": "cordis_define: session-local plugins",
+   "to": "cordis"
+  },
+  {
+   "from": "web-ui",
+   "label": "boots the web profile",
+   "to": "cordis",
+   "label_dx": -35
+  },
+  {
+   "from": "cli",
+   "label": "boots a named profile",
+   "to": "composition",
+   "label_dx": -35
+  },
+  {
+   "from": "desktop-sdk",
+   "label": "boots web / sdk profile",
+   "to": "cordis",
+   "label_dx": -30
+  },
+  {
+   "from": "acp",
+   "label": "serves the tree over stdio",
+   "to": "cordis"
+  },
+  {
+   "from": "composition",
+   "label": "assembles the plugin tree",
+   "to": "cordis"
+  },
+  {
+   "from": "cordis",
+   "label": "loop is a plugin row",
+   "to": "loop"
+  },
+  {
+   "from": "cordis",
+   "label": "session: also a plugin row",
+   "to": "session",
+   "label_dx": -87,
+   "label_dy": -100
+  },
+  {
+   "from": "loop",
+   "label": "prepareCall via ctx.llm",
+   "to": "llm"
+  },
+  {
+   "from": "loop",
+   "label": "tool calls via ctx.tools",
+   "to": "tools",
+   "label_dx": -87
+  },
+  {
+   "from": "loop",
+   "label": "appends events; deriveMessages()",
+   "to": "session"
+  },
+  {
+   "from": "session",
+   "label": "events since the watermark",
+   "to": "upload"
+  },
+  {
+   "from": "upload",
+   "label": "dsh_session_log rides the request",
+   "to": "llm"
+  },
+  {
+   "from": "guards",
+   "label": "wraps execute; post-execute hints",
+   "to": "tools"
+  },
+  {
+   "from": "tools",
+   "label": "may veto or ask",
+   "to": "approval",
+   "label_dx": -92
+  },
+  {
+   "from": "approval",
+   "label": "approved call runs confined",
+   "to": "sandbox"
+  },
+  {
+   "from": "tools",
+   "label": "PTC: one run_code schema",
+   "to": "ptc"
+  },
+  {
+   "from": "ptc",
+   "label": "bridged sub-calls re-enter",
+   "to": "tools",
+   "label_dx": -100,
+   "label_dy": -53
+  },
+  {
+   "from": "ptc",
+   "label": "Node runs under sandbox policy",
+   "to": "sandbox"
+  },
+  {
+   "from": "skills",
+   "label": "bodies fetched via skill tool",
+   "to": "tools"
+  },
+  {
+   "from": "mcp",
+   "label": "mcp__server__tool registered",
+   "to": "tools"
+  }
+ ],
+ "nodes": [
+  {
+   "excerpt": "The model can extend the harness at runtime: install npm plugins into a profile through the gated plugin_manager tool, or define session-local plugins with cordis_define \u2014 host code evaluated in a node:vm realm (5 s default bound), gone at restart. Installed host code executes in-process, outside the workspace sandbox \u2014 the project's own README says so.",
+   "grade": "verified",
+   "h": 96,
+   "id": "plugins-ext",
+   "label": "Plugin manager + Creator mode",
+   "links": [
+    {
+     "label": "plugin-manager README \u2014 \u201cinstalled Host code executes in-process outside the workspace sandbox\u201d",
+     "url": "https://github.com/deepseek-ai/deepseek-harness/blob/2fbf4359b82fb94c03dcce0b831660d87f12ea5c/packages/boot/plugin-manager/README.md#L31"
+    },
+    {
+     "label": "cordis-host-runner/src/index.ts \u2014 cordis_define",
+     "url": "https://github.com/deepseek-ai/deepseek-harness/blob/2fbf4359b82fb94c03dcce0b831660d87f12ea5c/packages/extensions/cordis-host-runner/src/index.ts#L167"
+    }
+   ],
+   "step": 18,
+   "sub": "plugin-manager \u00b7 cordis-host-runner",
+   "w": 380,
+   "x": 0,
+   "y": 0
+  },
+  {
+   "excerpt": "There is no interactive terminal UI. The primary surface is a Vite/React web app (apps/web) served by a node:http route-registration plugin on http://127.0.0.1:3080; client and host talk through a typed remote gateway. Booting dsh web composes the web-app bundle and opens the browser locally.",
+   "grade": "verified",
+   "h": 96,
+   "id": "web-ui",
+   "label": "Web UI \u2014 the primary surface",
+   "links": [
+    {
+     "label": "packages/host/webserver/src/index.ts \u2014 the web server plugin",
+     "url": "https://github.com/deepseek-ai/deepseek-harness/blob/2fbf4359b82fb94c03dcce0b831660d87f12ea5c/packages/host/webserver/src/index.ts#L11"
+    },
+    {
+     "label": "README.md \u2014 default bind http://127.0.0.1:3080",
+     "url": "https://github.com/deepseek-ai/deepseek-harness/blob/2fbf4359b82fb94c03dcce0b831660d87f12ea5c/README.md#L31"
+    }
+   ],
+   "step": 1,
+   "sub": "apps/web \u00b7 host/webserver :3080",
+   "w": 380,
+   "x": 0,
+   "y": 130
+  },
+  {
+   "excerpt": "The CLI does three things: boot a named profile, manage plugins, dump config. Profiles (web, headless, sdk, sdk-minimal, acp) live under $DSH_HOME/profiles/<name>; each is a Cordis config assembled from bundle layers. Headless runs one fresh persisted session and prints the final answer.",
+   "grade": "verified",
+   "h": 96,
+   "id": "cli",
+   "label": "CLI \u2014 profile boot, no TUI",
+   "links": [
+    {
+     "label": "apps/cli \u2014 profile boot, plugin management, config dump",
+     "url": "https://github.com/deepseek-ai/deepseek-harness/tree/2fbf4359b82fb94c03dcce0b831660d87f12ea5c/apps/cli"
+    },
+    {
+     "label": "packages/bundle/headless/README.md \u2014 the headless profile",
+     "url": "https://github.com/deepseek-ai/deepseek-harness/blob/2fbf4359b82fb94c03dcce0b831660d87f12ea5c/packages/bundle/headless/README.md"
+    }
+   ],
+   "step": 2,
+   "sub": "apps/cli/src/bin.ts \u2014 runCli",
+   "w": 380,
+   "x": 0,
+   "y": 260
+  },
+  {
+   "excerpt": "The Electron desktop app boots the same web profile in-process \u2014 one composition, two shells. The SDK profile serves a JSON-RPC stdio server that both the TypeScript client and the Python SDK (python/sdk) drive; both SDKs \u201cproject the loop\u201d, so session and event changes must update both.",
+   "grade": "verified",
+   "h": 96,
+   "id": "desktop-sdk",
+   "label": "Desktop + SDKs",
+   "links": [
+    {
+     "label": "apps/desktop \u2014 Electron boots the web profile",
+     "url": "https://github.com/deepseek-ai/deepseek-harness/tree/2fbf4359b82fb94c03dcce0b831660d87f12ea5c/apps/desktop"
+    },
+    {
+     "label": "packages/sdk \u2014 JSON-RPC protocol, server, client",
+     "url": "https://github.com/deepseek-ai/deepseek-harness/tree/2fbf4359b82fb94c03dcce0b831660d87f12ea5c/packages/sdk"
+    }
+   ],
+   "step": 3,
+   "sub": "apps/desktop \u00b7 packages/sdk",
+   "w": 380,
+   "x": 0,
+   "y": 390
+  },
+  {
+   "excerpt": "The Agent Client Protocol profile serves the composed tree over JSON-RPC stdio for editor automation. It is a deliberate subset: session/load, deletion, fork, terminals, client filesystem operations, and elicitation are explicitly unsupported. ACP clients are trusted controllers.",
+   "grade": "verified",
+   "h": 96,
+   "id": "acp",
+   "label": "ACP server",
+   "links": [
+    {
+     "label": "packages/acp/acp/README.md \u2014 protocol surface",
+     "url": "https://github.com/deepseek-ai/deepseek-harness/blob/2fbf4359b82fb94c03dcce0b831660d87f12ea5c/packages/acp/acp/README.md#L55"
+    },
+    {
+     "label": "packages/acp/acp/README.md \u2014 ACP clients are trusted controllers",
+     "url": "https://github.com/deepseek-ai/deepseek-harness/blob/2fbf4359b82fb94c03dcce0b831660d87f12ea5c/packages/acp/acp/README.md#L80"
+    }
+   ],
+   "step": 4,
+   "sub": "packages/acp/acp \u2014 JSON-RPC stdio",
+   "w": 380,
+   "x": 0,
+   "y": 520
+  },
+  {
+   "excerpt": "A running app is layered YAML: bundle patch files, the profile's own patch, a home-level cordis.patch.yml, --patch overlays. The base bundle alone is 95 plugin rows in 522 lines. The four modes are agent presets \u2014 plugin-list diffs: Standard vs PTC differ by exactly one row (agent-tool-presentation with mode: ptc). Rows can carry !!js conditions, so composition is platform-conditional.",
+   "grade": "verified",
+   "h": 96,
+   "id": "composition",
+   "label": "Bundles + presets (YAML patches)",
+   "links": [
+    {
+     "label": "packages/bundle/base/cordis.patch.yml \u2014 the loop is row 504",
+     "url": "https://github.com/deepseek-ai/deepseek-harness/blob/2fbf4359b82fb94c03dcce0b831660d87f12ea5c/packages/bundle/base/cordis.patch.yml#L504"
+    },
+    {
+     "label": "presets/ptc.patch.yml \u2014 the one row that makes PTC mode",
+     "url": "https://github.com/deepseek-ai/deepseek-harness/blob/2fbf4359b82fb94c03dcce0b831660d87f12ea5c/packages/bundle/web-app/presets/ptc.patch.yml#L123"
+    }
+   ],
+   "step": 5,
+   "sub": "packages/bundle \u2014 base: 95 rows",
+   "w": 380,
+   "x": 560,
+   "y": 0
+  },
+  {
+   "excerpt": "The fixed frame. Cordis is vendored source (upstream cordiverse/cordis packages/core @ 56b3d4f, rescoped @deepseek-ai/cordis) with 24 logged local modifications. The kernel is 2,696 lines: plugins are functions or apply(ctx, config) objects; services are context properties (ctx.llm, ctx.tools, ctx.sandbox) wired by inject/provide; every registration is an effect returning a disposer; each plugin runs as a fiber (PENDING \u2192 LOADING \u2192 ACTIVE \u2192 UNLOADING \u2192 DISPOSED).",
+   "grade": "verified",
+   "h": 96,
+   "id": "cordis",
+   "label": "Cordis runtime (vendored)",
+   "links": [
+    {
+     "label": "vendor/README.md \u2014 the vendoring pin",
+     "url": "https://github.com/deepseek-ai/deepseek-harness/blob/2fbf4359b82fb94c03dcce0b831660d87f12ea5c/vendor/README.md#L17"
+    },
+    {
+     "label": "vendor/cordis/src/fiber.ts \u2014 the fiber lifecycle",
+     "url": "https://github.com/deepseek-ai/deepseek-harness/blob/2fbf4359b82fb94c03dcce0b831660d87f12ea5c/vendor/cordis/src/fiber.ts#L140"
+    }
+   ],
+   "step": 6,
+   "sub": "vendor/cordis \u2014 fibers \u00b7 effects",
+   "w": 380,
+   "x": 560,
+   "y": 130
+  },
+  {
+   "excerpt": "kick() runs while (await this.turn()) {} \u2014 there is no built-in turn or step budget; a turn ends when the model stops calling tools, on abort, or when a composed plugin vetoes the agent/turn-stopping hook. Each step re-derives model context from the session log (session.deriveMessages()), executes up to 10 tool calls in parallel, and settles the streamed response back into the log as events.",
+   "grade": "verified",
+   "h": 96,
+   "id": "loop",
+   "label": "Agent loop \u2014 ReactLoopAgent",
+   "links": [
+    {
+     "label": "agent-loop/src/agent.ts \u2014 kick() and the loop head",
+     "url": "https://github.com/deepseek-ai/deepseek-harness/blob/2fbf4359b82fb94c03dcce0b831660d87f12ea5c/packages/core/agent-loop/src/agent.ts#L258"
+    },
+    {
+     "label": "agent-loop/src/agent.ts \u2014 deriveMessages() at the step boundary",
+     "url": "https://github.com/deepseek-ai/deepseek-harness/blob/2fbf4359b82fb94c03dcce0b831660d87f12ea5c/packages/core/agent-loop/src/agent.ts#L688"
+    },
+    {
+     "label": "agent-loop/README.md \u2014 no built-in budget, stated plainly",
+     "url": "https://github.com/deepseek-ai/deepseek-harness/blob/2fbf4359b82fb94c03dcce0b831660d87f12ea5c/packages/core/agent-loop/README.md"
+    }
+   ],
+   "step": 7,
+   "sub": "core/agent-loop \u2014 a plugin row",
+   "w": 380,
+   "x": 560,
+   "y": 260
+  },
+  {
+   "excerpt": "The loop never talks to a provider directly: prepareCall builds each request through the ctx.llm seam, and provider packages (the pi-ai adapter) implement it \u2014 the official DeepSeek API or bring-your-own-key providers. The seam is also where the session-log upload attaches for official-API requests.",
+   "grade": "verified",
+   "h": 96,
+   "id": "llm",
+   "label": "LLM seam \u2014 ctx.llm",
+   "links": [
+    {
+     "label": "packages/llm/llm-pi-ai \u2014 the provider adapter",
+     "url": "https://github.com/deepseek-ai/deepseek-harness/tree/2fbf4359b82fb94c03dcce0b831660d87f12ea5c/packages/llm/llm-pi-ai"
+    },
+    {
+     "label": "agent-loop/src/agent.ts \u2014 kick() entry, prepareCall inside",
+     "url": "https://github.com/deepseek-ai/deepseek-harness/blob/2fbf4359b82fb94c03dcce0b831660d87f12ea5c/packages/core/agent-loop/src/agent.ts#L252"
+    }
+   ],
+   "step": 8,
+   "sub": "llm/llm-pi-ai \u2014 API + BYOK",
+   "w": 380,
+   "x": 560,
+   "y": 390
+  },
+  {
+   "excerpt": "Both guards are ordinary plugins mounted in the base bundle. timeout-policy wraps tools/execute and enforces each tool's declared timeoutMs (bash defaults to 60 s), substituting a TOOL_TIMEOUT result. repeat-tool-reminder counts consecutive identical calls and, at thresholds 3/5/8, injects a reminder into context via tools/post-execute \u2014 advisory only; it never vetoes a call.",
+   "grade": "verified",
+   "h": 96,
+   "id": "guards",
+   "label": "Guards \u2014 timeout + reminder",
+   "links": [
+    {
+     "label": "packages/guard/timeout-policy \u2014 wraps tools/execute",
+     "url": "https://github.com/deepseek-ai/deepseek-harness/tree/2fbf4359b82fb94c03dcce0b831660d87f12ea5c/packages/guard/timeout-policy"
+    },
+    {
+     "label": "packages/guard/repeat-tool-reminder \u2014 advisory, never a veto",
+     "url": "https://github.com/deepseek-ai/deepseek-harness/tree/2fbf4359b82fb94c03dcce0b831660d87f12ea5c/packages/guard/repeat-tool-reminder"
+    }
+   ],
+   "step": 12,
+   "sub": "packages/guard \u2014 two plugins",
+   "w": 380,
+   "x": 1120,
+   "y": 130
+  },
+  {
+   "excerpt": "Tool packages register into a per-agent-scope effect registry. Every call passes tools/pre-execute (waterfall listeners may veto or demand approval), execution, then tools/post-execute. There is no tool search or deferred loading: in native mode every mounted tool's schema rides every request \u2014 visibility is decided at composition time, by which plugins the preset mounts. The full inventory is a generated 2,773-line catalog.",
+   "grade": "verified",
+   "h": 96,
+   "id": "tools",
+   "label": "Tool registry \u2014 ctx.tools",
+   "links": [
+    {
+     "label": "docs/tool-catalog.md \u2014 the generated inventory",
+     "url": "https://github.com/deepseek-ai/deepseek-harness/blob/2fbf4359b82fb94c03dcce0b831660d87f12ea5c/docs/tool-catalog.md"
+    },
+    {
+     "label": "base/cordis.patch.yml \u2014 the bash tool's 60 s default timeout",
+     "url": "https://github.com/deepseek-ai/deepseek-harness/blob/2fbf4359b82fb94c03dcce0b831660d87f12ea5c/packages/bundle/base/cordis.patch.yml#L249"
+    }
+   ],
+   "step": 11,
+   "sub": "core/tools \u2014 effect registry",
+   "w": 380,
+   "x": 1120,
+   "y": 260
+  },
+  {
+   "excerpt": "A session is an append-only event log; model history, approvals, permission choices, and projections are all folds over it \u2014 the project's invariant is \u201cmodel-visible \u27fa logged\u201d. Format v4 is formally governed (finalized/released records, adjacent-only migrations in-tree). On disk: one directory per session under ~/.dsh/sessions, JSONL in checksummed zstd frames. Compaction (compaction-basic) prices each step and summarizes the oldest span into <compacted-summary> past 80% of the window.",
+   "grade": "verified",
+   "h": 96,
+   "id": "session",
+   "label": "Session service \u2014 the event log",
+   "links": [
+    {
+     "label": "core/session/src/types.ts \u2014 SESSION_FORMAT_VERSION = 4",
+     "url": "https://github.com/deepseek-ai/deepseek-harness/blob/2fbf4359b82fb94c03dcce0b831660d87f12ea5c/packages/core/session/src/types.ts#L90"
+    },
+    {
+     "label": "session-persistence-jsonl/README.md \u2014 the on-disk layout",
+     "url": "https://github.com/deepseek-ai/deepseek-harness/blob/2fbf4359b82fb94c03dcce0b831660d87f12ea5c/packages/session/session-persistence-jsonl/README.md#L55"
+    }
+   ],
+   "step": 9,
+   "sub": "core/session \u2014 format v4",
+   "w": 380,
+   "x": 1120,
+   "y": 390
+  },
+  {
+   "excerpt": "Mounted in the base bundle and enabled by default: when requests go to the official DeepSeek API, each carries a dsh_session_log field with the canonical session events since the last server-accepted watermark (\u2264 8 MiB per request, at-least-once; acceptance is itself a logged event). A Settings switch pauses it \u2014 the backlog is not purged. Separately, OTel session telemetry exports only after explicit user feedback (FEEDBACK_ONLY), carrying an anonymous UUID.",
+   "grade": "verified",
+   "h": 96,
+   "id": "upload",
+   "label": "Session-log upload + telemetry",
+   "links": [
+    {
+     "label": "session-log-deepseek/src/index.ts \u2014 enabled defaults to true",
+     "url": "https://github.com/deepseek-ai/deepseek-harness/blob/2fbf4359b82fb94c03dcce0b831660d87f12ea5c/packages/session/session-log-deepseek/src/index.ts#L52"
+    },
+    {
+     "label": "session-log-deepseek/src/index.ts \u2014 the official-provider gate",
+     "url": "https://github.com/deepseek-ai/deepseek-harness/blob/2fbf4359b82fb94c03dcce0b831660d87f12ea5c/packages/session/session-log-deepseek/src/index.ts#L189"
+    }
+   ],
+   "step": 10,
+   "sub": "session-log-deepseek \u2014 ON",
+   "w": 380,
+   "x": 1120,
+   "y": 520
+  },
+  {
+   "excerpt": "Providers contribute skill catalogs (filesystem directories, runtime registrations from other plugins, remote sources); the registry merges and deduplicates them. Disclosure is progressive: summaries are advertised to the model, and a skill's full body is fetched through the skill tool only when invoked. Every skill carries an invocation policy (modelInvocable / userInvocable), keeping model-facing and human-facing catalogs separate. Skills are dsh's durable, user-authored knowledge format \u2014 there is no built-in cross-session memory store.",
+   "grade": "verified",
+   "h": 96,
+   "id": "skills",
+   "label": "Skills \u2014 ctx.skills",
+   "links": [
+    {
+     "label": "packages/skill/skill \u2014 the ctx.skills registry",
+     "url": "https://github.com/deepseek-ai/deepseek-harness/tree/2fbf4359b82fb94c03dcce0b831660d87f12ea5c/packages/skill/skill"
+    }
+   ],
+   "step": 16,
+   "sub": "skill/skill \u2014 on-demand bodies",
+   "w": 380,
+   "x": 1680,
+   "y": 0
+  },
+  {
+   "excerpt": "Two knobs only: sandbox mode \u00d7 approval policy (ask | never), bundled as named presets and pinned into the session log at creation. Under ask, an approval/request waterfall dispatches to composed answerers \u2014 and fails closed: no answerer, a throwing answerer, or an off-vocabulary answer all resolve unavailable, and the action is blocked. Approvals are one-shot; there is no \u201calways allow\u201d. Requests and decisions are logged (approval/asked, approval/decided) but are not model-visible. An experimental auto-review layer (off by default) can pre-decide \u2014 its reviewer sees the call, not the chain.",
+   "grade": "verified",
+   "h": 96,
+   "id": "approval",
+   "label": "Approvals \u2014 ctx.approval",
+   "links": [
+    {
+     "label": "packages/interaction/user-approval \u2014 the approval service",
+     "url": "https://github.com/deepseek-ai/deepseek-harness/tree/2fbf4359b82fb94c03dcce0b831660d87f12ea5c/packages/interaction/user-approval"
+    },
+    {
+     "label": "core/session/src/known-event-types.ts \u2014 approval/asked, approval/decided",
+     "url": "https://github.com/deepseek-ai/deepseek-harness/blob/2fbf4359b82fb94c03dcce0b831660d87f12ea5c/packages/core/session/src/known-event-types.ts"
+    }
+   ],
+   "step": 13,
+   "sub": "interaction/user-approval",
+   "w": 380,
+   "x": 1680,
+   "y": 260
+  },
+  {
+   "excerpt": "Per-call, OS-level, fail-closed: if no backend can enforce the requested mode, the call fails with SANDBOX_UNAVAILABLE rather than running unconfined. Linux tries bubblewrap, then Landlock (a native launcher built from native/system); macOS uses Seatbelt; the Windows ACL rung reports its enforcement as partial, per call. After a denial, the model may retry once at the narrowest strictly wider mode \u2014 with a justification and a human approval, for that one call only. The project is explicit: this is same-world confinement, a guardrail for agent mistakes, not a container.",
+   "grade": "verified",
+   "h": 96,
+   "id": "sandbox",
+   "label": "Sandbox \u2014 ctx.sandbox",
+   "links": [
+    {
+     "label": "sandbox-local/README.md \u2014 runner selection and limits",
+     "url": "https://github.com/deepseek-ai/deepseek-harness/blob/2fbf4359b82fb94c03dcce0b831660d87f12ea5c/packages/sandbox/sandbox-local/README.md#L71"
+    },
+    {
+     "label": "sandbox/src/escalation.ts \u2014 the one-call escalation ladder",
+     "url": "https://github.com/deepseek-ai/deepseek-harness/blob/2fbf4359b82fb94c03dcce0b831660d87f12ea5c/packages/sandbox/sandbox/src/escalation.ts"
+    }
+   ],
+   "step": 14,
+   "sub": "sandbox-local \u2014 OS backends",
+   "w": 380,
+   "x": 1120,
+   "y": 650
+  },
+  {
+   "excerpt": "PTC (\u201cCode Mode\u201d) is a presentation transform, not a second agent: the wire surface collapses to one run_code schema plus a generated SDK, and tools.<name>(args) calls inside the model's program bridge back into the same guarded pipeline. The Node provider runs erasable TypeScript in a fresh managed process under the resolved sandbox policy; the experimental Python provider runs a CPython subprocess with no file confinement \u2014 its README says so.",
+   "grade": "verified",
+   "h": 96,
+   "id": "ptc",
+   "label": "PTC runtime \u2014 ctx.ptcRuntime",
+   "links": [
+    {
+     "label": "packages/ptc-runtime/ptc-runtime-node \u2014 the Node provider",
+     "url": "https://github.com/deepseek-ai/deepseek-harness/tree/2fbf4359b82fb94c03dcce0b831660d87f12ea5c/packages/ptc-runtime/ptc-runtime-node"
+    },
+    {
+     "label": "presets/ptc.patch.yml \u2014 mode: ptc on the presentation row",
+     "url": "https://github.com/deepseek-ai/deepseek-harness/blob/2fbf4359b82fb94c03dcce0b831660d87f12ea5c/packages/bundle/web-app/presets/ptc.patch.yml#L123"
+    }
+   ],
+   "step": 15,
+   "sub": "ptc-runtime-node \u2014 sandboxed",
+   "w": 380,
+   "x": 1680,
+   "y": 390
+  },
+  {
+   "excerpt": "dsh consumes MCP; it is not exposed by it \u2014 packages/mcp holds exactly two packages, a client and a resources bridge, and no server. Servers (stdio or Streamable HTTP) are configured one entry each, none enabled by default; their tools register as mcp__<server>__<tool>. For stdio children, the bridge strips ambient variables whose names usually identify credentials, plus all DSH_* variables, before launch. Third-party memory servers are the documented route to cross-session memory.",
+   "grade": "verified",
+   "h": 96,
+   "id": "mcp",
+   "label": "MCP client",
+   "links": [
+    {
+     "label": "packages/mcp/mcp-client/README.md \u2014 transports and tool naming",
+     "url": "https://github.com/deepseek-ai/deepseek-harness/blob/2fbf4359b82fb94c03dcce0b831660d87f12ea5c/packages/mcp/mcp-client/README.md"
+    },
+    {
+     "label": "docs/user/guide/mcp-memory.md \u2014 stdio env stripping; memory over MCP",
+     "url": "https://github.com/deepseek-ai/deepseek-harness/blob/2fbf4359b82fb94c03dcce0b831660d87f12ea5c/docs/user/guide/mcp-memory.md#L10"
+    }
+   ],
+   "step": 17,
+   "sub": "mcp/mcp-client \u2014 client only",
+   "w": 380,
+   "x": 1680,
+   "y": 650
+  }
+ ],
+ "repo": "deepseek-ai/deepseek-harness",
+ "sha": "2fbf4359b82fb94c03dcce0b831660d87f12ea5c",
+ "title": "DeepSeek Harness (dsh) \u2014 everything is a plugin, including the loop"
+}
