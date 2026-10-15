@@ -1,0 +1,209 @@
+{
+ "title": "One turn through Deep Agents",
+ "example_input": "Survey the utils package and the config loader in this repository, and summarize what each one does.",
+ "note": "Representations below are simplified shapes of the real types at the pinned SHAs, not verbatim dumps.",
+ "repo": "https://github.com/langchain-ai/deepagents",
+ "sha": "c6c340d47d2013a2e7b7230698f73977b7de6756",
+ "steps": [
+  {
+   "code": "graph.py — create_deep_agent returns create_agent(...).with_config(recursion_limit=9_999)",
+   "modules": [
+    {
+     "file": "libs/deepagents/deepagents/graph.py",
+     "label": "deepagents graph.py:277 — create_deep_agent",
+     "line": 277,
+     "url": "https://github.com/langchain-ai/deepagents/blob/c6c340d47d2013a2e7b7230698f73977b7de6756/libs/deepagents/deepagents/graph.py#L277"
+    },
+    {
+     "file": "libs/deepagents/deepagents/graph.py",
+     "label": "deepagents graph.py:989-1010 — the create_agent return, config stamped",
+     "line": 989,
+     "url": "https://github.com/langchain-ai/deepagents/blob/c6c340d47d2013a2e7b7230698f73977b7de6756/libs/deepagents/deepagents/graph.py#L989"
+    },
+    {
+     "file": "libs/langchain_v1/langchain/agents/factory.py",
+     "label": "langchain factory.py:1896-1926 — the factory stamps the same limit",
+     "line": 1896,
+     "url": "https://github.com/langchain-ai/langchain/blob/f2bf626ccee0a0e88d560706d4fdad35e43116e5/libs/langchain_v1/langchain/agents/factory.py#L1896"
+    }
+   ],
+   "narrative": "The application calls create_deep_agent with a LocalShellBackend rooted at the repository. Deep Agents resolves the model and its profile, assembles the middleware stack, compiles the general-purpose subagent, composes the base prompt — and returns LangChain's create_agent(...), with recursion_limit 9_999 and ls_integration: deepagents stamped onto the config. Nothing has run yet; what exists is a compiled LangGraph graph whose loop belongs to the dependencies.",
+   "node": "assembly",
+   "representation": "agent = create_deep_agent(model, backend=LocalShellBackend(root_dir=repo))\n  stack := [Filesystem, SubAgent, Summarization,\n            PatchToolCalls, (caching)]\n  subagents compiled via create_agent(...)\n  -> create_agent(...).with_config(\n       recursion_limit=9_999,\n       metadata={\"ls_integration\": \"deepagents\"})",
+   "step": 1,
+   "title": "Construction: the stack is assembled, the loop is borrowed"
+  },
+  {
+   "code": "agent.invoke({messages}, config={configurable: {thread_id}}) — Pregel writes the input checkpoint",
+   "modules": [
+    {
+     "file": "libs/langgraph/langgraph/pregel/_loop.py",
+     "label": "langgraph pregel/_loop.py:1157 — the input checkpoint",
+     "line": 1157,
+     "url": "https://github.com/langchain-ai/langgraph/blob/08a345637fb2bd499f69c90056a22c478a468817/libs/langgraph/langgraph/pregel/_loop.py#L1157"
+    },
+    {
+     "file": "libs/langchain_v1/langchain/agents/factory.py",
+     "label": "langchain factory.py:1743 — START wiring (loop entry)",
+     "line": 1743,
+     "url": "https://github.com/langchain-ai/langchain/blob/f2bf626ccee0a0e88d560706d4fdad35e43116e5/libs/langchain_v1/langchain/agents/factory.py#L1743"
+    },
+    {
+     "file": "libs/deepagents/deepagents/middleware/patch_tool_calls.py",
+     "label": "deepagents patch_tool_calls.py:11 — PatchToolCallsMiddleware",
+     "line": 11,
+     "url": "https://github.com/langchain-ai/deepagents/blob/c6c340d47d2013a2e7b7230698f73977b7de6756/libs/deepagents/deepagents/middleware/patch_tool_calls.py#L11"
+    }
+   ],
+   "narrative": "The caller invokes the graph with the survey prompt on a thread. Pregel loads the thread's checkpoint (none yet), applies the input, and saves a checkpoint marked source: input. The first super-steps run the middleware state hooks in graph order — the before_agent nodes, where PatchToolCallsMiddleware's repair scan finds no dangling tool calls in a fresh history — then the before_model nodes. No model call has happened; the runtime has already checkpointed once.",
+   "node": "pregel",
+   "representation": "invoke({\"messages\": [HumanMessage(prompt)]},\n       {\"configurable\": {\"thread_id\": \"survey-1\"}})\n  -> checkpoint {source: \"input\"}\n  -> super-step: before_agent nodes\n       (PatchToolCalls repair scan)\n  -> super-step: before_model nodes",
+   "step": 2,
+   "title": "The input lands: an input checkpoint, then the before-hooks"
+  },
+  {
+   "code": "the factory chains wrap_model_call handlers; the system prompt is composed per call",
+   "modules": [
+    {
+     "file": "libs/deepagents/deepagents/graph.py",
+     "label": "deepagents graph.py:655 — profile prompt composition",
+     "line": 655,
+     "url": "https://github.com/langchain-ai/deepagents/blob/c6c340d47d2013a2e7b7230698f73977b7de6756/libs/deepagents/deepagents/graph.py#L655"
+    },
+    {
+     "file": "libs/deepagents/deepagents/middleware/summarization.py",
+     "label": "deepagents summarization.py:321 — trigger evaluation",
+     "line": 321,
+     "url": "https://github.com/langchain-ai/deepagents/blob/c6c340d47d2013a2e7b7230698f73977b7de6756/libs/deepagents/deepagents/middleware/summarization.py#L321"
+    },
+    {
+     "file": "libs/langchain_v1/langchain/agents/factory.py",
+     "label": "langchain factory.py:1181-1202 — wrap_model_call chaining",
+     "line": 1181,
+     "url": "https://github.com/langchain-ai/langchain/blob/f2bf626ccee0a0e88d560706d4fdad35e43116e5/libs/langchain_v1/langchain/agents/factory.py#L1181"
+    }
+   ],
+   "narrative": "The model node builds its request: the system prompt composed for this call (base prompt plus profile suffix; no memory middleware in this assembly), the history, and the bound tools — the filesystem seven, the permissions-filtered execute, and task. The request travels the chained wrap_model_call handlers in stack order; summarization runs its trigger arithmetic against the reconstructed history and finds it far below the threshold, so no compaction event is recorded and the request passes through unchanged.",
+   "node": "stack",
+   "representation": "ModelRequest(model, system_prompt, messages, tools)\n  system_prompt = base + profile suffix   (per call)\nwrap chain (stack order):\n  filesystem -> subagent -> summarization -> ...\n  summarization: price(history) << trigger\n               -> no event; pass through",
+   "step": 3,
+   "title": "Before the model: the prompt is composed, the wrappers are armed"
+  },
+  {
+   "code": "model_node: bind tools, invoke; the routing edge returns one Send per pending call",
+   "modules": [
+    {
+     "file": "libs/langchain_v1/langchain/agents/factory.py",
+     "label": "langchain factory.py:1518 — the model invoke",
+     "line": 1518,
+     "url": "https://github.com/langchain-ai/langchain/blob/f2bf626ccee0a0e88d560706d4fdad35e43116e5/libs/langchain_v1/langchain/agents/factory.py#L1518"
+    },
+    {
+     "file": "libs/langchain_v1/langchain/agents/factory.py",
+     "label": "langchain factory.py:2034-2043 — one Send per pending call",
+     "line": 2034,
+     "url": "https://github.com/langchain-ai/langchain/blob/f2bf626ccee0a0e88d560706d4fdad35e43116e5/libs/langchain_v1/langchain/agents/factory.py#L2034"
+    },
+    {
+     "file": "libs/langgraph/langgraph/pregel/_algo.py",
+     "label": "langgraph pregel/_algo.py:391 — task preparation",
+     "line": 391,
+     "url": "https://github.com/langchain-ai/langgraph/blob/08a345637fb2bd499f69c90056a22c478a468817/libs/langgraph/langgraph/pregel/_algo.py#L391"
+    }
+   ],
+   "narrative": "At the end of the wrapper chain the model node's handler binds the tools and invokes the model. The reply carries two task calls and no direct file calls — the model delegates both halves of the survey. The routing edge inspects the reply: tool calls are pending, so instead of END it returns one Send per call, and Pregel prepares both as parallel tasks of the next super-step — one tools-node execution each, in the same step.",
+   "node": "create-agent",
+   "representation": "reply = AIMessage(tool_calls=[\n    task(\"survey the utils package...\"),\n    task(\"audit the config loader...\")])\nrouting(reply) =\n  [Send(\"tools\", task_call_1),\n   Send(\"tools\", task_call_2)]   # parallel tasks",
+   "step": 4,
+   "title": "The first model call: a reply full of delegations"
+  },
+  {
+   "code": "subagents.py — _build_state subtracts; subagent.invoke runs the nested graph",
+   "modules": [
+    {
+     "file": "libs/deepagents/deepagents/middleware/subagents.py",
+     "label": "deepagents subagents.py:842-843 — state prepared, invoke",
+     "line": 842,
+     "url": "https://github.com/langchain-ai/deepagents/blob/c6c340d47d2013a2e7b7230698f73977b7de6756/libs/deepagents/deepagents/middleware/subagents.py#L842"
+    },
+    {
+     "file": "libs/deepagents/deepagents/middleware/subagents.py",
+     "label": "deepagents subagents.py:382-408 — the excluded keys",
+     "line": 382,
+     "url": "https://github.com/langchain-ai/deepagents/blob/c6c340d47d2013a2e7b7230698f73977b7de6756/libs/deepagents/deepagents/middleware/subagents.py#L382"
+    }
+   ],
+   "narrative": "Each Send task runs the task tool inside ToolNode, through the chained wrap_tool_call wrappers. SubAgentMiddleware builds the subagent's state by subtraction: the parent's state minus the curated exclusion set, with the message history replaced by a single HumanMessage carrying the task description. It then calls subagent.invoke synchronously — a complete nested run of the same machinery, with its own super-steps, on the caller's thread unless the subagent spec names its own checkpointer.",
+   "node": "subagents",
+   "representation": "per task call (inside the tools node):\n  state = {k: v for k, v in parent.items()\n           if k not in EXCLUDED_FROM_SUBAGENT}\n  state[\"messages\"] = [HumanMessage(task_text)]\n  result = subagent.invoke(state)   # nested run",
+   "step": 5,
+   "title": "Delegation, twice: state subtraction at the subgraph boundary"
+  },
+  {
+   "code": "ToolNode executes; FilesystemMiddleware resolves each call against the backend",
+   "modules": [
+    {
+     "file": "libs/prebuilt/langgraph/prebuilt/tool_node.py",
+     "label": "langgraph prebuilt/tool_node.py:930 — tool execution",
+     "line": 930,
+     "url": "https://github.com/langchain-ai/langgraph/blob/08a345637fb2bd499f69c90056a22c478a468817/libs/prebuilt/langgraph/prebuilt/tool_node.py#L930"
+    },
+    {
+     "file": "libs/deepagents/deepagents/middleware/filesystem.py",
+     "label": "deepagents filesystem.py:1819 — FilesystemMiddleware",
+     "line": 1819,
+     "url": "https://github.com/langchain-ai/deepagents/blob/c6c340d47d2013a2e7b7230698f73977b7de6756/libs/deepagents/deepagents/middleware/filesystem.py#L1819"
+    }
+   ],
+   "narrative": "Inside each subagent, the same loop runs with a smaller stack. The models explore with ls, read_file, and grep; each call passes through ToolNode into FilesystemMiddleware, which resolves the backend from state and calls it — here LocalShellBackend's file operations against its jailed root. No execute call is made in this trace: the reads suffice, so the host-shell capability wired into this assembly is never exercised.",
+   "node": "backends",
+   "representation": "subagent loop (smaller stack, no task tool):\n  ls(\"/\")  read_file(\"/pkg/...\")  grep(\"...\")\n    -> ToolNode -> FilesystemMiddleware\n       -> backend.ls / read / grep\n          (root-jailed paths)\n  execute: bound, never called in this trace",
+   "step": 6,
+   "title": "Inside the subagents: tools fire, the backend answers"
+  },
+  {
+   "code": "subagents.py — one ToolMessage per task call; after_tick saves the checkpoint",
+   "modules": [
+    {
+     "file": "libs/deepagents/deepagents/middleware/subagents.py",
+     "label": "deepagents subagents.py:862-873 — result extraction",
+     "line": 862,
+     "url": "https://github.com/langchain-ai/deepagents/blob/c6c340d47d2013a2e7b7230698f73977b7de6756/libs/deepagents/deepagents/middleware/subagents.py#L862"
+    },
+    {
+     "file": "libs/langgraph/langgraph/pregel/_loop.py",
+     "label": "langgraph pregel/_loop.py:786 — checkpoint after the super-step",
+     "line": 786,
+     "url": "https://github.com/langchain-ai/langgraph/blob/08a345637fb2bd499f69c90056a22c478a468817/libs/langgraph/langgraph/pregel/_loop.py#L786"
+    }
+   ],
+   "narrative": "Each nested run ends with a plain-text answer. _validate_and_prepare_state and the result extraction reduce each final state to exactly one ToolMessage on the parent's original task call — the structured response if one was produced, otherwise the last AI message's text. Both tasks' writes merge into the parent state in one super-step, and after_tick saves the checkpoint. The parent's next model request re-prices the history for summarization; two survey summaries do not move it anywhere near the trigger.",
+   "node": "stack",
+   "representation": "result_1.result -> ToolMessage(task_call_1)\nresult_2.result -> ToolMessage(task_call_2)\n  (structured_response, else last AIMessage text)\nwrites merge in one super-step\n  -> checkpoint {source: \"loop\"}\nparent history re-priced: still under trigger",
+   "step": 7,
+   "title": "Results return; compaction stays out of the way"
+  },
+  {
+   "code": "factory.py — no tool calls routes to END; the final checkpoint closes the thread state",
+   "modules": [
+    {
+     "file": "libs/langchain_v1/langchain/agents/factory.py",
+     "label": "langchain factory.py:2020-2022 — the classic exit condition",
+     "line": 2020,
+     "url": "https://github.com/langchain-ai/langchain/blob/f2bf626ccee0a0e88d560706d4fdad35e43116e5/libs/langchain_v1/langchain/agents/factory.py#L2020"
+    },
+    {
+     "file": "libs/langgraph/langgraph/pregel/_loop.py",
+     "label": "langgraph pregel/_loop.py:720 — after_tick",
+     "line": 720,
+     "url": "https://github.com/langchain-ai/langgraph/blob/08a345637fb2bd499f69c90056a22c478a468817/libs/langgraph/langgraph/pregel/_loop.py#L720"
+    }
+   ],
+   "narrative": "The parent model reads the two ToolMessages and answers the survey directly, with no further tool calls. The routing edge takes the comment-named classic exit: no pending calls routes to END. The after_model and after_agent hook nodes run on the way out — nothing in this assembly changes anything there — the final checkpoint is written, and invoke returns the state. The whole turn consumed a handful of super-steps against the 9,999 ceiling, and not one of them was counted by any code in the deepagents package.",
+   "node": "pregel",
+   "representation": "reply = AIMessage(text) with tool_calls == []\nrouting(reply) -> END\n  (\"the classic exit condition\")\nafter_model / after_agent nodes run\nfinal checkpoint written\nreturn {\"messages\": [...]}",
+   "step": 8,
+   "title": "Exit: no tool calls is the whole condition"
+  }
+ ]
+}

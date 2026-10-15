@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1008" width="1600" font-family="system-ui, -apple-system, sans-serif">
+<defs><marker id="arrc" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 1 L 9 5 L 0 9 z" fill="#d08c4e"/></marker><marker id="arrr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 1 L 9 5 L 0 9 z" fill="#8a7a66"/></marker></defs>
+<rect x="0" y="0" width="1600" height="1008" fill="#f7f2e9"/>
+<text x="90.78014184397163" y="44" font-size="26" font-weight="700" fill="#000000">Two ways to run a shell command</text>
+<text x="90.78014184397163" y="74" font-size="15" fill="#000000">The execute tool is a backend capability — where it runs is a construction choice</text>
+<line x1="233" y1="110" x2="233" y2="940" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="113" y="82" width="238" height="56" rx="10" fill="#ffffff" stroke="#3a2f26" stroke-width="1.5"/>
+<text x="233" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#000000">Model</text>
+<line x1="516" y1="110" x2="516" y2="940" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="397" y="82" width="238" height="56" rx="10" fill="#ffffff" stroke="#3a2f26" stroke-width="1.5"/>
+<text x="516" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#000000">execute tool</text>
+<line x1="800" y1="110" x2="800" y2="940" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="681" y="82" width="238" height="56" rx="10" fill="#ffffff" stroke="#3a2f26" stroke-width="1.5"/>
+<text x="800" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#000000">LocalShellBackend</text>
+<line x1="1084" y1="110" x2="1084" y2="940" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="965" y="82" width="238" height="56" rx="10" fill="#ffffff" stroke="#3a2f26" stroke-width="1.5"/>
+<text x="1084" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#000000">Host machine</text>
+<line x1="1367" y1="110" x2="1367" y2="940" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="1248" y="82" width="238" height="56" rx="10" fill="#ffffff" stroke="#3a2f26" stroke-width="1.5"/>
+<text x="1367" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#000000">Sandbox partner backend</text>
+<rect x="113" y="163" width="1089" height="44" rx="8" fill="#d08c4e" fill-opacity="0.13" stroke="#d08c4e" stroke-width="1"/>
+<text x="658" y="190" text-anchor="middle" font-size="14" fill="#000000">Path A — the local backend: no sandboxing, no isolation, no resource limits (its docstring says so)</text>
+<line x1="233" y1="263" x2="506" y2="263" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="296" cy="249" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="296" y="254" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">1</text>
+<text x="314" y="254" font-size="14" fill="#000000">execute(&quot;pytest -q&quot;)</text>
+<line x1="516" y1="325" x2="790" y2="325" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="580" cy="311" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="580" y="316" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">2</text>
+<text x="598" y="316" font-size="14" fill="#000000">backend.execute(command)</text>
+<line x1="800" y1="386" x2="1074" y2="386" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="864" cy="372" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="864" y="377" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">3</text>
+<text x="882" y="377" font-size="14" fill="#000000">subprocess.run(command, shell=True)</text>
+<line x1="1084" y1="447" x2="810" y2="447" stroke="#8a7a66" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrr)"/>
+<circle cx="864" cy="433" r="11" fill="#ffffff" stroke="#8a7a66" stroke-width="1.5"/>
+<text x="864" y="438" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">4</text>
+<text x="882" y="438" font-size="14" fill="#000000">stdout / stderr / exit code</text>
+<line x1="516" y1="508" x2="243" y2="508" stroke="#8a7a66" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrr)"/>
+<circle cx="296" cy="494" r="11" fill="#ffffff" stroke="#8a7a66" stroke-width="1.5"/>
+<text x="296" y="499" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">5</text>
+<text x="314" y="499" font-size="14" fill="#000000">ToolMessage with output</text>
+<rect x="113" y="542" width="1373" height="44" rx="8" fill="#d08c4e" fill-opacity="0.13" stroke="#d08c4e" stroke-width="1"/>
+<text x="800" y="569" text-anchor="middle" font-size="14" fill="#000000">Path B — a BaseSandbox partner (Daytona / Modal / Runloop / Vercel): the same call, isolated</text>
+<line x1="233" y1="642" x2="506" y2="642" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="296" cy="628" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="296" y="633" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">6</text>
+<text x="314" y="633" font-size="14" fill="#000000">execute(&quot;pytest -q&quot;)</text>
+<line x1="516" y1="704" x2="1357" y2="704" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="864" cy="690" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="864" y="695" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">7</text>
+<text x="882" y="695" font-size="14" fill="#000000">backend.execute(command)</text>
+<line x1="1367" y1="765" x2="526" y2="765" stroke="#8a7a66" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrr)"/>
+<circle cx="864" cy="751" r="11" fill="#ffffff" stroke="#8a7a66" stroke-width="1.5"/>
+<text x="864" y="756" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">8</text>
+<text x="882" y="756" font-size="14" fill="#000000">output from the remote sandbox</text>
+<line x1="516" y1="826" x2="243" y2="826" stroke="#8a7a66" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrr)"/>
+<circle cx="296" cy="812" r="11" fill="#ffffff" stroke="#8a7a66" stroke-width="1.5"/>
+<text x="296" y="817" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">9</text>
+<text x="314" y="817" font-size="14" fill="#000000">ToolMessage with output</text>
+<rect x="113" y="860" width="1373" height="44" rx="8" fill="#d08c4e" fill-opacity="0.13" stroke="#d08c4e" stroke-width="1"/>
+<text x="800" y="887" text-anchor="middle" font-size="14" fill="#000000">Same tool, same stack — and with the default StateBackend the tool is filtered out of the request entirely</text>
+</svg>
