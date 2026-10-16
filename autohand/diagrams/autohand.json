@@ -1,0 +1,486 @@
+{
+ "edges": [
+  {
+   "from": "input",
+   "label": "prompt + steering drain",
+   "to": "prompt"
+  },
+  {
+   "from": "prompt",
+   "label": "assembled context",
+   "to": "toolfilter"
+  },
+  {
+   "from": "toolfilter",
+   "label": "narrowed tool list",
+   "to": "provider"
+  },
+  {
+   "from": "provider",
+   "label": "streamed response",
+   "to": "parse"
+  },
+  {
+   "from": "parse",
+   "label": "tool call requests",
+   "to": "permissions"
+  },
+  {
+   "from": "permissions",
+   "label": "approved calls",
+   "to": "tools"
+  },
+  {
+   "from": "tools",
+   "label": "tool results -> next iteration",
+   "to": "provider"
+  },
+  {
+   "from": "tools",
+   "label": "turn completes",
+   "to": "memory"
+  },
+  {
+   "from": "memory",
+   "label": "append events to LOG.jsonl",
+   "to": "memorystore"
+  },
+  {
+   "from": "memorystore",
+   "label": "recall: top-5 per level",
+   "label_dx": -85,
+   "to": "prompt"
+  },
+  {
+   "from": "interfaces",
+   "label": "prompt / cancel",
+   "to": "input"
+  },
+  {
+   "from": "skills",
+   "label": "active skill bodies",
+   "label_dx": -80,
+   "to": "prompt"
+  },
+  {
+   "from": "learn",
+   "label": "generated SKILL.md",
+   "to": "skills"
+  },
+  {
+   "from": "input",
+   "label": "/learn, --auto-skill",
+   "label_dx": -60,
+   "to": "learn"
+  },
+  {
+   "from": "goals",
+   "label": "activation -> automode",
+   "label_dx": -85,
+   "to": "permissions"
+  },
+  {
+   "from": "goals",
+   "label": "continuation re-queued",
+   "to": "input"
+  },
+  {
+   "from": "tools",
+   "label": "delegate_task / spawn",
+   "label_dx": -60,
+   "to": "delegation"
+  },
+  {
+   "from": "tools",
+   "label": "namespaced MCP calls",
+   "label_dx": -60,
+   "to": "mcp"
+  },
+  {
+   "from": "extensions",
+   "label": "declarative tools",
+   "to": "tools"
+  },
+  {
+   "from": "sessions",
+   "label": "resume replays history",
+   "to": "input"
+  },
+  {
+   "from": "tools",
+   "label": "conversation.jsonl appends",
+   "label_dy": 6,
+   "to": "sessions"
+  }
+ ],
+ "nodes": [
+  {
+   "excerpt": "    // Steered messages join the conversation only between iterations, once\n    // the current tool batch has fully resolved.",
+   "grade": "verified",
+   "h": 96,
+   "id": "input",
+   "label": "Ingress + steering",
+   "links": [
+    {
+     "label": "index.ts:378-467",
+     "url": "https://github.com/autohandai/code-cli/blob/55f07f8112d3d53739c4c45d7c19d73772e645d7/src/index.ts#L378-L467"
+    },
+    {
+     "label": "SteeringQueue.ts:388-389",
+     "url": "https://github.com/autohandai/code-cli/blob/55f07f8112d3d53739c4c45d7c19d73772e645d7/src/core/agent/SteeringQueue.ts#L388-L389"
+    }
+   ],
+   "step": 1,
+   "sub": "index.ts \u00b7 InputTurnCoordinator.ts",
+   "w": 380,
+   "x": 20,
+   "y": 20
+  },
+  {
+   "excerpt": "    const [memories, instructions] = runtime.options.bare\n      ? ['', [] as string[]]\n      : await Promise.all([\n          this.options.getContextMemories(),\n          this.options.loadInstructionFiles(),\n        ]);",
+   "grade": "verified",
+   "h": 96,
+   "id": "prompt",
+   "label": "System prompt assembly",
+   "links": [
+    {
+     "label": "SystemPromptBuilder.ts:150-158",
+     "url": "https://github.com/autohandai/code-cli/blob/55f07f8112d3d53739c4c45d7c19d73772e645d7/src/core/agent/SystemPromptBuilder.ts#L150-L158"
+    },
+    {
+     "label": "SystemPromptBuilder.ts:426",
+     "url": "https://github.com/autohandai/code-cli/blob/55f07f8112d3d53739c4c45d7c19d73772e645d7/src/core/agent/SystemPromptBuilder.ts#L426"
+    }
+   ],
+   "step": 2,
+   "sub": "SystemPromptBuilder.ts",
+   "w": 380,
+   "x": 20,
+   "y": 150
+  },
+  {
+   "excerpt": "export function filterToolsByRelevance(\n  tools: FunctionDefinition[],\n  messages: LLMMessage[],\n  options: ToolRelevanceOptions = {},\n): FunctionDefinition[] {",
+   "grade": "verified",
+   "h": 96,
+   "id": "toolfilter",
+   "label": "Tool relevance filter",
+   "links": [
+    {
+     "label": "toolFilter.ts:769",
+     "url": "https://github.com/autohandai/code-cli/blob/55f07f8112d3d53739c4c45d7c19d73772e645d7/src/core/toolFilter.ts#L769"
+    },
+    {
+     "label": "toolFilter.ts:733-800",
+     "url": "https://github.com/autohandai/code-cli/blob/55f07f8112d3d53739c4c45d7c19d73772e645d7/src/core/toolFilter.ts#L733-L800"
+    }
+   ],
+   "step": 3,
+   "sub": "toolFilter.ts \u2014 per-iteration",
+   "w": 380,
+   "x": 20,
+   "y": 280
+  },
+  {
+   "excerpt": "export interface LLMProvider {\n    getName(): string;\n\n    /**\n     * Complete a chat request\n     */",
+   "grade": "verified",
+   "h": 96,
+   "id": "provider",
+   "label": "Model call",
+   "links": [
+    {
+     "label": "LLMProvider.ts:20-53",
+     "url": "https://github.com/autohandai/code-cli/blob/55f07f8112d3d53739c4c45d7c19d73772e645d7/src/providers/LLMProvider.ts#L20-L53"
+    },
+    {
+     "label": "ProviderFactory.ts:75-290",
+     "url": "https://github.com/autohandai/code-cli/blob/55f07f8112d3d53739c4c45d7c19d73772e645d7/src/providers/ProviderFactory.ts#L75-L290"
+    }
+   ],
+   "step": 4,
+   "sub": "LLMProvider \u2014 17 adapters",
+   "w": 380,
+   "x": 20,
+   "y": 410
+  },
+  {
+   "excerpt": "export class ToolLoopGuard {\n  private readonly identicalCallHardLimit: number;\n  private readonly identicalCallAndResultLimit: number;\n  private readonly forcedToolCallLimit: number;",
+   "grade": "verified",
+   "h": 96,
+   "id": "parse",
+   "label": "Parse, outcome, repair",
+   "links": [
+    {
+     "label": "ReactionParser.ts:60-118",
+     "url": "https://github.com/autohandai/code-cli/blob/55f07f8112d3d53739c4c45d7c19d73772e645d7/src/core/agent/ReactionParser.ts#L60-L118"
+    },
+    {
+     "label": "ToolLoopPolicy.ts:79-93",
+     "url": "https://github.com/autohandai/code-cli/blob/55f07f8112d3d53739c4c45d7c19d73772e645d7/src/core/agent/ToolLoopPolicy.ts#L79-L93"
+    }
+   ],
+   "step": 5,
+   "sub": "ReactionParser.ts \u00b7 ToolLoopPolicy.ts",
+   "w": 380,
+   "x": 20,
+   "y": 540
+  },
+  {
+   "excerpt": "  checkPermission(context: PermissionContext): PermissionDecision {\n    // SECURITY: Always check security blacklist FIRST - cannot be bypassed by any mode\n    if (this.isSecurityBlacklisted(context)) {\n      return { allowed: false, reason: 'blacklisted' };\n    }",
+   "grade": "verified",
+   "h": 96,
+   "id": "permissions",
+   "label": "PermissionManager",
+   "links": [
+    {
+     "label": "PermissionManager.ts:318-326",
+     "url": "https://github.com/autohandai/code-cli/blob/55f07f8112d3d53739c4c45d7c19d73772e645d7/src/permissions/PermissionManager.ts#L318-L326"
+    },
+    {
+     "label": "types.ts:92-124",
+     "url": "https://github.com/autohandai/code-cli/blob/55f07f8112d3d53739c4c45d7c19d73772e645d7/src/permissions/types.ts#L92-L124"
+    }
+   ],
+   "step": 6,
+   "sub": "permissions/PermissionManager.ts",
+   "w": 380,
+   "x": 20,
+   "y": 670
+  },
+  {
+   "excerpt": "    // Get plan mode manager to check read-only enforcement\n    const planModeManager = getPlanModeManager();\n    const isInPlanningPhase = planModeManager.isEnabled() && planModeManager.getPhase() === 'planning';\n\n    // Phase 1: Pre-flight + Approval (sequential)",
+   "grade": "verified",
+   "h": 96,
+   "id": "tools",
+   "label": "Tool execution",
+   "links": [
+    {
+     "label": "toolManager.ts:2690-2700",
+     "url": "https://github.com/autohandai/code-cli/blob/55f07f8112d3d53739c4c45d7c19d73772e645d7/src/core/toolManager.ts#L2690-L2700"
+    },
+    {
+     "label": "toolManager.ts:76-127",
+     "url": "https://github.com/autohandai/code-cli/blob/55f07f8112d3d53739c4c45d7c19d73772e645d7/src/core/toolManager.ts#L76-L127"
+    }
+   ],
+   "step": 7,
+   "sub": "toolManager.ts \u00b7 actionExecutor.ts",
+   "w": 380,
+   "x": 20,
+   "y": 800
+  },
+  {
+   "excerpt": "export async function extractAndSaveSessionMemories(\n  deps: ExtractionDeps,\n): Promise<ExtractedMemory[]> {\n  const { llm, memoryManager, conversationHistory, signal } = deps;",
+   "grade": "verified",
+   "h": 96,
+   "id": "memory",
+   "label": "Memory extraction",
+   "links": [
+    {
+     "label": "extractSessionMemories.ts:155-164",
+     "url": "https://github.com/autohandai/code-cli/blob/55f07f8112d3d53739c4c45d7c19d73772e645d7/src/memory/extractSessionMemories.ts#L155-L164"
+    },
+    {
+     "label": "InstructionRunner.ts:811-823",
+     "url": "https://github.com/autohandai/code-cli/blob/55f07f8112d3d53739c4c45d7c19d73772e645d7/src/core/agent/InstructionRunner.ts#L811-L823"
+    }
+   ],
+   "step": 8,
+   "sub": "extractSessionMemories.ts",
+   "w": 380,
+   "x": 20,
+   "y": 930
+  },
+  {
+   "excerpt": " * This replaces the external autohand-acp adapter:\n *   Before: Zed -> autohand-acp -> spawns autohand --mode rpc -> JSON-RPC\n *   After:  Zed -> autohand --mode acp -> in-process ACP protocol",
+   "grade": "verified",
+   "h": 96,
+   "id": "interfaces",
+   "label": "ACP / RPC / mobile relay",
+   "links": [
+    {
+     "label": "acp/index.ts:36-100",
+     "url": "https://github.com/autohandai/code-cli/blob/55f07f8112d3d53739c4c45d7c19d73772e645d7/src/modes/acp/index.ts#L36-L100"
+    },
+    {
+     "label": "rpc/index.ts:1-6",
+     "url": "https://github.com/autohandai/code-cli/blob/55f07f8112d3d53739c4c45d7c19d73772e645d7/src/modes/rpc/index.ts#L1-L6"
+    }
+   ],
+   "sub": "modes/acp \u00b7 modes/rpc \u00b7 MobileRelay",
+   "w": 380,
+   "x": 560,
+   "y": 20
+  },
+  {
+   "excerpt": "export function computeProjectHash(analysis: ProjectAnalysis): string {\n  const serialized = JSON.stringify({\n    languages: analysis.languages.slice().sort(),\n    frameworks: analysis.frameworks.slice().sort(),\n    patterns: analysis.patterns.slice().sort(),\n    packageManager: analysis.packageManager,\n  });",
+   "grade": "verified",
+   "h": 96,
+   "id": "learn",
+   "label": "LearnAdvisor",
+   "links": [
+    {
+     "label": "LearnAdvisor.ts:142-150",
+     "url": "https://github.com/autohandai/code-cli/blob/55f07f8112d3d53739c4c45d7c19d73772e645d7/src/skills/LearnAdvisor.ts#L142-L150"
+    },
+    {
+     "label": "autoSkill.ts:160-169",
+     "url": "https://github.com/autohandai/code-cli/blob/55f07f8112d3d53739c4c45d7c19d73772e645d7/src/skills/autoSkill.ts#L160-L169"
+    },
+    {
+     "label": "communityInstaller.ts:254-262",
+     "url": "https://github.com/autohandai/code-cli/blob/55f07f8112d3d53739c4c45d7c19d73772e645d7/src/skills/communityInstaller.ts#L254-L262"
+    }
+   ],
+   "sub": "LearnAdvisor.ts \u00b7 autoSkill.ts",
+   "w": 380,
+   "x": 560,
+   "y": 150
+  },
+  {
+   "excerpt": "  parseContent(content: string, filePath: string, source: SkillSource): SkillParseResult {\n    const extraction = this.extractFrontmatter(content);\n\n    if (!extraction) {",
+   "grade": "verified",
+   "h": 96,
+   "id": "skills",
+   "label": "Skills registry",
+   "links": [
+    {
+     "label": "SkillsRegistry.ts:112",
+     "url": "https://github.com/autohandai/code-cli/blob/55f07f8112d3d53739c4c45d7c19d73772e645d7/src/skills/SkillsRegistry.ts#L112"
+    },
+    {
+     "label": "SkillParser.ts:48-56",
+     "url": "https://github.com/autohandai/code-cli/blob/55f07f8112d3d53739c4c45d7c19d73772e645d7/src/skills/SkillParser.ts#L48-L56"
+    }
+   ],
+   "sub": "SkillsRegistry.ts \u00b7 SkillParser.ts",
+   "w": 380,
+   "x": 560,
+   "y": 280
+  },
+  {
+   "excerpt": "const EVENT_LOG_VERSION = 1;\nconst EVENT_DIRECTORY = 'events';\nconst EVENT_LOG_FILE = 'LOG.jsonl';\nconst EVENT_LOG_LOCK = '.LOG.jsonl.lock';",
+   "grade": "verified",
+   "h": 96,
+   "id": "memorystore",
+   "label": "Memory store",
+   "links": [
+    {
+     "label": "MemoryEventLog.ts:21-24",
+     "url": "https://github.com/autohandai/code-cli/blob/55f07f8112d3d53739c4c45d7c19d73772e645d7/src/memory/MemoryEventLog.ts#L21-L24"
+    },
+    {
+     "label": "MemoryProjection.ts:24-67",
+     "url": "https://github.com/autohandai/code-cli/blob/55f07f8112d3d53739c4c45d7c19d73772e645d7/src/memory/MemoryProjection.ts#L24-L67"
+    }
+   ],
+   "sub": "MemoryEventLog.ts \u2014 JSONL + projection",
+   "w": 380,
+   "x": 560,
+   "y": 410
+  },
+  {
+   "excerpt": "export class SessionManager {\n    private readonly sessionsDir: string;\n    private currentSession: Session | null = null;\n    private index: SessionIndex | null = null;",
+   "grade": "verified",
+   "h": 96,
+   "id": "sessions",
+   "label": "Sessions",
+   "links": [
+    {
+     "label": "SessionManager.ts:104-180",
+     "url": "https://github.com/autohandai/code-cli/blob/55f07f8112d3d53739c4c45d7c19d73772e645d7/src/session/SessionManager.ts#L104-L180"
+    },
+    {
+     "label": "SessionManager.ts:599",
+     "url": "https://github.com/autohandai/code-cli/blob/55f07f8112d3d53739c4c45d7c19d73772e645d7/src/session/SessionManager.ts#L599"
+    }
+   ],
+   "sub": "SessionManager.ts \u2014 conversation.jsonl",
+   "w": 380,
+   "x": 560,
+   "y": 540
+  },
+  {
+   "excerpt": "export function buildGoalContinuationInstruction(objective: string): string {\n  return [\n    `Active goal: ${objective}`,\n    'Continue working toward this persistent goal until it is complete, blocked, waiting, paused, cleared, or budget-limited.',\n  ].join('\\n');\n}",
+   "grade": "verified",
+   "h": 96,
+   "id": "goals",
+   "label": "Goals",
+   "links": [
+    {
+     "label": "GoalManager.ts:55-62",
+     "url": "https://github.com/autohandai/code-cli/blob/55f07f8112d3d53739c4c45d7c19d73772e645d7/src/goals/GoalManager.ts#L55-L62"
+    },
+    {
+     "label": "GoalActivation.ts:14-17",
+     "url": "https://github.com/autohandai/code-cli/blob/55f07f8112d3d53739c4c45d7c19d73772e645d7/src/core/agent/GoalActivation.ts#L14-L17"
+    }
+   ],
+   "sub": "GoalManager.ts \u2014 goals.local.json",
+   "w": 380,
+   "x": 560,
+   "y": 670
+  },
+  {
+   "excerpt": "    private async runTask(task: string, options: SubAgentRunOptions, peerRuntime?: PeerCommunicationRuntime): Promise<string> {\n        options.signal?.throwIfAborted();",
+   "grade": "verified",
+   "h": 96,
+   "id": "delegation",
+   "label": "Sub-agents / peers / teams",
+   "links": [
+    {
+     "label": "SubAgent.ts:365-391",
+     "url": "https://github.com/autohandai/code-cli/blob/55f07f8112d3d53739c4c45d7c19d73772e645d7/src/core/agents/SubAgent.ts#L365-L391"
+    },
+    {
+     "label": "TeammateProcess.ts:134-149",
+     "url": "https://github.com/autohandai/code-cli/blob/55f07f8112d3d53739c4c45d7c19d73772e645d7/src/core/teams/TeammateProcess.ts#L134-L149"
+    }
+   ],
+   "sub": "SubAgent.ts \u00b7 TeammateProcess.ts",
+   "w": 380,
+   "x": 560,
+   "y": 800
+  },
+  {
+   "excerpt": " * Tools from MCP servers are registered with the naming convention\n * `mcp__<serverName>__<toolName>` to avoid collisions with built-in tools.",
+   "grade": "verified",
+   "h": 96,
+   "id": "mcp",
+   "label": "MCP client",
+   "links": [
+    {
+     "label": "McpClientManager.ts:759-760",
+     "url": "https://github.com/autohandai/code-cli/blob/55f07f8112d3d53739c4c45d7c19d73772e645d7/src/mcp/McpClientManager.ts#L759-L760"
+    }
+   ],
+   "sub": "McpClientManager.ts",
+   "w": 380,
+   "x": 560,
+   "y": 930
+  },
+  {
+   "excerpt": "export interface ExtensionRuntimeAPI {\n  readonly version: 1;\n  readonly extension: {\n    id: string;\n    version: string;\n    root: string;",
+   "grade": "verified",
+   "h": 96,
+   "id": "extensions",
+   "label": "Extension packages",
+   "links": [
+    {
+     "label": "ExtensionRuntimeHost.ts:120-165",
+     "url": "https://github.com/autohandai/code-cli/blob/55f07f8112d3d53739c4c45d7c19d73772e645d7/src/extensions/ExtensionRuntimeHost.ts#L120-L165"
+    },
+    {
+     "label": "manifest.ts:12-15",
+     "url": "https://github.com/autohandai/code-cli/blob/55f07f8112d3d53739c4c45d7c19d73772e645d7/src/extensions/manifest.ts#L12-L15"
+    }
+   ],
+   "sub": "ExtensionRuntimeHost.ts",
+   "w": 380,
+   "x": 560,
+   "y": 1060
+  }
+ ],
+ "repo": "https://github.com/autohandai/code-cli",
+ "sha": "55f07f8112d3d53739c4c45d7c19d73772e645d7",
+ "title": "Autohand Code CLI architecture"
+}

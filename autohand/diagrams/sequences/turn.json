@@ -1,0 +1,99 @@
+{
+ "title": "One turn, end to end",
+ "subtitle": "ReactLoopRunner: bounded for loop, 100 iterations (1,000 executing a plan)",
+ "participants": [
+  "User",
+  "ReactLoopRunner",
+  "LLMProvider",
+  "ToolManager",
+  "PermissionManager",
+  "Memory"
+ ],
+ "messages": [
+  {
+   "note": "span",
+   "span": [
+    0,
+    5
+   ],
+   "text": "Iteration boundary: steering drains here, never between a call and its result"
+  },
+  {
+   "from": 0,
+   "to": 1,
+   "label": "prompt(text)"
+  },
+  {
+   "from": 1,
+   "to": 1,
+   "label": "drain SteeringQueue (max 32)"
+  },
+  {
+   "from": 1,
+   "to": 1,
+   "label": "filterToolsByRelevance(messages)"
+  },
+  {
+   "from": 1,
+   "to": 2,
+   "label": "complete(tools, auto, 16k max)"
+  },
+  {
+   "from": 2,
+   "to": 1,
+   "label": "text + tool calls",
+   "dashed": true
+  },
+  {
+   "from": 1,
+   "to": 1,
+   "label": "guards: loop / reflection / repair"
+  },
+  {
+   "from": 1,
+   "to": 3,
+   "label": "execute(batch)"
+  },
+  {
+   "from": 3,
+   "to": 4,
+   "label": "checkPermission(call)"
+  },
+  {
+   "from": 4,
+   "to": 3,
+   "label": "allow | deny | prompt",
+   "dashed": true
+  },
+  {
+   "from": 3,
+   "to": 3,
+   "label": "writes sequential, rest pool of 5"
+  },
+  {
+   "from": 3,
+   "to": 1,
+   "label": "results appended as role: tool",
+   "dashed": true
+  },
+  {
+   "note": "span",
+   "span": [
+    0,
+    5
+   ],
+   "text": "A reply with no tool calls finishes the turn"
+  },
+  {
+   "from": 1,
+   "to": 5,
+   "label": "extractAndSaveSessionMemories()"
+  },
+  {
+   "from": 5,
+   "to": 1,
+   "label": "[Auto Memory Update] note",
+   "dashed": true
+  }
+ ]
+}

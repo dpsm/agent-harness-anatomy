@@ -1,0 +1,57 @@
+{
+ "title": "Memory extraction: where the learning actually happens",
+ "subtitle": "One extra model call after every interactive turn",
+ "participants": [
+  "InstructionRunner",
+  "extractSessionMemories",
+  "LLMProvider",
+  "MemoryEventLog",
+  "System prompt"
+ ],
+ "messages": [
+  {
+   "note": "span",
+   "span": [
+    0,
+    4
+   ],
+   "text": "Runs after every interactive turn (unless autoMemory: false)"
+  },
+  {
+   "from": 0,
+   "to": 1,
+   "label": "turn outcome: ok | failed | canceled"
+  },
+  {
+   "from": 1,
+   "to": 2,
+   "label": "complete(temp 0.3, max 1024 tokens)"
+  },
+  {
+   "from": 2,
+   "to": 1,
+   "label": "JSON: style, prefs, conventions",
+   "dashed": true
+  },
+  {
+   "from": 1,
+   "to": 1,
+   "label": "dedupe: Jaccard >= 0.6 updates instead"
+  },
+  {
+   "from": 1,
+   "to": 3,
+   "label": "append create/update events"
+  },
+  {
+   "from": 3,
+   "to": 3,
+   "label": "projection rebuilt by replaying LOG.jsonl"
+  },
+  {
+   "from": 1,
+   "to": 4,
+   "label": "top-5 per level into next prompt"
+  }
+ ]
+}

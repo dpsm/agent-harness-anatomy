@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 935" width="1600" font-family="system-ui, -apple-system, sans-serif">
+<defs><marker id="arrc" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 1 L 9 5 L 0 9 z" fill="#d08c4e"/></marker><marker id="arrr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 1 L 9 5 L 0 9 z" fill="#8a7a66"/></marker></defs>
+<rect x="0" y="0" width="1600" height="935" fill="#f7f2e9"/>
+<text x="90.78014184397163" y="44" font-size="26" font-weight="700" fill="#000000">Skill generation: fingerprint -&gt; prompt -&gt; file</text>
+<text x="90.78014184397163" y="74" font-size="15" fill="#000000">The self-configuration pipeline behind the &#x27;self-evolving&#x27; claim</text>
+<line x1="233" y1="110" x2="233" y2="867" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="113" y="82" width="238" height="56" rx="10" fill="#ffffff" stroke="#3a2f26" stroke-width="1.5"/>
+<text x="233" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#000000">User / CLI flag</text>
+<line x1="516" y1="110" x2="516" y2="867" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="397" y="82" width="238" height="56" rx="10" fill="#ffffff" stroke="#3a2f26" stroke-width="1.5"/>
+<text x="516" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#000000">ProjectAnalyzer</text>
+<line x1="800" y1="110" x2="800" y2="867" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="681" y="82" width="238" height="56" rx="10" fill="#ffffff" stroke="#3a2f26" stroke-width="1.5"/>
+<text x="800" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#000000">LearnAdvisor</text>
+<line x1="1084" y1="110" x2="1084" y2="867" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="965" y="82" width="238" height="56" rx="10" fill="#ffffff" stroke="#3a2f26" stroke-width="1.5"/>
+<text x="1084" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#000000">Community registry</text>
+<line x1="1367" y1="110" x2="1367" y2="867" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="1248" y="82" width="238" height="56" rx="10" fill="#ffffff" stroke="#3a2f26" stroke-width="1.5"/>
+<text x="1367" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#000000">SkillsRegistry</text>
+<line x1="233" y1="191" x2="506" y2="191" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="296" cy="177" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="296" y="182" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">1</text>
+<text x="314" y="182" font-size="14" fill="#000000">--auto-skill  or  /learn</text>
+<path d="M 516 252 h 50 v 30 H 526" fill="none" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="541" cy="236" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="541" y="241" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">2</text>
+<text x="576" y="257" font-size="14" fill="#000000">analyze(): manifests, CI, Dockerfile</text>
+<line x1="516" y1="313" x2="790" y2="313" stroke="#8a7a66" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrr)"/>
+<circle cx="580" cy="299" r="11" fill="#ffffff" stroke="#8a7a66" stroke-width="1.5"/>
+<text x="580" y="304" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">3</text>
+<text x="598" y="304" font-size="14" fill="#000000">ProjectAnalysis (4 hashed fields)</text>
+<path d="M 800 374 h 50 v 30 H 810" fill="none" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="825" cy="358" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="825" y="363" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">4</text>
+<text x="860" y="379" font-size="14" fill="#000000">computeProjectHash: sha256, 7 chars</text>
+<line x1="800" y1="436" x2="1074" y2="436" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="864" cy="422" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="864" y="427" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">5</text>
+<text x="882" y="427" font-size="14" fill="#000000">rank registry skills vs analysis</text>
+<line x1="1084" y1="497" x2="810" y2="497" stroke="#8a7a66" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrr)"/>
+<circle cx="864" cy="483" r="11" fill="#ffffff" stroke="#8a7a66" stroke-width="1.5"/>
+<text x="864" y="488" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">6</text>
+<text x="882" y="488" font-size="14" fill="#000000">scores — best below threshold</text>
+<rect x="397" y="531" width="806" height="44" rx="8" fill="#d08c4e" fill-opacity="0.13" stroke="#d08c4e" stroke-width="1"/>
+<text x="800" y="558" text-anchor="middle" font-size="14" fill="#000000">No catalog skill scores well -&gt; generate a custom one</text>
+<path d="M 800 631 h 50 v 30 H 810" fill="none" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="825" cy="615" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="825" y="620" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">7</text>
+<text x="860" y="636" font-size="14" fill="#000000">generateSkill(): validated JSON out</text>
+<line x1="800" y1="692" x2="1357" y2="692" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="1006" cy="678" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="1006" y="683" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">8</text>
+<text x="1024" y="683" font-size="14" fill="#000000">write SKILL.md + provenance metadata</text>
+<line x1="1367" y1="753" x2="243" y2="753" stroke="#8a7a66" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrr)"/>
+<circle cx="722" cy="739" r="11" fill="#ffffff" stroke="#8a7a66" stroke-width="1.5"/>
+<text x="722" y="744" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">9</text>
+<text x="740" y="744" font-size="14" fill="#000000">Generated 1 targeted skill</text>
+<rect x="113" y="788" width="1373" height="44" rx="8" fill="#d08c4e" fill-opacity="0.13" stroke="#d08c4e" stroke-width="1"/>
+<text x="800" y="815" text-anchor="middle" font-size="14" fill="#000000">The --auto-skill path then exits — the agent session never starts</text>
+</svg>

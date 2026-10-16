@@ -25,6 +25,7 @@ Companion repo to the Substack series.
 | 11 | SWE-agent (v1.1.0) | [swe-agent/article.md](swe-agent/article.md) | forthcoming |
 | 12 | Qwen Code (v0.25.0) | [qwen-code/article.md](qwen-code/article.md) | forthcoming |
 | 13 | Darwin Gödel Machine (a565fd2) | [dgm/article.md](dgm/article.md) | forthcoming |
+| 14 | Autohand Code CLI (v0.9.8) | [autohand/article.md](autohand/article.md) | forthcoming |
 
 ## What's here
 

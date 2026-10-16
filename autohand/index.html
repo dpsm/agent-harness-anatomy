@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body {
+    background: #161210; color: #ece1d3;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    line-height: 1.7; padding: 48px 24px; margin: 0;
+  }
+  main { max-width: 760px; margin: 0 auto; }
+  a { color: #d08c4e; }
+  h1 { font-size: 1.9rem; letter-spacing: -0.02em; line-height: 1.25; margin-bottom: 16px; }
+  h2 { font-size: 1.4rem; margin: 40px 0 12px; padding-top: 8px; border-top: 1px solid #2c231b; }
+  h3 { font-size: 1.1rem; margin: 28px 0 8px; }
+  p, li { margin-bottom: 12px; }
+  blockquote {
+    border-left: 3px solid #d08c4e; padding: 4px 16px; margin: 20px 0;
+    color: #a89880; background: #1f1a15; border-radius: 0 8px 8px 0;
+  }
+  blockquote p { margin-bottom: 6px; }
+  code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.88em; background: #1f1a15; padding: 2px 6px; border-radius: 6px;
+  }
+  pre { background: #1f1a15; border: 1px solid #3a2f26; border-radius: 8px;
+        padding: 16px; overflow-x: auto; }
+  pre code { background: none; padding: 0; }
+  img { max-width: 100%; height: auto; border: 1px solid #3a2f26;
+        border-radius: 12px; margin: 20px 0; background: #1f1a15; }
+  table { border-collapse: collapse; width: 100%; margin: 20px 0; font-size: 0.92rem;
+          display: block; overflow-x: auto; }
+  th, td { border: 1px solid #3a2f26; padding: 10px 12px; text-align: left;
+           vertical-align: top; }
+  th { background: #1f1a15; }
+  ul, ol { padding-left: 24px; }
+  hr { border: none; border-top: 1px solid #2c231b; margin: 32px 0; }
+  .footnote { font-size: 0.88rem; color: #a89880; }
+  .footnote hr { margin: 40px 0 16px; }
+  sup a { text-decoration: none; }
+  .topnav { max-width: 760px; margin: 0 auto 32px; font-size: 0.9rem; }
+  .topnav a { color: #a89880; text-decoration: none; }
+  .topnav a:hover { color: #ece1d3; }
+  .diagram-cta {
+    display: block; text-align: center; margin: 28px 0; padding: 16px;
+    background: #1f1a15; border: 1px solid #3a2f26; border-radius: 12px;
+    color: #ece1d3; text-decoration: none; font-weight: 600;
+  }
+  .diagram-cta:hover { border-color: #d08c4e; }
+  .diagram-cta span { display: block; font-weight: 400; font-size: 0.88rem;
+                      color: #a89880; margin-top: 4px; }
+</style>
+<title>Agent Harness Anatomy #14: Autohand Code CLI — the harness that rewrites its own skills</title>
+</head>
+<body>
+<main>
+  <nav class="topnav"><a href="../#autohand">&larr; Agent Harness Anatomy</a></nav>
+<h1 id="agent-harness-anatomy-14-autohand-code-cli-the-harness-that-rewrites-its-own-skills">Agent Harness Anatomy #14: Autohand Code CLI — the harness that rewrites its own skills</h1>
+<blockquote>
+<p><strong>Series:</strong> Agent Harness Anatomy — top-down dissections of real agent harnesses, grounded in verifiable source code. Every behavioral claim below carries a footnote to a pinned GitHub permalink; the full evidence lives in the endnotes.</p>
+</blockquote>
+<h2 id="version-block">Version block</h2>
+<ul>
+<li><strong>Repo:</strong> <a href="https://github.com/autohandai/code-cli">autohandai/code-cli</a></li>
+<li><strong>Pinned:</strong> tag <code>v0.9.8</code> → <code>55f07f8112d3d53739c4c45d7c19d73772e645d7</code> (2026-09-22)</li>
+<li><strong>Language:</strong> TypeScript on Bun (702 <code>.ts</code>/<code>.tsx</code> files, ~207k LOC in <code>src/</code>; Ink + React TUI)</li>
+<li><strong>License:</strong> Apache-2.0</li>
+<li><strong>Claim under test:</strong> &quot;self evolving coding agent&quot; — skills that generate and update themselves</li>
+</ul>
+<p><img src="figures/autohand.svg" alt="Autohand Code CLI architecture" /></p>
+<a class="diagram-cta" href="../diagrams/template.html?data=../autohand/diagrams/autohand.json">
+    Explore the interactive architecture diagram
+    <span>17 nodes, 21 edges — pan, zoom, and follow every subsystem link</span>
+  </a>
+<h2 id="the-mental-model">The mental model</h2>
+<p>Autohand's headline claim is that it <em>evolves</em>: it generates its own skills. The mechanism is real, complete, and narrower than the word suggests — and pinning down exactly what it does is the most instructive way into this harness.</p>
+<p>There is no learning from experience anywhere in the skill system. What exists is a three-step pipeline: <strong>fingerprint the project, prompt a model, write a file.</strong> A deterministic analyzer walks the workspace — <code>package.json</code>, <code>requirements.txt</code>, <code>Cargo.toml</code>, <code>go.mod</code>, CI configs, a Dockerfile — and reduces the project to four fields: languages, frameworks, patterns, package manager.<sup id="fnref:1"><a class="footnote-ref" href="#fn:1">1</a></sup> Those four fields are hashed (a 7-character SHA-256 prefix).<sup id="fnref:2"><a class="footnote-ref" href="#fn:2">2</a></sup> An LLM advisor then either ranks community-registry skills against that fingerprint or, when nothing scores well, generates a custom skill as validated JSON, which is written to disk as a <code>SKILL.md</code> with provenance metadata stamped into its frontmatter: source <code>llm-generated</code>, the project hash it was generated from, a timestamp.<sup id="fnref:3"><a class="footnote-ref" href="#fn:3">3</a></sup> Later, <code>/learn update</code> recomputes the hash; if your project has drifted — you swapped a framework, adopted a test runner — the stale generated skills are regenerated in place. If the hash matches, nothing happens.<sup id="fnref:4"><a class="footnote-ref" href="#fn:4">4</a></sup></p>
+<p>So the &quot;evolution&quot; signal is <em>project drift</em>, not agent experience. Swap React for Vue and Autohand rewrites its own skills. Accumulate a year of sessions, corrections, and hard-won workflow habits, and the skill set changes not at all — no transcript, tool-call history, or outcome ever enters the generation prompt.<sup id="fnref:5"><a class="footnote-ref" href="#fn:5">5</a></sup> Every trigger is explicit, too: a <code>--auto-skill</code> flag, a <code>/learn</code> command, an RPC method. Nothing generates or updates a skill at session end, and the agent itself has no tool that authors one.<sup id="fnref:6"><a class="footnote-ref" href="#fn:6">6</a></sup></p>
+<p>The harness <em>does</em> learn from experience — just in a different subsystem, writing a different artifact. After every interactive turn, a reflection call extracts preferences and conventions from the session into a persistent memory store (§Memory). Autohand's architecture thus splits &quot;learning&quot; in two: <strong>skills are generated from what your project is; memories are extracted from what you did.</strong> The marketing merges them. The code doesn't.</p>
+<p>Everything else in this very large harness — 131 default tools, a four-scope permission engine, feature-flagged goals, OS-process teammates, a phone relay — is in service of a conventional, if maximalist, terminal coding agent. The sections below walk it axis by axis.</p>
+<h2 id="the-self-evolution-mechanism-end-to-end">The self-evolution mechanism, end to end</h2>
+<p><strong>Analysis.</strong> <code>ProjectAnalyzer</code> (<code>src/skills/autoSkill.ts</code>) is deliberately simple: dependency-name lookups against fixed framework tables, file-existence checks, a shallow directory walk. It cannot be wrong in interesting ways because it asserts so little — but that also bounds what a generated skill can know: the stack, never the codebase's content or the team's habits.<sup id="fnref:1:2"><a class="footnote-ref" href="#fn:1">1</a></sup></p>
+<p><strong>Advisory.</strong> <code>LearnAdvisor</code> makes two kinds of LLM calls, both structured-JSON with hard validation and safe empty fallbacks. Phase 1 ranks the community registry against the analysis and audits installed skills as <code>redundant</code>, <code>outdated</code>, or <code>conflicting</code>. Phase 2 generates: the prompt is the analysis summary plus a gap analysis plus the three closest registry near-misses.<sup id="fnref:7"><a class="footnote-ref" href="#fn:7">7</a></sup> The generated skill passes through the same door as every other skill — same parser, same frontmatter, same activation paths — distinguished only by its metadata block.<sup id="fnref:8"><a class="footnote-ref" href="#fn:8">8</a></sup></p>
+<p><img src="figures/seq-skills.svg" alt="Skill generation: fingerprint, advisor, SKILL.md" /></p>
+<p><strong>Regeneration.</strong> The metadata is what makes <code>/learn update</code> possible: the stored hash is compared against a fresh one, and only drifted skills are rewritten.<sup id="fnref:4:2"><a class="footnote-ref" href="#fn:4">4</a></sup> It is a cache-invalidation design, not a learning loop — closer to how a build system decides what to rebuild than to how an agent improves. That is not a criticism of the engineering, which is tidy. It is a correction to the noun: this is <em>self-configuration</em>, keyed to the project. The one genuinely experience-driven mechanism in the product is memory extraction, and it never touches skills.</p>
+<p><img src="figures/seq-learn.svg" alt="/learn update: regeneration on project drift" /></p>
+<p>One more calibration: the README's sample output for <code>--auto-skill</code> shows three skills being generated. That output comes from an older generator (<code>generateAutoSkills</code>, whose prompt demands exactly three skills from eight fixed categories) that has <strong>no callers left</strong> at this pin. The live path generates exactly one targeted skill — and then exits; the agent session never starts.<sup id="fnref:9"><a class="footnote-ref" href="#fn:9">9</a></sup></p>
+<h2 id="package-map">Package map</h2>
+<p>Single-package TypeScript; the agent core is split across ~48 modules in <code>src/core/agent/</code>.</p>
+<table>
+<thead>
+<tr>
+<th>Module</th>
+<th>Role</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>src/index.ts</code></td>
+<td>Commander entry (3,083 lines); mode dispatch: interactive / RPC / ACP / teammate</td>
+</tr>
+<tr>
+<td><code>src/core/agent/ReactLoopRunner.ts</code></td>
+<td>THE loop</td>
+</tr>
+<tr>
+<td><code>src/core/agent/ToolLoopPolicy.ts</code></td>
+<td>Loop guard, reflection guard</td>
+</tr>
+<tr>
+<td><code>src/core/toolManager.ts</code></td>
+<td>Tool registry + pre-flight (~3,400 lines); <code>actionExecutor.ts</code> implements</td>
+</tr>
+<tr>
+<td><code>src/core/toolFilter.ts</code></td>
+<td>Per-iteration tool relevance filtering</td>
+</tr>
+<tr>
+<td><code>src/skills/</code></td>
+<td>Registry, parser, <code>autoSkill.ts</code>, <code>LearnAdvisor.ts</code>, community installer + scanner</td>
+</tr>
+<tr>
+<td><code>src/permissions/PermissionManager.ts</code></td>
+<td>Four-scope permission engine</td>
+</tr>
+<tr>
+<td><code>src/memory/</code></td>
+<td>Event-sourced memory: log, projection, summary tree, extraction</td>
+</tr>
+<tr>
+<td><code>src/goals/</code></td>
+<td>Goal store, queue, completion receipts</td>
+</tr>
+<tr>
+<td><code>src/modes/</code></td>
+<td>ACP + RPC adapters, plan mode, pipe/command modes</td>
+</tr>
+<tr>
+<td><code>src/extensions/</code></td>
+<td>Extension packages: manifest, registry, trusted runtime host</td>
+</tr>
+</tbody>
+</table>
+<h2 id="the-core-loop">The core loop</h2>
+<p><code>runAgentReactLoop</code> is a plain bounded <code>for</code> loop — no event machinery — with a dependency-bag host assembled by <code>AutohandAgent</code>.<sup id="fnref:10"><a class="footnote-ref" href="#fn:10">10</a></sup> The cap is 100 iterations by default, 1,000 while executing an accepted plan; exhaustion is soft (a summary call, then <code>{status: 'incomplete'}</code>).<sup id="fnref:11"><a class="footnote-ref" href="#fn:11">11</a></sup> There is no &quot;done&quot; tool: the model finishes by answering without tool calls. Run budgets (requests, tokens, duration) exist but are <strong>opt-in</strong> — unset, they impose nothing; the iteration count is the only default bound.<sup id="fnref:12"><a class="footnote-ref" href="#fn:12">12</a></sup></p>
+<p>What fills the loop is repair machinery, the most distinctive mass in the codebase:</p>
+<ul>
+<li><strong>Loop guard</strong> — an identical call signature six times, or an identical call <em>and result</em> three times, forces a final answer; two further violations abort the run.<sup id="fnref:13"><a class="footnote-ref" href="#fn:13">13</a></sup></li>
+<li><strong>Reflection guard</strong> — models on the text protocol must emit a <code>reflection</code> field or a substantive <code>thought</code> before calling more tools; native-function-calling providers are exempt.<sup id="fnref:13:2"><a class="footnote-ref" href="#fn:13">13</a></sup></li>
+<li><strong>Deferred-action repair</strong> — a heuristic classifier catches replies that <em>announce</em> work without calling a tool (&quot;I'll now edit…&quot;) and pushes back: a note, then one tool-free recovery turn, then abort.<sup id="fnref:14"><a class="footnote-ref" href="#fn:14">14</a></sup></li>
+<li><strong>Truncation recovery</strong> — length-cut responses are preserved and retried with a &quot;be concise&quot; note; three in a row aborts.<sup id="fnref:15"><a class="footnote-ref" href="#fn:15">15</a></sup></li>
+</ul>
+<p>Steering is disciplined: user messages typed mid-turn enter a bounded queue (32 messages) drained <strong>only at iteration boundaries</strong> — never between a tool call and its result, by explicit design comment. ESC aborts through an <code>AbortController</code> threaded into both the model call and tool execution.<sup id="fnref:16"><a class="footnote-ref" href="#fn:16">16</a></sup> A session-level wrapper retries whole loop failures up to three times with a continuation message.</p>
+<p>Delegation comes in three shapes that should not be conflated. Sub-agents run a <strong>separate, simplified copy of the loop</strong> (hard cap: 10 iterations, shared guards and budget, no MCP tools), nestable to depth 3. Peers are cross-<em>session</em> messaging — no loop at all. Teams are separate OS processes running the full CLI, coordinated over JSON-RPC on stdio, capped at five.<sup id="fnref:17"><a class="footnote-ref" href="#fn:17">17</a></sup></p>
+<h2 id="one-turn-end-to-end">One turn, end to end</h2>
+<ol>
+<li>Drain the steering queue; run the peer boundary hook.</li>
+<li>Filter the tool list for this iteration (§Tools); if a plan is being drafted, intersect with the read-only set.</li>
+<li>Compact context if the tiers demand it (70% compress / 80% summarize / 90% crop).</li>
+<li>Call the model (native tools, <code>toolChoice: 'auto'</code>, 16k max output tokens); record usage against the budget.</li>
+<li>Parse the response — native tool calls first, else the text protocol (§Tools). Classify the turn outcome; run the repair machinery if it misbehaves.</li>
+<li>Pre-flight each call (name repair, plan gate, permission check, hooks), then execute: writes and shell sequentially, the rest in a pool of five.</li>
+<li>Append results as tool messages; check mid-turn compaction; loop.</li>
+<li>On finish: flush any pending memory reflection (§Memory) — one extra model call that may write new memory entries and note them back into the conversation.</li>
+</ol>
+<p><img src="figures/seq-turn.svg" alt="One turn, end to end" /></p>
+<a class="diagram-cta" href="trace.html">
+    Play the 8-step trace
+    <span>One turn through Autohand — steering, prompt assembly, tool filtering, model call, parsing and repair, permissions, execution, memory extraction</span>
+  </a>
+<h2 id="tools">Tools</h2>
+<p>The default registry holds <strong>131 tool definitions</strong> — file/edit, some 45 <code>git_*</code> tools, browser, web, memory, delegation, teams, tasks, cron, MCP discovery — defined in a hand-rolled JSON-Schema subset and normalized to OpenAI function shape at send time.<sup id="fnref:18"><a class="footnote-ref" href="#fn:18">18</a></sup> Goal tools (+11) appear only when the goal feature is enabled; plan tools exist only during the planning phase; a 20-tool browser set is swapped in, not added, for browser clients.</p>
+<p>131 schemas never reach the model at once. A session-level filter drops policy-excluded tools, the permission layer removes ones the user has barred from advertising, and then, <strong>per iteration</strong>, a relevance filter keeps an &quot;always&quot; core (read, grep, search, todo, plan) plus categories triggered by keywords in recent messages and by tools already used.<sup id="fnref:19"><a class="footnote-ref" href="#fn:19">19</a></sup> Tools with no category — which is to say, all MCP and agent-created tools — survive only if their name or a long description token literally appears in recent text. There is no deferred schema loading in the Anthropic sense; the <code>tool_search</code> tool is the discovery analogue, returning descriptions as a tool result.</p>
+<p>Emission is dual-protocol. Providers reporting native tool calling get schemas; the rest get <strong>no schemas at all</strong> and must answer in a text protocol — <code>[TOOL_CALL]</code> blocks, <code>&lt;tool_call&gt;</code> XML, or a JSON payload of <code>{thought, reflection, toolCalls, finalResponse}</code> — parsed in that precedence order.<sup id="fnref:20"><a class="footnote-ref" href="#fn:20">20</a></sup> Much of the loop's repair machinery exists to keep this second protocol honest.</p>
+<p>MCP is supported over stdio/HTTP/SSE with namespaced tools (<code>mcp__&lt;server&gt;__&lt;tool&gt;</code>), re-registered wholesale whenever servers sync; per-property schema detail is flattened away in the mapping, and MCP tools are marked as never requiring approval.<sup id="fnref:21"><a class="footnote-ref" href="#fn:21">21</a></sup> Separately, the agent can <strong>author its own tools</strong> at runtime: <code>create_meta_tool</code> takes a name, schema, and a shell handler (≤2,000 chars), screens the handler against a dangerous-pattern blocklist (<code>curl|sh</code>, <code>rm /</code>, reverse shells), dedupes by fingerprint and name similarity, and persists the result as a user- or project-scoped tool.<sup id="fnref:22"><a class="footnote-ref" href="#fn:22">22</a></sup></p>
+<p>There is no single cap on tool output returned to the model; results are appended verbatim. Caps are per-path — <code>read_file</code> stops at 2,000 lines or 128 KiB, meta-tool output at 200k characters.<sup id="fnref:23"><a class="footnote-ref" href="#fn:23">23</a></sup></p>
+<h2 id="approvals-and-modes">Approvals and modes</h2>
+<p>The permission engine merges four scopes at check time — session, project, user, extension policies — plus a per-run <code>--allowed-tools</code>/<code>--disallowed-tools</code> scope that is never persisted and cannot be widened by any allowlist.<sup id="fnref:24"><a class="footnote-ref" href="#fn:24">24</a></sup> Each call is decided in a fixed order, and the first step matters most: an <strong>unbypassable security blacklist</strong> — <code>.env*</code>, <code>.git/config</code>, SSH keys, cloud credentials, <code>sudo</code>, <code>rm -rf /</code>, <code>curl … | sh</code> — is a hard deny in every mode, under every allowlist.<sup id="fnref:25"><a class="footnote-ref" href="#fn:25">25</a></sup> Deny patterns and deny lists are likewise consulted <em>before</em> the mode is, so they still bite in YOLO. Only then do mode, scoped allows, and custom rules apply, with a fail-closed disposition: an unrecognized decision denies; the default decision prompts — though a prompt only actually appears for write/shell/delete-category tools or ones flagged <code>requiresApproval</code>, so a read-only tool with a default decision runs silently.<sup id="fnref:26"><a class="footnote-ref" href="#fn:26">26</a></sup></p>
+<p>Approvals are patterns, and they persist: <code>allow_always_project</code> writes an exact <code>tool:command+args</code> (or <code>tool:path</code>) pattern to the project's settings file; prefix approvals generalize to <code>tool:&lt;first-token&gt;:*</code>. One legacy path is more generous than the UI suggests — it adds a directory wildcard (<code>tool:&lt;dirname&gt;/*</code>) to path approvals automatically.<sup id="fnref:27"><a class="footnote-ref" href="#fn:27">27</a></sup> Repo-supplied hooks and MCP servers, separately, don't run until the workspace is trusted for their <em>exact content</em> — a hash of the config; change the config, get re-prompted.<sup id="fnref:28"><a class="footnote-ref" href="#fn:28">28</a></sup></p>
+<p>The four interaction modes (Shift+Tab) are where names and machinery diverge:</p>
+<ul>
+<li><strong>default</strong> — the baseline above.</li>
+<li><strong>plan</strong> — writes are blocked <em>in code</em>, twice: the advertised tool list is intersected with a read-only set, and execution rejects anything outside it. Plans are markdown files; accepting one lifts the iteration cap to 1,000. (§Observations for the accept options that don't do what they say.)</li>
+<li><strong>automode</strong> — the surprise: its permission profile is <strong>identical to YOLO's</strong> (<code>unrestricted</code>). There is no per-call classifier or AI judge anywhere in this mode. What &quot;auto&quot; actually buys is <em>continuation</em> — with a goal active, the harness re-queues a &quot;keep working&quot; instruction after every successful turn.<sup id="fnref:29"><a class="footnote-ref" href="#fn:29">29</a></sup></li>
+<li><strong>yolo</strong> — the same unrestricted profile plus auto-yes; only the blacklist, run scope, and deny rules still stop a call, and they stop it as a deny, never a prompt.</li>
+</ul>
+<p><img src="figures/seq-permissions.svg" alt="One permission decision" /></p>
+<p>The standalone <code>--auto-mode</code> is a different animal entirely: a Ralph-style outer loop (50 iterations / 120 minutes / $10 by default) in a git worktree with checkpoint commits and circuit breakers, completing when the output contains the string <code>DONE</code>.<sup id="fnref:30"><a class="footnote-ref" href="#fn:30">30</a></sup></p>
+<h2 id="memory-where-the-learning-actually-happens">Memory: where the learning actually happens</h2>
+<p>Memory is two-level (<code>user</code> in <code>~/.autohand/memory/</code>, <code>project</code> in <code>&lt;ws&gt;/.autohand/memory/</code>) and <strong>event-sourced</strong>: the canonical store is an append-only JSONL log of <code>create|update|delete</code> events; the per-entry JSON files readers see are a materialized projection, rebuilt by replaying the log, so deleted entries can't resurrect. Writes dedupe by token similarity (≥0.6 updates instead of creating).<sup id="fnref:31"><a class="footnote-ref" href="#fn:31">31</a></sup></p>
+<p>Extraction is the experience loop the skills headline promises. After every interactive turn, the harness fires one extra call on the session's own model: given the turn and its outcome (succeeded, failed, canceled — each with its own guidance), extract coding style, tool preferences, workflow habits, project conventions, in 1–2 sentences each, tagged <code>user</code> or <code>project</code>.<sup id="fnref:32"><a class="footnote-ref" href="#fn:32">32</a></sup> It also runs on <code>/clear</code>, <code>/new</code>, and protocol-session close, and can be disabled (<code>autoMemory: false</code>); bare, ephemeral, and one-shot runs skip it. Saved items are announced back into the live conversation as an <code>[Auto Memory Update]</code> note.</p>
+<p><img src="figures/seq-memory.svg" alt="Memory extraction after a turn" /></p>
+<p>Recall is lexical — no embeddings anywhere in the subsystem. The system prompt carries up to five entries per level; beyond that, a summary tree takes over, and its summaries are <em>extractive</em> (&quot;12 memories: &lt;first&gt; … &lt;last&gt;&quot;), not model-written. The <code>recall_memory</code> tool scores by phrase/token/tag matches plus recency decay.<sup id="fnref:33"><a class="footnote-ref" href="#fn:33">33</a></sup> A separate aggregation turns skill/command usage events into a &quot;learned project capabilities&quot; ranking — statistics about what you use, surfaced as context, feeding nothing else.</p>
+<p>Sessions are plain files: <code>~/.autohand/sessions/&lt;id&gt;/</code> holds <code>metadata.json</code>, <code>conversation.jsonl</code>, and <code>state.json</code>. Resume replays <em>all</em> stored messages into the model's conversation, fork truncates at the Nth user message, and a failed resume silently falls back to a fresh session.<sup id="fnref:34"><a class="footnote-ref" href="#fn:34">34</a></sup></p>
+<h2 id="goals">Goals</h2>
+<p>Goals are feature-flagged (<code>slash_goal</code>) and stored as one JSON file per workspace: one active goal per session, a shared FIFO queue, completed history, every write mirrored to a backup.<sup id="fnref:35"><a class="footnote-ref" href="#fn:35">35</a></sup> A goal is an objective (≤80k chars) with up to 20 acceptance criteria and optional token/time budgets. Creating one does two things: queues a continuation instruction — &quot;Active goal: … Continue working toward this persistent goal until it is complete, blocked, …&quot; — and, quietly, <strong>switches the session into automode</strong>, i.e. the unrestricted permission profile, unless you've opted out.<sup id="fnref:36"><a class="footnote-ref" href="#fn:36">36</a></sup> The continuation re-fires after every successful turn; budgets are accounted per turn and crossing one freezes the goal until raised.</p>
+<p>Completion is the model's own call. <code>update_goal(status: 'complete')</code> is validated deterministically: wrap-up floors (minimum tokens/time) must be met, and if acceptance criteria exist, the model must supply exactly one evidence check per criterion, all <code>passed</code>, or the call throws. The stored receipt is stamped <code>provenance: 'reported'</code> — and the system prompt says the quiet part itself: &quot;Receipts record reported evidence, not independent verification.&quot; With no criteria, no evidence is required at all: the model's assertion completes the goal.<sup id="fnref:37"><a class="footnote-ref" href="#fn:37">37</a></sup> Templates for reusable goals live in a <code>.pi-goals/</code> directory — a convention borrowed from the pi ecosystem.</p>
+<h2 id="skills-and-extensions">Skills and extensions</h2>
+<p>A skill is a directory with a <code>SKILL.md</code>: frontmatter (<code>name</code>, <code>description</code> ≤1,024 chars, optional <code>allowed-tools</code>) plus a Markdown body.<sup id="fnref:38"><a class="footnote-ref" href="#fn:38">38</a></sup> Thirteen ship built in. Discovery is aggressively cross-vendor — Autohand reads Codex, Claude, and generic agent skill directories at user level, and some forty third-party project directories (<code>.goose/skills</code>, <code>.hermes/skills</code>, <code>.pi/skills</code>, <code>.qwen/skills</code>, …), with its own <code>.autohand/skills</code> winning collisions.<sup id="fnref:8:2"><a class="footnote-ref" href="#fn:8">8</a></sup> Activation is by <code>$name</code> mention (body appended to that turn's prompt), by the agent's <code>skill</code> tool, or by intent auto-injection (brainstorm in plan mode, systematic-debugging on failure signals); every request then carries active skills' full bodies in the system prompt.</p>
+<p>Community skills install from a GitHub registry repo (with an Autohand API alongside for suggestions and backup/sync) through a regex security scanner: points deducted per suspicious pattern (<code>curl|bash</code> −20, <code>.ssh/id_rsa</code> −15), blocked below 30, warn-and-proceed below 50, interactive override allowed. The scanner runs <strong>only on registry installs</strong> — skills already on disk, from any vendor directory, load unscanned.<sup id="fnref:39"><a class="footnote-ref" href="#fn:39">39</a></sup></p>
+<p>Extensions are the heavier surface: manifest packages (<code>autohand.extension.json</code>, strict Zod) contributing declarative shell-template tools, agents, skills — and optionally a trusted runtime: JavaScript loaded <strong>in-process, unsandboxed, with the CLI's own OS access</strong>, gated by an install-time <code>--trust</code> flag, able to register commands, views, keybindings, CLI flags, hooks, providers, and permission policies (short of changing the permission mode itself).<sup id="fnref:40"><a class="footnote-ref" href="#fn:40">40</a></sup></p>
+<h2 id="interfaces">Interfaces</h2>
+<p>Ingress is broad. The Ink TUI is the primary surface; one-shot (<code>-p</code>) and pipe modes cover scripting, with an <code>--output-schema</code> option that forces a schema-valid JSON final answer.<sup id="fnref:41"><a class="footnote-ref" href="#fn:41">41</a></sup> ACP is implemented in-process over ndJSON stdio — prompt/cancel/modes/models/session list-resume-fork, approvals proxied to the editor client — so Zed and JetBrains need no plugin from this project.<sup id="fnref:42"><a class="footnote-ref" href="#fn:42">42</a></sup> The RPC mode is a JSON-RPC 2.0 stdio server of ~90 methods serving the (external) VS Code extension and the SDKs; notably, <strong>no SDK ships in this repo</strong> — the TypeScript/Go/Python/Java/Swift packages live elsewhere, on top of this protocol.<sup id="fnref:43"><a class="footnote-ref" href="#fn:43">43</a></sup> A mobile relay pairs the desktop session to Autohand's cloud so a phone can steer turns, approve previews, and change models. Providers number 17 behind one interface (default: OpenRouter), from bespoke Anthropic/Bedrock/Vertex adapters to thin wrappers over a shared OpenAI-compatible client, plus local Ollama, llama.cpp, and MLX.<sup id="fnref:44"><a class="footnote-ref" href="#fn:44">44</a></sup></p>
+<h2 id="observations">Observations</h2>
+<p><strong>The installer claims the <code>agent</code> command name — on other tools' turf.</strong> The Unix installer, the PowerShell installer, and the generated Homebrew formula all scan the user's PATH and, wherever a command named <code>agent</code> <em>already exists</em> in a writable directory, delete it and replace it with a link to Autohand (Windows deletes <code>agent.com/.exe/.bat/.cmd</code>, directories included, and substitutes a shim). Two qualifications keep the fact precise: nothing is planted where no <code>agent</code> exists, and only user-writable directories are touched. But there is no prompt, no confirmation, and no opt-out flag in the claiming code; the in-code comment is candid that the generic name is contested by other AI CLIs and should be &quot;reclaimed&quot;. The npm postinstall and the local-build installer do not do this.<sup id="fnref:45"><a class="footnote-ref" href="#fn:45">45</a></sup></p>
+<p><strong>A closed-source daemon rides along.</strong> Every release bundle includes <code>ahtraces</code>, a trace-monitoring binary whose source is a separate private repository (the local-build script calls it &quot;Missing private ahtraces checkout&quot;); CI fetches it at a pinned SHA and compiles it into the archives. The installer's checksum verification covers the bundle, not the binary individually. In its favor, the default state is genuinely inert: monitoring requires a stored consent record <em>and</em> an enabled flag, startup doesn't even spawn the process without them, and onboarding offers &quot;Disabled (recommended default)&quot; first. Consent tiers run from a local metadata index to cloud sync of &quot;bounded, redacted message and tool parts&quot;. Two wrinkles: the quick <code>--traces-on</code> path selects the cloud-metadata tier — the local-only tier isn't offered there — and what the daemon watches, when enabled, is the session files of <strong>19 harnesses</strong>, Autohand's competitors included.<sup id="fnref:46"><a class="footnote-ref" href="#fn:46">46</a></sup></p>
+<p><strong>Docs-vs-code, three more.</strong> The docs describe <code>--auto-skill</code> as finding, installing, and activating community skills before the agent starts; the code generates one custom skill and exits (§The self-evolution mechanism).<sup id="fnref:9:2"><a class="footnote-ref" href="#fn:9">9</a></sup> Plan mode's accept dialog offers <code>auto_accept</code> / <code>clear_context_auto_accept</code>, but the auto-accept flag is only ever logged — execution still prompts under baseline rules unless separately in yes/unrestricted mode.<sup id="fnref:47"><a class="footnote-ref" href="#fn:47">47</a></sup> And &quot;session&quot; permissions, despite the name, persist to a project file and survive restarts.<sup id="fnref:27:2"><a class="footnote-ref" href="#fn:27">27</a></sup></p>
+<p><strong>Declared constraints that aren't enforced.</strong> A skill's <code>allowed-tools</code> frontmatter is parsed, validated, and displayed — and never applied as a filter when the skill activates.<sup id="fnref:38:2"><a class="footnote-ref" href="#fn:38">38</a></sup> A harness that sells provenance for its generated skills might be expected to honor the tool restrictions those skills declare.</p>
+<h2 id="tradeoffs">Tradeoffs</h2>
+<p>Read generously, Autohand's thesis is that a harness should <em>persist</em> things: skills as files, memories as an event log, goals as JSON, plans as markdown — all inspectable, all diff-able, all portable across the many surfaces (TUI, ACP, RPC, mobile) that read them. The self-configuration pipeline is the cleanest expression of it: a fingerprint, a prompt, an artifact with provenance, and invalidation by hash. Read strictly, the same instinct produces the sprawl: 131 tools narrowed by keyword heuristics, four permission scopes plus a run scope plus extension policies, three delegation mechanisms, two auto-modes with different meanings, and a repair apparatus in the loop whose size is itself a finding — much of it exists to keep a dual emission protocol (native calls <em>and</em> a text fallback) from misbehaving, a tax providers with universal native calling wouldn't impose.</p>
+<p>The sharpest single design decision is the automode/yolo identity: two mode names, one unrestricted profile, differentiated only by a goal-continuation behavior that itself escalates privileges on goal creation. In a harness whose blacklist and deny-ordering are genuinely careful, the mode <em>labels</em> are the least careful part.</p>
+<h2 id="comparison-matrix-row">Comparison matrix row</h2>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Dimension</th>
+<th>Autohand Code CLI (v0.9.8)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>Agent loop</td>
+<td>Bounded <code>for</code> loop, 100 iterations (1,000 executing a plan); model-declared finish; loop/reflection/deferred-action/truncation repair machinery; steering at iteration boundaries only</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Tool system</td>
+<td>131 defaults in a hand-rolled schema subset; per-iteration keyword-relevance filtering; MCP (namespaced, flattened schemas); agent-authored meta-tools with handler blocklist</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Model providers</td>
+<td>17 behind one <code>LLMProvider</code> interface; OpenRouter default; capability flag switches native vs text emission protocol</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Prompt construction</td>
+<td>System prompt rebuilt per request incl. memory block, skill catalog + active skill bodies, learned-capabilities summary; context tiers 70/80/90% compress/summarize/crop</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Memory/session</td>
+<td>Event-sourced JSONL memory (user+project), LLM extraction after every interactive turn, lexical recall, extractive summary tree; sessions as JSONL dirs with full replay resume</td>
+</tr>
+<tr>
+<td>6</td>
+<td>Reasoning/planning</td>
+<td>Plan mode with code-enforced read-only set; goals with continuation loop and self-attested completion; sub-agent loop copy (cap 10, depth 3); OS-process teams (≤5)</td>
+</tr>
+<tr>
+<td>7</td>
+<td>Extensibility</td>
+<td>Cross-vendor skills (SKILL.md) incl. LLM-generated; community registry + regex scanner (install-path only); extension packages with in-process trusted runtimes; hooks at fixed events</td>
+</tr>
+<tr>
+<td>8</td>
+<td>Interfaces</td>
+<td>Ink TUI; one-shot/pipe CLI with JSON-schema output; ACP (in-process, ndJSON); JSON-RPC stdio for VS Code/external SDKs; cloud mobile relay</td>
+</tr>
+<tr>
+<td>9</td>
+<td>Failure handling</td>
+<td>Provider retries; session-level retry ≤3 with continuation; context-overflow crop-and-continue; per-tool failure guard (2 strikes); soft iteration-limit summary</td>
+</tr>
+<tr>
+<td>10</td>
+<td>Security model</td>
+<td>Unbypassable security blacklist first; layered pattern scopes; fail-closed disposition; workspace trust by config hash; no sandbox (trusted extension runtimes run in-process)</td>
+</tr>
+</tbody>
+</table>
+<h2 id="endnotes">Endnotes</h2>
+<p>All notes are VERIFIED against <code>v0.9.8</code> (<code>55f07f8112d3d53739c4c45d7c19d73772e645d7</code>) unless marked otherwise. <code>GH</code> = <code>https://github.com/autohandai/code-cli/blob/55f07f8112d3d53739c4c45d7c19d73772e645d7/</code>.</p>
+<div class="footnote">
+<hr />
+<ol>
+<li id="fn:1">
+<p><code>ProjectAnalyzer</code> at <a href="https://github.com/autohandai/code-cli/blob/55f07f8112d3d53739c4c45d7c19d73772e645d7/src/skills/autoSkill.ts#L160">GH…/src/skills/autoSkill.ts#L160</a>; <code>analyze()</code> at L169: <code>package.json</code> dependency tables (<code>JS_FRAMEWORKS</code>/<code>PYTHON_FRAMEWORKS</code>, L120-L150), <code>requirements.txt</code>, <code>pyproject.toml</code>, <code>Cargo.toml</code>, <code>go.mod</code>, <code>.github/workflows</code>, <code>Dockerfile</code>, <code>**/migrations/**</code>. No file <em>contents</em> beyond manifests are read. &#160;<a class="footnote-backref" href="#fnref:1" title="Jump back to footnote 1 in the text">&#8617;</a></p>
+</li>
+<li id="fn:2">
+<p><code>computeProjectHash</code> at <a href="https://github.com/autohandai/code-cli/blob/55f07f8112d3d53739c4c45d7c19d73772e645d7/src/skills/communityInstaller.ts#L254">GH…/src/skills/communityInstaller.ts#L254</a>: sha256 of <code>JSON.stringify({languages, frameworks, patterns, packageManager})</code> (each sorted), <code>.slice(0, 7)</code>; comment at L250-L253 states dependencies are excluded on purpose. &#160;<a class="footnote-backref" href="#fnref:2" title="Jump back to footnote 2 in the text">&#8617;</a></p>
+</li>
+<li id="fn:3">
+<p><code>runAutoSkillGeneration</code> at <a href="https://github.com/autohandai/code-cli/blob/55f07f8112d3d53739c4c45d7c19d73772e645d7/src/skills/autoSkill.ts#L599-L686">GH…/src/skills/autoSkill.ts#L599-L686</a>: skills dir <code>&lt;workspace&gt;/.autohand/skills</code> (L646; <code>PROJECT_DIR_NAME = '.autohand'</code>, <code>src/constants.ts:167</code>), SKILL.md written at L665. Metadata injection: <code>injectGeneratedMetadata</code> at <a href="https://github.com/autohandai/code-cli/blob/55f07f8112d3d53739c4c45d7c19d73772e645d7/src/skills/communityInstaller.ts#L268">GH…/src/skills/communityInstaller.ts#L268</a> stamps <code>agentskill-slug</code>, <code>agentskill-source: llm-generated</code>, <code>agentskill-generated-at</code>, <code>agentskill-project-hash</code>. &#160;<a class="footnote-backref" href="#fnref:3" title="Jump back to footnote 3 in the text">&#8617;</a></p>
+</li>
+<li id="fn:4">
+<p><code>handleLearnUpdate</code> at <a href="https://github.com/autohandai/code-cli/blob/55f07f8112d3d53739c4c45d7c19d73772e645d7/src/commands/learn.ts#L309">GH…/src/commands/learn.ts#L309</a>: filters <code>metadata['agentskill-source'] === 'llm-generated'</code>, compares stored <code>agentskill-project-hash</code> to a fresh <code>computeProjectHash</code>, regenerates only mismatches, rewrites at the skill's existing path. &#160;<a class="footnote-backref" href="#fnref:4" title="Jump back to footnote 4 in the text">&#8617;</a></p>
+</li>
+<li id="fn:5">
+<p>Generation prompt inputs: <code>buildLearnGenerationUserPrompt</code> at <a href="https://github.com/autohandai/code-cli/blob/55f07f8112d3d53739c4c45d7c19d73772e645d7/src/skills/learnPrompts.ts#L195">GH…/src/skills/learnPrompts.ts#L195</a> = <code>buildSkillGenerationPrompt(analysis)</code> (autoSkill.ts:468: project name, platform, languages, frameworks, patterns, package manager, hasGit/hasTests/hasCI, top-30 dependencies, tool catalog) + gap analysis + top-3 low-scoring registry skills. Negative finding: no session, transcript, or history type appears in <code>LearnAdvisor</code>'s inputs (<code>src/skills/LearnAdvisor.ts</code> constructor takes only an <code>LLMProvider</code>). &#160;<a class="footnote-backref" href="#fnref:5" title="Jump back to footnote 5 in the text">&#8617;</a></p>
+</li>
+<li id="fn:6">
+<p>Trigger inventory: <code>--auto-skill</code> flag at <a href="https://github.com/autohandai/code-cli/blob/55f07f8112d3d53739c4c45d7c19d73772e645d7/src/index.ts#L405">GH…/src/index.ts#L405</a>, handler L1937-L1955 (calls <code>runAutoSkillGeneration</code>, then <code>return</code>); <code>--learn</code>/<code>--learn-update</code> at L406, L568-L580, L2404+; <code>/learn</code> in <code>src/commands/learn.ts</code>; RPC in <code>src/modes/rpc/adapter.ts:2511-2597</code>. Negative findings: grep for <code>LearnAdvisor</code> over <code>src/</code> returns only <code>commands/learn.ts</code>, <code>commands/skills.ts</code> (client variant), and the RPC adapter — nothing in the loop or session lifecycle; the model-facing skill tools are <code>skill</code> (toolManager.ts:1427), <code>find_agent_skills</code> (:1614), <code>install_agent_skill</code> (:1627) — none authors content. &#160;<a class="footnote-backref" href="#fnref:6" title="Jump back to footnote 6 in the text">&#8617;</a></p>
+</li>
+<li id="fn:7">
+<p><code>LearnAdvisor.analyze</code> at <a href="https://github.com/autohandai/code-cli/blob/55f07f8112d3d53739c4c45d7c19d73772e645d7/src/skills/LearnAdvisor.ts#L67">GH…/src/skills/LearnAdvisor.ts#L67</a> (audit statuses restricted to <code>redundant|outdated|conflicting</code>, L45); <code>generateSkill</code> at L142 (JSON validated field-by-field, name normalized by <code>toKebabCase</code>, L32-L42). Both return safe fallbacks on any error. &#160;<a class="footnote-backref" href="#fnref:7" title="Jump back to footnote 7 in the text">&#8617;</a></p>
+</li>
+<li id="fn:8">
+<p>Skill format/precedence: frontmatter type <a href="https://github.com/autohandai/code-cli/blob/55f07f8112d3d53739c4c45d7c19d73772e645d7/src/skills/types.ts#L31-L44">GH…/src/skills/types.ts#L31-L44</a>, constraints L104-L148; parser <code>src/skills/SkillParser.ts:48-95</code>; source union (11 values, &quot;later sources win&quot;) types.ts:14-26; locations in <code>src/constants.ts</code> (<code>getUserSkillLocations</code>/<code>getProjectSkillLocations</code>, incl. <code>THIRD_PARTY_PROJECT_SKILL_DIRS</code>); 13 builtins under <code>src/skills/builtin/*/SKILL.md</code> (counted at the pin). Generated skills register as source <code>autohand-project</code> via the same discovery. &#160;<a class="footnote-backref" href="#fnref:8" title="Jump back to footnote 8 in the text">&#8617;</a></p>
+</li>
+<li id="fn:9">
+<p><code>generateAutoSkills</code> at <a href="https://github.com/autohandai/code-cli/blob/55f07f8112d3d53739c4c45d7c19d73772e645d7/src/skills/autoSkill.ts#L556">GH…/src/skills/autoSkill.ts#L556</a> (system prompt at L515 demands &quot;exactly 3 skills&quot;). Negative finding: grep for <code>generateAutoSkills</code> over <code>src/</code> outside <code>autoSkill.ts</code> returns zero callers. README sample output (README.md §&quot;Auto-Skill Generation&quot;, L295-L307) shows 3 skills; the live path prints &quot;Generated 1 targeted skill&quot; (autoSkill.ts:683 area). <code>docs/agent-skills.md</code> §&quot;Auto-Skill Bootstrap&quot; describes install-and-activate behavior not present in the <code>--auto-skill</code> handler (index.ts:1937-1955). DOCS vs VERIFIED code. &#160;<a class="footnote-backref" href="#fnref:9" title="Jump back to footnote 9 in the text">&#8617;</a></p>
+</li>
+<li id="fn:10">
+<p><code>runAgentReactLoop</code> at <a href="https://github.com/autohandai/code-cli/blob/55f07f8112d3d53739c4c45d7c19d73772e645d7/src/core/agent/ReactLoopRunner.ts#L472">GH…/src/core/agent/ReactLoopRunner.ts#L472</a>, loop <code>for (let iteration = 0; …)</code> at L634; host assembly in <code>src/core/agent.ts:1304-1325</code>. &#160;<a class="footnote-backref" href="#fnref:10" title="Jump back to footnote 10 in the text">&#8617;</a></p>
+</li>
+<li id="fn:11">
+<p>Cap at ReactLoopRunner.ts:488-491 (<code>isExecutingPlan ? 1000 : config.agent?.maxIterations ?? 100</code>); exhaustion path ~L1569-L1582 (summary call, <code>reason: 'iteration_limit'</code>). Finish: <code>TurnOutcome.type === 'finish'</code>, <code>src/core/agent/TurnOutcomeEvaluator.ts:132-136</code>. &#160;<a class="footnote-backref" href="#fnref:11" title="Jump back to footnote 11 in the text">&#8617;</a></p>
+</li>
+<li id="fn:12">
+<p><code>RunBudget.fromSettings</code> returns <code>undefined</code> when no limit is set, <a href="https://github.com/autohandai/code-cli/blob/55f07f8112d3d53739c4c45d7c19d73772e645d7/src/core/agent/RunBudget.ts#L322-L335">GH…/src/core/agent/RunBudget.ts#L322-L335</a>; checked pre-flight at ReactLoopRunner.ts:763-764. &#160;<a class="footnote-backref" href="#fnref:12" title="Jump back to footnote 12 in the text">&#8617;</a></p>
+</li>
+<li id="fn:13">
+<p><code>ToolLoopGuard</code> (identical signature limit 6, call+result limit 3, post-force violations 2) at <a href="https://github.com/autohandai/code-cli/blob/55f07f8112d3d53739c4c45d7c19d73772e645d7/src/core/agent/ToolLoopPolicy.ts#L79-L93">GH…/src/core/agent/ToolLoopPolicy.ts#L79-L93</a>; <code>ToolReflectionGuard</code> at L173 (reflection-field / &gt;50-char thought rule L216-L228; skipped when <code>supportsNativeToolCalling</code>). &#160;<a class="footnote-backref" href="#fnref:13" title="Jump back to footnote 13 in the text">&#8617;</a></p>
+</li>
+<li id="fn:14">
+<p><code>DEFAULT_RESPONSE_COMPLETION_HOOKS</code> and the <code>invalid_deferred_action</code> classification at <a href="https://github.com/autohandai/code-cli/blob/55f07f8112d3d53739c4c45d7c19d73772e645d7/src/core/agent/ResponseCompletionClassifier.ts#L351-L356">GH…/src/core/agent/ResponseCompletionClassifier.ts#L351-L356</a>; <code>MAX_TOOL_FREE_RECOVERIES = 2</code> at ReactLoopRunner.ts:77. &#160;<a class="footnote-backref" href="#fnref:14" title="Jump back to footnote 14 in the text">&#8617;</a></p>
+</li>
+<li id="fn:15">
+<p><code>TruncationRecoveryTracker</code>, <code>MAX_CONSECUTIVE_TRUNCATION_REPAIRS = 3</code> at <a href="https://github.com/autohandai/code-cli/blob/55f07f8112d3d53739c4c45d7c19d73772e645d7/src/core/agent/TruncationRecovery.ts#L426-L438">GH…/src/core/agent/TruncationRecovery.ts#L426-L438</a>. &#160;<a class="footnote-backref" href="#fnref:15" title="Jump back to footnote 15 in the text">&#8617;</a></p>
+</li>
+<li id="fn:16">
+<p><code>SteeringQueue</code> bounds (<code>MAX_STEERING_MESSAGES = 32</code>, <code>MAX_STEERING_MESSAGE_LENGTH = 8_000</code>) at <a href="https://github.com/autohandai/code-cli/blob/55f07f8112d3d53739c4c45d7c19d73772e645d7/src/core/agent/SteeringQueue.ts#L388-L389">GH…/src/core/agent/SteeringQueue.ts#L388-L389</a>; drain-at-boundary comment and code at ReactLoopRunner.ts:617-640; abort wiring in <code>src/core/agent/InputTurnCoordinator.ts:70,314</code>. &#160;<a class="footnote-backref" href="#fnref:16" title="Jump back to footnote 16 in the text">&#8617;</a></p>
+</li>
+<li id="fn:17">
+<p>Sub-agents: <code>SubAgent.runTask</code> (own loop, <code>maxIterations = 10</code>) at <a href="https://github.com/autohandai/code-cli/blob/55f07f8112d3d53739c4c45d7c19d73772e645d7/src/core/agents/SubAgent.ts#L365-L391">GH…/src/core/agents/SubAgent.ts#L365-L391</a>; <code>DEFAULT_MAX_DEPTH = 3</code>, <code>src/core/agents/AgentDelegator.ts:22</code>; no MCP tools for sub-agents (SubAgent.ts ~L183). Peers: <code>src/core/agent/AgentPeerRuntime.ts:22</code> (messaging only; tools filtered unless <code>config.sessions.communication.enabled</code>, AgentDependencyComposer.ts:400-401). Teams: <code>spawn()</code> of the CLI binary with JSON-RPC over stdio, <code>src/core/teams/TeammateProcess.ts:134-149</code>; cap <code>maxTeammates ?? 5</code>, <code>src/core/teams/TeamManager.ts:104</code>. &#160;<a class="footnote-backref" href="#fnref:17" title="Jump back to footnote 17 in the text">&#8617;</a></p>
+</li>
+<li id="fn:18">
+<p><code>ToolDefinition</code>/<code>ToolParameter</code> at <a href="https://github.com/autohandai/code-cli/blob/55f07f8112d3d53739c4c45d7c19d73772e645d7/src/core/toolManager.ts#L76-L127">GH…/src/core/toolManager.ts#L76-L127</a>; <code>DEFAULT_TOOL_DEFINITIONS</code> at L425 — 127 literal <code>name:</code> entries counted at the pin, +4 via <code>...PEER_TOOL_DEFINITIONS</code> = 131; <code>GOAL_TOOL_DEFINITIONS</code> (11) at L303; browser set (20) at L2164; <code>toFunctionDefinition</code> at L2614. &#160;<a class="footnote-backref" href="#fnref:18" title="Jump back to footnote 18 in the text">&#8617;</a></p>
+</li>
+<li id="fn:19">
+<p><code>filterToolsByRelevance</code> / <code>detectRelevantCategories</code> at <a href="https://github.com/autohandai/code-cli/blob/55f07f8112d3d53739c4c45d7c19d73772e645d7/src/core/toolFilter.ts#L733-L800">GH…/src/core/toolFilter.ts#L733-L800</a> (<code>always</code> category L432-L450; uncategorized tools survive only via <code>matchesToolByText</code>, L714-L728); invoked per iteration at ReactLoopRunner.ts:646. Permission advertising filter: <code>src/permissions/toolAdvertising.ts:15-30</code>. &#160;<a class="footnote-backref" href="#fnref:19" title="Jump back to footnote 19 in the text">&#8617;</a></p>
+</li>
+<li id="fn:20">
+<p><code>ReactionParser.parseAssistantResponse</code> precedence at <a href="https://github.com/autohandai/code-cli/blob/55f07f8112d3d53739c4c45d7c19d73772e645d7/src/core/agent/ReactionParser.ts#L60-L118">GH…/src/core/agent/ReactionParser.ts#L60-L118</a>; capability gate and &quot;no schemas are sent&quot; behavior at ReactLoopRunner.ts:527-531. &#160;<a class="footnote-backref" href="#fnref:20" title="Jump back to footnote 20 in the text">&#8617;</a></p>
+</li>
+<li id="fn:21">
+<p><code>McpClientManager</code> namespacing at <a href="https://github.com/autohandai/code-cli/blob/55f07f8112d3d53739c4c45d7c19d73772e645d7/src/mcp/McpClientManager.ts#L759-L760">GH…/src/mcp/McpClientManager.ts#L759-L760</a>; sync into the registry (flattened properties, <code>requiresApproval: false</code>) in <code>src/core/agent.ts:600-622</code> and <code>toolManager.ts:2545-2552</code>. &#160;<a class="footnote-backref" href="#fnref:21" title="Jump back to footnote 21 in the text">&#8617;</a></p>
+</li>
+<li id="fn:22">
+<p><code>create_meta_tool</code> at toolManager.ts:1258 → <code>MetaToolService.createMetaTool</code>, <a href="https://github.com/autohandai/code-cli/blob/55f07f8112d3d53739c4c45d7c19d73772e645d7/src/core/metaTools/MetaToolService.ts#L69">GH…/src/core/metaTools/MetaToolService.ts#L69</a>; handler blocklist at <code>src/core/metaTools/safety.ts:225-253</code>; similarity threshold 0.75; persistence via <code>src/core/toolsRegistry.ts:76</code>. &#160;<a class="footnote-backref" href="#fnref:22" title="Jump back to footnote 22 in the text">&#8617;</a></p>
+</li>
+<li id="fn:23">
+<p>Verbatim append of tool results at ReactLoopRunner.ts ~L1334; <code>read_file</code> caps (<code>READ_FILE_MAX_LINES = 2_000</code>, <code>READ_FILE_MAX_BYTES = 128*1024</code>) at <code>src/core/actionExecutor.ts:250-252</code>; meta-tool output cap 200,000 chars at actionExecutor.ts:4237-4243. &#160;<a class="footnote-backref" href="#fnref:23" title="Jump back to footnote 23 in the text">&#8617;</a></p>
+</li>
+<li id="fn:24">
+<p>Scope merge at <a href="https://github.com/autohandai/code-cli/blob/55f07f8112d3d53739c4c45d7c19d73772e645d7/src/permissions/PermissionManager.ts#L182-L310">GH…/src/permissions/PermissionManager.ts#L182-L310</a>; run scope never persisted / cannot be widened: <code>src/permissions/runToolScope.ts:1-56</code>. &#160;<a class="footnote-backref" href="#fnref:24" title="Jump back to footnote 24 in the text">&#8617;</a></p>
+</li>
+<li id="fn:25">
+<p><code>DEFAULT_SECURITY_BLACKLIST</code> at PermissionManager.ts:38-180, checked first at L318-L322 and again at L700-L701. &#160;<a class="footnote-backref" href="#fnref:25" title="Jump back to footnote 25 in the text">&#8617;</a></p>
+</li>
+<li id="fn:26">
+<p>Disposition collapse (<code>default</code> → prompt, unknown → deny) at <a href="https://github.com/autohandai/code-cli/blob/55f07f8112d3d53739c4c45d7c19d73772e645d7/src/permissions/types.ts#L92-L124">GH…/src/permissions/types.ts#L92-L124</a>; <code>shouldPromptForToolPermission</code> at toolManager.ts:66-75. &#160;<a class="footnote-backref" href="#fnref:26" title="Jump back to footnote 26 in the text">&#8617;</a></p>
+</li>
+<li id="fn:27">
+<p><code>applyPromptDecision</code> at PermissionManager.ts:487+; exact patterns via <code>contextToPattern</code> at L574+; legacy <code>recordDecision</code> directory-wildcard behavior at L430+. Storage files: <code>.autohand/session-permissions.json</code> (session scope — persists across runs), <code>.autohand/settings.local.json</code> (project), global <code>config.json</code> (user). &#160;<a class="footnote-backref" href="#fnref:27" title="Jump back to footnote 27 in the text">&#8617;</a></p>
+</li>
+<li id="fn:28">
+<p><code>src/permissions/workspaceTrust.ts:1-113</code>: SHA-256 over canonical JSON of <code>{hooks, mcpServers}</code>; store <code>~/.autohand/trusted-workspaces.json</code>. &#160;<a class="footnote-backref" href="#fnref:28" title="Jump back to footnote 28 in the text">&#8617;</a></p>
+</li>
+<li id="fn:29">
+<p>Mode sequence and profile mapping at <a href="https://github.com/autohandai/code-cli/blob/55f07f8112d3d53739c4c45d7c19d73772e645d7/src/core/agent/InteractionModeController.ts#L7-L12">GH…/src/core/agent/InteractionModeController.ts#L7-L12</a> and L56-L88 (yolo <strong>and automode</strong> → <code>unrestricted</code>); continuation via <code>PostTurnActionCoordinator.resolveActiveGoalContinuation</code>. Plan-mode gates: ReactLoopRunner.ts ~L654-L665 (advertising) and toolManager.ts:2693-2700 (execution); read-only set <code>src/modes/planMode/PlanModeManager.ts:16-48</code>. &#160;<a class="footnote-backref" href="#fnref:29" title="Jump back to footnote 29 in the text">&#8617;</a></p>
+</li>
+<li id="fn:30">
+<p><code>AutomodeManager</code> defaults at <a href="https://github.com/autohandai/code-cli/blob/55f07f8112d3d53739c4c45d7c19d73772e645d7/src/core/AutomodeManager.ts#L34-L46">GH…/src/core/AutomodeManager.ts#L34-L46</a> (<code>maxIterations: 50</code>, <code>maxRuntime: 120min</code>, <code>maxCost: $10</code>, <code>completionPromise: 'DONE'</code>, <code>useWorktree: true</code>); agent built with <code>yes: true</code> only. &#160;<a class="footnote-backref" href="#fnref:30" title="Jump back to footnote 30 in the text">&#8617;</a></p>
+</li>
+<li id="fn:31">
+<p>Event log format and ops at <a href="https://github.com/autohandai/code-cli/blob/55f07f8112d3d53739c4c45d7c19d73772e645d7/src/memory/MemoryEventLog.ts#L21-L24">GH…/src/memory/MemoryEventLog.ts#L21-L24</a>; projection rebuild in <code>src/memory/MemoryProjection.ts:24-67</code>; dedup threshold <code>SIMILARITY_THRESHOLD = 0.6</code> at <code>src/memory/MemoryManager.ts:28</code>, applied L93-L120; ID derivation L546-L548. &#160;<a class="footnote-backref" href="#fnref:31" title="Jump back to footnote 31 in the text">&#8617;</a></p>
+</li>
+<li id="fn:32">
+<p><code>EXTRACTION_PROMPT</code> at <a href="https://github.com/autohandai/code-cli/blob/55f07f8112d3d53739c4c45d7c19d73772e645d7/src/memory/extractSessionMemories.ts#L63-L79">GH…/src/memory/extractSessionMemories.ts#L63-L79</a>; <code>extractAndSaveSessionMemories</code> at L155 (session's own provider, <code>temperature: 0.3, maxTokens: 1024</code>). Per-turn trigger: <code>src/core/agent/InstructionRunner.ts:811-823</code> → <code>src/core/agent.ts:871</code> (<code>shouldRunTurnMemoryReflection</code> gates on <code>config.agent.autoMemory !== false</code>, skips bare/ephemeral/command mode). <code>/clear</code>|<code>/new</code> trigger: <code>src/commands/clear.ts:40-57</code>. &#160;<a class="footnote-backref" href="#fnref:32" title="Jump back to footnote 32 in the text">&#8617;</a></p>
+</li>
+<li id="fn:33">
+<p><code>getContextMemories</code> at MemoryManager.ts:392+, injected by <code>src/core/agent/SystemPromptBuilder.ts:155,426</code> under <code>## User Preferences &amp; Memory</code>; summary-tree format at <code>src/memory/MemorySummaryTree.ts:83-88</code> (extractive, ≤320 chars); <code>recall()</code> lexical scoring at MemoryManager.ts ~L470-L540. Negative finding: grep for <code>embedding|vector</code> over <code>src/memory/</code> returns no recall-path hits. &#160;<a class="footnote-backref" href="#fnref:33" title="Jump back to footnote 33 in the text">&#8617;</a></p>
+</li>
+<li id="fn:34">
+<p>Session layout and append at <a href="https://github.com/autohandai/code-cli/blob/55f07f8112d3d53739c4c45d7c19d73772e645d7/src/session/SessionManager.ts#L104-L180">GH…/src/session/SessionManager.ts#L104-L180</a>; resume in <code>src/startup/resumeCommand.ts:20-61</code> and <code>src/core/agent/AgentLifecycleRunner.ts:1342+</code> (full replay; failure → fresh session fallback ~L1423). &#160;<a class="footnote-backref" href="#fnref:34" title="Jump back to footnote 34 in the text">&#8617;</a></p>
+</li>
+<li id="fn:35">
+<p>Goal store path <code>&lt;ws&gt;/.autohand/goals.local.json</code> at <a href="https://github.com/autohandai/code-cli/blob/55f07f8112d3d53739c4c45d7c19d73772e645d7/src/goals/GoalManager.ts#L31">GH…/src/goals/GoalManager.ts#L31</a> (also L837-L838); snapshot/backup in <code>src/goals/GoalSnapshotStore.ts:41-60</code>; feature flag <code>src/goals/feature.ts:9-25</code>; data model <code>src/goals/types.ts:44-62</code>. &#160;<a class="footnote-backref" href="#fnref:35" title="Jump back to footnote 35 in the text">&#8617;</a></p>
+</li>
+<li id="fn:36">
+<p>Continuation instruction text at GoalManager.ts:55-62; activation side effect at <a href="https://github.com/autohandai/code-cli/blob/55f07f8112d3d53739c4c45d7c19d73772e645d7/src/core/agent/GoalActivation.ts#L14-L17">GH…/src/core/agent/GoalActivation.ts#L14-L17</a> (<code>activateGoalAutoMode</code> → mode <code>automode</code> unless non-interactive or <code>dualAutoMode === false</code>); per-turn usage recording at InstructionRunner.ts:779. &#160;<a class="footnote-backref" href="#fnref:36" title="Jump back to footnote 36 in the text">&#8617;</a></p>
+</li>
+<li id="fn:37">
+<p>Completion validation at GoalManager.ts:405-435 and <a href="https://github.com/autohandai/code-cli/blob/55f07f8112d3d53739c4c45d7c19d73772e645d7/src/goals/GoalCompletion.ts#L38-L52">GH…/src/goals/GoalCompletion.ts#L38-L52</a> (<code>floorMet</code> floors; per-criterion evidence checks; receipt <code>provenance: 'reported'</code>); the disclaimer is in the system prompt itself, <code>src/core/agent/SystemPromptBuilder.ts:119</code>. &#160;<a class="footnote-backref" href="#fnref:37" title="Jump back to footnote 37 in the text">&#8617;</a></p>
+</li>
+<li id="fn:38">
+<p>Frontmatter/constraints as <sup id="fnref:8:3"><a class="footnote-ref" href="#fn:8">8</a></sup>. <code>allowed-tools</code> non-enforcement: negative finding — grep for consumers of the parsed <code>'allowed-tools'</code> field over <code>src/</code> returns only display (<code>src/core/agent/AgentCommandRuntime.ts:754</code>), backup, and metadata paths; no activation-time filter exists. &#160;<a class="footnote-backref" href="#fnref:38" title="Jump back to footnote 38 in the text">&#8617;</a></p>
+</li>
+<li id="fn:39">
+<p>Registry defaults (<code>autohandai/community-skills</code>, raw <code>registry.json</code>, 24 h cache) at <a href="https://github.com/autohandai/code-cli/blob/55f07f8112d3d53739c4c45d7c19d73772e645d7/src/skills/GitHubRegistryFetcher.ts#L20-L48">GH…/src/skills/GitHubRegistryFetcher.ts#L20-L48</a>; install pipeline <code>installSkillWithSecurity</code> at <code>src/skills/communityInstaller.ts:62-190</code>; scanner scoring at <a href="https://github.com/autohandai/code-cli/blob/55f07f8112d3d53739c4c45d7c19d73772e645d7/src/skills/SkillSecurityScanner.ts#L36-L116">GH…/src/skills/SkillSecurityScanner.ts#L36-L116</a> (<code>safe ≥ 50</code>, <code>blocked &lt; 30</code>). Negative finding: <code>SkillSecurityScanner</code> is instantiated only at communityInstaller.ts:119 — the local discovery/load path never scans. &#160;<a class="footnote-backref" href="#fnref:39" title="Jump back to footnote 39 in the text">&#8617;</a></p>
+</li>
+<li id="fn:40">
+<p>Manifest rules at <a href="https://github.com/autohandai/code-cli/blob/55f07f8112d3d53739c4c45d7c19d73772e645d7/src/extensions/manifest.ts#L12-L15">GH…/src/extensions/manifest.ts#L12-L15</a> and L160-L245; strict schema at <code>src/extensions/schema.ts:45-62</code>; runtime API surface at <code>src/extensions/ExtensionRuntimeHost.ts:120-165</code> (dynamic <code>import()</code>, in-process, trust-gated; validation never imports runtime code). &#160;<a class="footnote-backref" href="#fnref:40" title="Jump back to footnote 40 in the text">&#8617;</a></p>
+</li>
+<li id="fn:41">
+<p>Root signature and flags at <a href="https://github.com/autohandai/code-cli/blob/55f07f8112d3d53739c4c45d7c19d73772e645d7/src/index.ts#L378-L467">GH…/src/index.ts#L378-L467</a>; output schema enforcement in <code>src/modes/outputSchema.ts</code>; pipe composition in <code>src/modes/pipeMode.ts</code> / <code>src/index.ts:1962-2012</code>. &#160;<a class="footnote-backref" href="#fnref:41" title="Jump back to footnote 41 in the text">&#8617;</a></p>
+</li>
+<li id="fn:42">
+<p>ACP entry (<code>ndJsonStream</code> + <code>AgentSideConnection</code> from <code>@agentclientprotocol/sdk</code>) at <a href="https://github.com/autohandai/code-cli/blob/55f07f8112d3d53739c4c45d7c19d73772e645d7/src/modes/acp/index.ts#L36-L100">GH…/src/modes/acp/index.ts#L36-L100</a>; adapter methods in <code>src/modes/acp/adapter.ts</code> (<code>initialize</code> :607, <code>prompt</code> :696, <code>cancel</code> :932, session list/resume/fork/load :1042-1236); client-proxied approvals in <code>src/modes/acp/permissions.ts:29,79</code>. &#160;<a class="footnote-backref" href="#fnref:42" title="Jump back to footnote 42 in the text">&#8617;</a></p>
+</li>
+<li id="fn:43">
+<p>RPC header and entry at <a href="https://github.com/autohandai/code-cli/blob/55f07f8112d3d53739c4c45d7c19d73772e645d7/src/modes/rpc/index.ts#L1-L6">GH…/src/modes/rpc/index.ts#L1-L6</a> (<code>runRpcMode</code> :478); method table <code>src/modes/rpc/types.ts:202-294</code>. SDK absence: <code>package.json</code> <code>files</code> lists only <code>dist</code>, assets, schema, extension examples/docs; the repo's own gap analysis concedes no public typed client library ships from this repo (<code>docs/CODEX_FEATURE_GAPS.md:171-173</code>, DOCS). &#160;<a class="footnote-backref" href="#fnref:43" title="Jump back to footnote 43 in the text">&#8617;</a></p>
+</li>
+<li id="fn:44">
+<p>Provider contract at <a href="https://github.com/autohandai/code-cli/blob/55f07f8112d3d53739c4c45d7c19d73772e645d7/src/providers/LLMProvider.ts#L20-L53">GH…/src/providers/LLMProvider.ts#L20-L53</a>; factory (default <code>openrouter</code>, <code>UnconfiguredProvider</code> fallback) at <code>src/providers/ProviderFactory.ts:75-290</code>; built-in name union (17) at <code>src/types.ts:40</code>. &#160;<a class="footnote-backref" href="#fnref:44" title="Jump back to footnote 44 in the text">&#8617;</a></p>
+</li>
+<li id="fn:45">
+<p>Unix claiming: <code>claim_agent_alias_path_wide()</code> at <a href="https://github.com/autohandai/code-cli/blob/55f07f8112d3d53739c4c45d7c19d73772e645d7/install.sh#L430-L470">GH…/install.sh#L430-L470</a> (rationale comment L431-L436; unconditional call L257; <code>rm -f</code> at L465; writable/existing-entry guards L455-L463). Windows: <code>Claim-PathWideAgentAlias</code> at <code>install.ps1:523-569</code>, collision names (<code>agent.com/.exe/.bat/.cmd</code>) L728. Homebrew: checked-in <code>homebrew/autohand.rb</code> is a legacy stub without the behavior; the generated production formula has it in <code>post_install</code>, <code>.github/render-homebrew-formula.mjs:69-90</code>, asserted by <code>tests/homebrew.spec.ts:115-119</code>. Negative findings: <code>package.json</code> <code>postinstall</code> (L41) and <code>install-local.sh</code> contain no PATH scan and no foreign-<code>agent</code> handling. &#160;<a class="footnote-backref" href="#fnref:45" title="Jump back to footnote 45 in the text">&#8617;</a></p>
+</li>
+<li id="fn:46">
+<p>Private-source evidence: <code>install-local.sh:72-84</code> (&quot;Missing private ahtraces checkout&quot;); pinned SHA file <code>.github/ahtraces-ref</code> (<code>ee9ca7ce5a7445672d4f955e6cc85e889b126f50</code>); CI checkout/compile/ bundle at <code>.github/workflows/release.yml:244-302,460-483</code>. Consent gate (<code>consentVersion === 1 &amp;&amp; enabled === true</code>) at <a href="https://github.com/autohandai/code-cli/blob/55f07f8112d3d53739c4c45d7c19d73772e645d7/src/integrations/ahtraces/consent.ts#L4-L18">GH…/src/integrations/ahtraces/consent.ts#L4-L18</a>; no-spawn short-circuit and settings handoff (authToken only when <code>cloudSync</code>) at <code>src/integrations/ahtraces/client.ts:175-250</code>; onboarding default at <code>src/integrations/ahtraces/consentPrompt.ts:12-30</code> (&quot;Disabled (recommended default)&quot;); cloud-tier descriptions at L21-L30 are the vendor's own strings for closed-binary behavior (DOCS). <code>--traces-on</code> → <code>cloud-metadata</code> mapping at <code>src/integrations/ahtraces/preferences.ts:11</code>. Watched harnesses (19) at <code>src/integrations/ahtraces/workMap.ts:8-11</code>; aggregate-only Work Map schema at L126-L133. &#160;<a class="footnote-backref" href="#fnref:46" title="Jump back to footnote 46 in the text">&#8617;</a></p>
+</li>
+<li id="fn:47">
+<p>Accept modal options at <code>src/modes/planMode/PlanModeManager.ts:217-261</code>; the flag's only consumer is a log statement at <code>src/core/agent/AgentCommandRuntime.ts:586-588</code>. Negative finding: grep for <code>autoAcceptEdits</code> over <code>src/</code> returns no PermissionManager wiring. &#160;<a class="footnote-backref" href="#fnref:47" title="Jump back to footnote 47 in the text">&#8617;</a></p>
+</li>
+</ol>
+</div>
+</main>
+<script src="../assets/storybook.js" data-kind="article" data-after=".topnav" data-bottom="main" data-keys></script>
+</body>
+</html>

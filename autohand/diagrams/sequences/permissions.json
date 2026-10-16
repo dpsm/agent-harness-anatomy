@@ -1,0 +1,67 @@
+{
+ "title": "One permission decision",
+ "subtitle": "Blacklist first, deny before mode, prompt only when it matters",
+ "participants": [
+  "ToolManager",
+  "PermissionManager",
+  "User",
+  "ActionExecutor"
+ ],
+ "messages": [
+  {
+   "from": 0,
+   "to": 1,
+   "label": "checkPermission(call)"
+  },
+  {
+   "from": 1,
+   "to": 1,
+   "label": "1. security blacklist -> hard deny"
+  },
+  {
+   "from": 1,
+   "to": 1,
+   "label": "2. run scope + deny patterns"
+  },
+  {
+   "from": 1,
+   "to": 1,
+   "label": "3. mode profile + scoped allows"
+  },
+  {
+   "note": "span",
+   "span": [
+    0,
+    3
+   ],
+   "text": "automode and yolo share one profile: unrestricted \u2014 no classifier, no judge"
+  },
+  {
+   "from": 1,
+   "to": 2,
+   "label": "prompt (write / shell / delete only)"
+  },
+  {
+   "from": 2,
+   "to": 1,
+   "label": "allow_once | allow_always_project",
+   "dashed": true
+  },
+  {
+   "from": 1,
+   "to": 1,
+   "label": "persist pattern: tool:path or tool:cmd:*"
+  },
+  {
+   "from": 1,
+   "to": 0,
+   "label": "decision: allow",
+   "dashed": true
+  },
+  {
+   "from": 0,
+   "to": 3,
+   "label": "execute(call)"
+  }
+ ]
+}

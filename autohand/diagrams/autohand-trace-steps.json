@@ -1,0 +1,221 @@
+{
+ "example_input": "Add a dark mode toggle to the settings page",
+ "note": "Representations below are simplified shapes of the real types at the pinned SHA, not verbatim dumps.",
+ "repo": "https://github.com/autohandai/code-cli",
+ "sha": "55f07f8112d3d53739c4c45d7c19d73772e645d7",
+ "steps": [
+  {
+   "code": "src/index.ts:378-467; src/core/agent/InputTurnCoordinator.ts:70,314; src/core/agent/SteeringQueue.ts:388-389",
+   "modules": [
+    {
+     "file": "src/index.ts",
+     "label": "index.ts:378-467",
+     "line": "378",
+     "url": "https://github.com/autohandai/code-cli/blob/55f07f8112d3d53739c4c45d7c19d73772e645d7/src/index.ts#L378"
+    },
+    {
+     "file": "src/core/agent/InputTurnCoordinator.ts",
+     "label": "InputTurnCoordinator.ts:70, 314",
+     "line": "70",
+     "url": "https://github.com/autohandai/code-cli/blob/55f07f8112d3d53739c4c45d7c19d73772e645d7/src/core/agent/InputTurnCoordinator.ts#L70"
+    },
+    {
+     "file": "src/core/agent/SteeringQueue.ts",
+     "label": "SteeringQueue.ts:388-389",
+     "line": "388",
+     "url": "https://github.com/autohandai/code-cli/blob/55f07f8112d3d53739c4c45d7c19d73772e645d7/src/core/agent/SteeringQueue.ts#L388"
+    }
+   ],
+   "narrative": "The prompt \u201cAdd a dark mode toggle to the settings page\u201d arrives through the Ink TUI (or as a one-shot -p instruction). Anything typed while a turn is running does not interrupt it: it enters a bounded steering queue (32 messages, 8,000 chars each) and joins the conversation only at the next iteration boundary \u2014 never between a tool call and its result. ESC and Ctrl+C are the hard path: an AbortController threaded into both the model call and tool execution.",
+   "node": "input",
+   "representation": "\"Add a dark mode toggle\u2026\"     # Ink TUI composer (or -p)\n  -> InputTurnCoordinator     # input, steering, interrupts\n  -> SteeringQueue (max 32)   # drained at iteration boundary\n  -> runAgentReactLoop()      # ReactLoopRunner.ts:472",
+   "step": 1,
+   "title": "Input"
+  },
+  {
+   "code": "src/core/agent/SystemPromptBuilder.ts:150-158, 426; src/memory/MemoryManager.ts:392+",
+   "modules": [
+    {
+     "file": "src/core/agent/SystemPromptBuilder.ts",
+     "label": "SystemPromptBuilder.ts:150-158",
+     "line": "150",
+     "url": "https://github.com/autohandai/code-cli/blob/55f07f8112d3d53739c4c45d7c19d73772e645d7/src/core/agent/SystemPromptBuilder.ts#L150"
+    },
+    {
+     "file": "src/core/agent/SystemPromptBuilder.ts",
+     "label": "SystemPromptBuilder.ts:426",
+     "line": "426",
+     "url": "https://github.com/autohandai/code-cli/blob/55f07f8112d3d53739c4c45d7c19d73772e645d7/src/core/agent/SystemPromptBuilder.ts#L426"
+    },
+    {
+     "file": "src/memory/MemoryManager.ts",
+     "label": "MemoryManager.ts:392+",
+     "line": "392",
+     "url": "https://github.com/autohandai/code-cli/blob/55f07f8112d3d53739c4c45d7c19d73772e645d7/src/memory/MemoryManager.ts#L392"
+    }
+   ],
+   "narrative": "The system prompt is rebuilt for the request: instruction files, the memory block (up to five entries per level \u2014 user and project \u2014 under \u201c## User Preferences & Memory\u201d, or a summary-tree outline when there are more), the skill catalog with the full bodies of every active skill, and a learned-capabilities summary computed from usage events. Nothing here is learned during this turn \u2014 it is what previous turns left behind.",
+   "node": "prompt",
+   "representation": "system prompt (rebuilt per request):\n  identity + instruction files\n  ## User Preferences & Memory   # <= 5 entries per level\n  ## Active Skills               # full bodies\n  learned project capabilities   # usage statistics",
+   "step": 2,
+   "title": "Prompt assembly"
+  },
+  {
+   "code": "src/core/toolFilter.ts:769; src/permissions/toolAdvertising.ts:15-30; src/core/toolManager.ts:425",
+   "modules": [
+    {
+     "file": "src/core/toolFilter.ts",
+     "label": "toolFilter.ts:769",
+     "line": "769",
+     "url": "https://github.com/autohandai/code-cli/blob/55f07f8112d3d53739c4c45d7c19d73772e645d7/src/core/toolFilter.ts#L769"
+    },
+    {
+     "file": "src/permissions/toolAdvertising.ts",
+     "label": "toolAdvertising.ts:15-30",
+     "line": "15",
+     "url": "https://github.com/autohandai/code-cli/blob/55f07f8112d3d53739c4c45d7c19d73772e645d7/src/permissions/toolAdvertising.ts#L15"
+    },
+    {
+     "file": "src/core/toolManager.ts",
+     "label": "toolManager.ts:425",
+     "line": "425",
+     "url": "https://github.com/autohandai/code-cli/blob/55f07f8112d3d53739c4c45d7c19d73772e645d7/src/core/toolManager.ts#L425"
+    }
+   ],
+   "narrative": "The registry holds 131 default tools, but they never reach the model at once. A session filter drops policy-excluded tools, the permission layer removes ones barred from advertising, and then \u2014 per iteration \u2014 filterToolsByRelevance keeps an 'always' core (read, grep, search, todo, plan) plus categories triggered by keywords in recent messages and by tools already used. Uncategorized tools \u2014 all MCP and agent-created tools \u2014 survive only if their name or a long description token literally appears in recent text.",
+   "node": "toolfilter",
+   "representation": "131 default tools\n  -> session filter (policy, modelVisible)\n  -> permission advertising filter\n  -> filterToolsByRelevance:\n       'always' core + keyword categories\n  = this iteration's tool list",
+   "step": 3,
+   "title": "Tool relevance filter"
+  },
+  {
+   "code": "src/providers/LLMProvider.ts:20-53; src/core/agent/ReactLoopRunner.ts:527-531",
+   "modules": [
+    {
+     "file": "src/providers/LLMProvider.ts",
+     "label": "LLMProvider.ts:20-53",
+     "line": "20",
+     "url": "https://github.com/autohandai/code-cli/blob/55f07f8112d3d53739c4c45d7c19d73772e645d7/src/providers/LLMProvider.ts#L20"
+    },
+    {
+     "file": "src/core/agent/ReactLoopRunner.ts",
+     "label": "ReactLoopRunner.ts:527-531",
+     "line": "527",
+     "url": "https://github.com/autohandai/code-cli/blob/55f07f8112d3d53739c4c45d7c19d73772e645d7/src/core/agent/ReactLoopRunner.ts#L527"
+    }
+   ],
+   "narrative": "One LLMProvider interface fronts 17 providers (OpenRouter is the default). The capability flag decides the emission protocol: native function calling gets the narrowed schemas with toolChoice 'auto' and a 16,000-token output ceiling; a provider without native calling gets no schemas at all, and the model must answer in a text protocol instead. Usage is recorded against the run budget \u2014 which, unset, imposes nothing: the iteration count is the only default bound.",
+   "node": "provider",
+   "representation": "llm.complete({ messages, tools,\n  toolChoice: 'auto', maxTokens: 16000 })\n  native provider  -> function schemas sent\n  text provider    -> NO schemas sent\n                      (text protocol instead)",
+   "step": 4,
+   "title": "Model call"
+  },
+  {
+   "code": "src/core/agent/ReactionParser.ts:60-118; src/core/agent/ToolLoopPolicy.ts:79-93, 173; src/core/agent/ResponseCompletionClassifier.ts:351-356",
+   "modules": [
+    {
+     "file": "src/core/agent/ReactionParser.ts",
+     "label": "ReactionParser.ts:60-118",
+     "line": "60",
+     "url": "https://github.com/autohandai/code-cli/blob/55f07f8112d3d53739c4c45d7c19d73772e645d7/src/core/agent/ReactionParser.ts#L60"
+    },
+    {
+     "file": "src/core/agent/ToolLoopPolicy.ts",
+     "label": "ToolLoopPolicy.ts:79-93",
+     "line": "79",
+     "url": "https://github.com/autohandai/code-cli/blob/55f07f8112d3d53739c4c45d7c19d73772e645d7/src/core/agent/ToolLoopPolicy.ts#L79"
+    },
+    {
+     "file": "src/core/agent/ResponseCompletionClassifier.ts",
+     "label": "ResponseCompletionClassifier.ts:351-356",
+     "line": "351",
+     "url": "https://github.com/autohandai/code-cli/blob/55f07f8112d3d53739c4c45d7c19d73772e645d7/src/core/agent/ResponseCompletionClassifier.ts#L351"
+    }
+   ],
+   "narrative": "ReactionParser normalizes whatever came back \u2014 native tool calls first, then [TOOL_CALL] blocks, <tool_call> XML, or a JSON ReAct payload \u2014 and TurnOutcomeEvaluator classifies the turn. Then the repair machinery inspects it: the loop guard (identical call six times forces a final answer), the reflection guard (text-protocol models must show a reflection or a substantive thought), and the deferred-action classifier, which catches replies that announce work without calling a tool and pushes back \u2014 a note, one tool-free recovery turn, then abort.",
+   "node": "parse",
+   "representation": "ReactionParser precedence:\n  native toolCalls\n  > [TOOL_CALL]\u2026[/TOOL_CALL]\n  > <tool_call> XML\n  > JSON {thought, reflection, toolCalls}\nguards: loop x6/x3 \u00b7 reflection \u00b7 deferred-action",
+   "step": 5,
+   "title": "Parse, outcome, repair"
+  },
+  {
+   "code": "src/permissions/PermissionManager.ts:318-326; src/permissions/types.ts:92-124; src/core/agent/InteractionModeController.ts:56-88",
+   "modules": [
+    {
+     "file": "src/permissions/PermissionManager.ts",
+     "label": "PermissionManager.ts:318-326",
+     "line": "318",
+     "url": "https://github.com/autohandai/code-cli/blob/55f07f8112d3d53739c4c45d7c19d73772e645d7/src/permissions/PermissionManager.ts#L318"
+    },
+    {
+     "file": "src/permissions/types.ts",
+     "label": "types.ts:92-124",
+     "line": "92",
+     "url": "https://github.com/autohandai/code-cli/blob/55f07f8112d3d53739c4c45d7c19d73772e645d7/src/permissions/types.ts#L92"
+    },
+    {
+     "file": "src/core/agent/InteractionModeController.ts",
+     "label": "InteractionModeController.ts:56-88",
+     "line": "56",
+     "url": "https://github.com/autohandai/code-cli/blob/55f07f8112d3d53739c4c45d7c19d73772e645d7/src/core/agent/InteractionModeController.ts#L56"
+    }
+   ],
+   "narrative": "Every call is decided in a fixed order, and the first step is unbypassable: the security blacklist (.env files, SSH keys, cloud credentials, sudo, rm -rf /, curl | sh) is a hard deny in every mode, under every allowlist. Deny patterns and the per-run scope are consulted before the mode, so they still bite in YOLO; only then do the mode profile, scoped allows, and custom rules apply. The disposition fails closed \u2014 an unrecognized decision denies; the default prompts, though only write/shell/delete-category tools actually surface a dialog. In automode the profile is 'unrestricted', identical to yolo: there is no classifier and no judge.",
+   "node": "permissions",
+   "representation": "checkPermission(call):\n  blacklist?      -> deny (unbypassable)\n  deny patterns?  -> deny (before mode)\n  mode profile    -> unrestricted in auto/yolo\n  default         -> prompt (write/shell/delete)",
+   "step": 6,
+   "title": "Permission check"
+  },
+  {
+   "code": "src/core/toolManager.ts:2693-2700; src/core/toolManager.ts:2465",
+   "modules": [
+    {
+     "file": "src/core/toolManager.ts",
+     "label": "toolManager.ts:2693-2700",
+     "line": "2693",
+     "url": "https://github.com/autohandai/code-cli/blob/55f07f8112d3d53739c4c45d7c19d73772e645d7/src/core/toolManager.ts#L2693"
+    },
+    {
+     "file": "src/core/toolManager.ts",
+     "label": "toolManager.ts:2465",
+     "line": "2465",
+     "url": "https://github.com/autohandai/code-cli/blob/55f07f8112d3d53739c4c45d7c19d73772e645d7/src/core/toolManager.ts#L2465"
+    }
+   ],
+   "narrative": "Approved calls execute through ToolManager: sequential pre-flight per call (legacy-name repair, the plan-mode read-only gate \u2014 writes are rejected in code during planning, hooks), then writes, shell, and git-writes run sequentially while the rest fan out into a worker pool of five. Results are appended verbatim as role: 'tool' messages \u2014 there is no single global cap on tool output returned to the model \u2014 and the loop iterates. A model-declared finish (a reply with no tool calls) is the only normal exit.",
+   "node": "tools",
+   "representation": "pre-flight: name repair -> plan gate\n  -> permission -> hooks\nwrites + shell: sequential\nreads + others: worker pool (max 5)\nresults -> role: 'tool' messages -> iterate",
+   "step": 7,
+   "title": "Tool execution"
+  },
+  {
+   "code": "src/core/agent/InstructionRunner.ts:811-823; src/memory/extractSessionMemories.ts:155-164; src/memory/MemoryEventLog.ts:21-24",
+   "modules": [
+    {
+     "file": "src/core/agent/InstructionRunner.ts",
+     "label": "InstructionRunner.ts:811-823",
+     "line": "811",
+     "url": "https://github.com/autohandai/code-cli/blob/55f07f8112d3d53739c4c45d7c19d73772e645d7/src/core/agent/InstructionRunner.ts#L811"
+    },
+    {
+     "file": "src/memory/extractSessionMemories.ts",
+     "label": "extractSessionMemories.ts:155-164",
+     "line": "155",
+     "url": "https://github.com/autohandai/code-cli/blob/55f07f8112d3d53739c4c45d7c19d73772e645d7/src/memory/extractSessionMemories.ts#L155"
+    },
+    {
+     "file": "src/memory/MemoryEventLog.ts",
+     "label": "MemoryEventLog.ts:21-24",
+     "line": "21",
+     "url": "https://github.com/autohandai/code-cli/blob/55f07f8112d3d53739c4c45d7c19d73772e645d7/src/memory/MemoryEventLog.ts#L21"
+    }
+   ],
+   "narrative": "When the turn completes, the harness fires one extra call on the session's own model: given the turn and its outcome \u2014 succeeded, failed, or canceled, each with its own guidance \u2014 extract coding style, tool preferences, workflow habits, and project conventions, one or two sentences each, tagged user or project. Entries are appended as events to the JSONL memory log (the per-entry files are a projection, rebuilt by replay), deduplicated by token similarity, and announced back into the live conversation as an [Auto Memory Update] note. This \u2014 not the skill system \u2014 is where Autohand learns from experience.",
+   "node": "memory",
+   "representation": "turn outcome: succeeded | failed | canceled\n  -> extractAndSaveSessionMemories()\n  -> 1 LLM call (temp 0.3, 1024 tokens)\n  -> create/update events in LOG.jsonl\n  -> [Auto Memory Update] note",
+   "step": 8,
+   "title": "Turn end: memory extraction"
+  }
+ ],
+ "title": "One turn through Autohand Code CLI \u2014 step-by-step"
+}
