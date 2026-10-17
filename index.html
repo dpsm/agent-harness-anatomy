@@ -271,6 +271,21 @@
     </div>
   </div>
 
+  <div class="article" id="deepagents">
+    <h2>#16 &mdash; Deep Agents: the harness that is a middleware stack, not a loop</h2>
+    <p>LangChain's batteries-included agent library contains no loop of its own:
+    <code>create_deep_agent()</code> assembles an ordered middleware stack &mdash;
+    filesystem tools, subagent delegation, non-mutating summarization &mdash; and hands
+    it to LangChain's <code>create_agent</code>, whose graph runs on LangGraph's Pregel
+    runtime. This teardown reads all three layers at their own pins, down to the
+    super-step the turn ceiling actually counts.</p>
+    <div class="links">
+      <a class="primary" href="deepagents/trace.html">Step through a live turn</a>
+      <a class="secondary" href="diagrams/template.html?data=../deepagents/diagrams/deepagents.json">Interactive diagram</a>
+      <a class="secondary" href="deepagents/">Read the article</a>
+    </div>
+  </div>
+
   <div class="contribute">
     <h2>Found a mistake?</h2>
     <p>These teardowns live or die on their grounding: every behavioral claim

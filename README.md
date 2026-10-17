@@ -27,6 +27,7 @@ Companion repo to the Substack series.
 | 13 | Darwin Gödel Machine (a565fd2) | [dgm/article.md](dgm/article.md) | forthcoming |
 | 14 | Autohand Code CLI (v0.9.8) | [autohand/article.md](autohand/article.md) | forthcoming |
 | 15 | DeepSeek Harness (dsh-v0.2.1-alpha.3) | [deepseek-harness/article.md](deepseek-harness/article.md) | forthcoming |
+| 16 | Deep Agents (deepagents==0.7.25) | [deepagents/article.md](deepagents/article.md) | forthcoming |
 
 ## What's here
 

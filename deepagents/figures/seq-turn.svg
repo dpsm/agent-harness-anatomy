@@ -1,0 +1,77 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1180" width="1600" font-family="system-ui, -apple-system, sans-serif">
+<defs><marker id="arrc" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 1 L 9 5 L 0 9 z" fill="#d08c4e"/></marker><marker id="arrr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 1 L 9 5 L 0 9 z" fill="#8a7a66"/></marker></defs>
+<rect x="0" y="0" width="1600" height="1180" fill="#f7f2e9"/>
+<text x="90.78014184397163" y="44" font-size="26" font-weight="700" fill="#000000">One turn through the dependency loop</text>
+<text x="90.78014184397163" y="74" font-size="15" fill="#000000">Default assembly — the loop is LangChain&#x27;s graph on LangGraph&#x27;s Pregel runtime</text>
+<line x1="233" y1="110" x2="233" y2="1112" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="113" y="82" width="238" height="56" rx="10" fill="#ffffff" stroke="#3a2f26" stroke-width="1.5"/>
+<text x="233" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#000000">Caller</text>
+<line x1="516" y1="110" x2="516" y2="1112" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="397" y="82" width="238" height="56" rx="10" fill="#ffffff" stroke="#3a2f26" stroke-width="1.5"/>
+<text x="516" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#000000">LangGraph Pregel</text>
+<line x1="800" y1="110" x2="800" y2="1112" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="681" y="82" width="238" height="56" rx="10" fill="#ffffff" stroke="#3a2f26" stroke-width="1.5"/>
+<text x="800" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#000000">Middleware nodes</text>
+<line x1="1084" y1="110" x2="1084" y2="1112" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="965" y="82" width="238" height="56" rx="10" fill="#ffffff" stroke="#3a2f26" stroke-width="1.5"/>
+<text x="1084" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#000000">Model node</text>
+<line x1="1367" y1="110" x2="1367" y2="1112" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="1248" y="82" width="238" height="56" rx="10" fill="#ffffff" stroke="#3a2f26" stroke-width="1.5"/>
+<text x="1367" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#000000">Tools node (ToolNode)</text>
+<rect x="113" y="163" width="1373" height="44" rx="8" fill="#d08c4e" fill-opacity="0.13" stroke="#d08c4e" stroke-width="1"/>
+<text x="800" y="190" text-anchor="middle" font-size="14" fill="#000000">A checkpoint is written when the input lands, and after every super-step</text>
+<line x1="233" y1="263" x2="506" y2="263" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="296" cy="249" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="296" y="254" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">1</text>
+<text x="314" y="254" font-size="14" fill="#000000">invoke(messages, thread_id)</text>
+<path d="M 516 325 h 50 v 30 H 526" fill="none" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="541" cy="309" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="541" y="314" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">2</text>
+<text x="576" y="330" font-size="14" fill="#000000">load checkpoint; apply input; save (source: input)</text>
+<line x1="516" y1="386" x2="790" y2="386" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="580" cy="372" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="580" y="377" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">3</text>
+<text x="598" y="377" font-size="14" fill="#000000">super-step: before_agent nodes (PatchToolCalls repair scan)</text>
+<line x1="516" y1="447" x2="1074" y2="447" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="722" cy="433" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="722" y="438" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">4</text>
+<text x="740" y="438" font-size="14" fill="#000000">super-step: model node — wrap_model_call chain (stack)</text>
+<path d="M 1084 508 h 50 v 30 H 1094" fill="none" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="1109" cy="492" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="1109" y="497" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">5</text>
+<text x="1144" y="513" font-size="14" fill="#000000">bind tools; invoke model</text>
+<line x1="1084" y1="570" x2="526" y2="570" stroke="#8a7a66" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrr)"/>
+<circle cx="722" cy="556" r="11" fill="#ffffff" stroke="#8a7a66" stroke-width="1.5"/>
+<text x="722" y="561" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">6</text>
+<text x="740" y="561" font-size="14" fill="#000000">AIMessage with 2 task calls</text>
+<line x1="516" y1="631" x2="1357" y2="631" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="864" cy="617" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="864" y="622" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">7</text>
+<text x="882" y="622" font-size="14" fill="#000000">routing: one Send per pending call</text>
+<path d="M 1367 692 h 50 v 30 H 1377" fill="none" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="1392" cy="676" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="1392" y="681" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">8</text>
+<text x="1427" y="697" font-size="14" fill="#000000">task calls run as parallel tasks, one super-step</text>
+<line x1="1367" y1="753" x2="526" y2="753" stroke="#8a7a66" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrr)"/>
+<circle cx="864" cy="739" r="11" fill="#ffffff" stroke="#8a7a66" stroke-width="1.5"/>
+<text x="864" y="744" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">9</text>
+<text x="882" y="744" font-size="14" fill="#000000">ToolMessages</text>
+<path d="M 516 815 h 50 v 30 H 526" fill="none" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="541" cy="799" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="541" y="804" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">10</text>
+<text x="576" y="820" font-size="14" fill="#000000">apply writes; save checkpoint (source: loop)</text>
+<line x1="516" y1="876" x2="1074" y2="876" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="722" cy="862" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="722" y="867" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">11</text>
+<text x="740" y="867" font-size="14" fill="#000000">next super-step: model node again</text>
+<line x1="1084" y1="937" x2="526" y2="937" stroke="#8a7a66" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrr)"/>
+<circle cx="722" cy="923" r="11" fill="#ffffff" stroke="#8a7a66" stroke-width="1.5"/>
+<text x="722" y="928" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">12</text>
+<text x="740" y="928" font-size="14" fill="#000000">reply, no tool calls</text>
+<line x1="516" y1="999" x2="790" y2="999" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="580" cy="985" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="580" y="990" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">13</text>
+<text x="598" y="990" font-size="14" fill="#000000">routing: no tool calls -&gt; END; after_agent nodes</text>
+<rect x="113" y="1033" width="1373" height="44" rx="8" fill="#d08c4e" fill-opacity="0.13" stroke="#d08c4e" stroke-width="1"/>
+<text x="800" y="1060" text-anchor="middle" font-size="14" fill="#000000">The step ceiling counts super-steps: recursion_limit 9,999, checked at the top of every tick</text>
+</svg>

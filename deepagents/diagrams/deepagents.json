@@ -1,0 +1,433 @@
+{
+ "title": "Deep Agents — a middleware stack on LangChain's loop, on LangGraph's runtime",
+ "repo": "https://github.com/langchain-ai/deepagents",
+ "sha": "c6c340d47d2013a2e7b7230698f73977b7de6756",
+ "nodes": [
+  {
+   "id": "caller",
+   "label": "Your application",
+   "sub": "calls create_deep_agent(...)",
+   "x": 0,
+   "y": 0,
+   "w": 380,
+   "h": 96,
+   "grade": "verified",
+   "excerpt": "The core package is a library. An application calls create_deep_agent with a model, optional tools, a backend, a checkpointer, and stack arguments — and gets back a compiled LangGraph graph to invoke or stream. Nothing runs until the application runs it.",
+   "links": [
+    {
+     "label": "deepagents/__init__.py — the public surface",
+     "url": "https://github.com/langchain-ai/deepagents/blob/c6c340d47d2013a2e7b7230698f73977b7de6756/libs/deepagents/deepagents/__init__.py"
+    }
+   ]
+  },
+  {
+   "id": "code-app",
+   "label": "Deep Agents Code — dcode",
+   "sub": "libs/code — the terminal coding-agent product",
+   "x": 0,
+   "y": 130,
+   "w": 380,
+   "h": 96,
+   "grade": "verified",
+   "excerpt": "The batteries-included product on the SDK: a terminal client and an agent-server process, TUI plus headless mode, layered config, its own tools, skills, hooks, and threat model. It wires the SDK with a CompositeBackend over LocalShellBackend — the product chooses host shell access and builds its approval flow on top.",
+   "links": [
+    {
+     "label": "libs/code/ARCHITECTURE.md",
+     "url": "https://github.com/langchain-ai/deepagents/blob/c6c340d47d2013a2e7b7230698f73977b7de6756/libs/code/ARCHITECTURE.md"
+    },
+    {
+     "label": "deepagents_code/agent.py:3127-3133 — the SDK wiring",
+     "url": "https://github.com/langchain-ai/deepagents/blob/c6c340d47d2013a2e7b7230698f73977b7de6756/libs/code/deepagents_code/agent.py#L3127"
+    }
+   ]
+  },
+  {
+   "id": "acp",
+   "label": "deepagents-acp",
+   "sub": "libs/acp — Agent Client Protocol server",
+   "x": 0,
+   "y": 260,
+   "w": 380,
+   "h": 96,
+   "grade": "verified",
+   "excerpt": "Serves a deep agent over the Agent Client Protocol — JSON-RPC over stdio, via the acp Python SDK — for editor integration.",
+   "links": [
+    {
+     "label": "deepagents_acp/server.py:10-31",
+     "url": "https://github.com/langchain-ai/deepagents/blob/c6c340d47d2013a2e7b7230698f73977b7de6756/libs/acp/deepagents_acp/server.py#L10"
+    }
+   ]
+  },
+  {
+   "id": "talon",
+   "label": "Talon — long-running host",
+   "sub": "libs/talon — channels, cron, checkpoints.sqlite",
+   "x": 0,
+   "y": 390,
+   "w": 380,
+   "h": 96,
+   "grade": "verified",
+   "excerpt": "An experimental host for agents that stay alive: channel adapters (WhatsApp, Telegram, Discord, Slack), a persistent cron scheduler, MCP tool loading from ~/.deepagents/.mcp.json, LangGraph checkpoints in a local SQLite file. Its README is frank that production-grade HITL and multi-tenant controls are not implemented; its per-invocation recursion limit defaults to 500.",
+   "links": [
+    {
+     "label": "libs/talon/README.md",
+     "url": "https://github.com/langchain-ai/deepagents/blob/c6c340d47d2013a2e7b7230698f73977b7de6756/libs/talon/README.md"
+    }
+   ]
+  },
+  {
+   "id": "partners",
+   "label": "Sandbox partner packages",
+   "sub": "libs/partners/{daytona, modal, runloop, vercel, quickjs}",
+   "x": 0,
+   "y": 520,
+   "w": 380,
+   "h": 96,
+   "grade": "verified",
+   "excerpt": "Concrete BaseSandbox implementations — remote sandboxes with real process isolation. Isolation exists in this ecosystem only here, as separate partner packages a caller chooses and wires in; the core package ships no sandbox implementation.",
+   "links": [
+    {
+     "label": "libs/partners/ — the partner packages",
+     "url": "https://github.com/langchain-ai/deepagents/tree/c6c340d47d2013a2e7b7230698f73977b7de6756/libs/partners"
+    }
+   ]
+  },
+  {
+   "id": "assembly",
+   "label": "create_deep_agent() — assembly",
+   "sub": "libs/deepagents/deepagents/graph.py",
+   "x": 560,
+   "y": 0,
+   "w": 380,
+   "h": 96,
+   "grade": "verified",
+   "excerpt": "Roughly 700 lines of construction and no loop: resolves the model and its harness profile, defaults the backend to StateBackend(), builds the middleware stack, compiles subagents, composes the system prompt — then returns LangChain's create_agent(...) with recursion_limit 9_999 and ls_integration: deepagents metadata stamped on.",
+   "links": [
+    {
+     "label": "graph.py:277 — create_deep_agent",
+     "url": "https://github.com/langchain-ai/deepagents/blob/c6c340d47d2013a2e7b7230698f73977b7de6756/libs/deepagents/deepagents/graph.py#L277"
+    },
+    {
+     "label": "graph.py:989-1010 — the create_agent return + stamped config",
+     "url": "https://github.com/langchain-ai/deepagents/blob/c6c340d47d2013a2e7b7230698f73977b7de6756/libs/deepagents/deepagents/graph.py#L989"
+    }
+   ]
+  },
+  {
+   "id": "stack",
+   "label": "The middleware stack",
+   "sub": "libs/deepagents/deepagents/middleware/",
+   "x": 560,
+   "y": 130,
+   "w": 380,
+   "h": 96,
+   "grade": "verified",
+   "excerpt": "The product. Filesystem, SubAgent, Deep Agents' own summarization, PatchToolCalls — then conditional skills, LangChain prompt caching, memory, LangChain HITL, unsupported-content. An ordered list of LangChain AgentMiddleware: replaceable by name, excludable by profile — except Filesystem and SubAgent, whose exclusion raises ValueError (protected scaffolding).",
+   "links": [
+    {
+     "label": "graph.py:889-972 — stack assembly",
+     "url": "https://github.com/langchain-ai/deepagents/blob/c6c340d47d2013a2e7b7230698f73977b7de6756/libs/deepagents/deepagents/graph.py#L889"
+    },
+    {
+     "label": "graph.py:247-260 — protected scaffolding",
+     "url": "https://github.com/langchain-ai/deepagents/blob/c6c340d47d2013a2e7b7230698f73977b7de6756/libs/deepagents/deepagents/graph.py#L247"
+    }
+   ]
+  },
+  {
+   "id": "subagents",
+   "label": "SubAgentMiddleware — the task tool",
+   "sub": "middleware/subagents.py",
+   "x": 560,
+   "y": 260,
+   "w": 380,
+   "h": 96,
+   "grade": "verified",
+   "excerpt": "Delegation by state subtraction: the subagent's initial state is the parent's minus a curated key set, with messages replaced by the single task description; exactly one ToolMessage returns. Subagents get a smaller stack and no task tool of their own. Fork mode (inherit the history) is opt-in, beta-warned, and refuses recursion at call time.",
+   "links": [
+    {
+     "label": "subagents.py:782-843 — state subtraction",
+     "url": "https://github.com/langchain-ai/deepagents/blob/c6c340d47d2013a2e7b7230698f73977b7de6756/libs/deepagents/deepagents/middleware/subagents.py#L782"
+    },
+    {
+     "label": "subagents.py:382-408 — the excluded keys",
+     "url": "https://github.com/langchain-ai/deepagents/blob/c6c340d47d2013a2e7b7230698f73977b7de6756/libs/deepagents/deepagents/middleware/subagents.py#L382"
+    }
+   ]
+  },
+  {
+   "id": "backends",
+   "label": "Backends — BackendProtocol",
+   "sub": "libs/deepagents/deepagents/backends/",
+   "x": 560,
+   "y": 390,
+   "w": 380,
+   "h": 96,
+   "grade": "verified",
+   "excerpt": "One protocol decides where files live and whether execution exists: StateBackend (in graph state, cannot execute), StoreBackend, FilesystemBackend (real disk, path-jailed, not isolated), LocalShellBackend (host subprocess, shell=True, under an extended warning), CompositeBackend prefix routing, and the abstract BaseSandbox. The security boundary of the whole system is which backend the application wires in.",
+   "links": [
+    {
+     "label": "backends/protocol.py:404 — BackendProtocol",
+     "url": "https://github.com/langchain-ai/deepagents/blob/c6c340d47d2013a2e7b7230698f73977b7de6756/libs/deepagents/deepagents/backends/protocol.py#L404"
+    },
+    {
+     "label": "backends/local_shell.py:304-309 — subprocess.run(shell=True)",
+     "url": "https://github.com/langchain-ai/deepagents/blob/c6c340d47d2013a2e7b7230698f73977b7de6756/libs/deepagents/deepagents/backends/local_shell.py#L304"
+    }
+   ]
+  },
+  {
+   "id": "profiles",
+   "label": "Harness + provider profiles",
+   "sub": "libs/deepagents/deepagents/profiles/",
+   "x": 560,
+   "y": 520,
+   "w": 380,
+   "h": 96,
+   "grade": "verified",
+   "excerpt": "Per-model tuning as data: prompt suffixes, tool-description overrides, extra middleware, exclusions — for built-in Anthropic, OpenAI Codex, and NVIDIA Nemotron families, with public registration functions. The Codex profile is the one place write_todos exists in the package: LangChain's TodoListMiddleware, added for that model's prompting style.",
+   "links": [
+    {
+     "label": "profiles/harness/_openai_codex.py:72-77 — TodoListMiddleware",
+     "url": "https://github.com/langchain-ai/deepagents/blob/c6c340d47d2013a2e7b7230698f73977b7de6756/libs/deepagents/deepagents/profiles/harness/_openai_codex.py#L72"
+    }
+   ]
+  },
+  {
+   "id": "create-agent",
+   "label": "LangChain create_agent() — the loop",
+   "sub": "dependency: langchain 1.4.5 — agents/factory.py",
+   "x": 1120,
+   "y": 130,
+   "w": 380,
+   "h": 96,
+   "grade": "verified",
+   "excerpt": "Dependency layer (langchain==1.4.5, pinned separately). Compiles a StateGraph: a model node that runs the request through the chained wrap_model_call handlers and invokes the model with tools bound; a tools node; one graph node per middleware state hook; routing edges — no tool calls routes to END, pending calls fan out as one Send each. It adds no middleware of its own, and stamps recursion_limit 9_999 on every graph.",
+   "links": [
+    {
+     "label": "langchain factory.py:1611 — the model node",
+     "url": "https://github.com/langchain-ai/langchain/blob/f2bf626ccee0a0e88d560706d4fdad35e43116e5/libs/langchain_v1/langchain/agents/factory.py#L1611"
+    },
+    {
+     "label": "langchain factory.py:1991-2043 — the model-to-tools routing edge",
+     "url": "https://github.com/langchain-ai/langchain/blob/f2bf626ccee0a0e88d560706d4fdad35e43116e5/libs/langchain_v1/langchain/agents/factory.py#L1991"
+    }
+   ]
+  },
+  {
+   "id": "hitl",
+   "label": "HumanInTheLoopMiddleware",
+   "sub": "dependency: langchain 1.4.5",
+   "x": 1120,
+   "y": 260,
+   "w": 380,
+   "h": 96,
+   "grade": "verified",
+   "excerpt": "LangChain's middleware class. Its after_model hook matches the model's pending tool calls against interrupt_on (with when predicates), assembles one review request, and calls LangGraph's interrupt(); decisions are approve / edit / reject / respond. Deep Agents' contribution is generating the interrupt_on config from filesystem permission rules.",
+   "links": [
+    {
+     "label": "langchain human_in_the_loop.py:240 — the class",
+     "url": "https://github.com/langchain-ai/langchain/blob/f2bf626ccee0a0e88d560706d4fdad35e43116e5/libs/langchain_v1/langchain/agents/middleware/human_in_the_loop.py#L240"
+    },
+    {
+     "label": "langchain human_in_the_loop.py:481 — interrupt() called with the request",
+     "url": "https://github.com/langchain-ai/langchain/blob/f2bf626ccee0a0e88d560706d4fdad35e43116e5/libs/langchain_v1/langchain/agents/middleware/human_in_the_loop.py#L481"
+    }
+   ]
+  },
+  {
+   "id": "lc-pieces",
+   "label": "LangChain pieces used as-is",
+   "sub": "prompt caching · summarization helper · init_chat_model",
+   "x": 1120,
+   "y": 520,
+   "w": 380,
+   "h": 96,
+   "grade": "verified",
+   "excerpt": "What Deep Agents reuses rather than rebuilds: Anthropic prompt-caching middleware (appended by a Deep Agents helper), LangChain's SummarizationMiddleware composed inside Deep Agents' own as its partitioning and summary engine, and init_chat_model resolving provider:model strings.",
+   "links": [
+    {
+     "label": "deepagents middleware/_prompt_caching.py:41 — caching appended",
+     "url": "https://github.com/langchain-ai/deepagents/blob/c6c340d47d2013a2e7b7230698f73977b7de6756/libs/deepagents/deepagents/middleware/_prompt_caching.py#L41"
+    },
+    {
+     "label": "deepagents middleware/summarization.py:627 — the LangChain helper composed",
+     "url": "https://github.com/langchain-ai/deepagents/blob/c6c340d47d2013a2e7b7230698f73977b7de6756/libs/deepagents/deepagents/middleware/summarization.py#L627"
+    }
+   ]
+  },
+  {
+   "id": "pregel",
+   "label": "LangGraph Pregel runtime",
+   "sub": "dependency: langgraph 1.2.15 — pregel/",
+   "x": 1680,
+   "y": 130,
+   "w": 380,
+   "h": 96,
+   "grade": "verified",
+   "excerpt": "Dependency layer (langgraph 1.2.15, pinned separately). Bulk-synchronous super-steps: each tick prepares the tasks whose channels updated, runs them concurrently, merges their writes through the channel reducers, and saves a checkpoint (source: loop). The recursion ceiling is checked at the top of tick(); GraphRecursionError is raised only when no stop condition was reached.",
+   "links": [
+    {
+     "label": "langgraph pregel/_loop.py:633 — tick()",
+     "url": "https://github.com/langchain-ai/langgraph/blob/08a345637fb2bd499f69c90056a22c478a468817/libs/langgraph/langgraph/pregel/_loop.py#L633"
+    },
+    {
+     "label": "langgraph pregel/_loop.py:786 — checkpoint after every super-step",
+     "url": "https://github.com/langchain-ai/langgraph/blob/08a345637fb2bd499f69c90056a22c478a468817/libs/langgraph/langgraph/pregel/_loop.py#L786"
+    }
+   ]
+  },
+  {
+   "id": "toolnode",
+   "label": "ToolNode — tool execution",
+   "sub": "dependency: langgraph 1.2.15 — prebuilt/tool_node.py",
+   "x": 1680,
+   "y": 390,
+   "w": 380,
+   "h": 96,
+   "grade": "verified",
+   "excerpt": "LangGraph's prebuilt tools node, constructed by create_agent with the chained wrap_tool_call wrappers. Executes one tool call per Send task, injects state/store/runtime arguments, returns ToolMessages or Commands — and turns tool exceptions into error ToolMessages by default.",
+   "links": [
+    {
+     "label": "langgraph prebuilt/tool_node.py:630 — ToolNode",
+     "url": "https://github.com/langchain-ai/langgraph/blob/08a345637fb2bd499f69c90056a22c478a468817/libs/prebuilt/langgraph/prebuilt/tool_node.py#L630"
+    }
+   ]
+  },
+  {
+   "id": "graphstate",
+   "label": "Checkpointer + store",
+   "sub": "dependency: langgraph — thread state (caller-supplied)",
+   "x": 1680,
+   "y": 260,
+   "w": 380,
+   "h": 96,
+   "grade": "verified",
+   "excerpt": "Threads and persistence: a checkpoint when the input lands and after every super-step, and the BaseStore namespaces behind StoreBackend. None of it is configured by default — create_deep_agent passes the caller's checkpointer and store straight through to create_agent, so the default assembly persists nothing across invocations.",
+   "links": [
+    {
+     "label": "deepagents graph.py:989-1003 — checkpointer/store pass-through",
+     "url": "https://github.com/langchain-ai/deepagents/blob/c6c340d47d2013a2e7b7230698f73977b7de6756/libs/deepagents/deepagents/graph.py#L989"
+    },
+    {
+     "label": "langgraph pregel/_loop.py:1157 — the input checkpoint",
+     "url": "https://github.com/langchain-ai/langgraph/blob/08a345637fb2bd499f69c90056a22c478a468817/libs/langgraph/langgraph/pregel/_loop.py#L1157"
+    }
+   ]
+  }
+ ],
+ "edges": [
+  {
+   "from": "caller",
+   "to": "assembly",
+   "label": "calls create_deep_agent(...)",
+   "label_dx": -60
+  },
+  {
+   "from": "code-app",
+   "to": "assembly",
+   "label": "wires the SDK + LocalShellBackend",
+   "label_dx": -40,
+   "label_dy": 30
+  },
+  {
+   "from": "acp",
+   "to": "assembly",
+   "label": "serves a constructed agent"
+  },
+  {
+   "from": "talon",
+   "to": "assembly",
+   "label": "hosts agents long-running",
+   "label_dx": -30,
+   "label_dy": -40
+  },
+  {
+   "from": "assembly",
+   "to": "stack",
+   "label": "builds the ordered stack"
+  },
+  {
+   "from": "assembly",
+   "to": "profiles",
+   "label": "resolves the model's profile"
+  },
+  {
+   "from": "profiles",
+   "to": "stack",
+   "label": "extras · exclusions · prompt suffix"
+  },
+  {
+   "from": "assembly",
+   "to": "create-agent",
+   "label": "returns create_agent(stack, tools, backend...)"
+  },
+  {
+   "from": "stack",
+   "to": "create-agent",
+   "label": "hook nodes + call wrappers",
+   "label_dx": -82
+  },
+  {
+   "from": "create-agent",
+   "to": "pregel",
+   "label": "compiled graph executes on",
+   "label_dx": -85
+  },
+  {
+   "from": "create-agent",
+   "to": "toolnode",
+   "label": "constructs with chained wrap_tool_call",
+   "label_dx": -60,
+   "label_dy": 30
+  },
+  {
+   "from": "toolnode",
+   "to": "backends",
+   "label": "fs + execute tools call the backend",
+   "label_dx": -80
+  },
+  {
+   "from": "backends",
+   "to": "graphstate",
+   "label": "StoreBackend persists via the store"
+  },
+  {
+   "from": "stack",
+   "to": "hitl",
+   "label": "fs rules become interrupt_on",
+   "label_dx": 25,
+   "label_dy": -4
+  },
+  {
+   "from": "hitl",
+   "to": "pregel",
+   "label": "interrupt() pauses between model and tools",
+   "label_dy": 12
+  },
+  {
+   "from": "pregel",
+   "to": "graphstate",
+   "label": "checkpoint after every super-step"
+  },
+  {
+   "from": "subagents",
+   "to": "create-agent",
+   "label": "each is its own create_agent graph",
+   "label_dy": 133,
+   "label_dx": -145
+  },
+  {
+   "from": "stack",
+   "to": "lc-pieces",
+   "label": "summarization helper, composed",
+   "label_dx": -70,
+   "label_dy": 10
+  },
+  {
+   "from": "backends",
+   "to": "partners",
+   "label": "BaseSandbox is implemented by"
+  }
+ ]
+}
