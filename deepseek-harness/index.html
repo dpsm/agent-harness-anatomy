@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body {
+    background: #161210; color: #ece1d3;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    line-height: 1.7; padding: 48px 24px; margin: 0;
+  }
+  main { max-width: 760px; margin: 0 auto; }
+  a { color: #d08c4e; }
+  h1 { font-size: 1.9rem; letter-spacing: -0.02em; line-height: 1.25; margin-bottom: 16px; }
+  h2 { font-size: 1.4rem; margin: 40px 0 12px; padding-top: 8px; border-top: 1px solid #2c231b; }
+  h3 { font-size: 1.1rem; margin: 28px 0 8px; }
+  p, li { margin-bottom: 12px; }
+  blockquote {
+    border-left: 3px solid #d08c4e; padding: 4px 16px; margin: 20px 0;
+    color: #a89880; background: #1f1a15; border-radius: 0 8px 8px 0;
+  }
+  blockquote p { margin-bottom: 6px; }
+  code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.88em; background: #1f1a15; padding: 2px 6px; border-radius: 6px;
+  }
+  pre { background: #1f1a15; border: 1px solid #3a2f26; border-radius: 8px;
+        padding: 16px; overflow-x: auto; }
+  pre code { background: none; padding: 0; }
+  img { max-width: 100%; height: auto; border: 1px solid #3a2f26;
+        border-radius: 12px; margin: 20px 0; background: #1f1a15; }
+  table { border-collapse: collapse; width: 100%; margin: 20px 0; font-size: 0.92rem;
+          display: block; overflow-x: auto; }
+  th, td { border: 1px solid #3a2f26; padding: 10px 12px; text-align: left;
+           vertical-align: top; }
+  th { background: #1f1a15; }
+  ul, ol { padding-left: 24px; }
+  hr { border: none; border-top: 1px solid #2c231b; margin: 32px 0; }
+  .footnote { font-size: 0.88rem; color: #a89880; }
+  .footnote hr { margin: 40px 0 16px; }
+  sup a { text-decoration: none; }
+  .topnav { max-width: 760px; margin: 0 auto 32px; font-size: 0.9rem; }
+  .topnav a { color: #a89880; text-decoration: none; }
+  .topnav a:hover { color: #ece1d3; }
+  .diagram-cta {
+    display: block; text-align: center; margin: 28px 0; padding: 16px;
+    background: #1f1a15; border: 1px solid #3a2f26; border-radius: 12px;
+    color: #ece1d3; text-decoration: none; font-weight: 600;
+  }
+  .diagram-cta:hover { border-color: #d08c4e; }
+  .diagram-cta span { display: block; font-weight: 400; font-size: 0.88rem;
+                      color: #a89880; margin-top: 4px; }
+</style>
+<title>Agent Harness Anatomy #15: DeepSeek Harness (dsh) — the harness where even the loop is a plugin</title>
+</head>
+<body>
+<main>
+  <nav class="topnav"><a href="../#deepseek-harness">&larr; Agent Harness Anatomy</a></nav>
+<h1 id="agent-harness-anatomy-15-deepseek-harness-dsh-the-harness-where-even-the-loop-is-a-plugin">Agent Harness Anatomy #15: DeepSeek Harness (dsh) — the harness where even the loop is a plugin</h1>
+<blockquote>
+<p><strong>Series:</strong> Agent Harness Anatomy — top-down dissections of real agent harnesses, grounded in verifiable source code. Every behavioral claim below carries a footnote to a pinned GitHub permalink; the full evidence lives in the endnotes.</p>
+</blockquote>
+<h2 id="version-block">Version block</h2>
+<ul>
+<li><strong>Repo:</strong> <a href="https://github.com/deepseek-ai/deepseek-harness">deepseek-ai/deepseek-harness</a></li>
+<li><strong>Pinned:</strong> tag <code>dsh-v0.2.1-alpha.3</code> → <code>2fbf4359b82fb94c03dcce0b831660d87f12ea5c</code> (2026-10-14)</li>
+<li><strong>Language:</strong> TypeScript (ESM) pnpm monorepo — 336 workspace packages, ≈270k LOC of TypeScript/TSX (≈249k excluding tests); plus a Python SDK, a native Landlock launcher, and an Electron desktop app</li>
+<li><strong>License:</strong> MIT</li>
+<li><strong>Claim under test:</strong> "DeepSeek Harness: Everything is a Plugin"</li>
+</ul>
+<p>A note on the pin itself: this is an alpha tag of a developer preview, released the same day it was pinned. The README warns of compatibility-breaking changes ahead, so read what follows as a snapshot of one composed tree at one commit — the mechanisms are the story, and they are fully present in the source; surface details will drift faster than in any previous teardown in this series.</p>
+<p><img alt="DeepSeek Harness architecture" src="figures/deepseek-harness.svg" /></p>
+<a class="diagram-cta" href="../diagrams/template.html?data=../deepseek-harness/diagrams/deepseek-harness.json">
+    Explore the interactive architecture diagram
+    <span>18 nodes, 22 edges — pan, zoom, and follow every subsystem link</span>
+  </a>
+<h2 id="the-mental-model">The mental model</h2>
+<p>Most harnesses in this series are plugin systems in the ordinary sense: a fixed core loop, and extension points around it. DeepSeek Harness inverts the relationship. The agent loop is a package (<code>packages/core/agent-loop</code>) that a bundle mounts by listing it in a YAML file, alongside the session service, the tools, the sandbox, the approval service, compaction, the Web UI, and everything else. In the base bundle's <code>cordis.patch.yml</code>, the loop is two rows — <code>- id: agent-loop</code>, <code>name: '@deepseek-ai/dsh-agent-loop'</code> — and the session service is another row in the same file.<sup id="fnref:1"><a class="footnote-ref" href="#fn:1">1</a></sup> "Everything is a plugin" is the project's headline claim, and at this pin it is literally true of everything above one small kernel.</p>
+<p>That kernel is Cordis, a plugin runtime the project vendors as source rather than taking as a dependency: upstream cordiverse/cordis <code>packages/core</code> at v4.0.0-rc.7, rescoped and locally modified (T5).<sup id="fnref:2"><a class="footnote-ref" href="#fn:2">2</a></sup> Around it, <code>packages/core/*</code> holds interface definitions — the <em>seams</em> (<code>ctx.llm</code>, <code>ctx.tools</code>, <code>ctx.sandbox</code>, <code>ctx.session</code>) — and the remaining ~330 packages are providers, tools, guards, surfaces, and policy that a composition mounts into them.</p>
+<p>Composition is the product. A running application is a <em>profile</em>: a root configuration assembled from layered YAML patch files — bundle patches, the profile's own patch, a home-level patch, <code>--patch</code> overlays. The base bundle alone contributes 95 plugin rows in 522 lines.<sup id="fnref:3"><a class="footnote-ref" href="#fn:3">3</a></sup> An <em>agent preset</em> is the same mechanism one level down: a YAML declaration mounting a set of plugins in an isolated realm per agent. The four run modes — Standard, PTC ("Code Mode"), Minimal, and Creator — are presets, not code paths. Standard and PTC differ by exactly one plugin row.<sup id="fnref:4"><a class="footnote-ref" href="#fn:4">4</a></sup></p>
+<p>The second load-bearing decision is that <strong>the session log is the context</strong>. A session is an append-only, versioned event log; the model history for every request is <em>derived</em> from it at each step boundary rather than held as mutable conversation state.<sup id="fnref:5"><a class="footnote-ref" href="#fn:5">5</a></sup> The project states the invariant in its own conventions document: "Model-visible ⟺ logged — anything that reaches a model request must be reconstructable from the session log; a new model-visible input requires a session event." Approvals, permission choices, compaction summaries, and telemetry watermarks are all events in the same log; everything else in the system is a fold over it.</p>
+<p>Hold those two ideas — <em>the harness is a composed tree of plugins</em> and <em>the log is the only state</em> — and the rest of this teardown is elaboration.</p>
+<h2 id="how-the-composition-is-put-together">How the composition is put together</h2>
+<p><strong>The plugin contract.</strong> A Cordis plugin is a function <code>(ctx, config)</code>, a class constructed with <code>(ctx, config)</code>, or an object with <code>apply(ctx, config)</code>. Its static side declares a name, a config schema (validated before the plugin starts), the services it requires (<code>inject</code> — the plugin loads only while all are available), the services it provides, and intercepts.<sup id="fnref:6"><a class="footnote-ref" href="#fn:6">6</a></sup> Services are properties on the shared context, declared by TypeScript declaration merging; a plugin consumes <code>ctx.sandbox</code> and provides <code>ctx.tools</code> by name, without either side importing the other.</p>
+<p><strong>Registrations are effects.</strong> Contributions go through <code>ctx.effect()</code> / <code>ctx.on()</code>, and every registration returns a disposer, so unloading a plugin unwinds exactly what it added.<sup id="fnref:7"><a class="footnote-ref" href="#fn:7">7</a></sup> Event hooks come in serial, parallel, and waterfall flavors; in a waterfall, a listener that returns without calling <code>next()</code> has vetoed — this single mechanism underlies both tool pre-execution and approvals (T3). Each plugin's lifecycle is a <em>fiber</em> with explicit states (<code>PENDING → LOADING → ACTIVE → UNLOADING → DISPOSED</code>, plus <code>FAILED</code>), and the kernel is small: 2,696 lines across 9 files in <code>vendor/cordis/src</code>.<sup id="fnref:8"><a class="footnote-ref" href="#fn:8">8</a></sup></p>
+<p>The vendored copy is not pristine: <code>vendor/README.md</code> logs 24 local modifications, including lifecycle hardening inside the kernel itself (reentrant-disposal fixes in <code>fiber.ts</code>), and <code>vendor/AGENTS.md</code> requires every divergence to be logged there.<sup id="fnref:9"><a class="footnote-ref" href="#fn:9">9</a></sup> The project has, in effect, adopted its own runtime as a maintained fork — with the discipline of writing the divergences down.</p>
+<p><strong>Composition is conditional.</strong> Patch rows can carry <code>!!js</code> expressions in config and in <code>disabled:</code> — the base bundle's bash-sandbox row is disabled on win32 by an expression, and its config sets the bash tool's 60-second default timeout.<sup id="fnref:10"><a class="footnote-ref" href="#fn:10">10</a></sup> Profiles live under <code>$DSH_HOME/profiles/&lt;name&gt;</code>; with the HMR plugin composed, config edits recompose the tree live, otherwise at restart. The project's working rule keeps the layers honest: "Plugins, not loop changes — new behavior goes on documented extension points; changing <code>agent-loop</code> requires updating <code>docs/architecture.md</code>."<sup id="fnref:11"><a class="footnote-ref" href="#fn:11">11</a></sup></p>
+<p><img alt="Preset composition at startup" src="figures/seq-composition.svg" /></p>
+<h2 id="package-map">Package map</h2>
+<p>336 packages across 52 group directories; the groups map almost one-to-one onto capability seams.</p>
+<table>
+<thead>
+<tr>
+<th>Package group</th>
+<th>Role</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>packages/core/*</code></td>
+<td>Seam definitions only: agent-loop, tools, session, llm interfaces</td>
+</tr>
+<tr>
+<td><code>packages/bundle/base</code></td>
+<td>The base composition — 95 plugin rows in <code>cordis.patch.yml</code></td>
+</tr>
+<tr>
+<td><code>packages/bundle/web-app/presets/</code></td>
+<td>The four agent presets (standard, ptc, minimal, cordis)</td>
+</tr>
+<tr>
+<td><code>packages/interaction/*</code></td>
+<td>Permission presets; the user-approval service</td>
+</tr>
+<tr>
+<td><code>packages/sandbox/*</code></td>
+<td>Sandbox contract (<code>ctx.sandbox</code>) + local OS backends</td>
+</tr>
+<tr>
+<td><code>packages/session/*</code></td>
+<td>JSONL log persistence, format migrations, session query, official-API upload</td>
+</tr>
+<tr>
+<td><code>packages/compaction/*</code></td>
+<td><code>compaction-basic</code>: threshold summarization of the log</td>
+</tr>
+<tr>
+<td><code>packages/guard/*</code></td>
+<td><code>repeat-tool-reminder</code>, <code>timeout-policy</code></td>
+</tr>
+<tr>
+<td><code>packages/mcp/*</code></td>
+<td>MCP client + resources (client only — see T5)</td>
+</tr>
+<tr>
+<td><code>packages/skill/*</code></td>
+<td>Skill registry and providers</td>
+</tr>
+<tr>
+<td><code>packages/ptc-runtime/*</code></td>
+<td>Code Mode runtimes (Node, experimental Python)</td>
+</tr>
+<tr>
+<td><code>packages/boot/*</code>, <code>packages/host/*</code></td>
+<td>Plugin manager, profile boot, web server</td>
+</tr>
+<tr>
+<td><code>vendor/cordis</code></td>
+<td>The plugin kernel itself (vendored source, 2,696 lines)</td>
+</tr>
+</tbody>
+</table>
+<h2 id="the-core-loop">The core loop</h2>
+<p>The loop is <code>ReactLoopAgent</code> in <code>packages/core/agent-loop</code>. Entry is <code>kick()</code>, which runs <code>while (await this.turn()) {}</code> — turns continue until one reports it should not.<sup id="fnref:12"><a class="footnote-ref" href="#fn:12">12</a></sup> Inside a turn, an inner step loop repeats: a pre-step claims any queued inbox input (steering), <code>prepareCall</code> builds the request through <code>ctx.llm</code>, the streamed response is settled into the session log as <code>assistant/message</code> / <code>assistant/attempt</code> events, tool calls execute, results are logged, and the next step re-derives context from the log. Parallelism inside a step is capped at 10 concurrent tool calls.<sup id="fnref:13"><a class="footnote-ref" href="#fn:13">13</a></sup></p>
+<p>Termination is where this loop departs from every previous teardown in the series. A step ends its turn by returning <code>completed</code> (the model called no tools) or <code>max-tokens</code> (sticky across steps); a pre-step <code>reject</code> yields <code>blocked</code>; errors and <code>AbortSignal</code> cancellation end the turn from outside. And that is the complete list — <strong>there is no built-in turn or step budget</strong>. The package's own README states it plainly: tool calls and steering keep the turn going, and bounding a run means cancelling it or vetoing from the serial <code>agent/turn-stopping</code> hook, dispatched just before a turn ends.<sup id="fnref:14"><a class="footnote-ref" href="#fn:14">14</a></sup> A harness that wants a budget composes one: a plugin that counts steps and vetoes at the hook. The base composition ships two guards, and neither is a budget:</p>
+<ul>
+<li><strong>Repeat-tool reminder</strong> (<code>packages/guard/repeat-tool-reminder</code>) — advisory only. It counts consecutive identical calls (arguments canonicalized) and, at thresholds of 3, 5, and 8, injects a reminder into context via a <code>tools/post-execute</code> listener. It never vetoes a call.<sup id="fnref:15"><a class="footnote-ref" href="#fn:15">15</a></sup></li>
+<li><strong>Timeout policy</strong> (<code>packages/guard/timeout-policy</code>) — wraps <code>tools/execute</code> and enforces each tool's declared <code>timeoutMs</code>, substituting a <code>TOOL_TIMEOUT</code> error result. (The bash tool's own default is 60 s, from the base bundle's config.)<sup id="fnref2:10"><a class="footnote-ref" href="#fn:10">10</a></sup></li>
+</ul>
+<p>So the runaway-loop story is: per-tool timeouts bound each call, a reminder nudges a stuck model three times, and beyond that the design trusts cancellation and composed policy. Whether that is confidence or an unfinished edge is a judgment the tradeoffs section returns to; mechanically, it is a deliberate, documented default.</p>
+<h2 id="one-turn-end-to-end">One turn, end to end</h2>
+<p>The Standard preset, in the Web UI: <em>"Add a dark mode toggle to the settings page."</em></p>
+<ol>
+<li><strong>Session start (already done).</strong> The session was created under the default permission preset — workspace-write sandbox, <code>ask</code> approvals — and that choice was pinned into the log as a <code>permission/preset</code> event; later settings changes will not rewrite it.<sup id="fnref:16"><a class="footnote-ref" href="#fn:16">16</a></sup></li>
+<li><strong>Pre-step.</strong> The compaction listener prices the pending request against the context window; far below the trigger, it does nothing. Any queued steering input is claimed into the log.<sup id="fnref2:17"><a class="footnote-ref" href="#fn:17">17</a></sup></li>
+<li><strong>Context derivation.</strong> <code>prepareCall</code> folds the session log into the request: system prompt (including the project's <code>AGENTS.md</code> instructions), the derived message history, and — native mode — the schema of <em>every</em> tool mounted in this agent's scope. The call goes out through <code>ctx.llm</code>.</li>
+<li><strong>First response.</strong> The model streams back a short plan and two calls — <code>read</code> on the settings page source, <code>grep</code> for the theme handling. The response is settled into the log as <code>assistant/message</code> / <code>assistant/attempt</code> events <em>before</em> the calls run, so the log already contains what the model said and asked for.<sup id="fnref2:5"><a class="footnote-ref" href="#fn:5">5</a></sup></li>
+<li><strong>Reads execute.</strong> Each call passes the tool pipeline: <code>tools/pre-execute</code> waterfall listeners (none veto, none demand approval for these), execution under the session's workspace-write sandbox policy, then <code>tools/post-execute</code> listeners. Results are appended to the log; the next step re-derives context from it.</li>
+<li><strong>The edit asks.</strong> The model now calls <code>edit</code>. Under the <code>ask</code> policy this dispatches an <code>approval/request</code> waterfall to the composed answerers — here, the Web UI — and waits. The user approves. The approval covers exactly this one request; both the request and the decision are written to the log as <code>approval/asked</code> / <code>approval/decided</code> events, which are <em>not</em> model-visible — the model will see only the tool's outcome.<sup id="fnref:18"><a class="footnote-ref" href="#fn:18">18</a></sup></li>
+<li><strong>The edit lands.</strong> The filesystem tools are fenced in-process by the per-call sandbox mode, and the observation policy's read-before-edit and version guards are satisfied by step 5's reads. The toggle is written.</li>
+<li><strong>Verification and finish.</strong> The model calls <code>bash</code> to run the typecheck; the timeout-policy guard wraps the call (60 s default). It passes. The model then replies with a summary and no tool calls — the step returns <code>completed</code>, the loop dispatches <code>agent/turn-stopping</code>, no composed plugin vetoes, and the turn ends. Final state of the turn: the log, from which everything above can be reconstructed.</li>
+</ol>
+<p><img alt="One turn in Standard mode" src="figures/seq-turn.svg" /></p>
+<a class="diagram-cta" href="trace.html">
+    Play the 8-step trace
+    <span>One turn through DeepSeek Harness — the logged prompt, derived context, native tool presentation, a one-shot approval, sandboxed execution, and the upload that rides along</span>
+  </a>
+<h2 id="tools">Tools</h2>
+<p>Tools are registered as effects on a scoped registry, <code>ctx.tools</code>, by tool packages; the registry is per-agent-scope, so two agents in one process can see different tool sets.<sup id="fnref:19"><a class="footnote-ref" href="#fn:19">19</a></sup> Every call traverses the same pipeline in <code>packages/core/tools</code>: <code>tools/pre-execute</code> waterfall listeners may veto the call or demand approval (<code>ask</code>); execution runs; <code>tools/post-execute</code> listeners may amend the context afterwards — the repeat-tool reminder hooks in at exactly this point. The full inventory is a generated document, <code>docs/tool-catalog.md</code> at 2,773 lines; the base composition mounts the expected coding set (<code>bash</code>, <code>read</code>, <code>write</code>, <code>edit</code>, <code>glob</code>, <code>grep</code> over a bundled ripgrep, job control, <code>todo_write</code>, web search/fetch, <code>lsp</code>, scheduling and goal tools, a <code>subagent</code> tool with interrupt/list/message controls, MCP resource tools, and more), with further sets conditional on preset and configuration.<sup id="fnref:20"><a class="footnote-ref" href="#fn:20">20</a></sup></p>
+<p>Surface management is the surprise: <strong>there is no tool-search or deferred-loading mechanism</strong>. In native mode, every tool registered in the agent's scope contributes its schema to every request. Visibility is controlled entirely at composition time — by which plugins the preset mounts — never by runtime retrieval. Where other harnesses in this series hide a large registry behind search, dsh's answer is that the registry itself is an editorial decision made in YAML.</p>
+<p>The one structural alternative is PTC. The presentation package exposes <code>ctx.tools.presentAs()</code>; in PTC mode the request carries a single tool schema, <code>run_code</code>, plus a generated SDK describing every registered tool. The model writes a TypeScript program; calls to <code>tools.&lt;name&gt;(args)</code> inside it are bridged back into the ordinary pipeline — approvals, sandbox, and audit apply per sub-call, with concurrency bounded by <code>maxParallelSubCalls</code>.<sup id="fnref:21"><a class="footnote-ref" href="#fn:21">21</a></sup> Execution goes through a runtime seam (<code>ctx.ptcRuntime</code>): the Node provider runs erasable TypeScript in a fresh managed process <em>under the resolved sandbox policy</em>, with an optional persistent in-memory REPL new in this alpha; an experimental Python provider runs a CPython subprocess whose README states it has no file confinement.<sup id="fnref:22"><a class="footnote-ref" href="#fn:22">22</a></sup> The composition enforces its own precondition: the PTC preset refuses to mount if no PTC runtime is composed — a load-time failure, not a runtime surprise.</p>
+<p><img alt="PTC mode: a bridged run_code sub-call" src="figures/seq-ptc.svg" /></p>
+<h2 id="approvals-and-the-sandbox">Approvals and the sandbox</h2>
+<p>Permissions are two knobs and nothing else: a <strong>sandbox mode</strong> (<code>read-only</code>, <code>workspace-write</code>, <code>danger-full-access</code>) and an <strong>approval policy</strong> (<code>ask</code> or <code>never</code>), owned by <code>packages/interaction/permission-presets</code>. The base bundle configures three named presets from the knobs — <code>read-only</code> (read-only + ask), <code>workspace-write</code> (workspace-write + ask), and <code>danger-full-access</code> (danger-full-access + never).<sup id="fnref:23"><a class="footnote-ref" href="#fn:23">23</a></sup> Fresh sessions default to workspace-write + ask, switchable live via <code>/permission</code>; a knob combination matching no preset displays as <code>custom</code> — a state you can switch away from, never into.</p>
+<p>The approval seam is built to fail closed. Under <code>ask</code>, a decision is dispatched as an <code>approval/request</code> waterfall to composed answerers (the Web UI and the ACP server each provide one). The dispatch semantics, from the package's own README: no terminal answerer → <code>unavailable</code> → <strong>the action is blocked</strong>; a throwing answerer is contained and likewise resolves <code>unavailable</code>; a return value outside the vocabulary is normalized to <code>unavailable</code>. The <code>never</code> policy is enforced inside the service <em>before</em> the waterfall runs, so a later-registered listener cannot bypass it. An approval applies to exactly one request — there is no "always allow" in this design.<sup id="fnref:24"><a class="footnote-ref" href="#fn:24">24</a></sup></p>
+<p>The sandbox is a contract (<code>ctx.sandbox</code>) with per-call file-effect modes, and it fails closed the same way: if no backend can enforce the requested mode, the call fails with <code>SANDBOX_UNAVAILABLE</code> rather than running unconfined. Enforcement completeness is reported per call as <code>full</code> or <code>partial</code>, and consumers may reject <code>partial</code>.<sup id="fnref:25"><a class="footnote-ref" href="#fn:25">25</a></sup> The local backends: on Linux, <strong>bubblewrap first, then Landlock</strong> (the Landlock runner is a launcher built from the repo's <code>native/system</code> component) — the bwrap profile gives the command a read-only host root, a fresh <code>/dev</code>, and a private PID-namespace <code>/proc</code>, with <code>workspace-write</code> adding an ephemeral <code>/tmp</code> and a writable workspace bind. On macOS, <strong>Seatbelt</strong> via <code>sandbox-exec</code>. On Windows, an <strong>ACL restricted-token</strong> rung that reports <code>partial</code> — hard links alias across the boundary and reads are unconfined, and the system says so per call instead of rounding up.<sup id="fnref:26"><a class="footnote-ref" href="#fn:26">26</a></sup> After a denial, an escalation ladder lets the model retry the exact call once with <code>sandbox_permissions</code> set to the narrowest strictly wider mode, plus a justification; the wider mode requires human approval and applies to that one call only.<sup id="fnref:27"><a class="footnote-ref" href="#fn:27">27</a></sup> The package is explicit about the ceiling: this is <em>same-world</em> confinement, sharing the host kernel and filesystem; a container or microVM is a different composition, not a stronger setting of this one.</p>
+<p><img alt="Approval and sandboxed execution" src="figures/seq-approval.svg" /></p>
+<p>One experimental layer sits beside approvals, off by default: <code>packages/experimental/auto-review</code>. When installed <em>and</em> selected, the agent's own provider and model review each pending tool call (PTC inner calls included) against a fixed risk policy. An allow executes the call with Full access sandboxing; a deny falls through to the <code>ask</code> path; malformed reviewer output or a technical failure <strong>fails the call</strong> — it never executes. Delegated child agents pin <code>never</code>, making a reviewer denial final for them. The reviewer's input is deliberately narrow — fixed policy, cwd, sourced project constraints, filtered sourced history, and the pending action; assistant text, reasoning, and tool results are excluded — and the README says plainly that the layer "can allow unsafe actions, deny useful work, and spend additional tokens."<sup id="fnref:28"><a class="footnote-ref" href="#fn:28">28</a></sup></p>
+<p>Then the boundary the safety story does not cross: <strong>plugins run outside the sandbox</strong>. The plugin manager's README states it directly — "installed Host code executes in-process outside the workspace sandbox."<sup id="fnref:29"><a class="footnote-ref" href="#fn:29">29</a></sup> The <code>plugin_manager</code> tool (the model's route to installing plugins) requires <code>danger-full-access</code> or a per-call approval, and dependency build scripts need a separate approval that persists by package name. The confinement is real for tool calls; code you install is a different trust decision, and the project documents it as one.</p>
+<h3 id="what-leaves-the-machine">What leaves the machine</h3>
+<p>Three flows deserve exact statement, because they differ in their defaults:</p>
+<ol>
+<li><strong>Session-log upload to the official API — default ON.</strong> When requests go to the official DeepSeek API, each request carries a <code>dsh_session_log</code> field: the canonical session events since the last server-accepted watermark (the longest contiguous run fitting a byte budget, 8 MiB by default; acceptance is at-least-once, recorded in a durable delivery event). It is provider-scoped — a BYOK provider's adapter does not add the field — it is not inserted into model context, and there is a user-facing switch (Web Settings → General). One behavior to know: events recorded while the switch is off are uploaded if it is turned back on — disabling pauses the drain from the watermark rather than purging the backlog.<sup id="fnref2:30"><a class="footnote-ref" href="#fn:30">30</a></sup></li>
+<li><strong>OTel session telemetry — feedback-gated.</strong> The base bundle mounts the telemetry plugins in <code>FEEDBACK_ONLY</code> mode: a session-log prefix is exported only after explicit user feedback, to a project collector endpoint (overridable by environment variable; any non-empty <code>DSH_TELEMETRY_DISABLED</code> opts out entirely). Exports carry an anonymous installation UUID — a random value in <code>$DSH_HOME/.anonymous-user-id</code>, no machine or account data, reset by deleting the file.<sup id="fnref:31"><a class="footnote-ref" href="#fn:31">31</a></sup></li>
+<li><strong>Desktop product analytics — default, no user-facing control.</strong> The Desktop app reports selected interactions through the OTel product exporter by default; its package README notes there is no user-facing control for it. Ordinary Web clients never submit these events.<sup id="fnref2:32"><a class="footnote-ref" href="#fn:32">32</a></sup></li>
+</ol>
+<p>Set against <code>SAFETY.md</code> — an experimental developer preview, no security audit, sandboxing and approvals that "do not guarantee isolation," with advice to use a disposable VM, least privilege, and backups — the code and the document agree.<sup id="fnref:33"><a class="footnote-ref" href="#fn:33">33</a></sup> The sandbox and approvals read as guardrails against agent mistakes; the project says exactly that, and the claim is verifiable in the same tree.</p>
+<p><img alt="Session-log upload: the watermark flow" src="figures/seq-upload.svg" /></p>
+<h2 id="memory-and-sessions">Memory and sessions</h2>
+<p>There is one memory system, and it is the session log. The current format version is 4 (<code>SESSION_FORMAT_VERSION = 4</code>), and its governance is unusually formal for a preview: a status document records the latest finalized and released versions with their evidence tag, adjacent-only migration packages ship in-tree (<code>v0-to-v1</code> through <code>v3-to-v4</code>), the reader refuses logs containing unknown <em>required</em> event types, and forward compatibility runs through an explicit <code>ignorable</code> envelope marker.<sup id="fnref:34"><a class="footnote-ref" href="#fn:34">34</a></sup></p>
+<p>On disk, the JSONL persistence package keeps one directory per session — <code>&lt;root&gt;/&lt;normalized-cwd&gt;/&lt;encoded-session-id&gt;/session.v4.jsonl[.zstd]</code> — under <code>$DSH_HOME/sessions</code> (<code>~/.dsh</code> by default): checksummed Zstandard frames by default, historical generations retained immutably and migrated on open, torn-tail crash recovery, and image bytes in a content-addressed store outside the log.<sup id="fnref:35"><a class="footnote-ref" href="#fn:35">35</a></sup></p>
+<p><strong>Compaction</strong> is a pre-step listener that prices the pending request through a token meter. The default trigger is <code>floor(min(W × 0.8, W − O − 65,536))</code> for context window <code>W</code> and output cap <code>O</code>. The oldest balanced span is replaced by one LLM-written summary, which later requests receive inside <code>&lt;compacted-summary&gt;</code> tags; the newest 16% of <code>W − O</code> stays verbatim. An optional tool-result pruner runs first and can make summarization unnecessary; a provider-confirmed <code>CONTEXT_WINDOW_EXCEEDED</code> triggers a maximal-reduction retry; <code>/compact</code> forces it manually.<sup id="fnref:17"><a class="footnote-ref" href="#fn:17">17</a></sup></p>
+<p><strong>Cross-session memory, as a built-in store, does not exist.</strong> No package implements one. What exists instead: the session logs themselves, searchable through opt-in session-query tools (<code>session_search</code>, <code>session_event_search</code>, …) mounted with full-text indexing off; workspace instruction files (<code>AGENTS.md</code> / <code>CLAUDE.md</code>) loaded per project; and — the documented answer — <strong>memory over MCP</strong>, delegated to third-party servers. The user guide ships three default-off reference configurations (Memorix, the MCP reference memory server, Engram) and is explicit about the division of labor: dsh does not download the server, initialize its database, or choose its embedding provider.<sup id="fnref:36"><a class="footnote-ref" href="#fn:36">36</a></sup> The durable, user-authored knowledge format here is not a memory store at all — it is skills.</p>
+<h2 id="extensions-the-cordis-plugin-system">Extensions: the Cordis plugin system</h2>
+<p>Everything above is the plugin system viewed from one angle or another; this section collects the parts aimed at authors.</p>
+<p><strong>Skills.</strong> <code>packages/skill/skill</code> provides the <code>ctx.skills</code> registry: providers contribute catalogs (a filesystem provider, runtime registrations from other plugins, remote sources), the registry merges and deduplicates them, and consumers advertise summaries while fetching a skill's full body through the <code>skill</code> tool only when invoked — progressive disclosure. Every skill carries an invocation policy (<code>modelInvocable</code> / <code>userInvocable</code>), keeping the model-facing and human-facing catalogs separate.<sup id="fnref:37"><a class="footnote-ref" href="#fn:37">37</a></sup></p>
+<p><strong>MCP — client only.</strong> The <code>packages/mcp/</code> group contains exactly two packages, <code>dsh-mcp-client</code> and <code>dsh-mcp-resources</code>. There is no MCP server in the codebase: dsh consumes MCP; it is not exposed by it. The client supports stdio and Streamable HTTP servers, one config entry per server, <strong>none enabled by default</strong>; tools surface as <code>mcp__&lt;server&gt;__&lt;tool&gt;</code>. Server instructions join the logged system prompt as literal text; prompt templates are unsupported. For stdio children, the bridge strips ambient variables whose names usually identify credentials, plus all <code>DSH_*</code> variables, before launch.<sup id="fnref:38"><a class="footnote-ref" href="#fn:38">38</a></sup></p>
+<p><strong>Installing plugins.</strong> External plugins are ordinary npm packages declaring a bundle patch, installed into a profile with pnpm semantics — registry specs, git URLs, tarballs, <code>file:</code>/<code>link:</code> paths. Installation performs a peer-compatibility check before anything downloads, build scripts require separate approval (T3), and failures roll the profile manifest and lockfile back. Management surfaces: the Web sidebar's Plugins page, the gated <code>plugin_manager</code> tool, and <code>dsh plugin --profile &lt;name&gt;</code>.<sup id="fnref:39"><a class="footnote-ref" href="#fn:39">39</a></sup></p>
+<p><strong>Creator mode: the harness extends itself at runtime.</strong> The Creator preset (id <code>cordis</code>) adds read-only runtime-inspection tools (<code>cordis_inspect_list</code> / <code>cordis_inspect_query</code>), so the model can see the APIs actually present, and the plugin-manager tools.<sup id="fnref:40"><a class="footnote-ref" href="#fn:40">40</a></sup> Behind them sits the dynamic-plugin runner: <code>cordis_define</code> accepts a session-owned, process-local plugin definition from supplied code — the host half executes in a <code>node:vm</code> realm with definition evaluation bounded by a 5-second default timeout, the client half in the browser. Definitions disappear on restart; anything persistent goes through the Plugin Manager, with its approvals.<sup id="fnref:41"><a class="footnote-ref" href="#fn:41">41</a></sup></p>
+<h2 id="interfaces">Interfaces</h2>
+<p>There is no interactive terminal UI. The CLI (<code>apps/cli</code>) boots named profiles from <code>$DSH_HOME/profiles/&lt;name&gt;</code> — <code>web</code>, <code>headless</code>, <code>sdk</code>, <code>sdk-minimal</code>, <code>acp</code> (the <code>desktop</code> name is reserved for the Electron-owned profile) — and otherwise manages plugins and dumps configuration.<sup id="fnref:42"><a class="footnote-ref" href="#fn:42">42</a></sup></p>
+<ul>
+<li><strong>Web UI (primary).</strong> <code>dsh web</code> boots the web-app bundle; the web server is itself a route-registration plugin over <code>node:http</code> (HTTPS optional), binding <code>http://127.0.0.1:3080</code> by default and opening the browser on a local launch. The client is a Vite/React app served as static files, talking to the host through a remote gateway.<sup id="fnref:43"><a class="footnote-ref" href="#fn:43">43</a></sup></li>
+<li><strong>Desktop.</strong> The Electron app boots the same web profile in-process — same composition, different shell (and the surface carrying T3's product analytics).</li>
+<li><strong>Headless.</strong> <code>dsh --profile headless "task"</code> runs one fresh persisted session: final answer on stdout, reasoning deltas on stderr, exit 0/1; <code>--json</code> streams events; <code>--session-id</code> resumes.<sup id="fnref:44"><a class="footnote-ref" href="#fn:44">44</a></sup></li>
+<li><strong>ACP.</strong> <code>dsh --profile acp</code> serves the Agent Client Protocol over JSON-RPC stdio, as an automation surface only: <code>session/new</code>, prompt, and option state are supported; <code>session/load</code>, deletion, fork, terminals, client filesystem operations, and elicitation are explicitly unsupported. ACP clients are trusted controllers — stdio MCP entries in a session request authorize their absolute commands and environment.<sup id="fnref:45"><a class="footnote-ref" href="#fn:45">45</a></sup></li>
+<li><strong>SDK.</strong> A JSON-RPC stdio server (<code>dsh --profile sdk</code>) with a TypeScript client, and a Python SDK that launches and drives that profile. Both SDKs "project the loop" — the project requires session and event changes to update both SDKs' expected outputs in the same change.<sup id="fnref:46"><a class="footnote-ref" href="#fn:46">46</a></sup></li>
+</ul>
+<h2 id="observations">Observations</h2>
+<p><strong>The default-on upload is the one default that cuts against the rest of the design.</strong> Everywhere else in the tool path, dsh's defaults are conservative: approvals fail closed, the sandbox refuses rather than runs unconfined, telemetry waits for feedback. The official-API session-log upload is the exception — full canonical session events, attached incrementally to model requests, on unless the user finds the Settings switch, with a backlog that resumes draining if the switch is flipped back.<sup id="fnref:30"><a class="footnote-ref" href="#fn:30">30</a></sup> It is documented, provider-scoped, and watermarked with care; it is also the only default in the system that moves user data first and asks later.</p>
+<p><strong>The auto-reviewer sees the call, not the chain.</strong> The experimental reviewer's input excludes assistant text, reasoning, and tool results by design — a defensible choice (a reviewer that reads tool output can be argued with by that output), with a structural cost: each call is judged in isolation, and a sequence whose risk exists only across calls is invisible to it. That it is off by default, fails closed, and is candidly documented limits the concern; that its <em>allows</em> execute at Full access sandboxing sharpens it.<sup id="fnref2:28"><a class="footnote-ref" href="#fn:28">28</a></sup></p>
+<p><strong>Desktop analytics is the least consistent surface in the tree.</strong> The two session-telemetry paths are gated or switchable; the Desktop app's product analytics reports by default with, by its own README's account, no user-facing control.<sup id="fnref:32"><a class="footnote-ref" href="#fn:32">32</a></sup> In a codebase this careful about consent mechanics elsewhere, the gap reads as an unfinished edge rather than a philosophy.</p>
+<p><strong>Partial enforcement, reported as partial.</strong> The Windows sandbox rung is weaker than the Linux and macOS ones — reads unconfined, hard links aliasing across the boundary. What the code does with that fact is the creditable part: enforcement is reported per call as <code>partial</code>, and consumers may reject partial enforcement, rather than the difference being rounded up to "sandboxed."<sup id="fnref2:26"><a class="footnote-ref" href="#fn:26">26</a></sup></p>
+<p><strong>Docs-vs-code: the Minimal preset's editor.</strong> Secondary descriptions of Minimal mode call it "bash plus a <code>str_replace_editor</code>." At this pin, Minimal's filesystem tool has read/write/edit <em>disabled</em> (image reading stays on) beside a one-line persona and a persistent terminal; there is no editor tool in the preset at all. The <code>str_replace_editor</code> package exists — as a standalone opt-in no shipped preset mounts; the base bundle's own README notes the default editing tools are <code>read</code>/<code>write</code>/<code>edit</code>.<sup id="fnref:47"><a class="footnote-ref" href="#fn:47">47</a></sup> A small divergence, but the kind that propagates: the modes are YAML, and anyone describing them from prose rather than preset files will eventually describe a harness that doesn't exist.</p>
+<h2 id="tradeoffs">Tradeoffs</h2>
+<p>The composition architecture buys something real. A mode is a diff; a policy is a pair of knobs in a named preset; a new behavior is a plugin on a documented seam rather than a patch to the loop — and because registrations are effects with disposers, all of it can be loaded, unloaded, and recomposed at runtime. The session log buys the complementary property: one artifact to persist, migrate, search, compact, and (where enabled) upload, with every other view a disposable fold over it. A harness whose state is one log and whose behavior is one composed tree is unusually inspectable, and this teardown's evidence base is correspondingly direct: most mechanisms above are stated in the bundle YAML or a package README <em>and</em> visible in the code at the same address.</p>
+<p>The costs are the mirror images. Composition moves behavior out of code and into 522 lines of layered YAML with embedded <code>!!js</code> expressions: what runs is the <em>result</em> of a resolution process across bundles, profiles, presets, home patches, and overlays, and reading any one file understates what a given agent actually mounts. The unbounded loop is the same philosophy at the turn level — budgets are policy, policy belongs in composed plugins — which is coherent, and also means an unmodified base composition lets a model call tools until something external stops it. And the preview status is not a footnote: an alpha whose own README promises breaking changes, built on a vendored release-candidate kernel carrying 24 local patches. The most compositional architecture in this series is also, by construction, the one whose next snapshot will differ most from this one.</p>
+<h2 id="comparison-matrix-row">Comparison matrix row</h2>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Dimension</th>
+<th>DeepSeek Harness (dsh) (dsh-v0.2.1-alpha.3)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>Agent loop</td>
+<td>Plugin-mounted <code>ReactLoopAgent</code> (<code>kick()</code> → turns of re-derive → call → execute steps); context folded from the append-only session log each step; <strong>no built-in turn/step budget</strong> — ends when the model stops calling tools, on abort, or via an <code>agent/turn-stopping</code> hook veto; ≤10 parallel calls per step; advisory repeat-tool reminder at 3/5/8</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Tool system</td>
+<td>Effect-registered, per-agent-scope registry; <code>tools/pre-execute</code> waterfall (veto / ask) + <code>tools/post-execute</code> listeners; no tool search — native mode sends every mounted schema; PTC presentation collapses the wire surface to <code>run_code</code> + generated SDK, sub-calls re-entering the full guarded pipeline; MCP client-only</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Model providers</td>
+<td>Provider adapters behind the <code>ctx.llm</code> seam; official DeepSeek API or BYOK providers</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Prompt construction</td>
+<td>Derived per step from the session log under a stated invariant (model-visible ⟺ logged); per-project <code>AGENTS.md</code>/<code>CLAUDE.md</code> instructions; skill summaries advertised, bodies fetched on invocation; compaction summaries as <code>&lt;compacted-summary&gt;</code></td>
+</tr>
+<tr>
+<td>5</td>
+<td>Memory/session</td>
+<td>The append-only, versioned (format v4) session event log is the only state; JSONL + checksummed zstd per-session directories under <code>~/.dsh/sessions</code>; threshold compaction (≈0.8 × window, newest 16% verbatim); <strong>no built-in cross-session memory</strong> — opt-in session search plus third-party memory over MCP</td>
+</tr>
+<tr>
+<td>6</td>
+<td>Reasoning/planning</td>
+<td>No separate planner; <code>todo_write</code> and goal tools; <code>subagent</code> delegation with interrupt/list/send-message controls; <code>exit_plan_mode</code>; scheduling tools</td>
+</tr>
+<tr>
+<td>7</td>
+<td>Extensibility</td>
+<td>Cordis plugins for everything above the kernel — the loop included; function/class/<code>apply</code> contract + schema-validated config + inject/provide + effect disposers; layered YAML patch composition (bundles, profiles, presets, overlays); skills with progressive disclosure; npm-installed profile plugins with rollback; Creator-mode runtime plugin definition in a <code>node:vm</code> realm</td>
+</tr>
+<tr>
+<td>8</td>
+<td>Interfaces</td>
+<td>No interactive CLI TUI — a profile-boot CLI (<code>web</code> / <code>headless</code> / <code>sdk</code> / <code>sdk-minimal</code> / <code>acp</code>); Web UI primary at <code>127.0.0.1:3080</code>; Electron desktop boots the web profile; headless one-shot with stdout answer; ACP (automation-only subset); JSON-RPC SDK server with TypeScript and Python SDKs</td>
+</tr>
+<tr>
+<td>9</td>
+<td>Failure handling</td>
+<td>Fail-closed approvals (answerer failure → blocked) and sandbox (no enforcing backend → <code>SANDBOX_UNAVAILABLE</code>); per-tool timeout policy; plugin-install rollback; torn-tail log recovery; maximal-reduction compaction retry on <code>CONTEXT_WINDOW_EXCEEDED</code>; composition errors fail at load time</td>
+</tr>
+<tr>
+<td>10</td>
+<td>Security model</td>
+<td>Two-knob permission presets (sandbox mode × approval policy) pinned per session in the log; per-call OS sandboxing (bubblewrap → Landlock / Seatbelt / Windows ACL) with <code>full</code>/<code>partial</code> enforcement reported per call; one-call approval-gated escalation ladder; experimental auto-review (off by default, fail-closed); <strong>plugins run in-process outside the sandbox</strong>; session-log upload to the official API default-on (switchable)</td>
+</tr>
+</tbody>
+</table>
+<h2 id="endnotes">Endnotes</h2>
+<p>All notes are VERIFIED against <code>dsh-v0.2.1-alpha.3</code> (<code>2fbf4359b82fb94c03dcce0b831660d87f12ea5c</code>) unless marked otherwise. <code>GH</code> = <code>https://github.com/deepseek-ai/deepseek-harness/blob/2fbf4359b82fb94c03dcce0b831660d87f12ea5c/</code>.</p>
+<div class="footnote">
+<hr />
+<ol>
+<li id="fn:1">
+<p>The loop as a bundle row: <a href="https://github.com/deepseek-ai/deepseek-harness/blob/2fbf4359b82fb94c03dcce0b831660d87f12ea5c/packages/bundle/base/cordis.patch.yml#L504-L505">GH…/packages/bundle/base/cordis.patch.yml#L504-L505</a> (<code>- id: agent-loop</code>, <code>name: '@deepseek-ai/dsh-agent-loop'</code>); the session service is the row at <a href="https://github.com/deepseek-ai/deepseek-harness/blob/2fbf4359b82fb94c03dcce0b831660d87f12ea5c/packages/bundle/base/cordis.patch.yml#L41">GH…/packages/bundle/base/cordis.patch.yml#L41</a> (<code>@deepseek-ai/dsh-session</code>).&#160;<a class="footnote-backref" href="#fnref:1" title="Jump back to footnote 1 in the text">&#8617;</a></p>
+</li>
+<li id="fn:2">
+<p>Vendored Cordis: <a href="https://github.com/deepseek-ai/deepseek-harness/blob/2fbf4359b82fb94c03dcce0b831660d87f12ea5c/vendor/README.md#L17">GH…/vendor/README.md#L17</a> pins <code>vendor/cordis</code> to upstream cordiverse/cordis <code>packages/core</code> @ <code>56b3d4f725681cf4556c1a8695a709cc3b6eed74</code> (upstream v4.0.0-rc.7), rescoped <code>@deepseek-ai/cordis</code>, vendored version 4.0.5-alpha.2. Eight more Cordis-ecosystem packages are vendored the same way.&#160;<a class="footnote-backref" href="#fnref:2" title="Jump back to footnote 2 in the text">&#8617;</a></p>
+</li>
+<li id="fn:3">
+<p>The base bundle patch file, <a href="https://github.com/deepseek-ai/deepseek-harness/blob/2fbf4359b82fb94c03dcce0b831660d87f12ea5c/packages/bundle/base/cordis.patch.yml">GH…/packages/bundle/base/cordis.patch.yml</a>: 522 lines, 95 plugin rows, counted at the pin. Profiles and their directories: <code>apps/cli/README.md</code> (profiles under <code>$DSH_HOME/profiles/&lt;name&gt;</code>).&#160;<a class="footnote-backref" href="#fnref:3" title="Jump back to footnote 3 in the text">&#8617;</a></p>
+</li>
+<li id="fn:4">
+<p>The four presets live in <code>packages/bundle/web-app/presets/{standard,ptc,minimal,cordis}.patch.yml</code>. Standard ↔ PTC differ by exactly one row: <a href="https://github.com/deepseek-ai/deepseek-harness/blob/2fbf4359b82fb94c03dcce0b831660d87f12ea5c/packages/bundle/web-app/presets/ptc.patch.yml#L123-L126">GH…/packages/bundle/web-app/presets/ptc.patch.yml#L123-L126</a> mounts <code>@deepseek-ai/dsh-agent-tool-presentation</code> with <code>mode: ptc</code>; the standard preset has no such row. ("Creator mode" is the UI name for preset id <code>cordis</code>.)&#160;<a class="footnote-backref" href="#fnref:4" title="Jump back to footnote 4 in the text">&#8617;</a></p>
+</li>
+<li id="fn:5">
+<p>Context derivation at the step boundary: <a href="https://github.com/deepseek-ai/deepseek-harness/blob/2fbf4359b82fb94c03dcce0b831660d87f12ea5c/packages/core/agent-loop/src/agent.ts#L688">GH…/packages/core/agent-loop/src/agent.ts#L688</a> calls <code>session.deriveMessages()</code>. The invariant is stated at <a href="https://github.com/deepseek-ai/deepseek-harness/blob/2fbf4359b82fb94c03dcce0b831660d87f12ea5c/AGENTS.md#L137">GH…/AGENTS.md#L137</a> (Conventions): "<strong>Model-visible ⟺ logged</strong>: anything that reaches a model request must be reconstructable from the session log; a new model-visible input requires a session event."&#160;<a class="footnote-backref" href="#fnref:5" title="Jump back to footnote 5 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:5" title="Jump back to footnote 5 in the text">&#8617;</a></p>
+</li>
+<li id="fn:6">
+<p>Plugin forms and the <code>Plugin.Base</code> contract (<code>name</code>, <code>Config</code>, <code>inject</code>, <code>provide</code>, <code>intercept</code>): <a href="https://github.com/deepseek-ai/deepseek-harness/blob/2fbf4359b82fb94c03dcce0b831660d87f12ea5c/vendor/cordis/src/registry.ts#L92-L135">GH…/vendor/cordis/src/registry.ts#L92-L135</a>. Config is a Standard Schema validator applied before start: <a href="https://github.com/deepseek-ai/deepseek-harness/blob/2fbf4359b82fb94c03dcce0b831660d87f12ea5c/vendor/cordis/src/fiber.ts#L50-L53">GH…/vendor/cordis/src/fiber.ts#L50-L53</a>.&#160;<a class="footnote-backref" href="#fnref:6" title="Jump back to footnote 6 in the text">&#8617;</a></p>
+</li>
+<li id="fn:7">
+<p>Effects and hook flavors: root <code>AGENTS.md</code>, Conventions — contributions go through <code>ctx.effect()</code> / <code>ctx.on()</code>, every <code>register()</code> returns a disposer, and hooks are serial / parallel / waterfall, a waterfall listener returning without <code>next()</code> acting as a veto. See <a href="https://github.com/deepseek-ai/deepseek-harness/blob/2fbf4359b82fb94c03dcce0b831660d87f12ea5c/AGENTS.md#L137">GH…/AGENTS.md#L137</a> (the Conventions block).&#160;<a class="footnote-backref" href="#fnref:7" title="Jump back to footnote 7 in the text">&#8617;</a></p>
+</li>
+<li id="fn:8">
+<p>Fiber states <code>PENDING → LOADING → ACTIVE → UNLOADING → DISPOSED</code> (+ <code>FAILED</code>): <a href="https://github.com/deepseek-ai/deepseek-harness/blob/2fbf4359b82fb94c03dcce0b831660d87f12ea5c/vendor/cordis/src/fiber.ts#L140-L153">GH…/vendor/cordis/src/fiber.ts#L140-L153</a>. Kernel size: <code>vendor/cordis/src</code> totals 2,696 lines across 9 files, counted at the pin.&#160;<a class="footnote-backref" href="#fnref:8" title="Jump back to footnote 8 in the text">&#8617;</a></p>
+</li>
+<li id="fn:9">
+<p>The 24 logged local modifications to vendored Cordis: <a href="https://github.com/deepseek-ai/deepseek-harness/blob/2fbf4359b82fb94c03dcce0b831660d87f12ea5c/vendor/README.md#L29-L56">GH…/vendor/README.md#L29-L56</a> — including the <code>fiber.ts</code> reentrant-disposal hardening (entry #6). <code>vendor/AGENTS.md</code> requires every divergence to be logged there.&#160;<a class="footnote-backref" href="#fnref:9" title="Jump back to footnote 9 in the text">&#8617;</a></p>
+</li>
+<li id="fn:10">
+<p>Conditional composition + bash defaults: <a href="https://github.com/deepseek-ai/deepseek-harness/blob/2fbf4359b82fb94c03dcce0b831660d87f12ea5c/packages/bundle/base/cordis.patch.yml#L249-L254">GH…/packages/bundle/base/cordis.patch.yml#L249-L254</a> — the <code>bash-sandbox</code> row is disabled on win32 by a <code>!!js</code> expression, and the same row's config carries the bash tool's 60 s default timeout that <code>timeout-policy</code> enforces.&#160;<a class="footnote-backref" href="#fnref:10" title="Jump back to footnote 10 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:10" title="Jump back to footnote 10 in the text">&#8617;</a></p>
+</li>
+<li id="fn:11">
+<p>The project rule at <a href="https://github.com/deepseek-ai/deepseek-harness/blob/2fbf4359b82fb94c03dcce0b831660d87f12ea5c/AGENTS.md#L138">GH…/AGENTS.md#L138</a>: "<strong>Plugins, not loop changes</strong>: new behavior goes on documented extension points; changing <code>agent-loop</code> requires updating docs/architecture.md."&#160;<a class="footnote-backref" href="#fnref:11" title="Jump back to footnote 11 in the text">&#8617;</a></p>
+</li>
+<li id="fn:12">
+<p>Loop entry: <a href="https://github.com/deepseek-ai/deepseek-harness/blob/2fbf4359b82fb94c03dcce0b831660d87f12ea5c/packages/core/agent-loop/src/agent.ts#L252">GH…/packages/core/agent-loop/src/agent.ts#L252</a> — <code>kick()</code> runs <code>while (await this.turn()) {}</code> (loop head at L258). Tool execution is in the same package's <code>src/tool-calls.ts</code>; responses settle into the log as <code>assistant/message</code> / <code>assistant/attempt</code> events.&#160;<a class="footnote-backref" href="#fnref:12" title="Jump back to footnote 12 in the text">&#8617;</a></p>
+</li>
+<li id="fn:13">
+<p>Step parallelism cap: <a href="https://github.com/deepseek-ai/deepseek-harness/blob/2fbf4359b82fb94c03dcce0b831660d87f12ea5c/packages/core/agent-loop/src/constants.ts#L6">GH…/packages/core/agent-loop/src/constants.ts#L6</a> — <code>DEFAULT_MAX_PARALLEL_TOOL_CALLS = 10</code>.&#160;<a class="footnote-backref" href="#fnref:13" title="Jump back to footnote 13 in the text">&#8617;</a></p>
+</li>
+<li id="fn:14">
+<p>No built-in budget, in the package's own words: <a href="https://github.com/deepseek-ai/deepseek-harness/blob/2fbf4359b82fb94c03dcce0b831660d87f12ea5c/packages/core/agent-loop/README.md#L220">GH…/packages/core/agent-loop/README.md#L220</a> — "<strong>No built-in turn budget</strong> — tool calls or steering continue the current turn; a policy that bounds runaway turns must cancel from an existing lifecycle extension point such as <code>agent/turn-stopping</code>." The hook is dispatched before turn end at <a href="https://github.com/deepseek-ai/deepseek-harness/blob/2fbf4359b82fb94c03dcce0b831660d87f12ea5c/packages/core/agent-loop/src/agent.ts#L362">GH…/packages/core/agent-loop/src/agent.ts#L362</a>.&#160;<a class="footnote-backref" href="#fnref:14" title="Jump back to footnote 14 in the text">&#8617;</a></p>
+</li>
+<li id="fn:15">
+<p>Repeat-tool reminder: thresholds default <code>[3, 5, 8]</code> — <a href="https://github.com/deepseek-ai/deepseek-harness/blob/2fbf4359b82fb94c03dcce0b831660d87f12ea5c/packages/guard/repeat-tool-reminder/src/index.ts#L36-L53">GH…/packages/guard/repeat-tool-reminder/src/index.ts#L36-L53</a>. It counts consecutive identical calls with canonicalized arguments and injects its reminder via a <code>tools/post-execute</code> listener (package README); no code path in the package vetoes a call.&#160;<a class="footnote-backref" href="#fnref:15" title="Jump back to footnote 15 in the text">&#8617;</a></p>
+</li>
+<li id="fn:16">
+<p>Fresh-session defaults: sandbox default <code>mode: $DSH_PERMISSION_MODE ?? 'workspace-write'</code> with <code>workspaceRoot: process.cwd()</code> at <a href="https://github.com/deepseek-ai/deepseek-harness/blob/2fbf4359b82fb94c03dcce0b831660d87f12ea5c/packages/bundle/base/cordis.patch.yml#L243-L247">GH…/packages/bundle/base/cordis.patch.yml#L243-L247</a>; approval default (<code>never</code> only under <code>danger-full-access</code>, otherwise <code>ask</code>) at <a href="https://github.com/deepseek-ai/deepseek-harness/blob/2fbf4359b82fb94c03dcce0b831660d87f12ea5c/packages/bundle/base/cordis.patch.yml#L259-L261">GH…/packages/bundle/base/cordis.patch.yml#L259-L261</a>. The chosen pair is pinned into the session log at creation as a <code>permission/preset</code> event and switched live via <code>/permission</code>.&#160;<a class="footnote-backref" href="#fnref:16" title="Jump back to footnote 16 in the text">&#8617;</a></p>
+</li>
+<li id="fn:17">
+<p>Compaction: <a href="https://github.com/deepseek-ai/deepseek-harness/blob/2fbf4359b82fb94c03dcce0b831660d87f12ea5c/packages/compaction/compaction-basic/README.md#L62">GH…/packages/compaction/compaction-basic/README.md#L62</a> — default trigger <code>floor(min(W × 0.8, W − O − 65,536))</code>, settings table at L66-L73; summary delivered inside <code>&lt;compacted-summary&gt;</code> tags with the newest 16% of <code>W − O</code> verbatim, optional tool-result pruner first, maximal-reduction retry on a provider-confirmed <code>CONTEXT_WINDOW_EXCEEDED</code>. Mounted in the base bundle (<code>cordis.patch.yml:351-352</code>).&#160;<a class="footnote-backref" href="#fnref:17" title="Jump back to footnote 17 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:17" title="Jump back to footnote 17 in the text">&#8617;</a></p>
+</li>
+<li id="fn:18">
+<p>Approval events are in the session event vocabulary — <code>approval/asked</code>, <code>approval/decided</code> in <a href="https://github.com/deepseek-ai/deepseek-harness/blob/2fbf4359b82fb94c03dcce0b831660d87f12ea5c/packages/core/session/src/known-event-types.ts">GH…/packages/core/session/src/known-event-types.ts</a> — and are not model-visible: the model sees the tool outcome and the current policy snapshot only.&#160;<a class="footnote-backref" href="#fnref:18" title="Jump back to footnote 18 in the text">&#8617;</a></p>
+</li>
+<li id="fn:19">
+<p>Tool registry and pipeline: <code>packages/core/tools</code> — tools register as effects on the scoped <code>ctx.tools</code> registry; the pipeline dispatches <code>tools/pre-execute</code> waterfall listeners (veto or <code>ask</code>), execution, and <code>tools/post-execute</code> listeners. Pinned tree: <a href="https://github.com/deepseek-ai/deepseek-harness/tree/2fbf4359b82fb94c03dcce0b831660d87f12ea5c/packages/core/tools">GH…/packages/core/tools</a>.&#160;<a class="footnote-backref" href="#fnref:19" title="Jump back to footnote 19 in the text">&#8617;</a></p>
+</li>
+<li id="fn:20">
+<p>The generated inventory: <a href="https://github.com/deepseek-ai/deepseek-harness/blob/2fbf4359b82fb94c03dcce0b831660d87f12ea5c/docs/tool-catalog.md">GH…/docs/tool-catalog.md</a> — 2,773 lines at the pin. Conditionally present: <code>run_code</code> (PTC only), <code>cordis_inspect_*</code> (Creator only), session-query and <code>terminal_*</code> tools (opt-in), agent-team tools (experimental, disabled in base).&#160;<a class="footnote-backref" href="#fnref:20" title="Jump back to footnote 20 in the text">&#8617;</a></p>
+</li>
+<li id="fn:21">
+<p>PTC presentation: <code>packages/core/agent-tool-presentation</code> exposes <code>ctx.tools.presentAs()</code>; in PTC mode the request carries the single <code>run_code</code> schema plus a generated SDK of every registered tool, and bridged sub-calls re-enter the ordinary pipeline with concurrency bounded by <code>maxParallelSubCalls</code> — see the <code>run_code</code> entry in <a href="https://github.com/deepseek-ai/deepseek-harness/blob/2fbf4359b82fb94c03dcce0b831660d87f12ea5c/docs/tool-catalog.md">GH…/docs/tool-catalog.md</a>.&#160;<a class="footnote-backref" href="#fnref:21" title="Jump back to footnote 21 in the text">&#8617;</a></p>
+</li>
+<li id="fn:22">
+<p>PTC runtimes: <code>packages/ptc-runtime/ptc-runtime</code> (the <code>ctx.ptcRuntime</code> seam), <code>packages/ptc-runtime/ptc-runtime-node</code> (fresh managed Node process under the resolved sandbox policy; optional persistent in-memory REPL keyed by <code>stateOwner</code>, new in this alpha), and the experimental Python provider, whose package README states its CPython subprocess runs without file confinement. Pinned tree: <a href="https://github.com/deepseek-ai/deepseek-harness/tree/2fbf4359b82fb94c03dcce0b831660d87f12ea5c/packages/ptc-runtime">GH…/packages/ptc-runtime</a>.&#160;<a class="footnote-backref" href="#fnref:22" title="Jump back to footnote 22 in the text">&#8617;</a></p>
+</li>
+<li id="fn:23">
+<p>The three configured presets: <a href="https://github.com/deepseek-ai/deepseek-harness/blob/2fbf4359b82fb94c03dcce0b831660d87f12ea5c/packages/bundle/base/cordis.patch.yml#L263">GH…/packages/bundle/base/cordis.patch.yml#L263</a> onward configures <code>read-only</code>, <code>workspace-write</code>, and <code>danger-full-access</code> in <code>packages/interaction/permission-presets</code>; the package's own defaults are the latter two (its README).&#160;<a class="footnote-backref" href="#fnref:23" title="Jump back to footnote 23 in the text">&#8617;</a></p>
+</li>
+<li id="fn:24">
+<p>Approval dispatch semantics: <code>packages/interaction/user-approval/README.md</code>, "Dispatch" — no terminal answerer → <code>unavailable</code> → blocked; a throwing answerer is contained and resolves <code>unavailable</code>; a non-vocabulary return is normalized to <code>unavailable</code>; the <code>never</code> policy is enforced inside the service before the waterfall. Pinned file: <a href="https://github.com/deepseek-ai/deepseek-harness/blob/2fbf4359b82fb94c03dcce0b831660d87f12ea5c/packages/interaction/user-approval/README.md">GH…/packages/interaction/user-approval/README.md</a>.&#160;<a class="footnote-backref" href="#fnref:24" title="Jump back to footnote 24 in the text">&#8617;</a></p>
+</li>
+<li id="fn:25">
+<p>Sandbox contract and fail-closed behavior: <code>packages/sandbox/sandbox/README.md</code>, "Fail-closed behavior" — if no backend can enforce the requested mode, the call fails with <code>SANDBOX_UNAVAILABLE</code>; enforcement completeness (<code>full</code> / <code>partial</code>) is reported per call and consumers may reject <code>partial</code>; the package frames this as same-world confinement. Pinned file: <a href="https://github.com/deepseek-ai/deepseek-harness/blob/2fbf4359b82fb94c03dcce0b831660d87f12ea5c/packages/sandbox/sandbox/README.md">GH…/packages/sandbox/sandbox/README.md</a>.&#160;<a class="footnote-backref" href="#fnref:25" title="Jump back to footnote 25 in the text">&#8617;</a></p>
+</li>
+<li id="fn:26">
+<p>Local backends and their limits: <a href="https://github.com/deepseek-ai/deepseek-harness/blob/2fbf4359b82fb94c03dcce0b831660d87f12ea5c/packages/sandbox/sandbox-local/README.md#L71-L83">GH…/packages/sandbox/sandbox-local/README.md#L71-L83</a> (runner selection: bubblewrap → Landlock on Linux, Seatbelt on macOS, ACL restricted-token on Windows, the latter reporting <code>partial</code>); the bubblewrap profile at <a href="https://github.com/deepseek-ai/deepseek-harness/blob/2fbf4359b82fb94c03dcce0b831660d87f12ea5c/packages/sandbox/sandbox-local/README.md#L75">GH…/packages/sandbox/sandbox-local/README.md#L75</a>; runner limits at L131-L133 of the same file.&#160;<a class="footnote-backref" href="#fnref:26" title="Jump back to footnote 26 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:26" title="Jump back to footnote 26 in the text">&#8617;</a></p>
+</li>
+<li id="fn:27">
+<p>The escalation ladder: <a href="https://github.com/deepseek-ai/deepseek-harness/blob/2fbf4359b82fb94c03dcce0b831660d87f12ea5c/packages/sandbox/sandbox/src/escalation.ts">GH…/packages/sandbox/sandbox/src/escalation.ts</a> — one retry of the exact call with <code>sandbox_permissions</code> set to the narrowest strictly wider mode plus a <code>justification</code>, gated by <code>ctx.approval</code>, applying to that call only; narrower or equal targets are rejected without approval.&#160;<a class="footnote-backref" href="#fnref:27" title="Jump back to footnote 27 in the text">&#8617;</a></p>
+</li>
+<li id="fn:28">
+<p>Auto-review: <code>packages/experimental/auto-review/README.md</code> — allow → executes with Full access sandboxing; deny → falls to the <code>ask</code> path; malformed output or technical failure fails the call; delegated children pin <code>never</code>; reviewer input excludes assistant text, reasoning, and tool results; the README's own caution: it "can allow unsafe actions, deny useful work, and spend additional tokens." Pinned file: <a href="https://github.com/deepseek-ai/deepseek-harness/blob/2fbf4359b82fb94c03dcce0b831660d87f12ea5c/packages/experimental/auto-review/README.md">GH…/packages/experimental/auto-review/README.md</a>. Shipped switched off.&#160;<a class="footnote-backref" href="#fnref:28" title="Jump back to footnote 28 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:28" title="Jump back to footnote 28 in the text">&#8617;</a></p>
+</li>
+<li id="fn:29">
+<p>The plugin boundary, in the project's words: <a href="https://github.com/deepseek-ai/deepseek-harness/blob/2fbf4359b82fb94c03dcce0b831660d87f12ea5c/packages/boot/plugin-manager/README.md#L31">GH…/packages/boot/plugin-manager/README.md#L31</a> — "installed Host code executes in-process outside the workspace sandbox." The same README covers the <code>plugin_manager</code> gating (<code>danger-full-access</code> or per-call approval; separate, persistent-by-package approval for dependency build scripts).&#160;<a class="footnote-backref" href="#fnref:29" title="Jump back to footnote 29 in the text">&#8617;</a></p>
+</li>
+<li id="fn:30">
+<p>Session-log upload: mounted in the base bundle at <a href="https://github.com/deepseek-ai/deepseek-harness/blob/2fbf4359b82fb94c03dcce0b831660d87f12ea5c/packages/bundle/base/cordis.patch.yml#L43-L44">GH…/packages/bundle/base/cordis.patch.yml#L43-L44</a> (<code>dsh-session-log-deepseek</code>). Config: <code>enabled: z.boolean().default(true)</code> at <a href="https://github.com/deepseek-ai/deepseek-harness/blob/2fbf4359b82fb94c03dcce0b831660d87f12ea5c/packages/session/session-log-deepseek/src/index.ts#L52">GH…/packages/session/session-log-deepseek/src/index.ts#L52</a>, gate at L189 of the same file. The <code>dsh_session_log</code> field carries canonical events since the last server-accepted watermark (longest contiguous run within <code>maxBytes</code>, default 8 MiB; at-least-once, with a durable delivery-accepted event). The user switch is Web Settings → General ("Upload Session Log when using the official model API"); events recorded while disabled drain from the watermark if re-enabled.&#160;<a class="footnote-backref" href="#fnref:30" title="Jump back to footnote 30 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:30" title="Jump back to footnote 30 in the text">&#8617;</a></p>
+</li>
+<li id="fn:31">
+<p>OTel telemetry: the base bundle mounts <code>dsh-otel</code> + <code>dsh-session-telemetry-otel</code> at <a href="https://github.com/deepseek-ai/deepseek-harness/blob/2fbf4359b82fb94c03dcce0b831660d87f12ea5c/packages/bundle/base/cordis.patch.yml#L202-L237">GH…/packages/bundle/base/cordis.patch.yml#L202-L237</a> with <code>mode: FEEDBACK_ONLY</code> by default, exporting to <code>https://dsh-otel-collector.deepseeksvc.com/v1/logs</code> (overridable via <code>DSH_TELEMETRY_OTLP_URL</code>; any non-empty <code>DSH_TELEMETRY_DISABLED</code> opts out). The anonymous identity (<code>packages/identity/anonymous-user-id</code>) is a random UUID at <code>$DSH_HOME/.anonymous-user-id</code>.&#160;<a class="footnote-backref" href="#fnref:31" title="Jump back to footnote 31 in the text">&#8617;</a></p>
+</li>
+<li id="fn:32">
+<p>Desktop product analytics: <code>packages/client/product-analytics/README.md</code> — the Desktop app reports selected interactions through the OTel product exporter by default, with no user-facing control; ordinary Web clients never submit these events. Pinned file: <a href="https://github.com/deepseek-ai/deepseek-harness/blob/2fbf4359b82fb94c03dcce0b831660d87f12ea5c/packages/client/product-analytics/README.md">GH…/packages/client/product-analytics/README.md</a>.&#160;<a class="footnote-backref" href="#fnref:32" title="Jump back to footnote 32 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:32" title="Jump back to footnote 32 in the text">&#8617;</a></p>
+</li>
+<li id="fn:33">
+<p><a href="https://github.com/deepseek-ai/deepseek-harness/blob/2fbf4359b82fb94c03dcce0b831660d87f12ea5c/SAFETY.md">GH…/SAFETY.md</a> (repo root): experimental developer preview, no security audit, sandboxing and approvals "do not guarantee isolation," with advice to use a disposable VM/container, least privilege, and backups.&#160;<a class="footnote-backref" href="#fnref:33" title="Jump back to footnote 33 in the text">&#8617;</a></p>
+</li>
+<li id="fn:34">
+<p>Format version and governance: <code>SESSION_FORMAT_VERSION = 4</code> at <a href="https://github.com/deepseek-ai/deepseek-harness/blob/2fbf4359b82fb94c03dcce0b831660d87f12ea5c/packages/core/session/src/types.ts#L90">GH…/packages/core/session/src/types.ts#L90</a>; <code>docs/session-format-status.md</code> records latest finalized = 4, latest released = 4 (evidence tag <code>dsh-v0.2.0-rc.2</code>); adjacent-only migration packages <code>session-format-v0-to-v1</code> … <code>v3-to-v4</code> ship in-tree; the <code>ignorable</code> forward-compatibility marker is documented in the header of <a href="https://github.com/deepseek-ai/deepseek-harness/blob/2fbf4359b82fb94c03dcce0b831660d87f12ea5c/packages/core/session/src/known-event-types.ts">GH…/packages/core/session/src/known-event-types.ts</a>.&#160;<a class="footnote-backref" href="#fnref:34" title="Jump back to footnote 34 in the text">&#8617;</a></p>
+</li>
+<li id="fn:35">
+<p>On-disk layout: <a href="https://github.com/deepseek-ai/deepseek-harness/blob/2fbf4359b82fb94c03dcce0b831660d87f12ea5c/packages/session/session-persistence-jsonl/README.md#L55-L73">GH…/packages/session/session-persistence-jsonl/README.md#L55-L73</a> — <code>&lt;root&gt;/&lt;normalized-cwd&gt;/&lt;encoded-session-id&gt;/session.v4.jsonl[.zstd]</code>, checksummed Zstandard frames by default, immutable historical generations migrated on open, torn-tail recovery. The root is <code>dshHomePath('sessions')</code> (<a href="https://github.com/deepseek-ai/deepseek-harness/blob/2fbf4359b82fb94c03dcce0b831660d87f12ea5c/packages/bundle/base/cordis.patch.yml#L139-L143">GH…/packages/bundle/base/cordis.patch.yml#L139-L143</a>); image bytes are content-addressed outside the log (<code>dsh-attachment-local</code>). <code>DSH_HOME</code> defaults to <code>~/.dsh</code>.&#160;<a class="footnote-backref" href="#fnref:35" title="Jump back to footnote 35 in the text">&#8617;</a></p>
+</li>
+<li id="fn:36">
+<p>No built-in cross-session memory store — negative finding over <code>packages/</code> at the pin. Session query is opt-in: the base bundle mounts <code>ctx.sessionQuery</code> with full-text indexing off (<code>openAt: never</code>, bundle comment at <a href="https://github.com/deepseek-ai/deepseek-harness/blob/2fbf4359b82fb94c03dcce0b831660d87f12ea5c/packages/bundle/base/cordis.patch.yml#L151">GH…/packages/bundle/base/cordis.patch.yml#L151</a>). The MCP memory guide, <a href="https://github.com/deepseek-ai/deepseek-harness/blob/2fbf4359b82fb94c03dcce0b831660d87f12ea5c/docs/user/guide/mcp-memory.md">GH…/docs/user/guide/mcp-memory.md</a>, ships the three default-off reference configurations and states dsh does not download the server, initialize its database, or choose its embedding provider.&#160;<a class="footnote-backref" href="#fnref:36" title="Jump back to footnote 36 in the text">&#8617;</a></p>
+</li>
+<li id="fn:37">
+<p>Skills: <code>packages/skill/skill</code> provides the <code>ctx.skills</code> registry (providers contribute catalogs; the registry merges and deduplicates; bodies load on demand through the <code>skill</code> tool); providers include <code>dsh-skill-filesystem</code>, runtime registrations via <code>ctx.skills.register(...)</code>, and remote sources; invocation policy is <code>modelInvocable</code> / <code>userInvocable</code> per skill. Pinned tree: <a href="https://github.com/deepseek-ai/deepseek-harness/tree/2fbf4359b82fb94c03dcce0b831660d87f12ea5c/packages/skill">GH…/packages/skill</a>.&#160;<a class="footnote-backref" href="#fnref:37" title="Jump back to footnote 37 in the text">&#8617;</a></p>
+</li>
+<li id="fn:38">
+<p>MCP client only — <code>packages/mcp/</code> contains exactly <code>dsh-mcp-client</code> and <code>dsh-mcp-resources</code> at the pin; no MCP server package exists. Client behavior (stdio + Streamable HTTP, one entry per server, none enabled by default, tools as <code>mcp__&lt;server&gt;__&lt;tool&gt;</code>, server instructions as literal system-prompt text, prompt templates unsupported): <a href="https://github.com/deepseek-ai/deepseek-harness/blob/2fbf4359b82fb94c03dcce0b831660d87f12ea5c/packages/mcp/mcp-client/README.md">GH…/packages/mcp/mcp-client/README.md</a>. Stdio environment stripping (credential-named variables plus all <code>DSH_*</code>): <a href="https://github.com/deepseek-ai/deepseek-harness/blob/2fbf4359b82fb94c03dcce0b831660d87f12ea5c/docs/user/guide/mcp-memory.md#L10">GH…/docs/user/guide/mcp-memory.md#L10</a>.&#160;<a class="footnote-backref" href="#fnref:38" title="Jump back to footnote 38 in the text">&#8617;</a></p>
+</li>
+<li id="fn:39">
+<p>Plugin installation: <a href="https://github.com/deepseek-ai/deepseek-harness/blob/2fbf4359b82fb94c03dcce0b831660d87f12ea5c/packages/boot/plugin-manager/README.md#L44-L64">GH…/packages/boot/plugin-manager/README.md#L44-L64</a> — npm packages declaring a bundle patch, installed into a profile with pnpm semantics (registry specs, git URLs, tarballs, <code>file:</code>/<code>link:</code>), a DSH peer-compatibility check before download, and rollback of the profile manifest and lockfile on failure.&#160;<a class="footnote-backref" href="#fnref:39" title="Jump back to footnote 39 in the text">&#8617;</a></p>
+</li>
+<li id="fn:40">
+<p>The Creator preset's additions: runtime-inspection tools at <a href="https://github.com/deepseek-ai/deepseek-harness/blob/2fbf4359b82fb94c03dcce0b831660d87f12ea5c/packages/bundle/web-app/presets/cordis.patch.yml#L120-L121">GH…/packages/bundle/web-app/presets/cordis.patch.yml#L120-L121</a> (<code>dsh-tool-cordis</code>) and the plugin-manager tools at <a href="https://github.com/deepseek-ai/deepseek-harness/blob/2fbf4359b82fb94c03dcce0b831660d87f12ea5c/packages/bundle/web-app/presets/cordis.patch.yml#L131-L132">GH…/packages/bundle/web-app/presets/cordis.patch.yml#L131-L132</a> (<code>@deepseek-ai/dsh-plugin-manager/tools</code>).&#160;<a class="footnote-backref" href="#fnref:40" title="Jump back to footnote 40 in the text">&#8617;</a></p>
+</li>
+<li id="fn:41">
+<p>Dynamic plugins: <code>DynamicCordisRunnerService</code> at <a href="https://github.com/deepseek-ai/deepseek-harness/blob/2fbf4359b82fb94c03dcce0b831660d87f12ea5c/packages/extensions/cordis-host-runner/src/index.ts#L141">GH…/packages/extensions/cordis-host-runner/src/index.ts#L141</a>; <code>cordis_define</code> at L167 of the same file; the <code>node:vm</code> host realm with <code>vmTimeoutMs</code> default 5,000 ms at L147-L150. Definitions are session-owned and process-local; persistence goes through the Plugin Manager.&#160;<a class="footnote-backref" href="#fnref:41" title="Jump back to footnote 41 in the text">&#8617;</a></p>
+</li>
+<li id="fn:42">
+<p>CLI modes: <code>apps/cli/src/bin.ts</code> (<code>runCli</code>) — profile boot, plugin management, config dump; no interactive terminal UI exists in the CLI. Shipped bundles: <code>packages/bundle/{base,web-app,headless,sdk-app,sdk-minimal,acp-app}</code>. Pinned file: <a href="https://github.com/deepseek-ai/deepseek-harness/blob/2fbf4359b82fb94c03dcce0b831660d87f12ea5c/apps/cli/src/bin.ts">GH…/apps/cli/src/bin.ts</a>.&#160;<a class="footnote-backref" href="#fnref:42" title="Jump back to footnote 42 in the text">&#8617;</a></p>
+</li>
+<li id="fn:43">
+<p>Web server: <code>packages/host/webserver</code> is a <code>node:http</code> route-registration plugin — <a href="https://github.com/deepseek-ai/deepseek-harness/blob/2fbf4359b82fb94c03dcce0b831660d87f12ea5c/packages/host/webserver/src/index.ts#L11-L13">GH…/packages/host/webserver/src/index.ts#L11-L13</a>; the default port resolves as <code>ctx.webStartup.port ?? 3080</code> at <a href="https://github.com/deepseek-ai/deepseek-harness/blob/2fbf4359b82fb94c03dcce0b831660d87f12ea5c/packages/boot/cmdline/src/index.ts#L14">GH…/packages/boot/cmdline/src/index.ts#L14</a>, with the default bind stated in the root README (L31). Client ↔ host traffic goes through the Typert Remote gateway (<code>packages/api/api-gateway</code>); the client is <code>apps/web</code> (Vite/React).&#160;<a class="footnote-backref" href="#fnref:43" title="Jump back to footnote 43 in the text">&#8617;</a></p>
+</li>
+<li id="fn:44">
+<p>Headless profile semantics: <a href="https://github.com/deepseek-ai/deepseek-harness/blob/2fbf4359b82fb94c03dcce0b831660d87f12ea5c/packages/bundle/headless/README.md">GH…/packages/bundle/headless/README.md</a> — one fresh persisted session per run, final answer on stdout, reasoning deltas on stderr, exit 0/1, <code>--json</code> event streaming, <code>--session-id</code> resume.&#160;<a class="footnote-backref" href="#fnref:44" title="Jump back to footnote 44 in the text">&#8617;</a></p>
+</li>
+<li id="fn:45">
+<p>ACP scope: <a href="https://github.com/deepseek-ai/deepseek-harness/blob/2fbf4359b82fb94c03dcce0b831660d87f12ea5c/packages/acp/acp/README.md#L55">GH…/packages/acp/acp/README.md#L55</a> — JSON-RPC stdio, automation-only (supported/unsupported surface listed at L2 and L55 of the same file: no <code>session/load</code>, deletion, fork, terminals, client filesystem operations, or elicitation); ACP clients as trusted controllers, whose stdio MCP entries authorize absolute commands and environment, at L80.&#160;<a class="footnote-backref" href="#fnref:45" title="Jump back to footnote 45 in the text">&#8617;</a></p>
+</li>
+<li id="fn:46">
+<p>Both SDKs project the loop: <a href="https://github.com/deepseek-ai/deepseek-harness/blob/2fbf4359b82fb94c03dcce0b831660d87f12ea5c/AGENTS.md#L161">GH…/AGENTS.md#L161</a> — "<strong>Both SDKs project the loop.</strong> Agent-loop, session-lifecycle, and <code>SessionEventMap</code> changes update the TypeScript and Python SDK expected outputs in the same PR." The SDK server is <code>packages/sdk/{protocol,server,client}</code>; the Python side is <code>python/sdk</code> + <code>python/sdk-runtime</code>.&#160;<a class="footnote-backref" href="#fnref:46" title="Jump back to footnote 46 in the text">&#8617;</a></p>
+</li>
+<li id="fn:47">
+<p>Minimal at this pin: the one-line persona at <a href="https://github.com/deepseek-ai/deepseek-harness/blob/2fbf4359b82fb94c03dcce0b831660d87f12ea5c/packages/bundle/web-app/presets/minimal.patch.yml#L11-L12">GH…/packages/bundle/web-app/presets/minimal.patch.yml#L11-L12</a> (<code>dsh-persona</code>); <code>dsh-tool-fs</code> with read/write/edit disabled and <code>readImage: true</code> at <a href="https://github.com/deepseek-ai/deepseek-harness/blob/2fbf4359b82fb94c03dcce0b831660d87f12ea5c/packages/bundle/web-app/presets/minimal.patch.yml#L17-L21">GH…/packages/bundle/web-app/presets/minimal.patch.yml#L17-L21</a>, beside a persistent bash terminal (<code>timeoutMs: 300000</code>). Negative finding: <code>str_replace_editor</code> appears in no shipped preset; it is a standalone package, and the base bundle's own README notes default editing is <code>read</code>/<code>write</code>/<code>edit</code>.&#160;<a class="footnote-backref" href="#fnref:47" title="Jump back to footnote 47 in the text">&#8617;</a></p>
+</li>
+</ol>
+</div>
+</main>
+<script src="../assets/storybook.js" data-kind="article" data-after=".topnav" data-bottom="main" data-keys></script>
+</body>
+</html>

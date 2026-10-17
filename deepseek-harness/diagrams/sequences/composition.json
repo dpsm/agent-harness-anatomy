@@ -1,0 +1,69 @@
+{
+ "messages": [
+  {
+   "from": 0,
+   "label": "boot profile: web",
+   "to": 1
+  },
+  {
+   "from": 1,
+   "label": "apply bundle layers",
+   "to": 2
+  },
+  {
+   "from": 1,
+   "label": "apply profile + preset patches",
+   "to": 3
+  },
+  {
+   "dashed": true,
+   "from": 3,
+   "label": "row diffs (PTC adds one row)",
+   "to": 1
+  },
+  {
+   "from": 1,
+   "label": "assembled config (95 base rows)",
+   "to": 4
+  },
+  {
+   "from": 4,
+   "label": "mount rows as fibers",
+   "to": 5
+  },
+  {
+   "from": 5,
+   "label": "PENDING -> LOADING",
+   "to": 5
+  },
+  {
+   "dashed": true,
+   "from": 5,
+   "label": "provide ctx.llm, ctx.tools, ...",
+   "to": 4
+  },
+  {
+   "from": 4,
+   "label": "agent-loop row ACTIVE — kick()",
+   "to": 4
+  },
+  {
+   "note": "span",
+   "span": [
+    0,
+    5
+   ],
+   "text": "An unsatisfied injection fails at load time, not at runtime"
+  }
+ ],
+ "participants": [
+  "CLI",
+  "Loader",
+  "Base bundle",
+  "Preset patch",
+  "Cordis",
+  "Plugin fibers"
+ ],
+ "subtitle": "dsh web — layers of YAML become a running plugin tree",
+ "title": "Preset composition at startup"
+}
