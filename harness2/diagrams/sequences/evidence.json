@@ -1,0 +1,74 @@
+{
+ "messages": [
+  {
+   "from": 0,
+   "label": "build(task, rollouts, harness, library, pool)",
+   "to": 1
+  },
+  {
+   "from": 1,
+   "label": "task_prompt() \u2014 criteria and expected output stripped",
+   "to": 2
+  },
+  {
+   "dashed": true,
+   "from": 2,
+   "label": "the task as the agent received it",
+   "to": 1
+  },
+  {
+   "from": 1,
+   "label": "trajectory(run_dir), deliverable_text(run_dir)",
+   "to": 2
+  },
+  {
+   "dashed": true,
+   "from": 2,
+   "label": "full trajectory + artifact via the grader's own extractor",
+   "to": 1
+  },
+  {
+   "from": 1,
+   "label": "write task.md, rollouts/, deliverables/, harness/, library/",
+   "to": 3
+  },
+  {
+   "from": 1,
+   "label": "assert_no_leak_paths: answer-key globs stay out",
+   "to": 1
+  },
+  {
+   "from": 1,
+   "label": "assert_no_grader_verdicts: marker scan, names + contents",
+   "to": 1
+  },
+  {
+   "note": "span",
+   "span": [
+    0,
+    4
+   ],
+   "text": "A tripwire hit aborts the stage \u2014 the tree never reaches a model"
+  },
+  {
+   "dashed": true,
+   "from": 1,
+   "label": "ContextTree: what actually landed",
+   "to": 0
+  },
+  {
+   "from": 0,
+   "label": "mission: a short pointer \u2014 read context/, cite the moment behind each edit",
+   "to": 4
+  }
+ ],
+ "participants": [
+  "Stage",
+  "Evidence builder",
+  "Benchmark adapter",
+  "Context tree",
+  "Proposer session"
+ ],
+ "subtitle": "Evidence reaches a model only as files \u2014 and only after the leak checks pass",
+ "title": "The evidence tree and its tripwires"
+}

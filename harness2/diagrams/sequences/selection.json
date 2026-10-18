@@ -1,0 +1,77 @@
+{
+ "messages": [
+  {
+   "from": 0,
+   "label": "finals agg1..aggk (+ base rollouts, unused)",
+   "to": 1
+  },
+  {
+   "from": 1,
+   "label": "drop candidates with no deliverable (each drop recorded)",
+   "to": 1
+  },
+  {
+   "from": 1,
+   "label": "anonymize: canonical sort + seeded shuffle -> A, B, C",
+   "to": 1
+  },
+  {
+   "note": "span",
+   "span": [
+    0,
+    1
+   ],
+   "text": "No abstention: the selector cannot pick the unmodified harness"
+  },
+  {
+   "from": 1,
+   "label": "task + candidates as deliverable text (complete, untrimmed)",
+   "to": 2
+  },
+  {
+   "dashed": true,
+   "from": 2,
+   "label": "choice block + <why>",
+   "to": 1
+  },
+  {
+   "from": 1,
+   "label": "reflect: distil cue / lesson / evidence from the adoption",
+   "to": 3
+  },
+  {
+   "dashed": true,
+   "from": 3,
+   "label": "entry stored \u2014 only if cue, lesson and evidence all present",
+   "to": 1
+  },
+  {
+   "note": "span",
+   "span": [
+    0,
+    4
+   ],
+   "text": "Scoring happens later, in a separate command, after selection has committed"
+  },
+  {
+   "from": 1,
+   "label": "chosen run dir",
+   "to": 4
+  },
+  {
+   "dashed": true,
+   "from": 4,
+   "label": "score \u2014 a judge failure is None, never a zero",
+   "to": 1
+  }
+ ],
+ "participants": [
+  "Recursion",
+  "Selection",
+  "Selector session",
+  "Library",
+  "Judge CLI"
+ ],
+ "subtitle": "The pool is exactly the k finals \u2014 the base is excluded by construction",
+ "title": "Selection: blind, anonymized, finals only"
+}

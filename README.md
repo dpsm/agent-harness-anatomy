@@ -29,6 +29,7 @@ Companion repo to the Substack series.
 | 15 | DeepSeek Harness (dsh-v0.2.1-alpha.3) | [deepseek-harness/article.md](deepseek-harness/article.md) | forthcoming |
 | 16 | Deep Agents (deepagents==0.7.25) | [deepagents/article.md](deepagents/article.md) | forthcoming |
 | 17 | Grok Build (2bdd1d6) | [grok-build/article.md](grok-build/article.md) | forthcoming |
+| 18 | Harness² (1cfe254) | [harness2/article.md](harness2/article.md) | forthcoming |
 
 ## What's here
 

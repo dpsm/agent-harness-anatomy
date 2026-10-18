@@ -1,0 +1,57 @@
+{
+ "messages": [
+  {
+   "from": 0,
+   "label": "adopted label + why + every candidate's record",
+   "to": 1
+  },
+  {
+   "from": 1,
+   "label": "compare adopted tree vs base harness + pool diffs",
+   "to": 1
+  },
+  {
+   "dashed": true,
+   "from": 1,
+   "label": "<edits> per-edit verdicts + <experience> block",
+   "to": 0
+  },
+  {
+   "note": "span",
+   "span": [
+    0,
+    1
+   ],
+   "text": "Missing cue, lesson or evidence -> the record is discarded, nothing is stored"
+  },
+  {
+   "from": 0,
+   "label": "add(task, adopted tree, experience)",
+   "to": 2
+  },
+  {
+   "from": 2,
+   "label": "grader-verdict check on tree and note, before writing",
+   "to": 2
+  },
+  {
+   "from": 2,
+   "label": "write harness/ (the full tree) + EXPERIENCE.md; rebuild INDEX.md",
+   "to": 2
+  },
+  {
+   "dashed": true,
+   "from": 2,
+   "label": "served as context/library/ in that task's evidence",
+   "to": 3
+  }
+ ],
+ "participants": [
+  "Selection",
+  "Reflection session",
+  "Library",
+  "Next task (same domain)"
+ ],
+ "subtitle": "A lesson enters the library only when cue, lesson and evidence are all present",
+ "title": "Reflection: from an adoption to a library entry"
+}

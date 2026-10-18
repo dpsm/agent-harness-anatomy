@@ -1,0 +1,105 @@
+{
+ "messages": [
+  {
+   "from": 0,
+   "label": "run_task: task, k=1, mode=agg",
+   "to": 1
+  },
+  {
+   "from": 1,
+   "label": "roll the base harness (base1)",
+   "to": 4
+  },
+  {
+   "dashed": true,
+   "from": 4,
+   "label": "run dir: trajectory + deliverable",
+   "to": 1
+  },
+  {
+   "note": "span",
+   "span": [
+    1,
+    4
+   ],
+   "text": "The base execution is the shared reference every stage argues from"
+  },
+  {
+   "from": 1,
+   "label": "build evidence tree from base rollout",
+   "to": 2
+  },
+  {
+   "dashed": true,
+   "from": 2,
+   "label": "context/ on disk: task, rollout, deliverable",
+   "to": 1
+  },
+  {
+   "from": 1,
+   "label": "INV mission: edit context/harness/",
+   "to": 3
+  },
+  {
+   "dashed": true,
+   "from": 3,
+   "label": "edited tree + <notes> (harvested)",
+   "to": 1
+  },
+  {
+   "from": 1,
+   "label": "repair + validate; one retry if invalid",
+   "to": 1
+  },
+  {
+   "from": 1,
+   "label": "roll the candidate tree (inv1)",
+   "to": 4
+  },
+  {
+   "dashed": true,
+   "from": 4,
+   "label": "inv1 run dir",
+   "to": 1
+  },
+  {
+   "note": "span",
+   "span": [
+    0,
+    4
+   ],
+   "text": "DOM proposes in parallel from the same base evidence -> dom1"
+  },
+  {
+   "from": 1,
+   "label": "AGG mission: all candidates + diffs + decision notes",
+   "to": 3
+  },
+  {
+   "dashed": true,
+   "from": 3,
+   "label": "composed tree agg1",
+   "to": 1
+  },
+  {
+   "from": 1,
+   "label": "roll the final (agg1)",
+   "to": 4
+  },
+  {
+   "dashed": true,
+   "from": 4,
+   "label": "agg1 run dir \u2014 the mode's final",
+   "to": 1
+  }
+ ],
+ "participants": [
+  "Driver",
+  "Recursion",
+  "Evidence",
+  "Proposer session",
+  "Substrate"
+ ],
+ "subtitle": "2k candidates from shared base evidence, then k independent compositions",
+ "title": "One Propose-Probe-Compose step (parallel mode, k=1)"
+}

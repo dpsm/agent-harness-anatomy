@@ -1,0 +1,81 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1241" width="1600" font-family="system-ui, -apple-system, sans-serif">
+<defs><marker id="arrc" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 1 L 9 5 L 0 9 z" fill="#d08c4e"/></marker><marker id="arrr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 1 L 9 5 L 0 9 z" fill="#8a7a66"/></marker></defs>
+<rect x="0" y="0" width="1600" height="1241" fill="#f7f2e9"/>
+<text x="90.78014184397163" y="44" font-size="26" font-weight="700" fill="#000000">One Propose-Probe-Compose step (parallel mode, k=1)</text>
+<text x="90.78014184397163" y="74" font-size="15" fill="#000000">2k candidates from shared base evidence, then k independent compositions</text>
+<line x1="233" y1="110" x2="233" y2="1173" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="113" y="82" width="238" height="56" rx="10" fill="#ffffff" stroke="#3a2f26" stroke-width="1.5"/>
+<text x="233" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#000000">Driver</text>
+<line x1="516" y1="110" x2="516" y2="1173" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="397" y="82" width="238" height="56" rx="10" fill="#ffffff" stroke="#3a2f26" stroke-width="1.5"/>
+<text x="516" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#000000">Recursion</text>
+<line x1="800" y1="110" x2="800" y2="1173" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="681" y="82" width="238" height="56" rx="10" fill="#ffffff" stroke="#3a2f26" stroke-width="1.5"/>
+<text x="800" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#000000">Evidence</text>
+<line x1="1084" y1="110" x2="1084" y2="1173" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="965" y="82" width="238" height="56" rx="10" fill="#ffffff" stroke="#3a2f26" stroke-width="1.5"/>
+<text x="1084" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#000000">Proposer session</text>
+<line x1="1367" y1="110" x2="1367" y2="1173" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="1248" y="82" width="238" height="56" rx="10" fill="#ffffff" stroke="#3a2f26" stroke-width="1.5"/>
+<text x="1367" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#000000">Substrate</text>
+<line x1="233" y1="191" x2="506" y2="191" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="296" cy="177" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="296" y="182" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">1</text>
+<text x="314" y="182" font-size="14" fill="#000000">run_task: task, k=1, mode=agg</text>
+<line x1="516" y1="252" x2="1357" y2="252" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="864" cy="238" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="864" y="243" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">2</text>
+<text x="882" y="243" font-size="14" fill="#000000">roll the base harness (base1)</text>
+<line x1="1367" y1="313" x2="526" y2="313" stroke="#8a7a66" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrr)"/>
+<circle cx="864" cy="299" r="11" fill="#ffffff" stroke="#8a7a66" stroke-width="1.5"/>
+<text x="864" y="304" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">3</text>
+<text x="882" y="304" font-size="14" fill="#000000">run dir: trajectory + deliverable</text>
+<rect x="397" y="347" width="1089" height="44" rx="8" fill="#d08c4e" fill-opacity="0.13" stroke="#d08c4e" stroke-width="1"/>
+<text x="942" y="374" text-anchor="middle" font-size="14" fill="#000000">The base execution is the shared reference every stage argues from</text>
+<line x1="516" y1="447" x2="790" y2="447" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="580" cy="433" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="580" y="438" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">4</text>
+<text x="598" y="438" font-size="14" fill="#000000">build evidence tree from base rollout</text>
+<line x1="800" y1="508" x2="526" y2="508" stroke="#8a7a66" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrr)"/>
+<circle cx="580" cy="494" r="11" fill="#ffffff" stroke="#8a7a66" stroke-width="1.5"/>
+<text x="580" y="499" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">5</text>
+<text x="598" y="499" font-size="14" fill="#000000">context/ on disk: task, rollout, deliverable</text>
+<line x1="516" y1="570" x2="1074" y2="570" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="722" cy="556" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="722" y="561" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">6</text>
+<text x="740" y="561" font-size="14" fill="#000000">INV mission: edit context/harness/</text>
+<line x1="1084" y1="631" x2="526" y2="631" stroke="#8a7a66" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrr)"/>
+<circle cx="722" cy="617" r="11" fill="#ffffff" stroke="#8a7a66" stroke-width="1.5"/>
+<text x="722" y="622" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">7</text>
+<text x="740" y="622" font-size="14" fill="#000000">edited tree + &lt;notes&gt; (harvested)</text>
+<path d="M 516 692 h 50 v 30 H 526" fill="none" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="541" cy="676" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="541" y="681" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">8</text>
+<text x="576" y="697" font-size="14" fill="#000000">repair + validate; one retry if invalid</text>
+<line x1="516" y1="753" x2="1357" y2="753" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="864" cy="739" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="864" y="744" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">9</text>
+<text x="882" y="744" font-size="14" fill="#000000">roll the candidate tree (inv1)</text>
+<line x1="1367" y1="815" x2="526" y2="815" stroke="#8a7a66" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrr)"/>
+<circle cx="864" cy="801" r="11" fill="#ffffff" stroke="#8a7a66" stroke-width="1.5"/>
+<text x="864" y="806" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">10</text>
+<text x="882" y="806" font-size="14" fill="#000000">inv1 run dir</text>
+<rect x="113" y="849" width="1373" height="44" rx="8" fill="#d08c4e" fill-opacity="0.13" stroke="#d08c4e" stroke-width="1"/>
+<text x="800" y="876" text-anchor="middle" font-size="14" fill="#000000">DOM proposes in parallel from the same base evidence -&gt; dom1</text>
+<line x1="516" y1="949" x2="1074" y2="949" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="722" cy="935" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="722" y="940" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">11</text>
+<text x="740" y="940" font-size="14" fill="#000000">AGG mission: all candidates + diffs + decision notes</text>
+<line x1="1084" y1="1010" x2="526" y2="1010" stroke="#8a7a66" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrr)"/>
+<circle cx="722" cy="996" r="11" fill="#ffffff" stroke="#8a7a66" stroke-width="1.5"/>
+<text x="722" y="1001" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">12</text>
+<text x="740" y="1001" font-size="14" fill="#000000">composed tree agg1</text>
+<line x1="516" y1="1071" x2="1357" y2="1071" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="864" cy="1057" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="864" y="1062" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">13</text>
+<text x="882" y="1062" font-size="14" fill="#000000">roll the final (agg1)</text>
+<line x1="1367" y1="1132" x2="526" y2="1132" stroke="#8a7a66" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrr)"/>
+<circle cx="864" cy="1118" r="11" fill="#ffffff" stroke="#8a7a66" stroke-width="1.5"/>
+<text x="864" y="1123" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">14</text>
+<text x="882" y="1123" font-size="14" fill="#000000">agg1 run dir — the mode&#x27;s final</text>
+</svg>

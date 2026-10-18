@@ -1,0 +1,355 @@
+{
+ "edges": [
+  {
+   "from": "bench",
+   "label": "tasks + domains",
+   "label_dx": 0,
+   "label_dy": 40,
+   "to": "schedule"
+  },
+  {
+   "from": "base",
+   "label": "base_tree: the edited tree",
+   "label_dx": 0,
+   "label_dy": 74,
+   "to": "recursion"
+  },
+  {
+   "from": "schedule",
+   "label": "k shared bases, mode, library dir",
+   "to": "recursion"
+  },
+  {
+   "from": "recursion",
+   "label": "per stage: rollouts, pool, decisions",
+   "to": "context"
+  },
+  {
+   "from": "context",
+   "label": "mission pointer; evidence on disk",
+   "to": "proposer"
+  },
+  {
+   "from": "proposer",
+   "label": "edited tree, harvested",
+   "to": "tree"
+  },
+  {
+   "from": "tree",
+   "label": "valid tree \u2014 or rejection (one retry)",
+   "side": "right",
+   "to": "recursion"
+  },
+  {
+   "from": "recursion",
+   "label": "materialise + roll this tree",
+   "label_dy": -16,
+   "to": "substrate"
+  },
+  {
+   "from": "substrate",
+   "label": "RunView: trajectory + deliverable, no score",
+   "label_dy": 22,
+   "to": "recursion"
+  },
+  {
+   "from": "recursion",
+   "label": "the k finals only",
+   "label_dx": -36,
+   "label_dy": 4,
+   "to": "selection"
+  },
+  {
+   "from": "selection",
+   "label": "adopted tree + experience record",
+   "label_dx": -44,
+   "to": "library"
+  },
+  {
+   "from": "library",
+   "label": "same-domain entries as evidence",
+   "to": "context"
+  },
+  {
+   "from": "selection",
+   "label": "chosen run, scored now",
+   "label_dx": 0,
+   "label_dy": 72,
+   "to": "judge"
+  }
+ ],
+ "nodes": [
+  {
+   "excerpt": "Implement these and the whole method works. Nothing here is method logic.",
+   "grade": "verified",
+   "h": 96,
+   "id": "bench",
+   "label": "Benchmark adapter",
+   "links": [
+    {
+     "label": "BenchmarkAdapter protocol \u2014 the benchmark seam",
+     "line": 201,
+     "url": "https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/core/spec.py#L201-L252"
+    },
+    {
+     "label": "JobBench BenchSpec: leak globs, subagent policy",
+     "line": 511,
+     "url": "https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/benchmarks/jobbench.py#L511-L521"
+    }
+   ],
+   "step": 1,
+   "sub": "benchmarks/ \u00b7 BenchSpec + protocol",
+   "w": 240,
+   "x": 20,
+   "y": 60
+  },
+  {
+   "excerpt": "The edit contract is omitted-is-inherited: a proposal emits only what it changes.",
+   "grade": "verified",
+   "h": 96,
+   "id": "base",
+   "label": "Base harness tree",
+   "links": [
+    {
+     "label": "the c1..c8 component tree: read, validate, write, diff",
+     "line": 15,
+     "url": "https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/core/tree.py#L15-L22"
+    },
+    {
+     "label": "adapter.base_harness() \u2014 the unmodified tree",
+     "line": 243,
+     "url": "https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/core/spec.py#L243-L246"
+    }
+   ],
+   "step": 2,
+   "sub": "c1..c8 component files",
+   "w": 240,
+   "x": 20,
+   "y": 190
+  },
+  {
+   "excerpt": "k shared reference executions -> every mode -> blind selection per mode -> summary.json",
+   "grade": "verified",
+   "h": 96,
+   "id": "schedule",
+   "label": "Sweep driver",
+   "links": [
+    {
+     "label": "run_task: bases -> modes -> blind selection",
+     "line": 566,
+     "url": "https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/core/schedule.py#L566-L575"
+    },
+    {
+     "label": "stream_order: the seeded continual-learning order",
+     "line": 130,
+     "url": "https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/core/schedule.py#L130-L149"
+    }
+   ],
+   "step": 3,
+   "sub": "core/schedule.py \u00b7 run_task",
+   "w": 240,
+   "x": 420,
+   "y": 60
+  },
+  {
+   "excerpt": "Each mode schedules 4k rollouts and 3k improvement stages, including shared base executions.",
+   "grade": "verified",
+   "h": 96,
+   "id": "recursion",
+   "label": "Recursion loop",
+   "links": [
+    {
+     "label": "run_parallel \u2014 WIDTH: 2k candidates, k compositions",
+     "line": 343,
+     "url": "https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/core/recursion.py#L343-L360"
+    },
+    {
+     "label": "run_sequential \u2014 DEPTH: k nested passes",
+     "line": 452,
+     "url": "https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/core/recursion.py#L452-L470"
+    },
+    {
+     "label": "the budget identity: R = 4k, P = 3k",
+     "line": 26,
+     "url": "https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/core/ledger.py#L26-L31"
+    }
+   ],
+   "step": 4,
+   "sub": "core/recursion.py \u00b7 agg | seq",
+   "w": 240,
+   "x": 420,
+   "y": 190
+  },
+  {
+   "excerpt": "The evidence tree an agentic proposer reads. The only way evidence reaches a model.",
+   "grade": "verified",
+   "h": 96,
+   "id": "context",
+   "label": "Evidence builder",
+   "links": [
+    {
+     "label": "the evidence tree layout; full trajectories",
+     "line": 15,
+     "url": "https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/core/context.py#L15-L31"
+    },
+    {
+     "label": "assert_no_grader_verdicts \u2014 the leak tripwire",
+     "line": 454,
+     "url": "https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/core/context.py#L454-L490"
+    }
+   ],
+   "step": 5,
+   "sub": "core/context.py \u00b7 files, not prompts",
+   "w": 240,
+   "x": 420,
+   "y": 320
+  },
+  {
+   "excerpt": "Runs agentic sessions on one channel, with an audit trail and a cache.",
+   "grade": "verified",
+   "h": 96,
+   "id": "proposer",
+   "label": "Proposer sessions",
+   "links": [
+    {
+     "label": "Proposer: agentic sessions, audit trail, cache",
+     "line": 91,
+     "url": "https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/core/proposer.py#L91-L100"
+    },
+    {
+     "label": "_call_fingerprint: content-addressed calls",
+     "line": 507,
+     "url": "https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/core/proposer.py#L507-L534"
+    }
+   ],
+   "step": 6,
+   "sub": "core/proposer.py \u00b7 two channels",
+   "w": 240,
+   "x": 420,
+   "y": 450
+  },
+  {
+   "excerpt": "Raise ValueError listing every problem; return a census of the validated tree.",
+   "grade": "verified",
+   "h": 96,
+   "id": "tree",
+   "label": "Component tree",
+   "links": [
+    {
+     "label": "validate: caps, frontmatter, hooks, compile checks",
+     "line": 336,
+     "url": "https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/core/tree.py#L336-L360"
+    },
+    {
+     "label": "autotrigger: repair untriggered skills",
+     "line": 192,
+     "url": "https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/core/tree.py#L192-L215"
+    }
+   ],
+   "step": 7,
+   "sub": "core/tree.py \u00b7 validate + repair",
+   "w": 240,
+   "x": 420,
+   "y": 580
+  },
+  {
+   "excerpt": "the reference executions are not in the pool and there is no abstention by construction",
+   "grade": "verified",
+   "h": 96,
+   "id": "selection",
+   "label": "Blind selection",
+   "links": [
+    {
+     "label": "selection_pool: exactly the k finals",
+     "line": 93,
+     "url": "https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/core/selection.py#L93-L112"
+    },
+    {
+     "label": "assign_ids: canonical sort + seeded shuffle",
+     "line": 71,
+     "url": "https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/core/selection.py#L71-L84"
+    }
+   ],
+   "step": 8,
+   "sub": "core/selection.py \u00b7 anonymized",
+   "w": 240,
+   "x": 820,
+   "y": 320
+  },
+  {
+   "excerpt": "Retrieval is by construction: a domain's directory only ever holds same-domain entries.",
+   "grade": "verified",
+   "h": 96,
+   "id": "library",
+   "label": "Experience library",
+   "links": [
+    {
+     "label": "the per-domain library R; whole tree carried",
+     "line": 15,
+     "url": "https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/core/library.py#L15-L25"
+    },
+    {
+     "label": "Library.add: tree + EXPERIENCE.md",
+     "line": 106,
+     "url": "https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/core/library.py#L106-L162"
+    }
+   ],
+   "step": 9,
+   "sub": "core/library.py \u00b7 improvement harness",
+   "w": 240,
+   "x": 820,
+   "y": 450
+  },
+  {
+   "excerpt": "\"opencode\": \"23fb5e0516c99ac04a1aa46c193efda2e1b9bb24\" \u2014 run from source through bun",
+   "grade": "verified",
+   "h": 96,
+   "id": "substrate",
+   "label": "Substrate rollouts",
+   "links": [
+    {
+     "label": "DEPENDENCY_PINS: opencode v1.14.18 at a fixed commit",
+     "line": 104,
+     "url": "https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/config.py#L104-L115"
+    },
+    {
+     "label": "OPENCODE_SURFACE: the c1..c8 surface for OpenCode",
+     "line": 42,
+     "url": "https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/substrate/opencode.py#L42-L56"
+    }
+   ],
+   "step": 10,
+   "sub": "substrate/ \u00b7 OpenCode \u00b7 Codex",
+   "w": 240,
+   "x": 1220,
+   "y": 190
+  },
+  {
+   "excerpt": "Nothing in the method imports this module. A judge failure is None, never a zero.",
+   "grade": "verified",
+   "h": 96,
+   "id": "judge",
+   "label": "Judge",
+   "links": [
+    {
+     "label": "measurement of the run selection chose",
+     "line": 15,
+     "url": "https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/core/judge.py#L15-L20"
+    },
+    {
+     "label": "score(): called only by core.judge",
+     "line": 247,
+     "url": "https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/core/spec.py#L247-L252"
+    }
+   ],
+   "step": 11,
+   "sub": "core/judge.py \u00b7 post-selection only",
+   "w": 240,
+   "x": 1220,
+   "y": 320
+  }
+ ],
+ "repo": "https://github.com/google-research/harness2",
+ "sha": "1cfe254e8d25b15f37048c3730134686abe60335",
+ "title": "Harness\u00b2 \u2014 recursive harness optimization"
+}

@@ -1,0 +1,227 @@
+{
+ "example_input": "A JobBench task on the OpenCode substrate, recursion budget k=1, mode=agg: the base harness runs the task once, two one-sided proposals edit the harness tree, one composition is rolled, and the single final is adopted by construction.",
+ "note": "Every module link pins the exact commit this teardown is based on \u2014 google-research/harness2 @ 1cfe254, pinned by commit (the repository publishes no tags or releases).",
+ "repo": "https://github.com/google-research/harness2",
+ "sha": "1cfe254e8d25b15f37048c3730134686abe60335",
+ "steps": [
+  {
+   "code": "spec.py:201",
+   "modules": [
+    {
+     "file": "harness2/core/spec.py:201",
+     "label": "BenchmarkAdapter \u2014 the protocol every benchmark implements",
+     "line": 201,
+     "url": "https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/core/spec.py#L201"
+    },
+    {
+     "file": "harness2/benchmarks/jobbench.py:511",
+     "label": "JobBench's BenchSpec: channels, leak globs, install mode",
+     "line": 511,
+     "url": "https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/benchmarks/jobbench.py#L511"
+    }
+   ],
+   "narrative": "harness2 enumerates the benchmark through the BenchmarkAdapter protocol. The adapter owns everything benchmark-shaped: task ids, the domain each task belongs to, the prompt exactly as the agent received it (grading criteria stripped), and the base harness. The method core never sees a benchmark name.",
+   "node": "bench",
+   "representation": "BenchSpec (JobBench, OpenCode substrate):\n  adapter           = \"harness2.benchmarks.jobbench:JobBenchAdapter\"\n  install_mode      = \"agents_md_append\"     # cx: \"codex_config\"\n  proposer_channel  = \"solver\"\n  allow_subagents   = True                   # cx: False\n  leak_globs        = (\"RUBRICS.json\", \"expected/**\", \"reference/**\")\n  proposer_deliverables = \"files\"            # what evidence may show",
+   "step": 1,
+   "title": "The sweep asks the adapter for work"
+  },
+  {
+   "code": "schedule.py:566",
+   "modules": [
+    {
+     "file": "harness2/core/schedule.py:566",
+     "label": "run_task: bases -> modes -> blind selection -> summary",
+     "line": 566,
+     "url": "https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/core/schedule.py#L566"
+    },
+    {
+     "file": "harness2/core/spec.py:171",
+     "label": "RunView \u2014 'Never carries a score'",
+     "line": 171,
+     "url": "https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/core/spec.py#L171"
+    },
+    {
+     "file": "harness2/core/ledger.py:89",
+     "label": "assert_identity: duplicates checked before counts",
+     "line": 89,
+     "url": "https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/core/ledger.py#L89"
+    }
+   ],
+   "narrative": "run_task rolls the base harness k times on the task before any mode runs. Both modes share these reference executions \u2014 they are the evidence every proposal argues from, and the ledger counts them once. A rollout that dies is recorded as a dead RunView, never raised.",
+   "node": "schedule",
+   "representation": "RunView (what the method may know about one rollout):\n  task, label = \"base1\", domain, run_dir, harness_dir\n  delivered   = True\n  usage       = {\"solver_sessions\": 1, \"proposer_sessions\": 0, ...}\n  # no score field exists on this type \u2014 by construction",
+   "step": 2,
+   "title": "k shared base rollouts of the unmodified harness"
+  },
+  {
+   "code": "context.py:521",
+   "modules": [
+    {
+     "file": "harness2/core/context.py:15",
+     "label": "the evidence-tree layout, in the module docstring",
+     "line": 15,
+     "url": "https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/core/context.py#L15"
+    },
+    {
+     "file": "harness2/core/context.py:454",
+     "label": "assert_no_grader_verdicts \u2014 names + contents marker scan",
+     "line": 454,
+     "url": "https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/core/context.py#L454"
+    },
+    {
+     "file": "harness2/core/context.py:521",
+     "label": "mission() \u2014 the short pointer text",
+     "line": 521,
+     "url": "https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/core/context.py#L521"
+    }
+   ],
+   "narrative": "context.build writes the stage's evidence as files: the task, the full untruncated trajectories, deliverables rendered through the grader's own extractor, the current harness, and any same-domain library entries. Before anything is written for a model, two tripwires scan it: answer-key paths (the adapter's leak globs) and the grader's own verdict markers, in file names and contents.",
+   "node": "context",
+   "representation": "context/\n  task.md               # the task as the agent received it\n  rollouts/base1.md     # full trajectory, [ACTION]/[OBSERVATION] grammar\n  deliverables/INDEX.md # '.txt is CANONICAL \u2014 reads each artifact\n                        #  the way the grader does'\n  harness/              # the tree being edited (seeded copy)\n  library/              # earlier same-domain adoptions, INDEX.md first\n  INDEX.md              # the map the mission points at",
+   "step": 3,
+   "title": "Evidence becomes a file tree, guarded by tripwires"
+  },
+  {
+   "code": "prompts.py:347",
+   "modules": [
+    {
+     "file": "harness2/core/prompts.py:347",
+     "label": "the INV job \u2014 'match each failure to the cheapest effective component'",
+     "line": 347,
+     "url": "https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/core/prompts.py#L347"
+    },
+    {
+     "file": "harness2/core/prompts.py:372",
+     "label": "the DOM job \u2014 practitioner knowledge, no invented authorities",
+     "line": 372,
+     "url": "https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/core/prompts.py#L372"
+    },
+    {
+     "file": "harness2/core/proposer.py:507",
+     "label": "_call_fingerprint \u2014 content-addressed, cached sessions",
+     "line": 507,
+     "url": "https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/core/proposer.py#L507"
+    }
+   ],
+   "narrative": "Each proposal is a full agent session in a throwaway directory, not an API call. The INV session may only fix how the agent works (procedure, matched to the cheapest effective component); the DOM session may only add practitioner knowledge (and is told never to invent an authority or citation). Both read the same base evidence. The edited tree is harvested from the temp dir before it is destroyed; the call is cached under a SHA-256 fingerprint of mission + evidence + workspace.",
+   "node": "proposer",
+   "representation": "proposer.call(mission, workspace) -> ProposerReply\n  prompt_sha256  = fingerprint(mission, evidence, mode, task)\n  workspace      = tmp/<session>/  (context/ copy + harness/)\n  channels: opencode --model <solver>  |  claude -p (Vertex)\n  env: ANTHROPIC_API_KEY et al. stripped (_DROP_ENV)\n  reply ends with <notes>\u2026</notes>, parsed by the caller",
+   "step": 4,
+   "title": "Two one-sided proposals: INV and DOM"
+  },
+  {
+   "code": "recursion.py:108",
+   "modules": [
+    {
+     "file": "harness2/core/recursion.py:108",
+     "label": "_accept_tree \u2014 repair, validate, tripwire, in that order",
+     "line": 108,
+     "url": "https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/core/recursion.py#L108"
+    },
+    {
+     "file": "harness2/core/tree.py:267",
+     "label": "_check_skills \u2014 the silent-failure rules for skills",
+     "line": 267,
+     "url": "https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/core/tree.py#L267"
+    },
+    {
+     "file": "harness2/core/tree.py:192",
+     "label": "autotrigger \u2014 append the missing trigger line, cap-aware",
+     "line": 192,
+     "url": "https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/core/tree.py#L192"
+    }
+   ],
+   "narrative": "A returned tree is not trusted. _accept_tree first repairs missing skill trigger lines (autotrigger, within the always-on cap), then runs tree.validate against the substrate's surface rules \u2014 budgets, skill name/directory identity, hook events the framework actually dispatches, scripts that must compile \u2014 then the adapter's own invariants, then the grader-verdict scan. An invalid tree gets exactly one retry with the rejection text fed back; after that the stage keeps the current harness and records fell_back.",
+   "node": "tree",
+   "representation": "validate(tree, surface) -> census, or ValueError listing every problem:\n  'skills/docx/SKILL.md frontmatter name 'documents' != directory\n   'docx' \u2014 a name/directory mismatch is dropped SILENTLY at load'\n  'skills/x/SKILL.md is never named in always-on text \u2014\n   an untriggered skill is dead weight'\n  census: {always_on_chars, skills, scripts, hooks, refs, bytes}",
+   "step": 5,
+   "title": "Accept the edit: repair, validate, or inherit"
+  },
+  {
+   "code": "recursion.py:343",
+   "modules": [
+    {
+     "file": "harness2/core/recursion.py:343",
+     "label": "run_parallel \u2014 WIDTH: independent draws, independent compositions",
+     "line": 343,
+     "url": "https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/core/recursion.py#L343"
+    },
+    {
+     "file": "harness2/core/recursion.py:452",
+     "label": "run_sequential \u2014 DEPTH: every checkpoint is a final",
+     "line": 452,
+     "url": "https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/core/recursion.py#L452"
+    },
+    {
+     "file": "harness2/core/tree.py:407",
+     "label": "diversity \u2014 pairwise line-Jaccard over final trees",
+     "line": 407,
+     "url": "https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/core/tree.py#L407"
+    }
+   ],
+   "narrative": "In parallel mode each of the k AGG stages sees the same pool \u2014 every candidate's harness, rollout, harness.diff and the INV/DOM decision notes \u2014 and composes its own final independently; the finals' pairwise line-Jaccard diversity is recorded so a collapse to one body is visible. In sequential mode the same budget becomes k checkpointed rounds, each arguing from the previous round's execution, and every checkpoint is a final. Either way the ledger's identity holds: R = 4k rollouts, P = 3k sessions.",
+   "node": "recursion",
+   "representation": "run_parallel(task, k=2) finals:\n  agg1  (from pool: inv1, inv2, dom1, dom2)\n  agg2  (independent composition, same pool)\n  diversity(finals) = 0.41   # mean pairwise line-Jaccard distance\n  ledger: rollouts 8 = 4k, sessions 6 = 3k  \u2713",
+   "step": 6,
+   "title": "Compose: k independent aggregations"
+  },
+  {
+   "code": "selection.py:93",
+   "modules": [
+    {
+     "file": "harness2/core/selection.py:93",
+     "label": "selection_pool \u2014 'no abstention by construction'",
+     "line": 93,
+     "url": "https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/core/selection.py#L93"
+    },
+    {
+     "file": "harness2/core/selection.py:71",
+     "label": "assign_ids \u2014 canonical sort, SHA-1-seeded shuffle",
+     "line": 71,
+     "url": "https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/core/selection.py#L71"
+    },
+    {
+     "file": "harness2/core/selection.py:360",
+     "label": "trivial_selection \u2014 k=1 needs no selector session",
+     "line": 360,
+     "url": "https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/core/selection.py#L360"
+    }
+   ],
+   "narrative": "The pool is the k finals and nothing else \u2014 the base executions are passed in and deliberately unused, so the selector cannot abstain. Non-delivered candidates are dropped first (each drop recorded), survivors are anonymized by canonical sort plus a seeded shuffle, and the selector session judges deliverable text, complete and untrimmed \u2014 never a score, never a trajectory. At k=1 no session runs at all: the single final is delivered by construction.",
+   "node": "selection",
+   "representation": "selection.json:\n  pool        = [\"agg1\", \"agg2\"]        # base1 NOT in the pool\n  dropped     = []                        # non-delivered, with causes\n  anon        = {\"A\": \"agg2\", \"B\": \"agg1\"}   # seeded shuffle\n  chosen      = \"agg1\"   via ```choice B```\n  why         = \"<why>\u2026</why> from the selector session\"",
+   "step": 7,
+   "title": "Blind selection over exactly the finals"
+  },
+  {
+   "code": "library.py:106",
+   "modules": [
+    {
+     "file": "harness2/core/library.py:106",
+     "label": "Library.add \u2014 tripwire check, then tree + EXPERIENCE.md",
+     "line": 106,
+     "url": "https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/core/library.py#L106"
+    },
+    {
+     "file": "harness2/core/selection.py:454",
+     "label": "_distil \u2014 the cue/lesson/evidence gate",
+     "line": 454,
+     "url": "https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/core/selection.py#L454"
+    },
+    {
+     "file": "harness2/core/judge.py:15",
+     "label": "judge.py \u2014 'Nothing in the method imports this module'",
+     "line": 15,
+     "url": "https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/core/judge.py#L15"
+    }
+   ],
+   "narrative": "A reflection session reads the whole adoption \u2014 candidates, harnesses, rollouts, decision notes, the base tree for contrast \u2014 and distils per-edit verdicts plus a transferable lesson as cue / lesson / evidence / confidence. Unless all of cue, lesson and evidence are present, nothing is stored. What is stored is the adopted harness as its full tree plus EXPERIENCE.md, in the per-(run, mode, domain) library the next task in the domain will read. Scoring happens only afterwards, in the separate judge pass, which the method never imports.",
+   "node": "library",
+   "representation": "library/<domain>/<task>/\n  harness/        # the WHOLE adopted tree \u2014 'never a summary'\n  EXPERIENCE.md\n    ## Why this was chosen\n    ## What each edit did        (per-edit verdicts)\n    ## Transferable lesson\n       Cue: \u2026  Lesson: \u2026  Evidence: \u2026  Confidence: \u2026",
+   "step": 8,
+   "title": "Reflection writes the library entry"
+  }
+ ],
+ "title": "One JobBench task, end to end \u2014 Harness\u00b2 (agg mode)"
+}
