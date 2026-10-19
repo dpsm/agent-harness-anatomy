@@ -1,0 +1,81 @@
+{
+ "messages": [
+  {
+   "from": 0,
+   "label": "harness2-demo --k 2 (two ledger tasks, one domain)",
+   "to": 1
+  },
+  {
+   "from": 1,
+   "label": "base rollout: run summarize.py on ledger.csv",
+   "to": 3
+  },
+  {
+   "dashed": true,
+   "from": 3,
+   "label": "Total: positive amounts only \u2014 the credits are dropped",
+   "to": 1
+  },
+  {
+   "from": 1,
+   "label": "propose: evidence tree + harness",
+   "to": 2
+  },
+  {
+   "dashed": true,
+   "from": 2,
+   "label": "scripted edit: remove the positive-only filter",
+   "to": 1
+  },
+  {
+   "from": 1,
+   "label": "probe rollout under the edited harness",
+   "to": 3
+  },
+  {
+   "dashed": true,
+   "from": 3,
+   "label": "Total: all signed amounts",
+   "to": 1
+  },
+  {
+   "dashed": true,
+   "from": 2,
+   "label": "select: verify candidate against the source ledger -> choice",
+   "to": 1
+  },
+  {
+   "from": 1,
+   "label": "experience: adopted harness + base harness",
+   "to": 2
+  },
+  {
+   "dashed": true,
+   "from": 2,
+   "label": "<experience> cue / lesson / evidence / confidence",
+   "to": 1
+  },
+  {
+   "from": 1,
+   "label": "add(task, adopted tree, experience)",
+   "to": 4
+  },
+  {
+   "note": "span",
+   "span": [
+    0,
+    4
+   ],
+   "text": "Same schedule, recursion, selection and library code as a real sweep"
+  }
+ ],
+ "participants": [
+  "CLI",
+  "DemoAdapter",
+  "DemoProposer",
+  "Real Python",
+  "Library"
+ ],
+ "subtitle": "Scripted edits and real Python executions through the production code path",
+ "title": "The deterministic demo: one full cycle, no model calls"
+}

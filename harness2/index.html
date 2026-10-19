@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body {
+    background: #161210; color: #ece1d3;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    line-height: 1.7; padding: 48px 24px; margin: 0;
+  }
+  main { max-width: 760px; margin: 0 auto; }
+  a { color: #d08c4e; }
+  h1 { font-size: 1.9rem; letter-spacing: -0.02em; line-height: 1.25; margin-bottom: 16px; }
+  h2 { font-size: 1.4rem; margin: 40px 0 12px; padding-top: 8px; border-top: 1px solid #2c231b; }
+  h3 { font-size: 1.1rem; margin: 28px 0 8px; }
+  p, li { margin-bottom: 12px; }
+  blockquote {
+    border-left: 3px solid #d08c4e; padding: 4px 16px; margin: 20px 0;
+    color: #a89880; background: #1f1a15; border-radius: 0 8px 8px 0;
+  }
+  blockquote p { margin-bottom: 6px; }
+  code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.88em; background: #1f1a15; padding: 2px 6px; border-radius: 6px;
+  }
+  pre { background: #1f1a15; border: 1px solid #3a2f26; border-radius: 8px;
+        padding: 16px; overflow-x: auto; }
+  pre code { background: none; padding: 0; }
+  img { max-width: 100%; height: auto; border: 1px solid #3a2f26;
+        border-radius: 12px; margin: 20px 0; background: #1f1a15; }
+  table { border-collapse: collapse; width: 100%; margin: 20px 0; font-size: 0.92rem;
+          display: block; overflow-x: auto; }
+  th, td { border: 1px solid #3a2f26; padding: 10px 12px; text-align: left;
+           vertical-align: top; }
+  th { background: #1f1a15; }
+  ul, ol { padding-left: 24px; }
+  hr { border: none; border-top: 1px solid #2c231b; margin: 32px 0; }
+  .footnote { font-size: 0.88rem; color: #a89880; }
+  .footnote hr { margin: 40px 0 16px; }
+  sup a { text-decoration: none; }
+  .topnav { max-width: 760px; margin: 0 auto 32px; font-size: 0.9rem; }
+  .topnav a { color: #a89880; text-decoration: none; }
+  .topnav a:hover { color: #ece1d3; }
+  .diagram-cta {
+    display: block; text-align: center; margin: 28px 0; padding: 16px;
+    background: #1f1a15; border: 1px solid #3a2f26; border-radius: 12px;
+    color: #ece1d3; text-decoration: none; font-weight: 600;
+  }
+  .diagram-cta:hover { border-color: #d08c4e; }
+  .diagram-cta span { display: block; font-weight: 400; font-size: 0.88rem;
+                      color: #a89880; margin-top: 4px; }
+</style>
+<title>Agent Harness Anatomy #18: Harness² — the harness is the thing being optimized</title>
+</head>
+<body>
+<main>
+<nav class="topnav"><a href="../#harness2">&larr; Agent Harness Anatomy</a></nav>
+<h1 id="agent-harness-anatomy-18-harness²-the-harness-is-the-thing-being-optimized">Agent Harness Anatomy #18: Harness² — the harness is the thing being optimized</h1>
+<blockquote>
+<p><strong>Series:</strong> Agent Harness Anatomy — top-down dissections of real agent harnesses, grounded in verifiable source code. Every behavioral claim below carries a footnote to a pinned GitHub permalink; the full evidence lives in the endnotes.</p>
+</blockquote>
+<h2 id="version-block">Version block</h2>
+<ul>
+<li><strong>Repo:</strong> <a href="https://github.com/google-research/harness2">google-research/harness2</a></li>
+<li><strong>Pinned:</strong> commit <code>1cfe254e8d25b15f37048c3730134686abe60335</code> (2026-10-13) — <strong>by commit</strong>: at the pin the repository has three commits, no tags, and no releases. It is the code release accompanying a research paper (Xu et al., &quot;Harness²: Recursive Agent Harnessing for an Open World&quot;, arXiv:2610.14224).</li>
+<li><strong>Language:</strong> Python (3.12) — ≈12,700 lines in the package including the three benchmark adapters; the optimization method itself (<code>harness2/core/</code>) is ≈5,000 lines.</li>
+<li><strong>License:</strong> Apache-2.0</li>
+<li><strong>Claim under test:</strong> a plug-and-play framework for <em>recursive agent harnessing</em> — optimizing the system around a fixed model (prompts, tools, memory, skills, orchestration) for tasks the harness was not designed for, at two levels of recursion.</li>
+</ul>
+<p>Two framing notes before the dissection. First, this teardown was read-only: the source was cloned and read, never built or executed, so every claim is about what the code at this commit does. Second, Harness² draws an unusually clean line between what it owns and what it borrows, and the article keeps that line visible throughout: the package contains <strong>no agent loop</strong> — the turns are executed by a substrate it drives (OpenCode or Codex, both pinned) — and it contains <strong>no grader it will look at</strong>: measurement lives in a module the method never imports. What the package contributes is structure around other systems' work: an evidence discipline, an editing surface with a validator, a budget, a blind selection, and a memory layout.</p>
+<p><img src="figures/harness2.svg" alt="Harness² architecture" /></p>
+<p><a class="diagram-cta" href="../diagrams/template.html?data=../harness2/diagrams/harness2.json">Explore the interactive architecture diagram<span>11 nodes, 13 edges — pan, zoom, and follow every source link</span></a></p>
+<h2 id="the-mental-model">The mental model</h2>
+<p>Most entries in this series are harnesses: systems that run an agent. Harness² is a system that <em>rewrites</em> harnesses. Its unit of work is not a turn but a <strong>task attempt</strong>: run the current harness on a benchmark task, study what happened, propose edits to the harness, run the edited harness on the same task, and compose a better harness from the contrast between executions. A second, slower loop carries what was learned to the <em>next</em> task in the same domain.</p>
+<p>The code separates three axes and keeps them separate. The <strong>method</strong> — recursion, evidence building, prompts, selection, the experience library — knows nothing about any benchmark. The <strong>substrate</strong> is the agent framework a rollout runs under (OpenCode by default; Codex with <code>--substrate cx</code>); everything framework-specific is data on a <code>SurfaceSpec</code> value plus a trajectory renderer. The <strong>benchmark</strong> is a <code>BenchSpec</code> value plus an adapter implementing a protocol: tasks, domains, execution, trajectory and deliverable extraction, and a base harness to start from.<sup id="fnref:1"><a class="footnote-ref" href="#fn:1">1</a></sup> The optimization loop only ever sees the adapter through that protocol, and the one adapter method that produces a score is fenced off from it — <code>score()</code> is documented as &quot;Called only by <code>core.judge</code>, only after selection committed.&quot;<sup id="fnref:2"><a class="footnote-ref" href="#fn:2">2</a></sup></p>
+<p>Hold one more distinction: there are <em>three</em> model roles, separately configured — the <strong>solver</strong> (the model inside the substrate, doing the task), the <strong>improver</strong> (the model in the proposer/selector/reflection sessions, doing the optimizing; it defaults to the solver model), and the <strong>judge</strong> (used only by the separate judging step). The interesting engineering is in how the improver is fed and fenced. It never sees a score, a rubric, or a grader artifact — not by policy, but by construction, with tripwires where construction ends.</p>
+<h2 id="component-map">Component map</h2>
+<table>
+<thead>
+<tr>
+<th>Module</th>
+<th>Lines</th>
+<th>Role</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>core/schedule.py</code></td>
+<td>850</td>
+<td>Namespaces, the seeded task stream, the per-task / per-domain / sweep drivers, resume</td>
+</tr>
+<tr>
+<td><code>core/recursion.py</code></td>
+<td>578</td>
+<td>The Propose–Probe–Compose loop: parallel and sequential modes, stage execution, fallback</td>
+</tr>
+<tr>
+<td><code>core/context.py</code></td>
+<td>546</td>
+<td>The evidence tree: trajectories, deliverables, leak and grader-verdict tripwires</td>
+</tr>
+<tr>
+<td><code>core/proposer.py</code></td>
+<td>534</td>
+<td>Improver sessions on two channels (OpenCode, Claude CLI); harvest, audit, content-addressed cache</td>
+</tr>
+<tr>
+<td><code>core/selection.py</code></td>
+<td>505</td>
+<td>Blind anonymized selection over the finals; reflection → experience records</td>
+</tr>
+<tr>
+<td><code>core/tree.py</code></td>
+<td>427</td>
+<td>The c1..c8 component tree: read / validate / write / diff / diversity</td>
+</tr>
+<tr>
+<td><code>core/prompts.py</code></td>
+<td>1,163</td>
+<td>Job templates for propose (INV/DOM), compose, select, experience; surface descriptions</td>
+</tr>
+<tr>
+<td><code>core/library.py</code></td>
+<td>222</td>
+<td>The per-domain experience library (the &quot;improvement harness&quot;)</td>
+</tr>
+<tr>
+<td><code>core/ledger.py</code></td>
+<td>132</td>
+<td>Budget accounting: the R = 4k / P = 3k identity, asserted per task</td>
+</tr>
+<tr>
+<td><code>core/judge.py</code></td>
+<td>155</td>
+<td>Post-selection measurement; imported by nothing in the method</td>
+</tr>
+<tr>
+<td><code>core/spec.py</code></td>
+<td>277</td>
+<td><code>BenchSpec</code>, <code>BenchPrompts</code>, <code>ChannelSpec</code>, the <code>BenchmarkAdapter</code> protocol</td>
+</tr>
+<tr>
+<td><code>substrate/opencode.py</code> / <code>codex.py</code></td>
+<td>395 / 480</td>
+<td>The two surfaces, install modes, trajectory renderers</td>
+</tr>
+<tr>
+<td><code>benchmarks/</code></td>
+<td>≈3,200</td>
+<td>JobBench, LAB, WorkBuddy-Bench adapters</td>
+</tr>
+<tr>
+<td><code>cli/</code></td>
+<td>≈1,000</td>
+<td><code>harness2</code> (run), <code>-judge</code>, <code>-report</code>, <code>-setup</code>, <code>-check</code>, <code>-demo</code>, <code>-bridge</code> entry points</td>
+</tr>
+</tbody>
+</table>
+<h2 id="the-core-loop">The core loop</h2>
+<p>The loop's shape is fixed enough to have an accounting identity. Per task and mode, the ledger expects exactly <strong>R = 4k rollouts and P = 3k improvement stages</strong> — k shared base executions, 2k candidate executions, k finals; k sessions on each of two proposal dimensions and k compositions — and <code>assert_identity()</code> raises at the end of a run that lands anywhere else, with duplicate labels checked first because a repeated label would mean two stages silently overwrote one run id.<sup id="fnref:3"><a class="footnote-ref" href="#fn:3">3</a></sup><sup id="fnref:4"><a class="footnote-ref" href="#fn:4">4</a></sup></p>
+<p><strong>Shared base.</strong> <code>run_task</code> first rolls the <em>unmodified</em> base harness k times on the task (<code>base1..basek</code>). Both modes and every later stage argue from these same executions; a dead rollout is recorded as a failed <code>RunView</code>, never raised.<sup id="fnref:5"><a class="footnote-ref" href="#fn:5">5</a></sup><sup id="fnref:6"><a class="footnote-ref" href="#fn:6">6</a></sup></p>
+<p><strong>Two dimensions of proposal.</strong> Candidate stages split by <em>what kind of knowledge</em> an edit carries. <strong>INV</strong> owns how the agent works — procedure, tool use, completion discipline — and is told to match each observed failure to the cheapest effective component (a script for mechanical repetition, a skill for a triggered workflow, a defensive in-loop lever only when prose is repeatedly ignored). <strong>DOM</strong> owns what a practitioner knows — the deliverable's contract, decision rules, consistency checks — and is told to encode knowledge the agent can apply and check, never to invent an authority or store this task's facts as durable memory.<sup id="fnref:7"><a class="footnote-ref" href="#fn:7">7</a></sup> Both prompts impose the same evidentiary rule: &quot;Every edit must trace to a moment in a trajectory… If you cannot name the moment, the edit is speculation and costs context for nothing,&quot; with divergences between runs preferred over repeated failures, and repeated failures over unrealized risks.<sup id="fnref:8"><a class="footnote-ref" href="#fn:8">8</a></sup></p>
+<p><strong>Parallel mode (<code>agg</code>) — width.</strong> The 2k candidates are drawn <em>independently</em> from the shared base evidence (k INV + k DOM), each is rolled once, and then k composition stages each receive <em>all</em> candidates — their harness trees, their rollouts, per-candidate diffs against the editing baseline, and the candidates' own decision notes — and each composes one final independently. The finals' pairwise diversity (line-level Jaccard over the trees) is computed and stored, so a collapse of the search into one body is visible in the record rather than silent.<sup id="fnref:9"><a class="footnote-ref" href="#fn:9">9</a></sup><sup id="fnref:10"><a class="footnote-ref" href="#fn:10">10</a></sup></p>
+<p><strong>Sequential mode (<code>seq</code>) — depth.</strong> k rounds over a checkpoint: each round proposes INV+DOM against the <em>current</em> harness, rolls both, then a COMPOSE stage merges them into the next checkpoint. The finals are all k checkpoints <code>c1..ck</code>, so a later round cannot destroy the result — selection can still pick an earlier checkpoint.<sup id="fnref:11"><a class="footnote-ref" href="#fn:11">11</a></sup></p>
+<p><strong>Stage mechanics, and the right to do nothing.</strong> A stage builds its evidence tree, runs one proposer session that edits the harness files in place (see below), reads the tree back, and puts it through repair-then-validate: missing skill trigger lines are auto-repaired, then the full surface validation, the adapter's own invariants, and the grader-verdict tripwire must all pass. An invalid proposal gets exactly <strong>one retry</strong>, with the rejection text fed back verbatim into the next session; a stage that still fails <strong>inherits the current harness</strong> and is recorded as <code>fell_back</code>.<sup id="fnref:12"><a class="footnote-ref" href="#fn:12">12</a></sup><sup id="fnref:13"><a class="footnote-ref" href="#fn:13">13</a></sup> A stage may also legitimately change nothing: the prompt insists &quot;KEEP_BASE is a real answer, not a failure. Adaptation that the evidence does not argue for is a regression,&quot; and an unchanged tree is recorded as <code>kept_base</code>, not as an error.<sup id="fnref:14"><a class="footnote-ref" href="#fn:14">14</a></sup></p>
+<p><img src="figures/seq-parallel.svg" alt="One Propose-Probe-Compose step in parallel mode" /></p>
+<h2 id="one-task-end-to-end">One task, end to end</h2>
+<p>A concrete pass at k=1 in parallel mode, on a professional-services task from JobBench (the adapter whose base harness installs into OpenCode as an <code>AGENTS.md</code> append plus component directories):</p>
+<ol>
+<li><strong>Base rollout.</strong> The unmodified base harness is installed into the solver's workspace and OpenCode executes the task once. The run directory holds the event stream and the deliverable; the method records <code>base1</code> as a <code>RunView</code> — label, run id, directory, delivered-or-not. No score is attached, because the type has no field for one.<sup id="fnref:15"><a class="footnote-ref" href="#fn:15">15</a></sup></li>
+<li><strong>Evidence is built.</strong> For the first proposal stage, <code>context.build</code> writes the evidence tree: the task text with criteria and expected output stripped, the <strong>full</strong> base trajectory rendered into the shared [ACTION]/[OBSERVATION] grammar, and the deliverable extracted with the same reader the grader uses. The leak tripwires scan the tree on the way in.<sup id="fnref:16"><a class="footnote-ref" href="#fn:16">16</a></sup></li>
+<li><strong>The INV proposal.</strong> A proposer session — an OpenCode agent in a fenced temp workspace — reads the trajectory, finds the base run re-extracting the same table three times by hand, and edits <code>context/harness/</code>: a guardrail line about the extraction, plus a deterministic <code>scripts/</code> helper. Its reply carries <code>&lt;notes&gt;</code> explaining the change; the edited tree is harvested out of the session directory before that directory is destroyed.<sup id="fnref:17"><a class="footnote-ref" href="#fn:17">17</a></sup></li>
+<li><strong>Validation and probe.</strong> The tree is auto-repaired (the new skill, if any, gets its trigger line), validated against the surface rules, and materialized as the <code>inv1</code> harness. The substrate runs the task again under it: rollout <code>inv1</code>. In parallel, the DOM stage has made its own edit from the same base evidence — say a skill encoding the deliverable's required structure — and <code>dom1</code> is rolled too.<sup id="fnref:18"><a class="footnote-ref" href="#fn:18">18</a></sup></li>
+<li><strong>Composition.</strong> The AGG stage's evidence tree contains both candidates with their rollouts, their diffs against base, and both decision notes. The composer keeps the script, adopts the DOM skill, drops a guardrail edit that the <code>dom1</code> trajectory shows misfiring, and emits <code>agg1</code> — which is rolled as the mode's final.<sup id="fnref:19"><a class="footnote-ref" href="#fn:19">19</a></sup></li>
+<li><strong>Selection.</strong> At k=1 the pool is exactly one final, so there is no selector session: <code>trivial_selection</code> delivers it and writes the standard selection record. (At k&gt;1, a selector session would choose among anonymized finals from their deliverable text alone.)<sup id="fnref:20"><a class="footnote-ref" href="#fn:20">20</a></sup></li>
+<li><strong>Reflection.</strong> A final session compares the adopted harness against base and the candidate pool — edits, decision notes, trajectories, deliverables — and distils an experience record: a cue, a transferable lesson, the evidence for it, a confidence, and a per-edit account of what each change did. If cue, lesson, and evidence are not all present, the record is discarded.<sup id="fnref:21"><a class="footnote-ref" href="#fn:21">21</a></sup></li>
+<li><strong>The library entry, and only then measurement.</strong> The adopted harness's <em>entire tree</em> is stored in the domain library with its experience note, where the next task in this domain will find it as evidence. Scoring happens in a separate command (<code>harness2-judge</code>), after selection has committed, through the module the method never imports.<sup id="fnref:22"><a class="footnote-ref" href="#fn:22">22</a></sup></li>
+</ol>
+<p><img src="figures/seq-selection.svg" alt="Selection: blind, anonymized, finals only" /></p>
+<p><a class="diagram-cta" href="trace.html">Play the 8-step trace<span>follow one JobBench task — propose, probe, compose — through Harness²'s recursion, selection and library, step by step</span></a></p>
+
+<h2 id="the-evidence-system">The evidence system</h2>
+<p>The evidence discipline is the paper's real contribution, and it is implemented as file layout plus refusals.</p>
+<p><strong>Files, not prompt stuffing.</strong> Everything a proposer or selector may know arrives as a directory tree on disk; the mission prompt is a short pointer (&quot;It is on disk, in <code>context/</code>. Read it — do not answer from this message alone&quot;). Trajectories are written <strong>in full</strong> — &quot;the trajectory was not clipped to fit this mission&quot; — with truncation applied per <em>observation</em> (default 50,000 chars) rather than per trajectory. The spec enforces a floor here with unusual self-awareness: an <code>obs_trunc</code> below 10,000 is rejected at construction because that range &quot;fabricates defects&quot; — clipped observations would make the solver look worse than it was, and the improver would then fix failures that never happened.<sup id="fnref:23"><a class="footnote-ref" href="#fn:23">23</a></sup><sup id="fnref:24"><a class="footnote-ref" href="#fn:24">24</a></sup> Deliverables are served through the benchmark's own extraction path — the artifact <em>as the grader will read it</em> (a spreadsheet formula with no cached value renders as the empty cell the grader sees) — and pool candidates in composition stages come with unified diffs so &quot;what changed&quot; is never a matter of re-reading two trees.<sup id="fnref:25"><a class="footnote-ref" href="#fn:25">25</a></sup></p>
+<p><strong>Score-blindness, in layers.</strong> The first layer is a type: <code>RunView</code>, the only handle the method holds on a finished rollout, has no score field, and <code>delivered</code> is a boolean about artifact existence, not quality.<sup id="fnref:15"><a class="footnote-ref" href="#fn:15">15</a></sup> The second is a seam: <code>adapter.score()</code> is called only by <code>core.judge</code>, and <code>core/judge.py</code> opens by stating &quot;Nothing in the method imports this module. A judge failure is None, never a zero, and a None is excluded from the denominator.&quot;<sup id="fnref:26"><a class="footnote-ref" href="#fn:26">26</a></sup> The third layer is tripwires, because adapters read real run directories where grader output also lives: <code>assert_no_grader_verdicts</code> scans evidence trees — and proposed harness trees, and library entries — for grader-output markers by filename and by content (<code>deterministic_eval_summary</code>, <code>&quot;passed_count&quot;</code>, <code>&quot;pass_rate&quot;</code>, …) and refuses, with an error message that instructs the reader to find the leaking read path rather than widen the marker list.<sup id="fnref:27"><a class="footnote-ref" href="#fn:27">27</a></sup> Per-benchmark <code>leak_globs</code> fence answer-key paths out of every copy into context: JobBench excludes <code>RUBRICS.json</code>, <code>eval_result/**</code>, <code>expected/**</code>, <code>reference/**</code>; LAB excludes <code>task.json</code>; WorkBuddy excludes <code>tests/**</code>, <code>solution/**</code>, <code>environment/**</code>.<sup id="fnref:28"><a class="footnote-ref" href="#fn:28">28</a></sup> And the prompt layer is policed too: a <code>BenchPrompts</code> value whose work-describing fields contain &quot;benchmark&quot;, &quot;evaluation&quot;, &quot;grader&quot;, &quot;rubric&quot;, or &quot;score&quot; fails construction — benchmark authors must describe the work, not its measurement.<sup id="fnref:29"><a class="footnote-ref" href="#fn:29">29</a></sup></p>
+<p><strong>A scar, documented in a constant.</strong> WorkBuddy's code subset sets <code>proposer_deliverables = &quot;names&quot;</code>: proposers see <em>which</em> files a rollout produced, never their contents. The reason is written into the withheld-contents note served in place of the files: on that benchmark the extracted-deliverable tree lives inside the same trial directory as the grader's own output, &quot;so serving file bodies here once served the grader's pass rate and failed-check names along with them.&quot; The note is part of the evidence — the proposer is told the withholding is deliberate, and that a missing or misnamed file is itself a finding.<sup id="fnref:30"><a class="footnote-ref" href="#fn:30">30</a></sup></p>
+<p><img src="figures/seq-evidence.svg" alt="The evidence tree and its tripwires" /></p>
+<h2 id="the-proposer-is-an-agent-not-an-api-call">The proposer is an agent, not an API call</h2>
+<p>Every improvement stage, composition, selection, and reflection is a full agentic session run by <code>core/proposer.py</code> on one of two channels.<sup id="fnref:31"><a class="footnote-ref" href="#fn:31">31</a></sup> On the <strong>OpenCode channel</strong> (the default), the session runs the pinned upstream OpenCode checkout from source through bun, in a temp directory holding a copy of the context; an <code>OPENCODE_PERMISSION</code> fence denies every external directory except that workspace. On the <strong>Claude CLI channel</strong>, the session is <code>claude -p</code> with <code>--dangerously-skip-permissions</code> on Vertex AI auth — and here the hygiene is in the environment: Anthropic API keys and base-URL overrides are stripped from the child environment (<code>_DROP_ENV</code>), so sessions authenticate the intended way rather than through whatever credentials the operator's shell happened to hold.<sup id="fnref:32"><a class="footnote-ref" href="#fn:32">32</a></sup><sup id="fnref:33"><a class="footnote-ref" href="#fn:33">33</a></sup></p>
+<p>The contract between the session and the method is files. The session edits <code>context/harness/</code> in place; when it replies, the proposer <em>harvests</em> that subtree into the audit directory before deleting the temp workspace, and the method reads the tree back from the harvest. A session whose workspace doesn't come back is a failed attempt, not an empty edit.<sup id="fnref:34"><a class="footnote-ref" href="#fn:34">34</a></sup> Every call is content-addressed — a SHA-256 fingerprint over label, mission, system prompt, and the full context tree contents keys the audit/cache directory — so re-running a sweep replays identical sessions from cache at zero cost, and the two modes can hold byte-identical evidence yet remain independent draws because the resolved workspace path is part of the key.<sup id="fnref:35"><a class="footnote-ref" href="#fn:35">35</a></sup> Sessions default to a one-hour timeout, transport retries with backoff, a global concurrency semaphore (default 2), and a full audit trail per call: mission, system, response, and metadata (model, effort, attempts, wall time, cost) written beside the harvest.<sup id="fnref:36"><a class="footnote-ref" href="#fn:36">36</a></sup></p>
+<h2 id="validation-the-surface-is-a-contract-and-it-knows-the-silent-failures">Validation: the surface is a contract, and it knows the silent failures</h2>
+<p>A proposed tree is not trusted because a model wrote it. <code>tree.validate</code> checks the tree against the substrate's <code>SurfaceSpec</code>, and the rules read like a catalogue of ways agent frameworks <em>silently</em> misbehave — each rule names the failure it prevents:</p>
+<ul>
+<li><strong>Always-on budget.</strong> The always-on text is capped (24,000 chars on OpenCode; 8,000 on Codex, whose <code>AGENTS.md</code> &quot;is injected whole into EVERY turn&quot; and is itself silently truncated by Codex at 32,768 bytes, so the cap keeps the harness well clear of a cliff the substrate won't report).<sup id="fnref:37"><a class="footnote-ref" href="#fn:37">37</a></sup><sup id="fnref:38"><a class="footnote-ref" href="#fn:38">38</a></sup></li>
+<li><strong>Skill identity.</strong> A skill's frontmatter <code>name:</code> must match its directory on OpenCode, because a mismatch &quot;is dropped SILENTLY at load&quot;; on Codex the rule inverts — <code>name:</code> <em>overrides</em> the directory at load, so a mismatch breaks every trigger line instead, and the validator says so.<sup id="fnref:39"><a class="footnote-ref" href="#fn:39">39</a></sup></li>
+<li><strong>Triggeredness.</strong> A skill never named in the always-on text is rejected: &quot;the agent will not know to invoke it — an untriggered skill is dead weight.&quot; Before validation, <code>autotrigger</code> repairs exactly this by appending a trigger line built from the skill's own <code>description:</code> — repaired, notably, <em>by the harness</em>, counted against the same cap, and reported.<sup id="fnref:40"><a class="footnote-ref" href="#fn:40">40</a></sup></li>
+<li><strong>Hooks, on the framework's terms.</strong> On the Codex surface, <code>.codex/hooks.json</code> is validated against the ten events Codex actually dispatches and the command-hook shape it honors — because a malformed hooks file &quot;never fires rather than erroring,&quot; a bad one would otherwise be an invisible no-op.<sup id="fnref:41"><a class="footnote-ref" href="#fn:41">41</a></sup></li>
+<li><strong>Code that must at least run.</strong> Every <code>scripts/*.py</code> (and skill scripts, where the surface requires it) must compile; every script a skill or always-on file invokes must exist in the tree.<sup id="fnref:42"><a class="footnote-ref" href="#fn:42">42</a></sup></li>
+</ul>
+<p>The two surfaces differ in ways that matter to an optimizer. OpenCode spreads always-on content across four files (system prompt, guardrails, memory, tool guidance) and gives plugins — TypeScript inside the tool loop, &quot;the only lever that can enforce something the model cannot skip&quot; — a directory. Codex concentrates always-on into a single <code>AGENTS.md</code>, has no plugin directory, and makes hooks (c8) the in-loop lever instead. The method's tree logic is written once, against the <code>SurfaceSpec</code> data; the per-framework knowledge lives in the two surface definitions and their validators.<sup id="fnref:43"><a class="footnote-ref" href="#fn:43">43</a></sup></p>
+<h2 id="selection-blind-anonymized-and-unable-to-abstain">Selection: blind, anonymized, and unable to abstain</h2>
+<p>Selection is where a score-driven pipeline would reach for the grader. This one reaches for another model session — and then takes care that the session cannot cheat either.</p>
+<p>The pool is <strong>exactly the k finals</strong> of the mode. The base executions are passed to the pool builder and deliberately not used: &quot;the reference executions are not in the pool and there is no abstention by construction. This is the published convention and the only pool this release builds.&quot; A selector cannot play safe by picking the unmodified harness; if every final is worse than base, the method will still adopt one, and the record will show it.<sup id="fnref:44"><a class="footnote-ref" href="#fn:44">44</a></sup> Candidates that failed or produced no deliverable are dropped <em>before</em> anonymization, with each drop and its cause recorded.<sup id="fnref:45"><a class="footnote-ref" href="#fn:45">45</a></sup> Survivors are anonymized to A, B, C… — assigned by canonical sort followed by a shuffle seeded from SHA-1(task|k|mode), so the assignment is stable across reruns but carries no positional information — and are presented as <strong>deliverable text</strong>, complete and untrimmed, not as trajectories: the selector judges the artifact, not the story of its production.<sup id="fnref:46"><a class="footnote-ref" href="#fn:46">46</a></sup> The session answers with a <code>choice</code> block and a <code>why</code>; on any failure, selection falls back to a delivered base or first final rather than raising, and the fallback is flagged in the record.<sup id="fnref:47"><a class="footnote-ref" href="#fn:47">47</a></sup></p>
+<p>Then comes the step that turns a choice into memory. <code>reflect_adoption</code> assembles the full record — all candidates, their harnesses and rollouts, the stage decision notes, the adopted tree, and the base tree for contrast — and a reflection session distils an <strong>experience record</strong>: per-edit accounts (component, source candidates, change, observed effect, verdict) plus a transferable lesson stated as <strong>cue / lesson / evidence / confidence</strong>. The distillation is gated: unless cue, lesson, and evidence are all present, nothing is stored — a lesson the session could not support with evidence does not enter the library.<sup id="fnref:48"><a class="footnote-ref" href="#fn:48">48</a></sup></p>
+<p><img src="figures/seq-reflection.svg" alt="Reflection: from an adoption to a library entry" /></p>
+<h2 id="memory-the-improvement-harness">Memory: the improvement harness</h2>
+<p>The second recursion level — the one the paper calls harnessing-level — is <code>core/library.py</code>: a per-domain <strong>experience library</strong> holding what earlier tasks in that domain produced. Each entry stores the adopted harness as its <strong>full component tree</strong> alongside an <code>EXPERIENCE.md</code> (why it was chosen, what each edit did, the lesson): &quot;The whole tree is carried, never a summary,&quot; because a later proposer may need any part of it, not the part a summarizer guessed would matter.<sup id="fnref:49"><a class="footnote-ref" href="#fn:49">49</a></sup></p>
+<p>Retrieval is by construction rather than by search: a library directory only ever contains entries from its own domain, and the next task in that domain receives the whole directory as evidence (<code>context/library/</code>), with an <code>INDEX.md</code> — cue lines and component inventories per entry — as the reading guide. Scoping is strict in two directions. Libraries are per <strong>mode</strong> as well as per domain (&quot;a shared mutable library would leak one mode into another&quot;), and roots are scoped per run: <strong>each sweep starts every domain empty</strong>, unless an explicit tag opts several runs into sharing one library. Within a domain, tasks run in a seeded, reproducible stream order, and each task's library is threaded forward — retained entries are exactly the tasks before it in the stream.<sup id="fnref:50"><a class="footnote-ref" href="#fn:50">50</a></sup><sup id="fnref:51"><a class="footnote-ref" href="#fn:51">51</a></sup> Resume respects the same discipline: a cached task is replayed into its libraries from the saved selection only after the adopted run's artifacts and the harness's fingerprint verify — a changed tree forces a re-run, not a quiet reuse.<sup id="fnref:52"><a class="footnote-ref" href="#fn:52">52</a></sup></p>
+<h2 id="safety-posture-two-stories">Safety posture: two stories</h2>
+<p><strong>Contamination discipline — strong, and structural.</strong> Covered above: score-blind types, an isolated judge, verdict tripwires, leak fences, anonymized selection, and prompt vocabulary rules. The optimizer cannot grade-shop because no path carries a grade to it; and the one historical leak (WorkBuddy's names-only mode) is documented in the code that now prevents it.</p>
+<p><strong>Executor confinement — weak, disclosed, and delegated to the operator.</strong> The solver rollouts are a different matter. The release <strong>does not restrict executor network access</strong>, and the Codex substrate's reference launch runs with <code>--dangerously-bypass-approvals-and-sandbox</code> and <code>--dangerously-bypass-hook-trust</code> — the bypasses exist so editable hooks can run, but they are bypasses.<sup id="fnref:53"><a class="footnote-ref" href="#fn:53">53</a></sup> The docs are candid about why this matters: all three benchmarks are public, JobBench publishes each task's rubric on Hugging Face, and &quot;in a validation run of this release, a Codex rollout on JobBench downloaded its task's rubric without being instructed to.&quot; The prescribed mitigation is operator-side — block <code>huggingface.co</code>, <code>hf.co</code>, <code>github.com</code> and <code>raw.githubusercontent.com</code> at the network level for the executor, and &quot;report the restrictions used alongside results&quot; — because, with the sandbox disabled, &quot;apply restrictions at the network level… rather than relying on a tool setting.&quot;<sup id="fnref:54"><a class="footnote-ref" href="#fn:54">54</a></sup> In other words: the method's own evidence channel is tripwired against grader leakage, but a solver fetching answers at solve time is outside the method's fence; the release names that boundary plainly instead of papering over it. (The proposer sessions sit in between: fenced temp workspaces and a deny-by-default directory permission on the OpenCode channel, permission-skipping on the Claude channel, and credential hygiene in the environment on both.)</p>
+<h2 id="extensions">Extensions</h2>
+<p>Adding a benchmark means implementing the <code>BenchmarkAdapter</code> protocol — task enumeration and domain mapping, the task prompt <em>as the agent received it</em> (criteria stripped), execution (idempotent by run id), delivery detection, trajectory and deliverable extraction in the shared grammar, a base harness, tree invariants, and the fenced <code>score()</code> — plus a <code>BenchSpec</code> value: install mode, channels for proposer and selector, leak globs, whether subagents are allowed, how deliverables are served to proposers, and the observation-truncation budget.<sup id="fnref:55"><a class="footnote-ref" href="#fn:55">55</a></sup> The three shipped adapters show the range: JobBench installs into OpenCode as an <code>AGENTS.md</code> append (subagents allowed there, not on Codex); LAB renders a workspace config with a tool gate and forbids subagents entirely; WorkBuddy composes the always-on tree into a Jinja prompt template (validated to contain exactly one <code>{{ instruction }}</code> placeholder, at the end, with no other brace pairs — because the container renders with <code>StrictUndefined</code>) and switches deliverable serving to names-only on its code subset.<sup id="fnref:56"><a class="footnote-ref" href="#fn:56">56</a></sup><sup id="fnref:57"><a class="footnote-ref" href="#fn:57">57</a></sup> Adding a <em>substrate</em> is the heavier lift: a <code>SurfaceSpec</code>, install/materialise logic, a launcher contract, and a renderer from the framework's event stream into the shared [ACTION]/[OBSERVATION]/[ERROR] grammar. Prompt text itself is pluggable per benchmark through <code>BenchPrompts</code> (the work description, dimension levers, domain guidance, selection checks) and two prompt packs — <code>adapt</code> and a <code>tts</code> variant — share the same stage machinery.<sup id="fnref:58"><a class="footnote-ref" href="#fn:58">58</a></sup></p>
+<p>The whole machine can also be run with no models at all: the deterministic demo adapter (<code>harness2/demo.py</code>, exercised by <code>tests/test_workflow.py</code>) wires a scripted proposer into the real schedule/recursion/selection/library path over a two-task ledger-reconciliation problem — the base script sums only positive amounts; the scripted edit removes the filter; selection, reflection, and the library entry all happen for real. It is the fastest honest way to watch one full Propose–Probe–Compose cycle.<sup id="fnref:59"><a class="footnote-ref" href="#fn:59">59</a></sup></p>
+<p><img src="figures/seq-demo.svg" alt="The deterministic demo: one full cycle with no model calls" /></p>
+<h2 id="observations">Observations</h2>
+<ul>
+<li><strong>The optimizer has no loop; the loop has an accountant.</strong> Where other entries in this series hide their iteration in a runtime, Harness² makes its iteration a <em>budgeted search protocol</em> — fixed counts (4k rollouts, 3k sessions), an asserted identity, cached sessions — which makes a run's cost knowable before it starts and its record auditable after.</li>
+<li><strong>Score-blindness is treated as an integrity property, not a preference.</strong> It is defended at the type level (<code>RunView</code>), the module level (an unimported judge), the file level (tripwires on every tree that crosses into a model), and the vocabulary level (prompts that may not mention measurement). Each layer assumes the others might fail.</li>
+<li><strong>Validation encodes operational folklore.</strong> The validator's rules are a written record of how OpenCode and Codex actually fail — silently dropped skills, untriggered skills, malformed hooks that never fire, an <code>AGENTS.md</code> truncated without notice. The optimizer's reliability rests as much on this catalogue as on the search itself.</li>
+<li><strong>The memory is the deliverable.</strong> Adopted harnesses are stored whole, with the reasoning and the lesson attached, in a layout a <em>model</em> can browse. The library is less a database than a bookshelf the next proposer session is told to read.</li>
+<li><strong>Everything is pinned, including the borrowed parts.</strong> OpenCode is a specific upstream commit run from source; Codex is a versioned dist; the benchmarks are exact commits in <code>DEPENDENCY_PINS</code> — because an optimizer's results are meaningless if the substrate drifts underneath it.<sup id="fnref:60"><a class="footnote-ref" href="#fn:60">60</a></sup></li>
+</ul>
+<h2 id="tradeoffs">Tradeoffs</h2>
+<ul>
+<li><strong>The cost is the method.</strong> Both modes together spend 7k executor rollouts and 6k improver sessions per task (the k bases are shared), plus selection and reflection — before judging. The content-addressed cache and content-verified resume keep <em>repeated</em> sweeps cheap, but a first pass over a benchmark is a serious compute commitment, and the recursion budget k is the main dial.</li>
+<li><strong>Blindness cuts both ways.</strong> The method cannot grade-shop — and cannot notice when its proxy for quality (a selector model reading deliverables) diverges from the grader's. The anonymized selector sees deliverable text, not trajectories, by default; a final whose artifact reads well but was produced by a fragile harness is adopted on the artifact's merits, with the harness's weaknesses left for the next task's evidence to expose.</li>
+<li><strong>Selection cannot abstain.</strong> Excluding the base from the pool keeps the search honest, but it also means a task where every candidate regressed still adopts one of them; the protection is that judging is separate and visible, not that adoption is safe.</li>
+<li><strong>The validator's folklore will drift.</strong> Rules like &quot;name must match directory or the skill is dropped silently&quot; are facts about specific substrate versions. Pinning the substrates keeps a run reproducible; it does not keep the catalogue current, and a substrate upgrade silently invalidates assumptions the validator was written to enforce.</li>
+<li><strong>Executor confinement is the operator's problem.</strong> The release says so itself, but the consequence stands: run this without egress controls on a public benchmark and the solver may fetch the rubric — as the authors' own validation run demonstrated — and the method's careful blindness will not save the measurement.</li>
+</ul>
+<h2 id="comparison-matrix-row">Comparison matrix row</h2>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Dimension</th>
+<th>Harness² (1cfe254)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>Agent loop</td>
+<td>No turn loop in-package — the loop is a budgeted search over harness trees: k shared base rollouts → 2k dimension-split proposals (INV procedure / DOM practitioner knowledge) → k compositions; parallel mode (independent draws, independent compositions) or sequential mode (checkpointed rounds c1..ck, all checkpoints are finals); ledger asserts R = 4k rollouts / P = 3k sessions per task-mode</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Tool system</td>
+<td>None of its own — the substrate's tools, reached through a pinned OpenCode checkout (run from source via bun) or a versioned Codex dist; the package's own tool surface is the file-editing workspace it grants proposer sessions</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Model providers</td>
+<td>Solver / improver / selector / judge as separate env-configured channels over two transports: OpenCode channel (provider-prefixed model ids, Vertex AI the reference route) or Claude CLI channel (Vertex auth); improver defaults to the solver model</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Prompt construction</td>
+<td>Evidence-as-files plus a short mission pointer; full trajectories untruncated (per-observation clip, 50k default, 10k floor enforced); per-dimension job templates interpolated with benchmark <code>BenchPrompts</code> that are forbidden from mentioning grading</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Memory/session</td>
+<td>The improvement harness: a per-(run, mode, domain) library storing each adopted harness as its whole tree plus an EXPERIENCE.md (why, per-edit effects, cue/lesson/evidence/confidence); within a task, decision notes and candidate diffs; content-addressed session cache makes sweeps resumable</td>
+</tr>
+<tr>
+<td>6</td>
+<td>Reasoning/planning</td>
+<td>The search is the planning: contrast-driven editing (every edit must trace to a trajectory moment; divergences preferred, then repeated failures, then risks), dimension-split proposals, composition over candidate pools, final diversity measured by pairwise line-Jaccard</td>
+</tr>
+<tr>
+<td>7</td>
+<td>Extensibility</td>
+<td><code>BenchmarkAdapter</code> protocol + <code>BenchSpec</code> values (install mode, leak globs, subagent policy, deliverable serving); a new substrate needs a <code>SurfaceSpec</code>, install modes, and a trajectory renderer; two prompt packs (<code>adapt</code>, <code>tts</code>)</td>
+</tr>
+<tr>
+<td>8</td>
+<td>Interfaces</td>
+<td>CLI suite only: <code>harness2</code> (sweep), <code>harness2-judge</code>, <code>harness2-report</code>, <code>-setup</code>, <code>-check</code>, <code>-demo</code>, <code>-bridge</code>; results as <code>runs/</code> trees with summary/selection/judged JSON; a deterministic no-model demo exercises the full workflow</td>
+</tr>
+<tr>
+<td>9</td>
+<td>Failure handling</td>
+<td>Dead rollouts recorded, never raised; invalid proposal gets one retry with the rejection fed back, then the stage inherits the current harness (<code>fell_back</code>); selector failure falls back to a delivered final; judge failure is None — excluded from the denominator, never a zero; resume is content-verified by harness fingerprint</td>
+</tr>
+<tr>
+<td>10</td>
+<td>Security model</td>
+<td>Score-blindness by construction (<code>RunView</code> carries no score) plus tripwires: grader-verdict marker scans on every evidence/harness/library tree, per-benchmark answer-key leak globs, anonymized selection; proposer sessions in fenced temp workspaces with API keys stripped from the environment; executor side is open by design — network unrestricted, Codex approvals/sandbox bypassed, mitigation delegated to operator egress filtering and disclosed in the docs</td>
+</tr>
+</tbody>
+</table>
+<h2 id="endnotes">Endnotes</h2>
+<p>All notes are pinned permalinks into the source tree at <code>1cfe254e8d25b15f37048c3730134686abe60335</code>; quoted text is verbatim from that tree unless marked otherwise.</p>
+<div class="footnote">
+<hr />
+<ol>
+<li id="fn:1">
+<p><a href="https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/core/spec.py#L15-L19"><code>harness2/core/spec.py#L15-L19</code></a> — &quot;Three axes stay separate — method (recursion, prompts, selection, library), substrate (the agent framework a solver rollout runs under) and benchmark.&quot;&#160;<a class="footnote-backref" href="#fnref:1" title="Jump back to footnote 1 in the text">&#8617;</a></p>
+</li>
+<li id="fn:2">
+<p><a href="https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/core/spec.py#L247-L252"><code>harness2/core/spec.py#L247-L252</code></a> — the adapter protocol's <code>score()</code>: &quot;Called only by <code>core.judge</code>, only after selection committed.&quot;&#160;<a class="footnote-backref" href="#fnref:2" title="Jump back to footnote 2 in the text">&#8617;</a></p>
+</li>
+<li id="fn:3">
+<p><a href="https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/core/ledger.py#L26-L31"><code>harness2/core/ledger.py#L26-L31</code></a> — <code>expected_rollouts</code>: &quot;R = 4k: k shared base + 2k candidates + k finals&quot;; <code>expected_sessions</code>: &quot;P = 3k: k INV + k DOM + k compositions.&quot;&#160;<a class="footnote-backref" href="#fnref:3" title="Jump back to footnote 3 in the text">&#8617;</a></p>
+</li>
+<li id="fn:4">
+<p><a href="https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/core/ledger.py#L89-L112"><code>harness2/core/ledger.py#L89-L112</code></a> — <code>Ledger.assert_identity</code>: duplicates are checked before the counts, &quot;because a duplicate can satisfy them.&quot;&#160;<a class="footnote-backref" href="#fnref:4" title="Jump back to footnote 4 in the text">&#8617;</a></p>
+</li>
+<li id="fn:5">
+<p><a href="https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/core/schedule.py#L566-L575"><code>harness2/core/schedule.py#L566-L575</code></a> — <code>run_task</code>: &quot;k shared reference executions -&gt; every mode -&gt; blind selection per mode -&gt; summary.json.&quot;&#160;<a class="footnote-backref" href="#fnref:5" title="Jump back to footnote 5 in the text">&#8617;</a></p>
+</li>
+<li id="fn:6">
+<p><a href="https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/core/recursion.py#L260-L300"><code>harness2/core/recursion.py#L260-L300</code></a> — <code>_roll</code>: &quot;Materialise a harness and roll it once. A dead rollout is recorded, never raised.&quot;&#160;<a class="footnote-backref" href="#fnref:6" title="Jump back to footnote 6 in the text">&#8617;</a></p>
+</li>
+<li id="fn:7">
+<p><a href="https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/core/prompts.py#L347-L409"><code>harness2/core/prompts.py#L347-L409</code></a> — the INV template (&quot;how the agent WORKS… match each failure to the cheapest effective component&quot;) and the DOM template (&quot;what a PRACTITIONER knows… Never invent an authority, identifier, standard or citation&quot;).&#160;<a class="footnote-backref" href="#fnref:7" title="Jump back to footnote 7 in the text">&#8617;</a></p>
+</li>
+<li id="fn:8">
+<p><a href="https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/core/prompts.py#L856-L872"><code>harness2/core/prompts.py#L856-L872</code></a> — &quot;HOW TO DECIDE WHAT TO CHANGE&quot;: every edit must trace to a trajectory moment; divergences first, then repeated failures, then risks.&#160;<a class="footnote-backref" href="#fnref:8" title="Jump back to footnote 8 in the text">&#8617;</a></p>
+</li>
+<li id="fn:9">
+<p><a href="https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/core/recursion.py#L343-L360"><code>harness2/core/recursion.py#L343-L360</code></a> — <code>run_parallel</code>: &quot;WIDTH: 2k iid candidates from shared evidence, then k INDEPENDENT compositions.&quot;&#160;<a class="footnote-backref" href="#fnref:9" title="Jump back to footnote 9 in the text">&#8617;</a></p>
+</li>
+<li id="fn:10">
+<p><a href="https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/core/tree.py#L407-L427"><code>harness2/core/tree.py#L407-L427</code></a> — <code>diversity</code>: &quot;Pairwise line-Jaccard over candidate trees, so collapse to one body is visible.&quot;&#160;<a class="footnote-backref" href="#fnref:10" title="Jump back to footnote 10 in the text">&#8617;</a></p>
+</li>
+<li id="fn:11">
+<p><a href="https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/core/recursion.py#L452-L470"><code>harness2/core/recursion.py#L452-L470</code></a> — <code>run_sequential</code>: &quot;DEPTH: k nested passes over the same shared base evidence.&quot;&#160;<a class="footnote-backref" href="#fnref:11" title="Jump back to footnote 11 in the text">&#8617;</a></p>
+</li>
+<li id="fn:12">
+<p><a href="https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/core/recursion.py#L108-L132"><code>harness2/core/recursion.py#L108-L132</code></a> — <code>_accept_tree</code>: &quot;Repair then validate a proposed tree&quot; — autotrigger, <code>validate</code>, <code>adapter.validate_tree</code>, <code>assert_tree_has_no_grader_verdicts</code>.&#160;<a class="footnote-backref" href="#fnref:12" title="Jump back to footnote 12 in the text">&#8617;</a></p>
+</li>
+<li id="fn:13">
+<p><a href="https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/core/recursion.py#L135-L140"><code>harness2/core/recursion.py#L135-L140</code></a> — <code>_run_stage</code>: &quot;Build evidence, propose an edit, and retry an invalid proposal once&quot;; a stage that exhausts its attempts returns the fallback tree with <code>fell_back=True</code> (end of the same function).&#160;<a class="footnote-backref" href="#fnref:13" title="Jump back to footnote 13 in the text">&#8617;</a></p>
+</li>
+<li id="fn:14">
+<p><a href="https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/core/prompts.py#L333-L336"><code>harness2/core/prompts.py#L333-L336</code></a> — <code>_KEEP_BASE</code>: &quot;KEEP_BASE is a real answer, not a failure. Adaptation that the evidence does not argue for is a regression.&quot;&#160;<a class="footnote-backref" href="#fnref:14" title="Jump back to footnote 14 in the text">&#8617;</a></p>
+</li>
+<li id="fn:15">
+<p><a href="https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/core/spec.py#L171-L183"><code>harness2/core/spec.py#L171-L183</code></a> — <code>RunView</code>: &quot;What the method knows about one finished rollout. Never carries a score.&quot;&#160;<a class="footnote-backref" href="#fnref:15" title="Jump back to footnote 15 in the text">&#8617;</a></p>
+</li>
+<li id="fn:16">
+<p><a href="https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/core/context.py#L15-L31"><code>harness2/core/context.py#L15-L31</code></a> — the evidence tree layout: &quot;context/rollouts/&lt;label&gt;.md — full trajectory — no prompt-budget truncation&quot;; deliverables &quot;via the judge's own extractor.&quot;&#160;<a class="footnote-backref" href="#fnref:16" title="Jump back to footnote 16 in the text">&#8617;</a></p>
+</li>
+<li id="fn:17">
+<p><a href="https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/core/proposer.py#L313-L326"><code>harness2/core/proposer.py#L313-L326</code></a> — <code>_harvest</code>: &quot;Copy <code>tmp/&lt;sub&gt;</code> somewhere durable before the session directory is removed.&quot;&#160;<a class="footnote-backref" href="#fnref:17" title="Jump back to footnote 17 in the text">&#8617;</a></p>
+</li>
+<li id="fn:18">
+<p><a href="https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/core/tree.py#L336-L360"><code>harness2/core/tree.py#L336-L360</code></a> — <code>validate</code>: &quot;Raise ValueError listing every problem; return a census of the validated tree.&quot;&#160;<a class="footnote-backref" href="#fnref:18" title="Jump back to footnote 18 in the text">&#8617;</a></p>
+</li>
+<li id="fn:19">
+<p><a href="https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/core/recursion.py#L395-L445"><code>harness2/core/recursion.py#L395-L445</code></a> — the parallel composition phase: pool evidence (candidate harness dir + rollout per candidate) and per-stage decision notes handed to each AGG stage.&#160;<a class="footnote-backref" href="#fnref:19" title="Jump back to footnote 19 in the text">&#8617;</a></p>
+</li>
+<li id="fn:20">
+<p><a href="https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/core/selection.py#L360-L400"><code>harness2/core/selection.py#L360-L400</code></a> — <code>trivial_selection</code>: &quot;Deliver the single k=1 final without a selector session,&quot; writing the standard selection.json schema.&#160;<a class="footnote-backref" href="#fnref:20" title="Jump back to footnote 20 in the text">&#8617;</a></p>
+</li>
+<li id="fn:21">
+<p><a href="https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/core/selection.py#L454-L505"><code>harness2/core/selection.py#L454-L505</code></a> — <code>_distil</code>: parses the <code>&lt;experience&gt;</code> block into cue/lesson/evidence/confidence and returns {} unless cue, lesson and evidence are all present.&#160;<a class="footnote-backref" href="#fnref:21" title="Jump back to footnote 21 in the text">&#8617;</a></p>
+</li>
+<li id="fn:22">
+<p><a href="https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/core/library.py#L106-L162"><code>harness2/core/library.py#L106-L162</code></a> — <code>Library.add</code>: stores the full tree (checked for grader verdicts first) plus the EXPERIENCE.md sections &quot;Why this was chosen&quot;, &quot;What each edit did&quot;, &quot;Transferable lesson&quot;.&#160;<a class="footnote-backref" href="#fnref:22" title="Jump back to footnote 22 in the text">&#8617;</a></p>
+</li>
+<li id="fn:23">
+<p><a href="https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/core/context.py#L521-L546"><code>harness2/core/context.py#L521-L546</code></a> — <code>mission()</code>: &quot;Every trajectory EVENT is present: the trajectory was not clipped to fit this mission.&quot;&#160;<a class="footnote-backref" href="#fnref:23" title="Jump back to footnote 23 in the text">&#8617;</a></p>
+</li>
+<li id="fn:24">
+<p><a href="https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/core/spec.py#L148-L168"><code>harness2/core/spec.py#L148-L168</code></a> — <code>BenchSpec.__post_init__</code>: an <code>obs_trunc</code> under 10,000 &quot;is in the range that fabricates defects&quot;; default is 50,000.&#160;<a class="footnote-backref" href="#fnref:24" title="Jump back to footnote 24 in the text">&#8617;</a></p>
+</li>
+<li id="fn:25">
+<p><a href="https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/core/context.py#L303-L340"><code>harness2/core/context.py#L303-L340</code></a> — <code>_write_pool</code>: each candidate gets its harness, its rollout, and a <code>harness.diff</code> of unified diffs against the current tree; the deliverables INDEX explains the <code>.txt</code> view &quot;is CANONICAL — it reads each artifact the way the grader does.&quot;&#160;<a class="footnote-backref" href="#fnref:25" title="Jump back to footnote 25 in the text">&#8617;</a></p>
+</li>
+<li id="fn:26">
+<p><a href="https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/core/judge.py#L15-L20"><code>harness2/core/judge.py#L15-L20</code></a> — &quot;Measurement of the run that selection chose, after it chose it. Nothing in the method imports this module. A judge failure is None, never a zero, and a None is excluded from the denominator.&quot;&#160;<a class="footnote-backref" href="#fnref:26" title="Jump back to footnote 26 in the text">&#8617;</a></p>
+</li>
+<li id="fn:27">
+<p><a href="https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/core/context.py#L454-L490"><code>harness2/core/context.py#L454-L490</code></a> — <code>assert_no_grader_verdicts</code>: refuses a context tree containing the grader's own output, by file name and by content; &quot;this is a leak, not a false positive to widen around.&quot;&#160;<a class="footnote-backref" href="#fnref:27" title="Jump back to footnote 27 in the text">&#8617;</a></p>
+</li>
+<li id="fn:28">
+<p><a href="https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/benchmarks/jobbench.py#L511-L521"><code>harness2/benchmarks/jobbench.py#L511-L521</code></a>, <a href="https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/benchmarks/lab.py#L483-L494"><code>harness2/benchmarks/lab.py#L483-L494</code></a>, <a href="https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/benchmarks/workbuddy.py#L656-L667"><code>harness2/benchmarks/workbuddy.py#L656-L667</code></a> — the three adapters' <code>BenchSpec</code> values: leak globs, subagent policy, install modes, deliverable serving.&#160;<a class="footnote-backref" href="#fnref:28" title="Jump back to footnote 28 in the text">&#8617;</a></p>
+</li>
+<li id="fn:29">
+<p><a href="https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/core/spec.py#L116-L128"><code>harness2/core/spec.py#L116-L128</code></a> — <code>BenchPrompts.__post_init__</code>: work-describing fields must not contain &quot;benchmark&quot;, &quot;evaluation&quot;, &quot;grader&quot;, &quot;rubric&quot; or &quot;score&quot; — &quot;must describe the WORK, not its measurement.&quot;&#160;<a class="footnote-backref" href="#fnref:29" title="Jump back to footnote 29 in the text">&#8617;</a></p>
+</li>
+<li id="fn:30">
+<p><a href="https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/core/context.py#L352-L361"><code>harness2/core/context.py#L352-L361</code></a> — <code>_WITHHELD_NOTE</code>: &quot;CONTENTS ARE WITHHELD ON THIS PATH, DELIBERATELY… serving file bodies here once served the grader's pass rate and failed-check names along with them.&quot;&#160;<a class="footnote-backref" href="#fnref:30" title="Jump back to footnote 30 in the text">&#8617;</a></p>
+</li>
+<li id="fn:31">
+<p><a href="https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/core/proposer.py#L91-L100"><code>harness2/core/proposer.py#L91-L100</code></a> — <code>Proposer</code>: &quot;Runs agentic sessions on one channel, with an audit trail and a cache.&quot;&#160;<a class="footnote-backref" href="#fnref:31" title="Jump back to footnote 31 in the text">&#8617;</a></p>
+</li>
+<li id="fn:32">
+<p><a href="https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/core/proposer.py#L207-L245"><code>harness2/core/proposer.py#L207-L245</code></a> — <code>_claude_cli</code>: the session runs <code>claude --dangerously-skip-permissions -p --output-format json</code> with Vertex environment wiring.&#160;<a class="footnote-backref" href="#fnref:32" title="Jump back to footnote 32 in the text">&#8617;</a></p>
+</li>
+<li id="fn:33">
+<p><a href="https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/core/proposer.py#L46-L53"><code>harness2/core/proposer.py#L46-L53</code></a> — <code>_DROP_ENV</code>: ANTHROPIC_API_KEY / ANTHROPIC_AUTH_TOKEN / ANTHROPIC_BASE_URL / ANTHROPIC_BEDROCK_BASE_URL / CLAUDE_CODE_USE_BEDROCK are removed from the child environment.&#160;<a class="footnote-backref" href="#fnref:33" title="Jump back to footnote 33 in the text">&#8617;</a></p>
+</li>
+<li id="fn:34">
+<p><a href="https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/core/recursion.py#L205-L212"><code>harness2/core/recursion.py#L205-L212</code></a> — a reply whose workspace did not come back is rejected: &quot;the harness directory did not come back from the session; edit the files in <code>context/harness/</code> in place.&quot;&#160;<a class="footnote-backref" href="#fnref:34" title="Jump back to footnote 34 in the text">&#8617;</a></p>
+</li>
+<li id="fn:35">
+<p><a href="https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/core/proposer.py#L507-L534"><code>harness2/core/proposer.py#L507-L534</code></a> — <code>_call_fingerprint</code>: &quot;Content-address one call, including its evidence and its mode/task workspace path… the two modes can have byte-identical k=1 evidence and must still be independent draws.&quot;&#160;<a class="footnote-backref" href="#fnref:35" title="Jump back to footnote 35 in the text">&#8617;</a></p>
+</li>
+<li id="fn:36">
+<p><a href="https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/core/spec.py#L36-L48"><code>harness2/core/spec.py#L36-L48</code></a> — <code>ChannelSpec</code> defaults: effort &quot;high&quot;, steps 120, timeout 3600 (one hour); <code>harness2/config.py</code> sets <code>PROPOSER_CONCURRENCY = 2</code> and <code>PHASE_WIDTH = 2</code>.&#160;<a class="footnote-backref" href="#fnref:36" title="Jump back to footnote 36 in the text">&#8617;</a></p>
+</li>
+<li id="fn:37">
+<p><a href="https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/substrate/opencode.py#L42-L56"><code>harness2/substrate/opencode.py#L42-L56</code></a> — <code>OPENCODE_SURFACE</code>: four always-on files, <code>always_on_max=24_000</code> — &quot;every token here competes with the agent's own output budget.&quot;&#160;<a class="footnote-backref" href="#fnref:37" title="Jump back to footnote 37 in the text">&#8617;</a></p>
+</li>
+<li id="fn:38">
+<p><a href="https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/substrate/codex.py#L39-L48"><code>harness2/substrate/codex.py#L39-L48</code></a> — <code>CODEX_SURFACE</code>: <code>always_on=(&quot;AGENTS.md&quot;,)</code>, cap 8,000 — &quot;AGENTS.md is injected whole into EVERY turn, and codex additionally truncates it silently at 32,768 bytes.&quot;&#160;<a class="footnote-backref" href="#fnref:38" title="Jump back to footnote 38 in the text">&#8617;</a></p>
+</li>
+<li id="fn:39">
+<p><a href="https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/core/tree.py#L267-L295"><code>harness2/core/tree.py#L267-L295</code></a> — <code>_check_skills</code>: frontmatter rules for both <code>skill_name_rule</code> modes, plus &quot;an untriggered skill is dead weight.&quot;&#160;<a class="footnote-backref" href="#fnref:39" title="Jump back to footnote 39 in the text">&#8617;</a></p>
+</li>
+<li id="fn:40">
+<p><a href="https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/core/tree.py#L192-L215"><code>harness2/core/tree.py#L192-L215</code></a> — <code>autotrigger</code>: &quot;Give every skill a trigger line in always-on text… A line that would push the body over the always-on cap is skipped instead.&quot;&#160;<a class="footnote-backref" href="#fnref:40" title="Jump back to footnote 40 in the text">&#8617;</a></p>
+</li>
+<li id="fn:41">
+<p><a href="https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/core/tree.py#L216-L245"><code>harness2/core/tree.py#L216-L245</code></a> — <code>check_hooks</code>: validates the hooks file against &quot;the schema the framework dispatches; a malformed one never fires rather than erroring.&quot;&#160;<a class="footnote-backref" href="#fnref:41" title="Jump back to footnote 41 in the text">&#8617;</a></p>
+</li>
+<li id="fn:42">
+<p><a href="https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/core/tree.py#L317-L333"><code>harness2/core/tree.py#L317-L333</code></a> — <code>_check_script_refs</code>: &quot;every script a skill or always-on file invokes but does not ship&quot; is an error; <code>_py_compiles</code> (L254) does the same for syntax.&#160;<a class="footnote-backref" href="#fnref:42" title="Jump back to footnote 42 in the text">&#8617;</a></p>
+</li>
+<li id="fn:43">
+<p><a href="https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/substrate/opencode.py#L66-L84"><code>harness2/substrate/opencode.py#L66-L84</code></a> — the OpenCode surface stubs naming c5–c8, including plugins: &quot;Acts INSIDE the tool loop — the only lever that can enforce something the model cannot skip.&quot;&#160;<a class="footnote-backref" href="#fnref:43" title="Jump back to footnote 43 in the text">&#8617;</a></p>
+</li>
+<li id="fn:44">
+<p><a href="https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/core/selection.py#L93-L112"><code>harness2/core/selection.py#L93-L112</code></a> — <code>selection_pool</code>: &quot;exactly the k finals of <code>mode</code>… <code>base</code> is accepted and deliberately unused: it is what the pool excludes.&quot;&#160;<a class="footnote-backref" href="#fnref:44" title="Jump back to footnote 44 in the text">&#8617;</a></p>
+</li>
+<li id="fn:45">
+<p><a href="https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/core/selection.py#L114-L140"><code>harness2/core/selection.py#L114-L140</code></a> — <code>_render_pool</code>: &quot;Drop non-answers before anonymising, recording each drop and its cause.&quot;&#160;<a class="footnote-backref" href="#fnref:45" title="Jump back to footnote 45 in the text">&#8617;</a></p>
+</li>
+<li id="fn:46">
+<p><a href="https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/core/selection.py#L71-L84"><code>harness2/core/selection.py#L71-L84</code></a> — <code>assign_ids</code>: &quot;anon id -&gt; label, by canonical sort then a seeded shuffle: stable across reruns&quot;; candidate files are written complete — &quot;COMPLETE — nothing trimmed&quot; (<code>_write_candidates</code>, L183).&#160;<a class="footnote-backref" href="#fnref:46" title="Jump back to footnote 46 in the text">&#8617;</a></p>
+</li>
+<li id="fn:47">
+<p><a href="https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/core/selection.py#L237-L252"><code>harness2/core/selection.py#L237-L252</code></a> — <code>_fallback</code>: &quot;The neutral stand-in after a selector failure: a delivered base, else the first final.&quot;&#160;<a class="footnote-backref" href="#fnref:47" title="Jump back to footnote 47 in the text">&#8617;</a></p>
+</li>
+<li id="fn:48">
+<p><a href="https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/core/selection.py#L402-L452"><code>harness2/core/selection.py#L402-L452</code></a> — <code>reflect_adoption</code>: &quot;Learn from harness edits, decisions, trajectories, and deliverables after adoption.&quot;&#160;<a class="footnote-backref" href="#fnref:48" title="Jump back to footnote 48 in the text">&#8617;</a></p>
+</li>
+<li id="fn:49">
+<p><a href="https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/core/library.py#L15-L25"><code>harness2/core/library.py#L15-L25</code></a> — the library layout: &quot;Retrieval is by construction: a domain's directory only ever holds same-domain entries. The whole tree is carried, never a summary.&quot;&#160;<a class="footnote-backref" href="#fnref:49" title="Jump back to footnote 49 in the text">&#8617;</a></p>
+</li>
+<li id="fn:50">
+<p><a href="https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/core/library.py#L215-L222"><code>harness2/core/library.py#L215-L222</code></a> — <code>root_for</code>: &quot;Per-run library root…; an explicit <code>tag</code> opts into sharing one library across runs&quot; — without one, each sweep starts empty.&#160;<a class="footnote-backref" href="#fnref:50" title="Jump back to footnote 50 in the text">&#8617;</a></p>
+</li>
+<li id="fn:51">
+<p><a href="https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/core/schedule.py#L340-L352"><code>harness2/core/schedule.py#L340-L352</code></a> — <code>_resolve_libraries</code>: &quot;a shared mutable library would leak one mode into another&quot;; <code>stream_order</code> (L130) makes the continual-learning order a pure function of (seed, domain, task set).&#160;<a class="footnote-backref" href="#fnref:51" title="Jump back to footnote 51 in the text">&#8617;</a></p>
+</li>
+<li id="fn:52">
+<p><a href="https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/core/schedule.py#L386-L425"><code>harness2/core/schedule.py#L386-L425</code></a> — <code>_resume</code>: a cached task resumes only if the adopted run directory, its artifact, and the harness fingerprint all verify; &quot;adopted harness has changed&quot; forces a re-run.&#160;<a class="footnote-backref" href="#fnref:52" title="Jump back to footnote 52 in the text">&#8617;</a></p>
+</li>
+<li id="fn:53">
+<p><a href="https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/substrate/codex.py#L150-L176"><code>harness2/substrate/codex.py#L150-L176</code></a> — the Codex substrate's reference <code>codex exec</code> argv, including <code>--dangerously-bypass-approvals-and-sandbox</code> and <code>--dangerously-bypass-hook-trust</code> (&quot;Hook trust enables the editable hooks&quot;).&#160;<a class="footnote-backref" href="#fnref:53" title="Jump back to footnote 53 in the text">&#8617;</a></p>
+</li>
+<li id="fn:54">
+<p><a href="https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/docs/EXPERIMENTS.md#L93-L110"><code>docs/EXPERIMENTS.md#L93-L110</code></a> — &quot;Web access&quot; (docs): &quot;The release does not restrict network access… In a validation run of this release, a Codex rollout on JobBench downloaded its task's rubric without being instructed to.&quot; Block huggingface.co / github.com at the network level and report the restrictions alongside results.&#160;<a class="footnote-backref" href="#fnref:54" title="Jump back to footnote 54 in the text">&#8617;</a></p>
+</li>
+<li id="fn:55">
+<p><a href="https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/core/spec.py#L201-L252"><code>harness2/core/spec.py#L201-L252</code></a> — the full <code>BenchmarkAdapter</code> protocol: tasks, domain_of, task_prompt (&quot;with criteria and expected output stripped&quot;), execute, delivered, trajectory, deliverable extraction, base_harness, validate_tree, score.&#160;<a class="footnote-backref" href="#fnref:55" title="Jump back to footnote 55 in the text">&#8617;</a></p>
+</li>
+<li id="fn:56">
+<p><a href="https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/benchmarks/lab.py#L483-L494"><code>harness2/benchmarks/lab.py#L483-L494</code></a> — LAB's <code>BenchSpec</code>: <code>install_mode</code> workspace_config / codex_root, <code>allow_subagents=False</code>, leak glob <code>task.json</code>.&#160;<a class="footnote-backref" href="#fnref:56" title="Jump back to footnote 56 in the text">&#8617;</a></p>
+</li>
+<li id="fn:57">
+<p><a href="https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/substrate/opencode.py#L86-L110"><code>harness2/substrate/opencode.py#L86-L110</code></a> — <code>assert_jinja_safe</code>: the composed WorkBuddy template must contain the <code>{{ instruction }}</code> placeholder exactly once, at the very end, with no other brace pair anywhere (StrictUndefined render contract).&#160;<a class="footnote-backref" href="#fnref:57" title="Jump back to footnote 57 in the text">&#8617;</a></p>
+</li>
+<li id="fn:58">
+<p><a href="https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/core/spec.py#L103-L109"><code>harness2/core/spec.py#L103-L109</code></a> — <code>BenchPrompts.prompt_pack</code> must be &quot;adapt&quot; or &quot;tts&quot;; the two packs share the stage machinery in <code>core/prompts.py</code>.&#160;<a class="footnote-backref" href="#fnref:58" title="Jump back to footnote 58 in the text">&#8617;</a></p>
+</li>
+<li id="fn:59">
+<p><a href="https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/demo.py#L100-L163"><code>harness2/demo.py#L100-L163</code></a> — <code>DemoProposer</code>: scripted selection, experience and edit sessions over the real workflow — &quot;no model service or benchmark judge is used.&quot;&#160;<a class="footnote-backref" href="#fnref:59" title="Jump back to footnote 59 in the text">&#8617;</a></p>
+</li>
+<li id="fn:60">
+<p><a href="https://github.com/google-research/harness2/blob/1cfe254e8d25b15f37048c3730134686abe60335/harness2/config.py#L104-L115"><code>harness2/config.py#L104-L115</code></a> — <code>DEPENDENCY_PINS</code>: exact commits for job-bench-eval, workbuddy-bench, harvey-labs and opencode (v1.14.18); <code>CODEX_VERSION = &quot;0.144.6&quot;</code> (same file).&#160;<a class="footnote-backref" href="#fnref:60" title="Jump back to footnote 60 in the text">&#8617;</a></p>
+</li>
+</ol>
+</div>
+</main>
+<script src="../assets/storybook.js" data-kind="article"></script>
+</body>
+</html>
