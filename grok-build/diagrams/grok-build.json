@@ -1,0 +1,499 @@
+{
+ "edges": [
+  {
+   "from": "pager",
+   "label": "drives and renders sessions",
+   "to": "shell"
+  },
+  {
+   "from": "headless",
+   "label": "scripted one-shot runs",
+   "to": "shell",
+   "label_dx": -45
+  },
+  {
+   "from": "acp",
+   "label": "editor embedding via stdio",
+   "to": "shell",
+   "label_dx": -100
+  },
+  {
+   "from": "sandbox",
+   "label": "process confined before the agent boots",
+   "label_dx": -60,
+   "to": "shell",
+   "label_dy": -34
+  },
+  {
+   "from": "agent-defs",
+   "label": "prompt, toolset, budget per definition",
+   "to": "shell"
+  },
+  {
+   "from": "shell",
+   "label": "turn loop lives in the session impl",
+   "to": "loop"
+  },
+  {
+   "from": "loop",
+   "label": "one round-trip per iteration",
+   "to": "sampler"
+  },
+  {
+   "from": "loop",
+   "label": "dispatches tool calls",
+   "label_dx": -30,
+   "to": "tools"
+  },
+  {
+   "from": "tools",
+   "label": "authorized before execution",
+   "to": "permissions"
+  },
+  {
+   "from": "permissions",
+   "label": "allowed calls run on the host",
+   "to": "workspace"
+  },
+  {
+   "from": "workspace",
+   "label": "results return; iterate",
+   "to": "loop",
+   "label_dx": -88
+  },
+  {
+   "from": "loop",
+   "label": "history folded into chat state",
+   "label_dx": 25,
+   "to": "sessions"
+  },
+  {
+   "from": "sessions",
+   "label": "payload packaged at turn end",
+   "to": "upload"
+  },
+  {
+   "from": "memory",
+   "label": "memory archive rides (registry-gated)",
+   "to": "upload"
+  },
+  {
+   "from": "memory",
+   "label": "reminders injected between iterations",
+   "label_dx": -60,
+   "to": "loop"
+  },
+  {
+   "from": "config",
+   "label": "managed rules + requirements pins",
+   "label_dx": 20,
+   "to": "permissions"
+  },
+  {
+   "from": "config",
+   "label": "mode resolved through the tiers",
+   "to": "telemetry"
+  },
+  {
+   "from": "config",
+   "label": "remote tier can switch trace upload on",
+   "label_dx": -35,
+   "to": "upload"
+  },
+  {
+   "from": "workspace",
+   "label": "collect-changes producer",
+   "to": "repostub",
+   "label_dx": -100
+  },
+  {
+   "from": "repostub",
+   "label": "types remain; would ride this transport",
+   "label_dx": -45,
+   "to": "upload"
+  },
+  {
+   "from": "workspace",
+   "label": "command network under per-origin policy",
+   "label_dx": 20,
+   "to": "egress"
+  }
+ ],
+ "nodes": [
+  {
+   "excerpt": "The full-screen terminal interface and the largest crate in the tree (~551K lines, including the shipped user guide: 27 documents under docs/user-guide/). The binary's main also applies the sandbox profile to the process before the agent boots.",
+   "grade": "verified",
+   "h": 96,
+   "id": "pager",
+   "label": "Pager TUI \u2014 the default grok",
+   "links": [
+    {
+     "label": "docs/user-guide/ ships inside xai-grok-pager (27 documents)",
+     "url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-pager/docs/user-guide/22-permissions-and-safety.md"
+    },
+    {
+     "label": "xai-grok-pager-bin/src/main.rs:2202 \u2014 sandbox applied before the agent boots",
+     "url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-pager-bin/src/main.rs#L2202"
+    }
+   ],
+   "step": 1,
+   "sub": "xai-grok-pager \u00b7 551K LOC",
+   "w": 380,
+   "x": 0,
+   "y": 0
+  },
+  {
+   "excerpt": "grok -p \"<prompt>\" for scripting and CI: plain/JSON/streaming output formats, --max-turns, tool allow/deny lists, permission rules on the command line, and resume flags. One of three entry-point families the shell crate hosts (leader / stdio / headless).",
+   "grade": "verified",
+   "h": 96,
+   "id": "headless",
+   "label": "Headless CLI \u2014 grok -p",
+   "links": [
+    {
+     "label": "docs/user-guide/14-headless-mode.md \u2014 the headless surface as documented",
+     "url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-pager/docs/user-guide/14-headless-mode.md"
+    }
+   ],
+   "step": 2,
+   "sub": "xai-grok-shell entry points",
+   "w": 380,
+   "x": 0,
+   "y": 130
+  },
+  {
+   "excerpt": "grok agent stdio embeds the agent in editors over the Agent Client Protocol; grok agent serve runs a token-guarded local server; leader mode lets one process host sessions that other grok processes attach to, with a relay channel for remote control. ACP clients can request always-approve per session via _meta.",
+   "grade": "verified",
+   "h": 96,
+   "id": "acp",
+   "label": "ACP + agent servers",
+   "links": [
+    {
+     "label": "docs/user-guide/15-agent-mode.md \u2014 agent mode surfaces",
+     "url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-pager/docs/user-guide/15-agent-mode.md"
+    }
+   ],
+   "step": 3,
+   "sub": "grok agent stdio \u00b7 serve \u00b7 leader",
+   "w": 380,
+   "x": 0,
+   "y": 260
+  },
+  {
+   "excerpt": "Opt-in, and unusual: --sandbox <profile> makes the binary confine its whole process at startup, before the agent boots \u2014 Landlock on Linux, Seatbelt on macOS, a bubblewrap re-exec for read-deny mounts. Profiles run workspace -> read-only -> strict; child-process network blocking is seccomp-based and a no-op on macOS. Off by default: without the flag, commands run unconfined.",
+   "grade": "verified",
+   "h": 96,
+   "id": "sandbox",
+   "label": "Sandbox \u2014 whole-process confinement",
+   "links": [
+    {
+     "label": "xai-grok-pager-bin/src/main.rs:2202 \u2014 apply_sandbox at startup",
+     "url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-pager-bin/src/main.rs#L2202"
+    },
+    {
+     "label": "xai-grok-sandbox/src/lib.rs:292 \u2014 bwrap_reexec_command",
+     "url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-sandbox/src/lib.rs#L292"
+    }
+   ],
+   "step": 4,
+   "sub": "xai-grok-sandbox \u00b7 Landlock / Seatbelt / bwrap",
+   "w": 380,
+   "x": 0,
+   "y": 390
+  },
+  {
+   "excerpt": "An agent is a definition: system prompt, project instructions, a tools allowlist and disallowed_tools denylist (with a compatibility mapping so vendor tool names in imported definitions still resolve), an optional max_turns, and a permission mode. Definitions load from .grok/agents and from Claude-compatible settings, which this codebase reads natively.",
+   "grade": "verified",
+   "h": 96,
+   "id": "agent-defs",
+   "label": "Agent definitions + prompt assembly",
+   "links": [
+    {
+     "label": "xai-grok-agent/src/tool_list.rs \u2014 allowlist/denylist filtering with vendor-name compatibility",
+     "url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-agent/src/tool_list.rs#L1"
+    },
+    {
+     "label": "xai-grok-agent/src/config.rs:740 \u2014 max_turns: Option<u32> on the definition",
+     "url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-agent/src/config.rs#L740"
+    }
+   ],
+   "step": 5,
+   "sub": "xai-grok-agent",
+   "w": 380,
+   "x": 560,
+   "y": 0
+  },
+  {
+   "excerpt": "The agent runtime (~430K lines): the session actor that owns a session end to end \u2014 prompt assembly, the turn loop, permissions glue, entry points (leader / stdio / headless), and the upload stack. Everything a surface drives lands here.",
+   "grade": "verified",
+   "h": 96,
+   "id": "shell",
+   "label": "Shell runtime \u2014 session actor",
+   "links": [
+    {
+     "label": "session/acp_session_impl/turn.rs:2747 \u2014 the turn loop in the session implementation",
+     "url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-shell/src/session/acp_session_impl/turn.rs#L2747"
+    }
+   ],
+   "step": 6,
+   "sub": "xai-grok-shell \u00b7 430K LOC",
+   "w": 380,
+   "x": 560,
+   "y": 130
+  },
+  {
+   "excerpt": "An explicit loop {} in process_conversation_turn_inner, emitting LoopStarted each iteration and making exactly one sampler round-trip per pass. A response with no tool calls ends the turn. There is no default turn cap \u2014 the real brake is the stationarity guard: order-insensitive step hashes, a nudge at 8 identical steps (4 for reads/plan calls), a hard stop at 12 (8), and true no-op runs stopped at 4.",
+   "grade": "verified",
+   "h": 96,
+   "id": "loop",
+   "label": "Turn loop + stationarity guard",
+   "links": [
+    {
+     "label": "turn.rs:3896-3900 \u2014 the stationarity thresholds",
+     "url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-shell/src/session/acp_session_impl/turn.rs#L3896-L3900"
+    },
+    {
+     "label": "turn.rs:3623 \u2014 the turn ends on an empty tool-call set",
+     "url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-shell/src/session/acp_session_impl/turn.rs#L3623"
+    }
+   ],
+   "step": 7,
+   "sub": "acp_session_impl/turn.rs",
+   "w": 380,
+   "x": 560,
+   "y": 260
+  },
+  {
+   "excerpt": "The model client speaks three wire formats \u2014 Chat Completions, Messages, Responses \u2014 chosen per catalog entry. Session/OAuth traffic is proxied through cli-chat-proxy.grok.com/v1; an API key goes to api.x.ai/v1. BYOK custom models carry their own base URL, key, headers, and context window. A server-delivered doom-loop policy (the x-grok-doom-loop-check header) is parsed and enforced client-side, layered over the local guard.",
+   "grade": "verified",
+   "h": 96,
+   "id": "sampler",
+   "label": "Sampler \u2014 the model client",
+   "links": [
+    {
+     "label": "xai-grok-env/src/lib.rs:20-26 \u2014 the production endpoints",
+     "url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-env/src/lib.rs#L20-L26"
+    },
+    {
+     "label": "agent/config.rs:1960 \u2014 the server doom-loop header policy",
+     "url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-shell/src/agent/config.rs#L1960"
+    }
+   ],
+   "step": 8,
+   "sub": "xai-grok-sampler \u00b7 3 wire formats",
+   "w": 380,
+   "x": 560,
+   "y": 390
+  },
+  {
+   "excerpt": "Tools are rows in a registry, in three toolsets \u2014 native, a concise variant, and a hashline variant \u2014 plus in-tree ports of tool implementations from openai/codex and sst/opencode, disclosed in THIRD-PARTY-NOTICES. MCP tools join the same registry and pass through the same permission pipeline as built-ins; subagents spawn through the task tool, optionally in a fresh git worktree.",
+   "grade": "verified",
+   "h": 96,
+   "id": "tools",
+   "label": "Tools \u2014 the registry",
+   "links": [
+    {
+     "label": "THIRD-PARTY-NOTICES \u2014 the Codex and OpenCode ports disclosed",
+     "url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/THIRD-PARTY-NOTICES"
+    }
+   ],
+   "step": 9,
+   "sub": "xai-grok-tools \u00b7 3 toolsets + ports",
+   "w": 380,
+   "x": 1120,
+   "y": 0
+  },
+  {
+   "excerpt": "Six modes (default, acceptEdits, auto, dontAsk, bypassPermissions, plan) over a fixed pipeline: PreToolUse hooks -> rules (deny > ask > allow) -> remembered per-project grants -> built-in read-only auto-approvals, evaluated per segment with execution-smuggling exceptions -> the mode's policy. Auto mode replaces the prompt with an LLM transcript classifier. Administrators can lock always-approve off via requirements.toml.",
+   "grade": "verified",
+   "h": 96,
+   "id": "permissions",
+   "label": "Permission manager \u2014 the pipeline",
+   "links": [
+    {
+     "label": "docs/user-guide/22-permissions-and-safety.md \u2014 how a tool call is authorized, steps 1-5",
+     "url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-pager/docs/user-guide/22-permissions-and-safety.md"
+    },
+    {
+     "label": "permission/auto_mode/mod.rs \u2014 the LLM transcript classifier",
+     "url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-workspace/src/permission/auto_mode/mod.rs#L1-L3"
+    }
+   ],
+   "step": 10,
+   "sub": "xai-grok-workspace/src/permission",
+   "w": 380,
+   "x": 1120,
+   "y": 130
+  },
+  {
+   "excerpt": "The host side (~125K lines): file system, version control, command execution, the permission manager, and file-state checkpoints (rewind_points.jsonl) that let a session rewind its workspace edits. Allowed tool calls execute here, against the real file system.",
+   "grade": "verified",
+   "h": 96,
+   "id": "workspace",
+   "label": "Workspace \u2014 fs, VCS, execution",
+   "links": [
+    {
+     "label": "xai-grok-workspace/src/workspace_ops.rs:615 \u2014 the stubbed collect-changes producer",
+     "url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-workspace/src/workspace_ops.rs#L615"
+    }
+   ],
+   "step": 11,
+   "sub": "xai-grok-workspace \u00b7 checkpoints",
+   "w": 380,
+   "x": 1120,
+   "y": 260
+  },
+  {
+   "excerpt": "Sessions persist under ~/.grok/sessions/, one directory per working directory and session: an append-only updates.jsonl, summary.json, and chat_history.jsonl. Resume is by id or title, with forking. Conversation state and its compaction modes live in xai-chat-state; auto-compaction triggers at 85% of the window by default, with a summary prefired in the background.",
+   "grade": "verified",
+   "h": 96,
+   "id": "sessions",
+   "label": "Sessions + chat state",
+   "links": [
+    {
+     "label": "session/persistence.rs:966-968 \u2014 the per-cwd session directory layout",
+     "url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-shell/src/session/persistence.rs#L966-L968"
+    },
+    {
+     "label": "agent/config.rs:1083-1086 \u2014 the 85% auto-compact threshold resolver",
+     "url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-shell/src/agent/config.rs#L1083-L1086"
+    }
+   ],
+   "step": 12,
+   "sub": "~/.grok/sessions \u00b7 xai-chat-state",
+   "w": 380,
+   "x": 1120,
+   "y": 390
+  },
+  {
+   "excerpt": "When trace upload is on, each completed turn packages its messages and full prompt text, chat_history.jsonl, the turn's permission events, and git root/remote metadata \u2014 via a disk-spilling queue to a deployment bucket, the cli-chat-proxy, or S3. In this tree the gates default closed: telemetry mode defaults to Disabled, and the coding-data opt-out defaults to opted-out until the server says otherwise. Spilled uploads are purged at startup if collection is disabled.",
+   "grade": "verified",
+   "h": 96,
+   "id": "upload",
+   "label": "Trace upload \u2014 the gated stack",
+   "links": [
+    {
+     "label": "upload/turn.rs:253 \u2014 complete_prompt_trace, the per-turn assembly",
+     "url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-shell/src/upload/turn.rs#L253"
+    },
+    {
+     "label": "agent/config.rs:1883 \u2014 resolve_trace_upload through the tiers",
+     "url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-shell/src/agent/config.rs#L1883"
+    }
+   ],
+   "step": 13,
+   "sub": "shell/upload \u00b7 xai-file-utils transport",
+   "w": 380,
+   "x": 1120,
+   "y": 520
+  },
+  {
+   "excerpt": "Cross-session memory is a subsystem, not a transcript search: a file-based store (default root ~/.grok/memory) with chunking, embeddings, and a background consolidation pass; the turn loop injects its reminders between iterations. Its archive upload is separately gated on the session registry, and the skip is recorded in the turn's manifest.",
+   "grade": "verified",
+   "h": 96,
+   "id": "memory",
+   "label": "Memory store",
+   "links": [
+    {
+     "label": "upload/memory.rs:103-104 \u2014 the session-registry gate on the memory archive",
+     "url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-shell/src/upload/memory.rs#L103-L104"
+    },
+    {
+     "label": "docs/user-guide/13-memory.md \u2014 the memory store as documented",
+     "url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-pager/docs/user-guide/13-memory.md"
+    }
+   ],
+   "step": 14,
+   "sub": "xai-grok-memory \u00b7 embeddings + consolidation",
+   "w": 380,
+   "x": 1120,
+   "y": 650
+  },
+  {
+   "excerpt": "One precedence shape decides nearly everything: requirements pin -> environment -> local config -> remote settings -> built-in default. At startup the client fetches remote settings (GET /v1/settings on the cli-chat-proxy); the payload can enable features, set the telemetry mode, turn trace upload on, enable the session registry, and carry a server-decided consent notice. Managed (enterprise) configuration rides the same machinery.",
+   "grade": "verified",
+   "h": 96,
+   "id": "config",
+   "label": "Configuration + remote settings",
+   "links": [
+    {
+     "label": "xai-grok-config/src/remote_settings.rs \u2014 fetched from cli-chat-proxy GET /v1/settings",
+     "url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-config/src/remote_settings.rs#L1"
+    },
+    {
+     "label": "remote_settings.rs:562 \u2014 the remote trace_upload_enabled field",
+     "url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-config/src/remote_settings.rs#L562"
+    }
+   ],
+   "step": 15,
+   "sub": "xai-grok-config \u00b7 GET /v1/settings",
+   "w": 380,
+   "x": 1680,
+   "y": 0
+  },
+  {
+   "excerpt": "Telemetry modes resolve through the same tiers as everything else, landing on Disabled by default in this source. Product analytics (Mixpanel) require telemetry enabled and a non-ZDR team; internal tracing spans go to the proxy by default and can be disabled with OTEL_TRACES_EXPORTER=none; the user's own OTEL collector stream is structurally separate and double opt-in.",
+   "grade": "verified",
+   "h": 96,
+   "id": "telemetry",
+   "label": "Telemetry \u2014 modes, analytics, OTEL",
+   "links": [
+    {
+     "label": "xai-grok-telemetry/src/config.rs:10-15 \u2014 TelemetryMode defaults to Disabled",
+     "url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-telemetry/src/config.rs#L10-L15"
+    },
+    {
+     "label": "agent/config.rs:1831 \u2014 product analytics = telemetry on and not ZDR",
+     "url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-shell/src/agent/config.rs#L1831"
+    }
+   ],
+   "step": 16,
+   "sub": "xai-grok-telemetry \u00b7 xai-mixpanel",
+   "w": 380,
+   "x": 1680,
+   "y": 130
+  },
+  {
+   "excerpt": "The repository-upload path is stubbed out at this pin. The wire types survive in full \u2014 GitCollectChangesReq asks for commits with patches, uncommitted changes, and untracked files as base64 (1 MiB/file cap), with force_include_paths documented as capturing paths 'even when gitignored' \u2014 but both producer entry points return 'unavailable in this build'. The exclusion lists skip a directory named .env and contain no .env file pattern.",
+   "grade": "verified",
+   "h": 96,
+   "id": "repostub",
+   "label": "Repo collection \u2014 stubbed at this pin",
+   "links": [
+    {
+     "label": "workspace-types/src/rpc/git.rs:799 \u2014 GitCollectChangesReq, the surviving wire type",
+     "url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-workspace-types/src/rpc/git.rs#L799"
+    },
+    {
+     "label": "extensions/git.rs:306 \u2014 'git serialize_changes is unavailable in this build'",
+     "url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-shell/src/extensions/git.rs#L306"
+    }
+   ],
+   "step": 17,
+   "sub": "GitCollectChangesReq types survive",
+   "w": 380,
+   "x": 1680,
+   "y": 260
+  },
+  {
+   "excerpt": "A second, per-command sandbox layer exists behind the whole-process profile: a remote sandbox_mode of off/observe/enforce, paired with this local HTTP/CONNECT proxy that enforces per-origin website policies for command network access. The whole-process profile is the mechanism a user can switch on locally today.",
+   "grade": "verified",
+   "h": 96,
+   "id": "egress",
+   "label": "Egress proxy \u2014 per-origin policy",
+   "links": [
+    {
+     "label": "docs/user-guide/18-sandbox.md \u2014 profiles and platform notes",
+     "url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-pager/docs/user-guide/18-sandbox.md"
+    }
+   ],
+   "step": 18,
+   "sub": "xai-grok-egress-proxy \u00b7 remote sandbox_mode",
+   "w": 380,
+   "x": 1680,
+   "y": 390
+  }
+ ],
+ "repo": "xai-org/grok-build",
+ "sha": "2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8",
+ "title": "Grok Build \u2014 a monorepo-scale harness with a server-held control plane"
+}

@@ -1,0 +1,185 @@
+{
+ "example_input": "The parser test in this repo is failing \u2014 find out why and fix it.",
+ "note": "Every module link pins the exact commit this teardown is based on \u2014 xai-org/grok-build @ 2bdd1d6a6369, pinned by commit (the repository publishes no tags).",
+ "repo": "xai-org/grok-build",
+ "sha": "2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8",
+ "steps": [
+  {
+   "code": "turn.rs:2747",
+   "modules": [
+    {
+     "file": "crates/codegen/xai-grok-agent/src/builder.rs:696",
+     "label": "AgentBuilder::build \u2014 the definition becomes a runnable Agent",
+     "line": 696,
+     "url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-agent/src/builder.rs#L696"
+    },
+    {
+     "file": "crates/codegen/xai-grok-agent/src/config.rs:740",
+     "label": "AgentDefinition.max_turns: Option<u32> \u2014 unset here",
+     "line": 740,
+     "url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-agent/src/config.rs#L740"
+    }
+   ],
+   "narrative": "The session actor loads the agent definition \u2014 system prompt, project instructions, an allowlist/denylist-filtered tool list, an optional turn budget (unset for this run) \u2014 and folds in memory reminders. The prompt is sent to the loop, which lives in the ACP session implementation.",
+   "node": "agent-defs",
+   "representation": "AgentDefinition {\n  system_prompt: <assembled from the definition + project files>,\n  tools: [grep, read_file, search_replace, run_terminal_command, ...],\n  disallowed_tools: [],\n  max_turns: None,          // no budget unless one is set\n  permission_mode: Default,\n}\n// memory reminders ride along with the conversation",
+   "step": 1,
+   "title": "Prompt assembly \u2014 the definition becomes the request"
+  },
+  {
+   "code": "turn.rs:2758",
+   "modules": [
+    {
+     "file": "crates/codegen/xai-grok-shell/src/session/acp_session_impl/turn.rs:2758",
+     "label": "run_turn_via_sampler \u2014 the loop's one model call",
+     "line": 2758,
+     "url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-shell/src/session/acp_session_impl/turn.rs#L2758"
+    },
+    {
+     "file": "crates/codegen/xai-grok-sampler/src/stream/mod.rs",
+     "label": "the sampler's stream layer \u2014 Chat Completions / Messages / Responses",
+     "line": 1,
+     "url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-sampler/src/stream/mod.rs"
+    }
+   ],
+   "narrative": "Iteration one. The loop calls the sampler exactly once \u2014 run_turn_via_sampler \u2014 and streams the reply. The wire format (Chat Completions, Messages, or Responses) comes from the model's catalog entry; this session's traffic is proxied, an API-key session would go to api.x.ai.",
+   "node": "sampler",
+   "representation": "SamplerConfig {\n  backend: <per the model's catalog entry>,\n  endpoint: cli-chat-proxy.grok.com/v1,   // session auth\n            // api.x.ai/v1 with an API key\n}\nrequest: conversation + tool schemas\nreply: streamed chunks",
+   "step": 2,
+   "title": "Sampling \u2014 one round-trip per iteration"
+  },
+  {
+   "code": "turn.rs:3896",
+   "modules": [
+    {
+     "file": "crates/codegen/xai-grok-shell/src/session/acp_session_impl/turn.rs:3960",
+     "label": "StepStationarityTracker \u2014 signatures and runs",
+     "line": 3960,
+     "url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-shell/src/session/acp_session_impl/turn.rs#L3960"
+    },
+    {
+     "file": "crates/codegen/xai-grok-shell/src/session/acp_session_impl/turn.rs:3896-3900",
+     "label": "the thresholds \u2014 nudge 8 (4 reads/plan), stop 12 (8)",
+     "line": 3896,
+     "url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-shell/src/session/acp_session_impl/turn.rs#L3896-L3900"
+    }
+   ],
+   "narrative": "The reply carries two tool calls: a grep for the failing test and a read_file on the parser. Before anything executes, the stationarity guard hashes this step's signature \u2014 tool name plus arguments, order-insensitive \u2014 and starts a run count. A fresh signature, so the run is 1.",
+   "node": "loop",
+   "representation": "tool_calls: [\n  grep(pattern: \"test_parse_header\"),\n  read_file(path: \"src/parser.rs\"),\n]\nstep signature: hash(tool name + args)  // order-insensitive\nrun count for this signature: 1",
+   "step": 3,
+   "title": "Tool calls arrive \u2014 and get hashed"
+  },
+  {
+   "code": "permission/manager",
+   "modules": [
+    {
+     "file": "crates/codegen/xai-grok-workspace/src/permission/manager/mod.rs",
+     "label": "permission/manager \u2014 the pipeline's implementation home",
+     "line": 1,
+     "url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-workspace/src/permission/manager/mod.rs"
+    },
+    {
+     "file": "crates/codegen/xai-grok-pager/docs/user-guide/22-permissions-and-safety.md",
+     "label": "the shipped guide \u2014 the same five steps, documented",
+     "line": 1,
+     "url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-pager/docs/user-guide/22-permissions-and-safety.md"
+    }
+   ],
+   "narrative": "Each call walks the pipeline in order: PreToolUse hooks, merged rules (deny > ask > allow), remembered per-project grants, then the built-in read-only auto-approvals. grep and read_file are read-only \u2014 both approve here, per segment, with no prompt. The mode's policy step is never reached.",
+   "node": "permissions",
+   "representation": "check_tool(grep) ->\n  hooks: no deny\n  rules: no match\n  grants: none\n  read-only auto-approval: yes  => Allow\ncheck_tool(read_file) -> same path => Allow",
+   "step": 4,
+   "title": "Authorization \u2014 read-only calls approve themselves"
+  },
+  {
+   "code": "turn.rs:3440",
+   "modules": [
+    {
+     "file": "crates/codegen/xai-grok-workspace/src/workspace_ops.rs",
+     "label": "workspace_ops \u2014 the host-side tool implementations",
+     "line": 1,
+     "url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-workspace/src/workspace_ops.rs"
+    },
+    {
+     "file": "crates/codegen/xai-grok-shell/src/session/acp_session_impl/turn.rs:3440",
+     "label": "finalize_tool_calls \u2014 results fold back into the turn",
+     "line": 3440,
+     "url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-shell/src/session/acp_session_impl/turn.rs#L3440"
+    }
+   ],
+   "narrative": "The workspace crate executes both calls against the real file system \u2014 ungated by any sandbox, because no --sandbox profile was given at startup. The results show the test's expectation and the parser code disagree about a header field. Both results are appended to the conversation.",
+   "node": "workspace",
+   "representation": "tool_result(grep):\n  tests/parser_test.rs:88 \u2014 expects field `kind`\ntool_result(read_file):\n  src/parser.rs \u2014 parser emits field `type`\n// appended to the conversation; the loop iterates",
+   "step": 5,
+   "title": "Results return \u2014 the loop iterates"
+  },
+  {
+   "code": "permission/grants",
+   "modules": [
+    {
+     "file": "crates/codegen/xai-grok-workspace/src/permission/manager/mod.rs",
+     "label": "permission/manager \u2014 the same pipeline, a different tier answers",
+     "line": 1,
+     "url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-workspace/src/permission/manager/mod.rs"
+    },
+    {
+     "file": "crates/codegen/xai-grok-workspace/src/permission/grants.rs",
+     "label": "permission/grants.rs \u2014 remembered always-allow approvals",
+     "line": 1,
+     "url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-workspace/src/permission/grants.rs"
+    }
+   ],
+   "narrative": "Iteration two: the model proposes search_replace to align the parser with the test. An edit is not read-only, so the pipeline falls through to the default mode's policy \u2014 a prompt. The user approves with 'always allow in this project', and the choice is stored as a per-project grant before the edit runs.",
+   "node": "permissions",
+   "representation": "check_tool(search_replace) ->\n  hooks: no deny \u00b7 rules: no match \u00b7 grants: none\n  read-only auto-approval: no (it writes)\n  mode policy (default): Prompt\nuser: Allow + always allow in this project\n  => grant stored (per-project, survives restarts)",
+   "step": 6,
+   "title": "The edit prompts \u2014 and the grant is remembered"
+  },
+  {
+   "code": "bash_command_splitting.rs",
+   "modules": [
+    {
+     "file": "crates/codegen/xai-grok-permission-rules/src/bash_command_splitting.rs",
+     "label": "bash_command_splitting.rs \u2014 chained commands split into segments",
+     "line": 1,
+     "url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-permission-rules/src/bash_command_splitting.rs"
+    },
+    {
+     "file": "crates/codegen/xai-grok-workspace/src/workspace_ops.rs",
+     "label": "workspace_ops \u2014 the test run executes here",
+     "line": 1,
+     "url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-workspace/src/workspace_ops.rs"
+    }
+   ],
+   "narrative": "The model verifies with a terminal run of the test suite. The command is authorized the same way \u2014 the fresh grant covers the prompt \u2014 and the permission layer checks the command per segment rather than as one string. The tests pass; the output joins the conversation.",
+   "node": "workspace",
+   "representation": "tool_call: run_terminal_command(\"cargo test parser\")\n  segments: [cargo test parser] \u2014 checked individually\n  grant from step 6 covers the prompt => Allow\ntool_result: test result: ok \u2014 214 passed",
+   "step": 7,
+   "title": "Verification \u2014 per-segment checks, tests pass"
+  },
+  {
+   "code": "turn.rs:253",
+   "modules": [
+    {
+     "file": "crates/codegen/xai-grok-shell/src/upload/turn.rs:253",
+     "label": "complete_prompt_trace \u2014 the per-turn trace assembly",
+     "line": 253,
+     "url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-shell/src/upload/turn.rs#L253"
+    },
+    {
+     "file": "crates/codegen/xai-grok-shell/src/agent/config.rs:1883",
+     "label": "resolve_trace_upload \u2014 the tier chain that decides",
+     "line": 1883,
+     "url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-shell/src/agent/config.rs#L1883"
+    }
+   ],
+   "narrative": "Iteration three returns prose and no tool calls, so the turn ends \u2014 the classic exit condition. Turn-end runs trace completion: in this source tree the resolver's tiers all land on off (telemetry defaults to Disabled, and the trace default follows it), so nothing is packaged or sent. A deployment whose remote settings enable it would upload the turn here.",
+   "node": "upload",
+   "representation": "reply: text only, tool_calls: []  => turn ends\ncomplete_prompt_trace(turn):\n  resolve_trace_upload() -> OFF in this tree\n    (tiers: capability -> pin -> env -> config\n     -> remote -> default = telemetry mode)\n  => no manifest, no upload queue entry",
+   "step": 8,
+   "title": "No tool calls \u2014 the turn ends, and the upload decision runs"
+  }
+ ],
+ "title": "One turn through Grok Build \u2014 step-by-step"
+}

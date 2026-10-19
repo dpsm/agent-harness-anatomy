@@ -286,6 +286,16 @@
     </div>
   </div>
 
+  <div class="article" id="grok-build">
+    <h2>#17 &mdash; Grok Build: the harness whose control plane lives on a server</h2>
+    <p>xAI's CLI, open-sourced as a one-way export from an internal monorepo: some 820K lines of Rust, 103 crates, and a turn loop you can point at &mdash; an explicit <code>loop {}</code> with one sampler round-trip per iteration, no default turn cap, and a stationarity guard that counts identical steps (nudge at 8, hard stop at 12) as the real brake. Below it: a six-mode permission pipeline whose auto mode is an LLM classifier, an opt-in sandbox that confines the whole process before the agent boots, and a control plane whose highest tier is a server response. The egress audit is the centerpiece: the repository-upload wire types survive in full, but both producers return "unavailable in this build", and session traces are real machinery gated off by default in this tree &mdash; with a coding-data opt-out that blocks the xAI-bound path while exempting a deployment's own trace bucket.</p>
+    <div class="links">
+      <a class="primary" href="grok-build/trace.html">Step through a live turn</a>
+      <a href="diagrams/template.html?data=../grok-build/diagrams/grok-build.json">Interactive diagram</a>
+      <a href="grok-build/">Read the article</a>
+    </div>
+  </div>
+
   <div class="contribute">
     <h2>Found a mistake?</h2>
     <p>These teardowns live or die on their grounding: every behavioral claim
