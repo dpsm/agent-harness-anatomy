@@ -32,7 +32,7 @@ By **David P. S. Marques** — [LinkedIn](https://ca.linkedin.com/in/dpsmarques)
 | 14 | Autohand Code CLI (v0.9.8) | [autohand/article.md](autohand/article.md) | forthcoming |
 | 15 | DeepSeek Harness (dsh-v0.2.1-alpha.3) | [deepseek-harness/article.md](deepseek-harness/article.md) | [Read on Substack](https://agentharnessanatomy.substack.com/p/deepseek-harness-dsh-the-harness) |
 | 16 | Deep Agents (deepagents==0.7.25) | [deepagents/article.md](deepagents/article.md) | [Read on Substack](https://agentharnessanatomy.substack.com/p/deep-agents-the-harness-that-is-a) |
-| 17 | Grok Build (2bdd1d6) | [grok-build/article.md](grok-build/article.md) | [Read on Substack](https://dpsm0.substack.com/p/grok-build-the-harness-whose-control) |
+| 17 | Grok Build (2bdd1d6) | [grok-build/article.md](grok-build/article.md) | [Read on Substack](https://agentharnessanatomy.substack.com/p/grok-build-the-harness-whose-control) |
 | 18 | Harness² (1cfe254) | [harness2/article.md](harness2/article.md) | [Read on Substack](https://agentharnessanatomy.substack.com/p/harness-the-harness-is-the-thing) |
 
 ## What's here
