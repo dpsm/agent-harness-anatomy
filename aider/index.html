@@ -4,6 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Agent Harness Anatomy #2: aider — the pair programmer that parses prose</title>
+<meta name="description" content="One LLM call per turn, then a deterministic parse-apply-verify pipeline over text edit formats — no tool calls at all. Git is the undo system.">
+<meta name="author" content="David P. S. Marques">
+<meta property="og:title" content="Agent Harness Anatomy #2: aider — the pair programmer that parses prose">
+<meta property="og:description" content="One LLM call per turn, then a deterministic parse-apply-verify pipeline over text edit formats — no tool calls at all. Git is the undo system.">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://dpsm.github.io/agent-harness-anatomy/aider/">
 <style>
   :root { color-scheme: dark; }
   * { box-sizing: border-box; }
@@ -53,12 +59,14 @@
   .diagram-cta:hover { border-color: #d08c4e; }
   .diagram-cta span { display: block; font-weight: 400; font-size: 0.88rem;
                       color: #a89880; margin-top: 4px; }
+  .byline { color: #a89880; font-size: 0.95rem; margin: 4px 0 20px; } .byline a { color: #d08c4e; }
 </style>
 </head>
 <body>
 <main>
   <nav class="topnav"><a href="../#aider">&larr; Agent Harness Anatomy</a></nav>
 <h1 id="agent-harness-anatomy-2-aider-the-pair-programmer-that-parses-prose">Agent Harness Anatomy #2: aider — the pair programmer that parses prose</h1>
+  <p class="byline">by <a href="https://ca.linkedin.com/in/dpsmarques">David P. S. Marques</a></p>
 <blockquote>
 <p><strong>Series:</strong> Agent Harness Anatomy — top-down dissections of real agent
 harnesses, grounded in verifiable source code. Every behavioral claim

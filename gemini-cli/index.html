@@ -52,13 +52,21 @@
   .diagram-cta:hover { border-color: #d08c4e; }
   .diagram-cta span { display: block; font-weight: 400; font-size: 0.88rem;
                       color: #a89880; margin-top: 4px; }
+  .byline { color: #a89880; font-size: 0.95rem; margin: 4px 0 20px; } .byline a { color: #d08c4e; }
 </style>
 <title>Agent Harness Anatomy #10: Gemini CLI — the routed, policy-gated terminal agent</title>
+<meta name="description" content="Google's terminal coding agent re-routes the model every turn and gates each tool call through a TOML policy engine with tiered priorities.">
+<meta name="author" content="David P. S. Marques">
+<meta property="og:title" content="Agent Harness Anatomy #10: Gemini CLI — the routed, policy-gated terminal agent">
+<meta property="og:description" content="Google's terminal coding agent re-routes the model every turn and gates each tool call through a TOML policy engine with tiered priorities.">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://dpsm.github.io/agent-harness-anatomy/gemini-cli/">
 </head>
 <body>
 <main>
   <nav class="topnav"><a href="../#gemini-cli">&larr; Agent Harness Anatomy</a></nav>
 <h1 id="agent-harness-anatomy-10-gemini-cli-the-routed-policy-gated-terminal-agent">Agent Harness Anatomy #10: Gemini CLI — the routed, policy-gated terminal agent</h1>
+  <p class="byline">by <a href="https://ca.linkedin.com/in/dpsmarques">David P. S. Marques</a></p>
 <blockquote>
 <p><strong>Series:</strong> Agent Harness Anatomy — top-down dissections of real agent harnesses, grounded in verifiable source code. Every behavioral claim below carries a footnote to a pinned GitHub permalink; the full evidence lives in the endnotes.</p>
 </blockquote>
