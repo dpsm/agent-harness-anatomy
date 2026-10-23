@@ -52,13 +52,21 @@
   .diagram-cta:hover { border-color: #d08c4e; }
   .diagram-cta span { display: block; font-weight: 400; font-size: 0.88rem;
                       color: #a89880; margin-top: 4px; }
+  .byline { color: #a89880; font-size: 0.95rem; margin: 4px 0 20px; } .byline a { color: #d08c4e; }
 </style>
 <title>Agent Harness Anatomy #17: Grok Build — the harness whose control plane lives on a server</title>
+<meta name="description" content="xAI's open-sourced CLI: 820K lines of Rust, an explicit turn loop with no default cap, and a stationarity guard as the real brake.">
+<meta name="author" content="David P. S. Marques">
+<meta property="og:title" content="Agent Harness Anatomy #17: Grok Build — the harness whose control plane lives on a server">
+<meta property="og:description" content="xAI's open-sourced CLI: 820K lines of Rust, an explicit turn loop with no default cap, and a stationarity guard as the real brake.">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://dpsm.github.io/agent-harness-anatomy/grok-build/">
 </head>
 <body>
 <main>
 <nav class="topnav"><a href="../#grok-build">&larr; Agent Harness Anatomy</a></nav>
 <h1 id="agent-harness-anatomy-17-grok-build-a-monorepo-scale-harness-with-a-server-held-control-plane">Agent Harness Anatomy #17: Grok Build — a monorepo-scale harness with a server-held control plane</h1>
+  <p class="byline">by <a href="https://ca.linkedin.com/in/dpsmarques">David P. S. Marques</a></p>
 <blockquote>
 <p><strong>Series:</strong> Agent Harness Anatomy — top-down dissections of real agent harnesses, grounded in verifiable source code. Every behavioral claim below carries a footnote to a pinned GitHub permalink; the full evidence lives in the endnotes.</p>
 </blockquote>
