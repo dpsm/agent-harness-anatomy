@@ -1,0 +1,63 @@
+{
+ "title": "A 2,000+ tool catalog in a fixed schema budget",
+ "subtitle": "Search first, reveal bounded schemas, re-check access at call time",
+ "participants": [
+  "Model",
+  "tool_search",
+  "MCP servers",
+  "Session registry"
+ ],
+ "messages": [
+  {
+   "from": 3,
+   "to": 2,
+   "label": "discovery: follow every tools/list page (bound: 10,000 tools/server)"
+  },
+  {
+   "from": 2,
+   "to": 3,
+   "label": "complete catalog \u2014 a partial page sequence fails, never truncates",
+   "dashed": true
+  },
+  {
+   "from": 3,
+   "to": 3,
+   "label": "index server + tool + schema text, within the agent's access"
+  },
+  {
+   "from": 0,
+   "to": 1,
+   "label": "needs a tool: query by keyword"
+  },
+  {
+   "from": 1,
+   "to": 3,
+   "label": "search the authorized index"
+  },
+  {
+   "from": 3,
+   "to": 1,
+   "label": "matches with schemas \u2014 at most 32 active tools / 64 KiB",
+   "dashed": true
+  },
+  {
+   "from": 1,
+   "to": 0,
+   "label": "revealed schemas join the tool list next step",
+   "dashed": true
+  },
+  {
+   "from": 0,
+   "to": 3,
+   "label": "call the tool (authority checked again at call time)"
+  },
+  {
+   "note": "span",
+   "span": [
+    0,
+    3
+   ],
+   "text": "If matches do not fit one result, search asks the model to narrow the query instead of truncating"
+  }
+ ]
+}
