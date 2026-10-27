@@ -1,0 +1,349 @@
+{
+ "title": "Everruns \u2014 the log is the session, the lease is the lock",
+ "repo": "https://github.com/everruns/everruns",
+ "sha": "4e8002acce3f567c99ae18c9aceea0c32634ecbd",
+ "nodes": [
+  {
+   "id": "clients",
+   "step": 1,
+   "label": "Apps, UI, channels",
+   "sub": "Agent API clients \u00b7 UI \u00b7 Slack",
+   "x": 20,
+   "y": 60,
+   "w": 240,
+   "h": 96,
+   "grade": "verified",
+   "excerpt": "Agent keys reach one agent's sessions: create sessions, stream replies, answer questions, approve tools.",
+   "links": [
+    {
+     "label": "agent-api.md:7 \u2014 one agent exposed to your own code, key scoped to its channel",
+     "line": 7,
+     "url": "https://github.com/everruns/everruns/blob/4e8002acce3f567c99ae18c9aceea0c32634ecbd/docs/features/agent-api.md#L7"
+    }
+   ]
+  },
+  {
+   "id": "server",
+   "step": 1,
+   "label": "Control plane (server)",
+   "sub": "crates/server \u00b7 REST + SSE + gRPC",
+   "x": 20,
+   "y": 190,
+   "w": 240,
+   "h": 96,
+   "grade": "verified",
+   "excerpt": "Owns auth, the REST API, SSE streams and all state; workers reach data only through its gRPC service.",
+   "links": [
+    {
+     "label": "physical-architecture.md:25 \u2014 workers never talk to PostgreSQL directly",
+     "line": 25,
+     "url": "https://github.com/everruns/everruns/blob/4e8002acce3f567c99ae18c9aceea0c32634ecbd/docs/advanced/physical-architecture.md#L25"
+    }
+   ]
+  },
+  {
+   "id": "actors",
+   "step": 2,
+   "label": "Actor index + leases",
+   "sub": "session_actors (PostgreSQL)",
+   "x": 20,
+   "y": 320,
+   "w": 240,
+   "h": 96,
+   "grade": "verified",
+   "excerpt": "One row per session: runnable_since, inbox cursor, lease holder, fence and expiry.",
+   "links": [
+    {
+     "label": "baseline.sql:2986 \u2014 the session_actors table",
+     "line": 2986,
+     "url": "https://github.com/everruns/everruns/blob/4e8002acce3f567c99ae18c9aceea0c32634ecbd/crates/server/migrations/20261011000000_baseline.sql#L2986"
+    },
+    {
+     "label": "session_actors/mod.rs:1 \u2014 leasing locks rows FOR UPDATE SKIP LOCKED; every lease raises the fence",
+     "line": 1,
+     "url": "https://github.com/everruns/everruns/blob/4e8002acce3f567c99ae18c9aceea0c32634ecbd/crates/server/src/storage/repositories/session_actors/mod.rs#L1"
+    }
+   ]
+  },
+  {
+   "id": "journal",
+   "step": 3,
+   "label": "Session event log",
+   "sub": "events (PostgreSQL, append-only)",
+   "x": 20,
+   "y": 450,
+   "w": 240,
+   "h": 96,
+   "grade": "verified",
+   "excerpt": "Every message, model response, tool call and result, sequenced per session; a trigger enforces append-only.",
+   "links": [
+    {
+     "label": "baseline.sql:1521 \u2014 the events table: sequence, event_type, data JSONB, context",
+     "line": 1521,
+     "url": "https://github.com/everruns/everruns/blob/4e8002acce3f567c99ae18c9aceea0c32634ecbd/crates/server/migrations/20261011000000_baseline.sql#L1521"
+    },
+    {
+     "label": "events/mod.rs:56 \u2014 turn.started and the event-type constants",
+     "line": 56,
+     "url": "https://github.com/everruns/everruns/blob/4e8002acce3f567c99ae18c9aceea0c32634ecbd/crates/contracts/src/runtime/events/mod.rs#L56"
+    }
+   ]
+  },
+  {
+   "id": "worker",
+   "step": 2,
+   "label": "Worker pool (stateless)",
+   "sub": "crates/worker \u00b7 actor_runtime",
+   "x": 420,
+   "y": 60,
+   "w": 240,
+   "h": 96,
+   "grade": "verified",
+   "excerpt": "Workers lease runnable sessions and run whole turns; no database credentials, no durable local state.",
+   "links": [
+    {
+     "label": "actor_runtime/mod.rs:1 \u2014 lease runnable sessions, run each whole turn, the log is the only turn state",
+     "line": 1,
+     "url": "https://github.com/everruns/everruns/blob/4e8002acce3f567c99ae18c9aceea0c32634ecbd/crates/worker/src/actor_runtime/mod.rs#L1"
+    }
+   ]
+  },
+  {
+   "id": "fold",
+   "step": 3,
+   "label": "Turn fold + resume rules",
+   "sub": "core/host/turn_resume.rs",
+   "x": 420,
+   "y": 190,
+   "w": 240,
+   "h": 96,
+   "grade": "verified",
+   "excerpt": "Folds the tail from the latest turn.started; unfinished calls rerun only when their tool declares it safe.",
+   "links": [
+    {
+     "label": "turn_resume.rs:1 \u2014 an open turn is resumed from the log alone",
+     "line": 1,
+     "url": "https://github.com/everruns/everruns/blob/4e8002acce3f567c99ae18c9aceea0c32634ecbd/crates/core/src/host/turn_resume.rs#L1"
+    },
+    {
+     "label": "tool_types.rs:452 \u2014 SideEffectClass: Pure / Idempotent / AtMostOnce",
+     "line": 452,
+     "url": "https://github.com/everruns/everruns/blob/4e8002acce3f567c99ae18c9aceea0c32634ecbd/crates/contracts/src/tool_types.rs#L452-L462"
+    }
+   ]
+  },
+  {
+   "id": "loop",
+   "step": 4,
+   "label": "Turn loop: reason / act",
+   "sub": "crates/core \u00b7 sans-IO planner",
+   "x": 420,
+   "y": 320,
+   "w": 240,
+   "h": 96,
+   "grade": "verified",
+   "excerpt": "Reason, then act in parallel, then reason again \u2014 capped at 500 iterations by default.",
+   "links": [
+    {
+     "label": "turn.rs:1 \u2014 the turn planner is pure and deterministic; the host performs its effects",
+     "line": 1,
+     "url": "https://github.com/everruns/everruns/blob/4e8002acce3f567c99ae18c9aceea0c32634ecbd/crates/core/src/engine/turn.rs#L1"
+    },
+    {
+     "label": "agentic-loop.md:20 \u2014 the 500-iteration default cap",
+     "line": 20,
+     "url": "https://github.com/everruns/everruns/blob/4e8002acce3f567c99ae18c9aceea0c32634ecbd/docs/explanation/agentic-loop.md#L20"
+    }
+   ]
+  },
+  {
+   "id": "approval",
+   "step": 6,
+   "label": "Tool approval gate",
+   "sub": "core/builtins/tool_approval.rs",
+   "x": 420,
+   "y": 450,
+   "w": 240,
+   "h": 96,
+   "grade": "verified",
+   "excerpt": "Declared-risky calls park the turn and release the lease until a person answers; an allow binds the exact arguments.",
+   "links": [
+    {
+     "label": "tool_approval.rs:1 \u2014 the gate classifies calls by the risk the tool declares",
+     "line": 1,
+     "url": "https://github.com/everruns/everruns/blob/4e8002acce3f567c99ae18c9aceea0c32634ecbd/crates/core/src/builtins/tool_approval.rs#L1"
+    },
+    {
+     "label": "tool_approvals.rs:1 \u2014 what was approved is read back from the emitted event",
+     "line": 1,
+     "url": "https://github.com/everruns/everruns/blob/4e8002acce3f567c99ae18c9aceea0c32634ecbd/crates/server/src/api/tool_approvals.rs#L1"
+    }
+   ]
+  },
+  {
+   "id": "llm",
+   "step": 4,
+   "label": "LLM providers",
+   "sub": "crates/drivers",
+   "x": 820,
+   "y": 60,
+   "w": 240,
+   "h": 96,
+   "grade": "verified",
+   "excerpt": "OpenAI, Anthropic, Gemini, Bedrock and more behind one driver layer; each response is journaled as llm.generation.",
+   "links": [
+    {
+     "label": "events/mod.rs:91 \u2014 LLM_GENERATION, the persisted record of a model call",
+     "line": 91,
+     "url": "https://github.com/everruns/everruns/blob/4e8002acce3f567c99ae18c9aceea0c32634ecbd/crates/contracts/src/runtime/events/mod.rs#L91"
+    }
+   ]
+  },
+  {
+   "id": "tools",
+   "step": 5,
+   "label": "Tools + capabilities",
+   "sub": "crates/capabilities",
+   "x": 820,
+   "y": 190,
+   "w": 240,
+   "h": 96,
+   "grade": "verified",
+   "excerpt": "Files, shell, sandboxes, web, sub-agents and MCP; tools declare their side-effect class and risk hints.",
+   "links": [
+    {
+     "label": "tool-approval.md \u2014 modes read tool declarations, never name guesses",
+     "line": 20,
+     "url": "https://github.com/everruns/everruns/blob/4e8002acce3f567c99ae18c9aceea0c32634ecbd/docs/capabilities/tool-approval.md#L20"
+    }
+   ]
+  },
+  {
+   "id": "mcpsearch",
+   "step": 5,
+   "label": "MCP catalog search",
+   "sub": "core/mcp + builtins/tool_search",
+   "x": 820,
+   "y": 320,
+   "w": 240,
+   "h": 96,
+   "grade": "verified",
+   "excerpt": "Catalogs paged in full (up to 10,000 tools per server), searched, and revealed within 32 tools / 64 KiB by default.",
+   "links": [
+    {
+     "label": "discovery.rs:9 \u2014 MCP_DISCOVERY_MAX_TOOLS = 10,000",
+     "line": 9,
+     "url": "https://github.com/everruns/everruns/blob/4e8002acce3f567c99ae18c9aceea0c32634ecbd/crates/core/src/mcp/discovery.rs#L9"
+    },
+    {
+     "label": "tool_search.rs:443 \u2014 bounded defaults: 32 active tools, 65,536 active bytes",
+     "line": 443,
+     "url": "https://github.com/everruns/everruns/blob/4e8002acce3f567c99ae18c9aceea0c32634ecbd/crates/core/src/builtins/tool_search.rs#L443-L444"
+    }
+   ]
+  },
+  {
+   "id": "durable",
+   "label": "Background durable queue",
+   "sub": "crates/durable (everruns-durable)",
+   "x": 820,
+   "y": 450,
+   "w": 240,
+   "h": 96,
+   "grade": "verified",
+   "excerpt": "Retries, schedules and the dead letter queue for background work \u2014 agent turns no longer run here.",
+   "links": [
+    {
+     "label": "durable/README.md:41 \u2014 agent turns do not run in everruns-durable",
+     "line": 41,
+     "url": "https://github.com/everruns/everruns/blob/4e8002acce3f567c99ae18c9aceea0c32634ecbd/crates/durable/README.md#L41"
+    }
+   ]
+  }
+ ],
+ "edges": [
+  {
+   "from": "clients",
+   "to": "server",
+   "label": "sessions, messages, answers; SSE events out"
+  },
+  {
+   "from": "server",
+   "to": "actors",
+   "label": "input + runnable mark, one transaction",
+   "label_dx": -30
+  },
+  {
+   "from": "actors",
+   "to": "worker",
+   "label": "lease granted (fence raised)",
+   "label_dx": -125,
+   "label_dy": 20
+  },
+  {
+   "from": "worker",
+   "to": "fold",
+   "label": "fold the log, run the whole turn"
+  },
+  {
+   "from": "journal",
+   "to": "fold",
+   "label": "tail from latest turn.started",
+   "label_dx": -60
+  },
+  {
+   "from": "fold",
+   "to": "loop",
+   "label": "resume plan: rerun / interrupted / fresh"
+  },
+  {
+   "from": "loop",
+   "to": "llm",
+   "label": "reason: one model call",
+   "label_dx": 10,
+   "label_dy": -34,
+   "label_t": 0.82
+  },
+  {
+   "from": "loop",
+   "to": "tools",
+   "label": "act: tool calls in parallel",
+   "label_dx": -116,
+   "label_dy": -60,
+   "label_t": 0.78
+  },
+  {
+   "from": "tools",
+   "to": "mcpsearch",
+   "label": "search, then reveal schemas"
+  },
+  {
+   "from": "loop",
+   "to": "approval",
+   "label": "declared-risky calls are held"
+  },
+  {
+   "from": "approval",
+   "to": "journal",
+   "label": "answer journaled",
+   "label_dx": -70
+  },
+  {
+   "from": "loop",
+   "to": "journal",
+   "label": "every step journaled first",
+   "side": "right",
+   "label_dx": -160,
+   "label_t": 0.45,
+   "label_dy": -8
+  },
+  {
+   "from": "worker",
+   "to": "durable",
+   "label": "background jobs",
+   "side": "right",
+   "label_dx": -10,
+   "label_t": 0.5
+  }
+ ]
+}

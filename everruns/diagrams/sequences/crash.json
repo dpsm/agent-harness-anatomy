@@ -1,0 +1,83 @@
+{
+ "title": "Crash mid-turn: lease expiry and takeover",
+ "subtitle": "The recorded results stand; the cut-off call is settled by what its tool declares",
+ "participants": [
+  "Worker A",
+  "PostgreSQL log",
+  "Worker B",
+  "LLM",
+  "Tool (AtMostOnce)"
+ ],
+ "messages": [
+  {
+   "from": 0,
+   "to": 1,
+   "label": "lease session (fence 7); renews every few seconds"
+  },
+  {
+   "from": 0,
+   "to": 3,
+   "label": "reason: model call"
+  },
+  {
+   "from": 3,
+   "to": 0,
+   "label": "two tool calls",
+   "dashed": true
+  },
+  {
+   "from": 0,
+   "to": 1,
+   "label": "append tool.started (call 1) \u2014 then run it"
+  },
+  {
+   "from": 0,
+   "to": 4,
+   "label": "call 1 runs"
+  },
+  {
+   "from": 0,
+   "to": 0,
+   "label": "worker A crashes before the result is recorded"
+  },
+  {
+   "from": 1,
+   "to": 1,
+   "label": "no renewal: lease expires after ~10s"
+  },
+  {
+   "from": 2,
+   "to": 1,
+   "label": "lease session (fence 8); fold the turn's tail"
+  },
+  {
+   "from": 2,
+   "to": 1,
+   "label": "call 1: started, no result, AtMostOnce -> settle as interrupted"
+  },
+  {
+   "from": 2,
+   "to": 3,
+   "label": "reason again: model told call 1's outcome is unknown"
+  },
+  {
+   "from": 3,
+   "to": 2,
+   "label": "final answer",
+   "dashed": true
+  },
+  {
+   "from": 2,
+   "to": 1,
+   "label": "append turn.completed; release lease"
+  },
+  {
+   "note": "span",
+   "span": [
+    0,
+    4
+   ],
+   "text": "A stale holder cannot write: every append carries its fence, checked in the insert transaction"
+  }
+ ]
+}

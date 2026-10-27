@@ -1,0 +1,90 @@
+{
+ "title": "One turn through the actor loop",
+ "subtitle": "Intake and the runnable mark commit together; one lease runs the whole turn",
+ "participants": [
+  "App (Agent API)",
+  "Control plane",
+  "PostgreSQL log",
+  "Worker",
+  "LLM",
+  "Tools"
+ ],
+ "messages": [
+  {
+   "from": 0,
+   "to": 1,
+   "label": "POST /sessions/{id}/messages"
+  },
+  {
+   "from": 1,
+   "to": 2,
+   "label": "one transaction: append input.message + mark actor runnable"
+  },
+  {
+   "from": 1,
+   "to": 3,
+   "label": "wake-up: session_actor notification"
+  },
+  {
+   "from": 3,
+   "to": 2,
+   "label": "lease session (fence raised, TTL 10s)"
+  },
+  {
+   "from": 3,
+   "to": 2,
+   "label": "fold tail from latest turn.started"
+  },
+  {
+   "from": 3,
+   "to": 4,
+   "label": "reason: model call"
+  },
+  {
+   "from": 4,
+   "to": 3,
+   "label": "tool calls",
+   "dashed": true
+  },
+  {
+   "from": 3,
+   "to": 2,
+   "label": "append llm.generation (the recorded response)"
+  },
+  {
+   "from": 3,
+   "to": 5,
+   "label": "act: run tool calls in parallel"
+  },
+  {
+   "from": 5,
+   "to": 3,
+   "label": "results",
+   "dashed": true
+  },
+  {
+   "from": 3,
+   "to": 2,
+   "label": "append tool.completed per call, then reason again"
+  },
+  {
+   "from": 3,
+   "to": 2,
+   "label": "append output.message.completed + turn.completed; release lease"
+  },
+  {
+   "from": 1,
+   "to": 0,
+   "label": "SSE: events stream from the same log",
+   "dashed": true
+  },
+  {
+   "note": "span",
+   "span": [
+    0,
+    5
+   ],
+   "text": "No queue hop between reason and act \u2014 the lease, not a task chain, carries the turn"
+  }
+ ]
+}

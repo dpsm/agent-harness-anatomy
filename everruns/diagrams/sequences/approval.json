@@ -1,0 +1,62 @@
+{
+ "title": "A held tool call: park, answer, resume",
+ "subtitle": "A turn waiting on a person holds no worker",
+ "participants": [
+  "Model",
+  "Approval gate",
+  "Session log",
+  "Person (API)",
+  "Any worker"
+ ],
+ "messages": [
+  {
+   "from": 0,
+   "to": 1,
+   "label": "tool call: declared destructive"
+  },
+  {
+   "from": 1,
+   "to": 1,
+   "label": "mode normal: no recorded decision -> Deferred"
+  },
+  {
+   "from": 1,
+   "to": 2,
+   "label": "structured tool_approval_required result"
+  },
+  {
+   "from": 2,
+   "to": 2,
+   "label": "turn parks on a synthetic approve_tool_call; lease released"
+  },
+  {
+   "from": 3,
+   "to": 2,
+   "label": "POST /v1/sessions/{id}/tool-approvals: allow"
+  },
+  {
+   "from": 2,
+   "to": 2,
+   "label": "decision stored under tool_approval/ (bound to the exact arguments)"
+  },
+  {
+   "from": 4,
+   "to": 2,
+   "label": "new lease folds the log: the open turn resumes"
+  },
+  {
+   "from": 4,
+   "to": 0,
+   "label": "the gated call runs once, with its recorded answer",
+   "dashed": true
+  },
+  {
+   "note": "span",
+   "span": [
+    0,
+    4
+   ],
+   "text": "What was approved is read back from the emitted tool.call_requested event \u2014 never from the request body"
+  }
+ ]
+}
