@@ -1,0 +1,13 @@
+{
+ "title": "What leaves the machine at the pinned commit",
+ "subtitle": "Each flow below is gated or explicit — see the article's audit for the evidence",
+ "participants": ["ZCode app", "Telemetry endpoint", "OTLP collector", "Update feed", "Provider API"],
+ "messages": [
+  {"from": 0, "to": 1, "label": "event metadata — only if the build set an endpoint"},
+  {"from": 0, "to": 2, "label": "traces + metrics — only if the host env sets OTLP"},
+  {"from": 0, "to": 3, "label": "update check (desktop, every 15 min)"},
+  {"from": 0, "to": 4, "label": "prompts + tool results (the model call itself)"},
+  {"from": 0, "to": 0, "label": "workspace checkpoints: local git objects, never uploaded"},
+  {"note": "span", "span": [0, 4], "text": "No background workspace-upload path exists at this pin; sharing and feedback upload only on explicit user action"}
+ ]
+}

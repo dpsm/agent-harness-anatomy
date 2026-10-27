@@ -1,0 +1,16 @@
+{
+ "title": "One turn through the ZCode loop",
+ "subtitle": "Everything enters as a command on the same runtime queue",
+ "participants": ["User", "Turn loop", "Provider (GLM)", "Tools", "Session store"],
+ "messages": [
+  {"from": 0, "to": 1, "label": "prompt (cancellable runtime command)"},
+  {"from": 1, "to": 1, "label": "drain queued commands; microcompact + auto-compact"},
+  {"from": 1, "to": 1, "label": "assemble: tools, reminders, goal state, memory recall"},
+  {"from": 1, "to": 2, "label": "model step (anthropic-messages shape)"},
+  {"from": 2, "to": 1, "label": "tool calls", "dashed": true},
+  {"from": 1, "to": 3, "label": "permission check per call (mode + rules)"},
+  {"from": 3, "to": 1, "label": "tool results", "dashed": true},
+  {"from": 1, "to": 4, "label": "append session events + messages"},
+  {"note": "span", "span": [0, 4], "text": "Repeat until the model stops calling tools — the loop itself has no iteration cap"}
+ ]
+}
