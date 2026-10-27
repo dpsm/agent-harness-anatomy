@@ -1,0 +1,61 @@
+{
+ "title": "zenclaw: a due job meets a stub",
+ "subtitle": "cron data layer is complete - execution is not wired at this pin",
+ "participants": [
+  "Model (cron tool)",
+  "CronStore",
+  "Desktop tick (60 s)",
+  "Gateway",
+  "ESP32 build"
+ ],
+ "messages": [
+  {
+   "from": 0,
+   "to": 1,
+   "label": "cron(action=add, every/at, message)"
+  },
+  {
+   "from": 1,
+   "to": 1,
+   "label": "persist cron.json (strict PUT if cloud on)",
+   "self": true
+  },
+  {
+   "from": 2,
+   "to": 1,
+   "label": "get_due_jobs()"
+  },
+  {
+   "from": 1,
+   "to": 2,
+   "label": "job is due",
+   "dashed": true
+  },
+  {
+   "from": 2,
+   "to": 2,
+   "label": "log: CRON: job due (execution via gateway not yet wired)",
+   "self": true
+  },
+  {
+   "from": 2,
+   "to": 3,
+   "label": "dispatch through gateway",
+   "dashed": true
+  },
+  {
+   "from": 4,
+   "to": 4,
+   "label": "no cron tick exists in the ESP32 build at all",
+   "self": true
+  },
+  {
+   "note": "A created job is a well-kept record of an intention, not a future turn",
+   "span": [
+    0,
+    4
+   ],
+   "text": "scaffolding, honestly labelled"
+  }
+ ]
+}

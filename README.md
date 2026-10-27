@@ -45,6 +45,7 @@ physical constraints.
 |---|---------|---------|-------|
 | E1 | ESP-Claw (v0.1.0) | [embedded/esp-claw/article.md](embedded/esp-claw/article.md) | [Follow one sensor event](embedded/esp-claw/trace.html) |
 | E2 | MimiClaw (v0.1.1) | [embedded/mimiclaw/article.md](embedded/mimiclaw/article.md) | [Follow one message](embedded/mimiclaw/trace.html) |
+| E3 | ZenClaw (v0.2.1-zai-tls-fix) | [embedded/zenclaw/article.md](embedded/zenclaw/article.md) | [Follow one message](embedded/zenclaw/trace.html) |
 
 ## What's here
 

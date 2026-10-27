@@ -1,0 +1,173 @@
+{
+ "title": "One message through ZenClaw - step-by-step",
+ "repo": "bennyzen/zenclaw",
+ "sha": "9d3dc42480b24463969c00034f060ab3db2b8fca",
+ "example_input": "remember that I prefer short answers",
+ "note": "Representations below are simplified shapes of the real types at the pinned SHA, not verbatim dumps.",
+ "steps": [
+  {
+   "step": 1,
+   "title": "Telegram update arrives",
+   "node": "telegram-poll",
+   "code": "agent/src/core/channels/telegram.rs:43; agent/src/main.rs:2076",
+   "modules": [
+    {
+     "file": "agent/src/core/channels/telegram.rs",
+     "label": "telegram.rs:43",
+     "line": "43",
+     "url": "https://github.com/bennyzen/zenclaw/blob/9d3dc42480b24463969c00034f060ab3db2b8fca/agent/src/core/channels/telegram.rs#L43"
+    },
+    {
+     "file": "agent/src/main.rs",
+     "label": "main.rs:2076",
+     "line": "2076",
+     "url": "https://github.com/bennyzen/zenclaw/blob/9d3dc42480b24463969c00034f060ab3db2b8fca/agent/src/main.rs#L2076"
+    }
+   ],
+   "narrative": "The single agent thread long-polls getUpdates with a 10-second timeout. The poll offset lives in RAM and starts at 0 on every boot, so after a reboot Telegram can redeliver recent updates. No sender check happens in the poller itself.",
+   "representation": "getUpdates?offset={ram_offset}&timeout=10   # telegram.rs:43\n  -> update { message { chat { id }, text } }\n  -> agent_thread loop pass                  # main.rs:2076"
+  },
+  {
+   "step": 2,
+   "title": "Allowlist check in the agent thread",
+   "node": "agent-thread",
+   "code": "agent/src/main.rs:2086",
+   "modules": [
+    {
+     "file": "agent/src/main.rs",
+     "label": "main.rs:2086",
+     "line": "2086",
+     "url": "https://github.com/bennyzen/zenclaw/blob/9d3dc42480b24463969c00034f060ab3db2b8fca/agent/src/main.rs#L2086"
+    }
+   ],
+   "narrative": "If allowed_chat_ids is configured and this chat is not on it, the message is logged and skipped - the first sender check on any channel in this series. With no list configured, any chat that finds the bot passes. A typing indicator is sent, then the gateway is called.",
+   "representation": "if let Some(ids) = allowed {               # main.rs:2086\n  if !ids.contains(&msg.chat_id) { skip; }\n}\nsend_typing(chat_id)\ngateway.chat(chat_id, text, \"telegram\")"
+  },
+  {
+   "step": 3,
+   "title": "Gateway: fast-path check and prompt",
+   "node": "gateway",
+   "code": "agent/src/core/gateway.rs:164; agent/src/core/gateway.rs:199",
+   "modules": [
+    {
+     "file": "agent/src/core/gateway.rs",
+     "label": "gateway.rs:164",
+     "line": "164",
+     "url": "https://github.com/bennyzen/zenclaw/blob/9d3dc42480b24463969c00034f060ab3db2b8fca/agent/src/core/gateway.rs#L164"
+    },
+    {
+     "file": "agent/src/core/workspace.rs",
+     "label": "workspace.rs:33",
+     "line": "33",
+     "url": "https://github.com/bennyzen/zenclaw/blob/9d3dc42480b24463969c00034f060ab3db2b8fca/agent/src/core/workspace.rs#L33"
+    }
+   ],
+   "narrative": "The text is not a slash command (recognized commands would be answered locally with no LLM call), so the gateway checks whether the session branch needs compaction, builds the system prompt from the bootstrap files (SOUL.md, AGENTS.md and peers), and loads the branch history by walking parent pointers from the leaf.",
+   "representation": "commands::parse(text) -> None  (not a command)  # gateway.rs:164\nmaybe_compact(branch, config)                   # gateway.rs:199\nprompt = identity + tooling + bootstrap files   # workspace.rs:33"
+  },
+  {
+   "step": 4,
+   "title": "User entry appended - through the cache",
+   "node": "sessions",
+   "code": "agent/src/core/sessions/mod.rs:617",
+   "modules": [
+    {
+     "file": "agent/src/core/sessions/mod.rs",
+     "label": "sessions/mod.rs:617",
+     "line": "617",
+     "url": "https://github.com/bennyzen/zenclaw/blob/9d3dc42480b24463969c00034f060ab3db2b8fca/agent/src/core/sessions/mod.rs#L617"
+    }
+   ],
+   "narrative": "The user entry is appended to the session. In cloud mode that means extending the active log-NN segment inside the PSRAM cache and enqueueing the whole updated segment to the replicator - no flash write happens here. In local mode it is a plain append to the chat's JSONL file on LittleFS.",
+   "representation": "entry = Message { id, parent: leaf_id, role: user, ... }\ncache: log-00.jsonl += entry line + session_info line\nreplicator.enqueue(log key, updated blob)   # sessions/mod.rs:617"
+  },
+  {
+   "step": 5,
+   "title": "LLM call on the one wire",
+   "node": "llm-runner",
+   "code": "agent/src/esp32/runner.rs:63",
+   "modules": [
+    {
+     "file": "agent/src/esp32/runner.rs",
+     "label": "esp32/runner.rs:63",
+     "line": "63",
+     "url": "https://github.com/bennyzen/zenclaw/blob/9d3dc42480b24463969c00034f060ab3db2b8fca/agent/src/esp32/runner.rs#L63"
+    },
+    {
+     "file": "agent/src/esp32/runner.rs",
+     "label": "esp32/runner.rs:38",
+     "line": "38",
+     "url": "https://github.com/bennyzen/zenclaw/blob/9d3dc42480b24463969c00034f060ab3db2b8fca/agent/src/esp32/runner.rs#L38"
+    }
+   ],
+   "narrative": "EspRunner POSTs the conversation and the 7 tool schemas to {base_url}/chat/completions with Bearer auth - the same OpenAI-compatible wire for every provider - reusing a warm TLS connection. The model answers with a memory tool call.",
+   "representation": "POST {base_url}/chat/completions           # esp32/runner.rs:63\nAuthorization: Bearer <api_key>\n  -> tool_calls: [ memory { action: save, ... } ]"
+  },
+  {
+   "step": 6,
+   "title": "Breaker check, then the memory tool",
+   "node": "agent-loop",
+   "code": "agent/src/core/tool_loop.rs:55; agent/src/core/tools/memory_tools.rs:99",
+   "modules": [
+    {
+     "file": "agent/src/core/tool_loop.rs",
+     "label": "tool_loop.rs:55",
+     "line": "55",
+     "url": "https://github.com/bennyzen/zenclaw/blob/9d3dc42480b24463969c00034f060ab3db2b8fca/agent/src/core/tool_loop.rs#L55"
+    },
+    {
+     "file": "agent/src/core/tools/memory_tools.rs",
+     "label": "memory_tools.rs:99",
+     "line": "99",
+     "url": "https://github.com/bennyzen/zenclaw/blob/9d3dc42480b24463969c00034f060ab3db2b8fca/agent/src/core/tools/memory_tools.rs#L99"
+    }
+   ],
+   "narrative": "Before execution, the LoopDetector checks the call against the turn's history for repeat, no-progress, and ping-pong patterns. The call is new, so the memory tool runs: it parses MEMORY.md's titled blocks and appends the new entry, subject to the 64 KB and 200-entry caps.",
+   "representation": "LoopDetector.check(memory, args) -> OK     # tool_loop.rs:55\nmemory save: ## Short answers preferred\n  [mem_xxxxxxxx] 2026-06-07T... (tags: preference)"
+  },
+  {
+   "step": 7,
+   "title": "Strict write: the bucket confirms",
+   "node": "cloud-strict",
+   "code": "agent/src/core/tools/memory_tools.rs:390; agent/src/core/cloud/strict.rs:25",
+   "modules": [
+    {
+     "file": "agent/src/core/tools/memory_tools.rs",
+     "label": "memory_tools.rs:390",
+     "line": "390",
+     "url": "https://github.com/bennyzen/zenclaw/blob/9d3dc42480b24463969c00034f060ab3db2b8fca/agent/src/core/tools/memory_tools.rs#L390"
+    },
+    {
+     "file": "agent/src/core/cloud/strict.rs",
+     "label": "strict.rs:25",
+     "line": "25",
+     "url": "https://github.com/bennyzen/zenclaw/blob/9d3dc42480b24463969c00034f060ab3db2b8fca/agent/src/core/cloud/strict.rs#L25"
+    }
+   ],
+   "narrative": "A memory save cannot be eventual: the tool updates the cache, then strict_put blocks on a confirmed S3 PUT, retrying with exponential backoff and returning the error to the model if retries run out. Only then is the local flash copy of MEMORY.md written.",
+   "representation": "cache.put(sys/MEMORY.md, bytes)            # memory_tools.rs:390\nstrict_put(store, sys/MEMORY.md, bytes,     # strict.rs:25\n           retry_max, backoff_cap) -> Ok\nfs::write(/data/MEMORY.md)  // local copy"
+  },
+  {
+   "step": 8,
+   "title": "Final text, append, reply",
+   "node": "agent-loop",
+   "code": "agent/src/core/agent_loop.rs:29; agent/src/main.rs:2117",
+   "modules": [
+    {
+     "file": "agent/src/core/agent_loop.rs",
+     "label": "agent_loop.rs:29",
+     "line": "29",
+     "url": "https://github.com/bennyzen/zenclaw/blob/9d3dc42480b24463969c00034f060ab3db2b8fca/agent/src/core/agent_loop.rs#L29"
+    },
+    {
+     "file": "agent/src/main.rs",
+     "label": "main.rs:2117",
+     "line": "2117",
+     "url": "https://github.com/bennyzen/zenclaw/blob/9d3dc42480b24463969c00034f060ab3db2b8fca/agent/src/main.rs#L2117"
+    }
+   ],
+   "narrative": "The next call - now without tool schemas, to shrink the payload - returns plain text. The assistant entry is appended to the session the same way as the user entry, and the agent thread delivers the reply to Telegram. The flash will not see any of this until the snapshot timer fires, up to 900 seconds later.",
+   "representation": "call(messages + tool result) -> text       # agent_loop.rs:29\nsessions.append(assistant entry)  (via cache)\nchannel.deliver(chat_id, reply)            # main.rs:2117"
+  }
+ ]
+}

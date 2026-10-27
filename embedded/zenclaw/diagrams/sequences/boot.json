@@ -1,0 +1,69 @@
+{
+ "title": "zenclaw: boot restore, and when the bucket disagrees",
+ "subtitle": "boot_restore -> L3 size gate -> L4 tail fallback -> L5 quarantine -> snapshot floor",
+ "participants": [
+  "Boot (main.rs)",
+  "S3 bucket",
+  "PSRAM cache",
+  "Session restore",
+  "Flash snapshot"
+ ],
+ "messages": [
+  {
+   "from": 0,
+   "to": 1,
+   "label": "list sys/sessions/ + get sys/.heartbeat"
+  },
+  {
+   "from": 1,
+   "to": 0,
+   "label": "keys + heartbeat (other device? warn, proceed)",
+   "dashed": true
+  },
+  {
+   "from": 0,
+   "to": 2,
+   "label": "restore MEMORY.md, cron.json, SOUL.md, AGENTS.md"
+  },
+  {
+   "from": 3,
+   "to": 1,
+   "label": "L3: HEAD-sum the chat's keys"
+  },
+  {
+   "from": 3,
+   "to": 3,
+   "label": "over 256,000 B: L4 keep tail of highest log only",
+   "self": true
+  },
+  {
+   "from": 3,
+   "to": 1,
+   "label": "tail unreadable: L5 move keys to .quarantine/"
+  },
+  {
+   "from": 3,
+   "to": 2,
+   "label": "chat restored (full, tailed, or reset empty)"
+  },
+  {
+   "from": 0,
+   "to": 4,
+   "label": "top-level restore failed: read .snapshot.bin"
+  },
+  {
+   "from": 4,
+   "to": 2,
+   "label": "magic + version checked entries (or empty cache)",
+   "dashed": true
+  },
+  {
+   "note": "Every failure path ends in a running device: degraded history, never a refused boot",
+   "span": [
+    0,
+    4
+   ],
+   "text": "layered recovery"
+  }
+ ]
+}

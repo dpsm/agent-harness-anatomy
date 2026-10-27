@@ -16,6 +16,7 @@ actuation?" — and what each world teaches the other.
 |---|---------|---------|-------|
 | E1 | ESP-Claw (v0.1.0) | [esp-claw/article.md](esp-claw/article.md) | [Follow one sensor event](esp-claw/trace.html) |
 | E2 | MimiClaw (v0.1.1) | [mimiclaw/article.md](mimiclaw/article.md) | [Follow one message](mimiclaw/trace.html) |
+| E3 | ZenClaw (v0.2.1-zai-tls-fix) | [zenclaw/article.md](zenclaw/article.md) | [Follow one message](zenclaw/trace.html) |
 
 ## Dimensions
 
