@@ -1,0 +1,375 @@
+{
+ "edges": [
+  {
+   "from": "pwa",
+   "to": "server",
+   "label": "moves cards; frames back",
+   "label_dx": -40
+  },
+  {
+   "from": "auth",
+   "to": "server",
+   "label": "ceremony -> session",
+   "side": "right",
+   "label_dx": -30
+  },
+  {
+   "from": "server",
+   "to": "board",
+   "label": "task, message and thread rows"
+  },
+  {
+   "from": "server",
+   "to": "executor",
+   "label": "start / stop on move",
+   "label_dx": -75,
+   "label_dy": 85
+  },
+  {
+   "from": "executor",
+   "to": "loop",
+   "label": "model provider: run the loop"
+  },
+  {
+   "from": "executor",
+   "to": "agentpath",
+   "label": "agent provider: CLI",
+   "side": "right",
+   "label_dy": 10,
+   "label_dx": 100
+  },
+  {
+   "from": "loop",
+   "to": "llm",
+   "label": "streaming completions",
+   "label_dx": -76
+  },
+  {
+   "from": "loop",
+   "to": "sandbox",
+   "label": "tool calls via the bridge",
+   "side": "right",
+   "label_dx": -70
+  },
+  {
+   "from": "agentpath",
+   "to": "sandbox",
+   "label": "agent runs in container",
+   "label_dx": -76
+  },
+  {
+   "from": "sandbox",
+   "to": "worktree",
+   "label": "worktree rw, .git ro, pin ro"
+  },
+  {
+   "from": "loop",
+   "to": "review",
+   "label": "request_review ends work",
+   "side": "right",
+   "label_dy": -26,
+   "label_dx": 130
+  },
+  {
+   "from": "review",
+   "to": "worktree",
+   "label": "commit + merge",
+   "label_dx": -76
+  },
+  {
+   "from": "pwa",
+   "to": "extensions",
+   "label": "UI iframes",
+   "label_dx": -185
+  },
+  {
+   "from": "extensions",
+   "to": "llm",
+   "label": "llm mappings",
+   "label_dx": -170
+  }
+ ],
+ "nodes": [
+  {
+   "excerpt": "The person works the board: drags cards, answers questions, reviews diffs. Offline, the same board renders from an IndexedDB mirror and writes queue for reconnect.",
+   "grade": "verified",
+   "h": 96,
+   "id": "pwa",
+   "label": "PWA board",
+   "links": [
+    {
+     "label": "queue.ts:712 \u2014 writeOrQueue: a write that got no answer is queued and replayed",
+     "line": 712,
+     "url": "https://github.com/SoftwareRenderer/MIKE/blob/382ec61bbf89d08ac2b0c99d42f166e00ae4dd8c/frontend/src/lib/api/queue.ts#L712"
+    }
+   ],
+   "step": 1,
+   "sub": "frontend/src \u00b7 Svelte 5 PWA",
+   "w": 240,
+   "x": 20,
+   "y": 60
+  },
+  {
+   "excerpt": "A pairing code authorizes one registration and authenticates nothing; a session exists only as the answer to a finished WebAuthn ceremony.",
+   "grade": "verified",
+   "h": 96,
+   "id": "auth",
+   "label": "Passkey pairing",
+   "links": [
+    {
+     "label": "pairing.go:14 \u2014 a pairing code allows a browser to register a passkey; it does not authenticate",
+     "line": 14,
+     "url": "https://github.com/SoftwareRenderer/MIKE/blob/382ec61bbf89d08ac2b0c99d42f166e00ae4dd8c/backend/auth/pairing.go#L14"
+    },
+    {
+     "label": "passkey.go:210 \u2014 FinishRegistration: one code writes one passkey row and opens the session",
+     "line": 210,
+     "url": "https://github.com/SoftwareRenderer/MIKE/blob/382ec61bbf89d08ac2b0c99d42f166e00ae4dd8c/backend/auth/passkey.go#L210"
+    }
+   ],
+   "step": 1,
+   "sub": "backend/auth \u00b7 WebAuthn",
+   "w": 240,
+   "x": 20,
+   "y": 450
+  },
+  {
+   "excerpt": "One Go binary serves the API, the board's WebSocket, the embedded SPA and the executor. TLS is the only mode; state lives in one SQLite file.",
+   "grade": "verified",
+   "h": 96,
+   "id": "server",
+   "label": "MIKE server",
+   "links": [
+    {
+     "label": "main.go:28 \u2014 main(): flags and env resolve once into an immutable startup config",
+     "line": 28,
+     "url": "https://github.com/SoftwareRenderer/MIKE/blob/382ec61bbf89d08ac2b0c99d42f166e00ae4dd8c/main.go#L28"
+    }
+   ],
+   "step": 1,
+   "sub": "main.go \u00b7 backend/server",
+   "w": 240,
+   "x": 20,
+   "y": 190
+  },
+  {
+   "excerpt": "Cards, threads, and every message row: assistant text, tool calls persisted before they run, tool results, stats and system notes.",
+   "grade": "verified",
+   "h": 96,
+   "id": "board",
+   "label": "Board + task store",
+   "links": [
+    {
+     "label": "status.go:10 \u2014 the four columns: backlog, in_progress, review, done",
+     "line": 10,
+     "url": "https://github.com/SoftwareRenderer/MIKE/blob/382ec61bbf89d08ac2b0c99d42f166e00ae4dd8c/backend/types/status.go#L10"
+    },
+    {
+     "label": "messages.go:375 \u2014 CreateTaskMessage writes the rows a conversation is rebuilt from",
+     "line": 375,
+     "url": "https://github.com/SoftwareRenderer/MIKE/blob/382ec61bbf89d08ac2b0c99d42f166e00ae4dd8c/backend/store/messages.go#L375"
+    }
+   ],
+   "step": 2,
+   "sub": "backend/store \u00b7 SQLite",
+   "w": 240,
+   "x": 20,
+   "y": 320
+  },
+  {
+   "excerpt": "A card entering In Progress starts a run: provider slot, memory-gate reservation, worktree, sandbox, then the run itself. Subtasks run children first.",
+   "grade": "verified",
+   "h": 96,
+   "id": "executor",
+   "label": "Task executor",
+   "links": [
+    {
+     "label": "executor.go:1472 \u2014 StartTask(projectID, taskID, autostarted)",
+     "line": 1472,
+     "url": "https://github.com/SoftwareRenderer/MIKE/blob/382ec61bbf89d08ac2b0c99d42f166e00ae4dd8c/backend/exec/executor.go#L1472"
+    },
+    {
+     "label": "task.go:429 \u2014 HandleMove: leaving In Progress stops the executor; entering it starts one",
+     "line": 429,
+     "url": "https://github.com/SoftwareRenderer/MIKE/blob/382ec61bbf89d08ac2b0c99d42f166e00ae4dd8c/backend/api/task.go#L429"
+    }
+   ],
+   "step": 2,
+   "sub": "backend/exec \u00b7 StartTask",
+   "w": 240,
+   "x": 420,
+   "y": 60
+  },
+  {
+   "excerpt": "MIKE's own loop: stream one chat completion, persist the turn, run its tool calls, repeat. No iteration cap \u2014 failure limits and the person bound it.",
+   "grade": "verified",
+   "h": 96,
+   "id": "loop",
+   "label": "Direct model loop",
+   "links": [
+    {
+     "label": "loop.go:418 \u2014 executeTask: slot, memory gate, sandbox, then the loop",
+     "line": 418,
+     "url": "https://github.com/SoftwareRenderer/MIKE/blob/382ec61bbf89d08ac2b0c99d42f166e00ae4dd8c/backend/exec/loop.go#L418"
+    },
+    {
+     "label": "loop.go:1063 \u2014 finalizeTurn settles each turn: tools, questions, request_review, failures",
+     "line": 1063,
+     "url": "https://github.com/SoftwareRenderer/MIKE/blob/382ec61bbf89d08ac2b0c99d42f166e00ae4dd8c/backend/exec/loop.go#L1063"
+    }
+   ],
+   "step": 3,
+   "sub": "backend/exec/loop.go",
+   "w": 240,
+   "x": 420,
+   "y": 190
+  },
+  {
+   "excerpt": "An agent extension's WASM adapter translates one agent CLI's wire protocol into MIKE's events; the runner spawns the binary the adapter names.",
+   "grade": "verified",
+   "h": 96,
+   "id": "agentpath",
+   "label": "Agent-provider path",
+   "links": [
+    {
+     "label": "loader.go:38 \u2014 wasmAdapter wraps a wazero WASI reactor module",
+     "line": 38,
+     "url": "https://github.com/SoftwareRenderer/MIKE/blob/382ec61bbf89d08ac2b0c99d42f166e00ae4dd8c/backend/agent/loader.go#L38"
+    },
+    {
+     "label": "loop_agent.go:60 \u2014 executeTaskWithAgent, the executor's agent-provider branch",
+     "line": 60,
+     "url": "https://github.com/SoftwareRenderer/MIKE/blob/382ec61bbf89d08ac2b0c99d42f166e00ae4dd8c/backend/exec/loop_agent.go#L60"
+    }
+   ],
+   "step": 3,
+   "sub": "backend/agent \u00b7 wazero",
+   "w": 240,
+   "x": 420,
+   "y": 320
+  },
+  {
+   "excerpt": "request_review lands the card in Review. Only the card's auto flags or a person's commit-and-done click arms a merge; Done means the work reached the target branch.",
+   "grade": "verified",
+   "h": 96,
+   "id": "review",
+   "label": "Review + merge gate",
+   "links": [
+    {
+     "label": "task.go:832 \u2014 HandleCommitAndDone: the person's click that commits and merges",
+     "line": 832,
+     "url": "https://github.com/SoftwareRenderer/MIKE/blob/382ec61bbf89d08ac2b0c99d42f166e00ae4dd8c/backend/api/task.go#L832"
+    },
+    {
+     "label": "tool_dispatch.go:476 \u2014 runRequestReview, the model's completion signal",
+     "line": 476,
+     "url": "https://github.com/SoftwareRenderer/MIKE/blob/382ec61bbf89d08ac2b0c99d42f166e00ae4dd8c/backend/exec/tool_dispatch.go#L476"
+    }
+   ],
+   "step": 5,
+   "sub": "backend/exec/merge.go",
+   "w": 240,
+   "x": 420,
+   "y": 450
+  },
+  {
+   "excerpt": "Git-pinned installs. UI extensions run in opaque-origin iframes; LSP extensions in their own gVisor sandboxes; tool extensions are data that templates one HTTP request.",
+   "grade": "verified",
+   "h": 96,
+   "id": "extensions",
+   "label": "Extensions",
+   "links": [
+    {
+     "label": "extensions.go:17 \u2014 the extension types: lsp, ui, css, agent, llm, tool, i18n",
+     "line": 17,
+     "url": "https://github.com/SoftwareRenderer/MIKE/blob/382ec61bbf89d08ac2b0c99d42f166e00ae4dd8c/backend/extensions/extensions.go#L17"
+    },
+    {
+     "label": "middleware.go:151 \u2014 every /extensions/ response carries a CSP sandbox allow-scripts directive",
+     "line": 151,
+     "url": "https://github.com/SoftwareRenderer/MIKE/blob/382ec61bbf89d08ac2b0c99d42f166e00ae4dd8c/backend/server/middleware.go#L151"
+    }
+   ],
+   "step": 4,
+   "sub": "backend/extensions",
+   "w": 240,
+   "x": 820,
+   "y": 60
+  },
+  {
+   "excerpt": "Named endpoints with a URL, model and optional key. The client POSTs streaming chat completions and accumulates tool calls; agent providers appear in the same list as agent:// URLs.",
+   "grade": "verified",
+   "h": 96,
+   "id": "llm",
+   "label": "Model providers",
+   "links": [
+    {
+     "label": "client.go:167 \u2014 LlamaClient handles communication with llama.cpp OpenAI-compatible API",
+     "line": 167,
+     "url": "https://github.com/SoftwareRenderer/MIKE/blob/382ec61bbf89d08ac2b0c99d42f166e00ae4dd8c/backend/llama/client.go#L167"
+    },
+    {
+     "label": "client.go:375 \u2014 the request goes to baseURL + /chat/completions",
+     "line": 375,
+     "url": "https://github.com/SoftwareRenderer/MIKE/blob/382ec61bbf89d08ac2b0c99d42f166e00ae4dd8c/backend/llama/client.go#L375"
+    }
+   ],
+   "step": 3,
+   "sub": "backend/llama client",
+   "w": 240,
+   "x": 820,
+   "y": 190
+  },
+  {
+   "excerpt": "One container per task: runsc runtime, all capabilities dropped, no-new-privileges, optional --network none. Tools reach it over a stdio bridge \u2014 no listener, no port.",
+   "grade": "verified",
+   "h": 96,
+   "id": "sandbox",
+   "label": "gVisor task sandbox",
+   "links": [
+    {
+     "label": "podman_args.go:158 \u2014 GVisorCreateArgs: --runtime runsc, --cap-drop ALL, no-new-privileges",
+     "line": 158,
+     "url": "https://github.com/SoftwareRenderer/MIKE/blob/382ec61bbf89d08ac2b0c99d42f166e00ae4dd8c/pkg/sandboxruntime/podman_args.go#L158"
+    },
+    {
+     "label": "sandbox.go:411 \u2014 Create builds the task's container, kanban-sandbox-<taskID>",
+     "line": 411,
+     "url": "https://github.com/SoftwareRenderer/MIKE/blob/382ec61bbf89d08ac2b0c99d42f166e00ae4dd8c/backend/sandbox/sandbox.go#L411"
+    }
+   ],
+   "step": 4,
+   "sub": "backend/sandbox \u00b7 Podman",
+   "w": 240,
+   "x": 820,
+   "y": 320
+  },
+  {
+   "excerpt": "The worktree bind-mounts rw (ro in plan mode) with its .git pointer pinned read-only over it; the project's .git mounts ro at its own path. Results are host files the moment they are written.",
+   "grade": "verified",
+   "h": 96,
+   "id": "worktree",
+   "label": "Worktree + project .git",
+   "links": [
+    {
+     "label": "worktree.go:309 \u2014 CreateWorktree(projectID, taskID, branchName, sourceBranch)",
+     "line": 309,
+     "url": "https://github.com/SoftwareRenderer/MIKE/blob/382ec61bbf89d08ac2b0c99d42f166e00ae4dd8c/backend/git/worktree.go#L309"
+    },
+    {
+     "label": "podman_args.go:90 \u2014 WorktreeGitPointerMount mounts the pointer read-only",
+     "line": 90,
+     "url": "https://github.com/SoftwareRenderer/MIKE/blob/382ec61bbf89d08ac2b0c99d42f166e00ae4dd8c/pkg/sandboxruntime/podman_args.go#L90"
+    }
+   ],
+   "step": 4,
+   "sub": "backend/git \u00b7 worktrees",
+   "w": 240,
+   "x": 820,
+   "y": 450
+  }
+ ],
+ "repo": "https://github.com/SoftwareRenderer/MIKE",
+ "sha": "382ec61bbf89d08ac2b0c99d42f166e00ae4dd8c",
+ "title": "MIKE \u2014 the board is the control plane, the sandbox is the boundary"
+}
