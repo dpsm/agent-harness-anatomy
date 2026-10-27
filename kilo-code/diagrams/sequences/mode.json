@@ -1,0 +1,74 @@
+{
+ "title": "Switching agents: what a mode switch changes",
+ "subtitle": "An agent is a prompt, a model and a permission ruleset - not a flag on one loop",
+ "participants": [
+  "Person",
+  "Agent registry",
+  "Session loop",
+  "Permission engine"
+ ],
+ "messages": [
+  {
+   "from": 0,
+   "to": 1,
+   "label": "pick plan in the agent picker"
+  },
+  {
+   "from": 1,
+   "to": 1,
+   "label": "base agents, then Kilo patchAgents"
+  },
+  {
+   "from": 1,
+   "to": 2,
+   "label": "session agent = plan",
+   "dashed": true
+  },
+  {
+   "from": 2,
+   "to": 3,
+   "label": "edit call: evaluate(ruleset)"
+  },
+  {
+   "from": 3,
+   "to": 2,
+   "label": "deny: edit * (plan files excepted)",
+   "dashed": true
+  },
+  {
+   "from": 2,
+   "to": 2,
+   "label": "the refusal is the tool result"
+  },
+  {
+   "from": 0,
+   "to": 1,
+   "label": "switch back to code"
+  },
+  {
+   "from": 1,
+   "to": 2,
+   "label": "session agent = code",
+   "dashed": true
+  },
+  {
+   "note": "span",
+   "span": [
+    0,
+    3
+   ],
+   "text": "Custom agents are Markdown files: frontmatter sets model, mode, permission and steps"
+  },
+  {
+   "from": 2,
+   "to": 3,
+   "label": "same edit call: evaluate(ruleset)"
+  },
+  {
+   "from": 3,
+   "to": 2,
+   "label": "allow (or ask, per merged rules)",
+   "dashed": true
+  }
+ ]
+}

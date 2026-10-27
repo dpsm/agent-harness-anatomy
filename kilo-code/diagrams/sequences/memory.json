@@ -1,0 +1,75 @@
+{
+ "title": "Context: overflow, compaction, and recall",
+ "subtitle": "History is rebuilt per step; what survives is a summary, snapshots, and files",
+ "participants": [
+  "Session loop",
+  "Compaction",
+  "Snapshot store",
+  "Project memory",
+  "Recall tool"
+ ],
+ "messages": [
+  {
+   "from": 0,
+   "to": 0,
+   "label": "count tokens vs usable context"
+  },
+  {
+   "from": 0,
+   "to": 1,
+   "label": "overflow: summarize older history"
+  },
+  {
+   "from": 1,
+   "to": 1,
+   "label": "hidden compaction agent (deny-all)"
+  },
+  {
+   "from": 1,
+   "to": 0,
+   "label": "summary replaces the old turns",
+   "dashed": true
+  },
+  {
+   "from": 0,
+   "to": 1,
+   "label": "prune old tool output",
+   "dashed": true
+  },
+  {
+   "from": 0,
+   "to": 2,
+   "label": "track the worktree this step"
+  },
+  {
+   "from": 2,
+   "to": 0,
+   "label": "patch part stored on the message",
+   "dashed": true
+  },
+  {
+   "from": 0,
+   "to": 3,
+   "label": "turn close: capture project memory"
+  },
+  {
+   "note": "span",
+   "span": [
+    0,
+    4
+   ],
+   "text": "Project memory is file-backed and project-scoped - later sessions start from it"
+  },
+  {
+   "from": 4,
+   "to": 4,
+   "label": "search past sessions by transcript"
+  },
+  {
+   "from": 4,
+   "to": 0,
+   "label": "a past transcript, read on request",
+   "dashed": true
+  }
+ ]
+}

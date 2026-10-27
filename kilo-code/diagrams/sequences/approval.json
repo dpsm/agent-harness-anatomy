@@ -1,0 +1,80 @@
+{
+ "title": "An ask, three ways to answer it",
+ "subtitle": "Rules first, then the person - and one class of ask that automation may not answer",
+ "participants": [
+  "Session loop",
+  "Permission engine",
+  "Person",
+  "Sandbox"
+ ],
+ "messages": [
+  {
+   "from": 0,
+   "to": 1,
+   "label": "tool call: bash, pattern matched"
+  },
+  {
+   "from": 1,
+   "to": 1,
+   "label": "evaluate: last matching rule wins"
+  },
+  {
+   "from": 1,
+   "to": 0,
+   "label": "no match: default is ask",
+   "dashed": true
+  },
+  {
+   "from": 1,
+   "to": 2,
+   "label": "permission.asked event"
+  },
+  {
+   "from": 2,
+   "to": 1,
+   "label": "reply: always",
+   "dashed": true
+  },
+  {
+   "from": 1,
+   "to": 1,
+   "label": "save the rule for this session"
+  },
+  {
+   "from": 0,
+   "to": 1,
+   "label": "same call again: saved rule allows"
+  },
+  {
+   "from": 1,
+   "to": 0,
+   "label": "runs without prompting",
+   "dashed": true
+  },
+  {
+   "note": "span",
+   "span": [
+    0,
+    3
+   ],
+   "text": "Auto-approve (extension toggle or --auto) still never answers a sandbox escalation"
+  },
+  {
+   "from": 0,
+   "to": 3,
+   "label": "sandboxed command asks to step out"
+  },
+  {
+   "from": 3,
+   "to": 2,
+   "label": "escalation ask reaches the person",
+   "dashed": true
+  },
+  {
+   "from": 2,
+   "to": 3,
+   "label": "once / reject",
+   "dashed": true
+  }
+ ]
+}

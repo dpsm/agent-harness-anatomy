@@ -1,0 +1,86 @@
+{
+ "title": "A cloud-session turn (7.8.18)",
+ "subtitle": "The hosted session runs elsewhere; the local API is the editor's whole view of it",
+ "participants": [
+  "Editor client",
+  "Local kilo serve",
+  "Session Host registry",
+  "Kilo Cloud",
+  "Hosted session"
+ ],
+ "messages": [
+  {
+   "from": 0,
+   "to": 1,
+   "label": "GET /kilocode/session-host/provider"
+  },
+  {
+   "from": 1,
+   "to": 2,
+   "label": "providers + availability"
+  },
+  {
+   "from": 2,
+   "to": 1,
+   "label": "kilo-cloud: available",
+   "dashed": true
+  },
+  {
+   "from": 0,
+   "to": 1,
+   "label": "POST session: start a hosted session"
+  },
+  {
+   "from": 1,
+   "to": 3,
+   "label": "bearer request, Kilo credentials"
+  },
+  {
+   "from": 3,
+   "to": 4,
+   "label": "start the hosted session"
+  },
+  {
+   "from": 4,
+   "to": 3,
+   "label": "hosted session id",
+   "dashed": true
+  },
+  {
+   "from": 3,
+   "to": 1,
+   "label": "start result (no credentials)",
+   "dashed": true
+  },
+  {
+   "from": 0,
+   "to": 1,
+   "label": "GET transcript / attach"
+  },
+  {
+   "from": 1,
+   "to": 3,
+   "label": "read / attach upstream"
+  },
+  {
+   "from": 3,
+   "to": 1,
+   "label": "transcript page / stream",
+   "dashed": true
+  },
+  {
+   "from": 1,
+   "to": 0,
+   "label": "rendered in the editor",
+   "dashed": true
+  },
+  {
+   "note": "span",
+   "span": [
+    0,
+    4
+   ],
+   "text": "Provider credentials stay inside the local server's cloud provider - the editor never handles them"
+  }
+ ]
+}

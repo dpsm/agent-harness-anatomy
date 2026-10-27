@@ -1,0 +1,179 @@
+{
+ "title": "One task, end to end: a rename in the extension",
+ "repo": "https://github.com/Kilo-Org/kilocode",
+ "sha": "b81761530650f8ec7b071441f4f54d2514f1a244",
+ "note": "A routine rename, traced through the shared server, the retained loop, the agent's ruleset and the permission gate - the same path a CLI run takes, minus the webview.",
+ "example_input": "Rename the session-host routes and update their callers.",
+ "steps": [
+  {
+   "step": 1,
+   "node": "vscode",
+   "code": "extension.ts:90",
+   "title": "A prompt in the sidebar",
+   "narrative": "The person types a task in the VS Code sidebar: rename the session-host routes and update their callers. The webview does not host a loop - it sends the prompt to the one shared kilo serve backend the extension spawned for the sidebar, editor tabs and Agent Manager alike.",
+   "representation": "webview --HTTP--> kilo serve (shared backend)\n  prompt: \"rename the session-host routes...\"\n  session: ses_...  agent: code",
+   "modules": [
+    {
+     "file": "packages/kilo-vscode/src/extension.ts:90",
+     "label": "extension.ts:90 - one shared KiloConnectionService",
+     "line": 90,
+     "url": "https://github.com/Kilo-Org/kilocode/blob/b81761530650f8ec7b071441f4f54d2514f1a244/packages/kilo-vscode/src/extension.ts#L90"
+    },
+    {
+     "file": "packages/opencode/src/cli/cmd/serve.ts:7",
+     "label": "serve.ts:7 - starts a headless kilo server",
+     "line": 7,
+     "url": "https://github.com/Kilo-Org/kilocode/blob/b81761530650f8ec7b071441f4f54d2514f1a244/packages/opencode/src/cli/cmd/serve.ts#L7"
+    }
+   ]
+  },
+  {
+   "step": 2,
+   "node": "server",
+   "code": "session.ts",
+   "title": "The server opens the session step",
+   "narrative": "The server loads (or creates) the session, resolves its agent - code, the default primary - and hands the prompt to SessionPrompt. Session state, not webview state, is the record: the transcript lives in the server's store.",
+   "representation": "session { id, agent: \"code\", directory }\n  -> SessionPrompt.prompt(...)",
+   "modules": [
+    {
+     "file": "packages/opencode/src/session/session.ts:1",
+     "label": "session.ts - session state and store",
+     "line": 1,
+     "url": "https://github.com/Kilo-Org/kilocode/blob/b81761530650f8ec7b071441f4f54d2514f1a244/packages/opencode/src/session/session.ts#L1"
+    }
+   ]
+  },
+  {
+   "step": 3,
+   "node": "loop",
+   "code": "prompt.ts:1555",
+   "title": "The loop assembles and streams",
+   "narrative": "The retained loop begins: while(true). Step one assembles the messages - system prompt for the code agent, the project's AGENTS.md instructions, the stored history - and streams one model call through the processor. The reply asks to read two files and edit one.",
+   "representation": "while (true) {          // prompt.ts:1555\n  msgs = system + instructions + history\n  stream(model) -> parts + tool calls\n}",
+   "modules": [
+    {
+     "file": "packages/opencode/src/session/prompt.ts:1555",
+     "label": "prompt.ts:1555 - while (true): the retained loop",
+     "line": 1555,
+     "url": "https://github.com/Kilo-Org/kilocode/blob/b81761530650f8ec7b071441f4f54d2514f1a244/packages/opencode/src/session/prompt.ts#L1555"
+    },
+    {
+     "file": "packages/opencode/src/session/instruction.ts:75",
+     "label": "instruction.ts:75 - project AGENTS.md resolution",
+     "line": 75,
+     "url": "https://github.com/Kilo-Org/kilocode/blob/b81761530650f8ec7b071441f4f54d2514f1a244/packages/opencode/src/session/instruction.ts#L75"
+    }
+   ]
+  },
+  {
+   "step": 4,
+   "node": "agents",
+   "code": "agent/index.ts:485",
+   "title": "The agent profile shapes the step",
+   "narrative": "Everything about this step comes from the agent definition: the code agent's prompt, its model, and its permission ruleset - base defaults merged with the agent's rules and the user's config by patchAgents and the agent builder. In plan, the same edit below would be denied outright.",
+   "representation": "agent code = { prompt, model,\n  permission: merge(defaults, agent, user) }",
+   "modules": [
+    {
+     "file": "packages/opencode/src/kilocode/agent/index.ts:485",
+     "label": "index.ts:485 - patchAgents: Kilo's agent patch layer",
+     "line": 485,
+     "url": "https://github.com/Kilo-Org/kilocode/blob/b81761530650f8ec7b071441f4f54d2514f1a244/packages/opencode/src/kilocode/agent/index.ts#L485"
+    },
+    {
+     "file": "packages/opencode/src/agent/agent.ts:169",
+     "label": "agent.ts:169 - the build agent (renamed to code)",
+     "line": 169,
+     "url": "https://github.com/Kilo-Org/kilocode/blob/b81761530650f8ec7b071441f4f54d2514f1a244/packages/opencode/src/agent/agent.ts#L169"
+    }
+   ]
+  },
+  {
+   "step": 5,
+   "node": "perms",
+   "code": "permission/index.ts:102",
+   "title": "The permission gate",
+   "narrative": "Before the edit runs, the engine evaluates it: wildcard match over the merged ruleset, last match wins. Reads of the two source files are allowed; the edit matches no allow rule, so the default applies - ask. The person answers once. (An .env read would also have asked: the defaults carve secrets out of the read allow.)",
+   "representation": "evaluate(\"edit\", path, rulesets)\n  last matching rule -> allow | ask | deny\n  no match -> ask  => person replies: once",
+   "modules": [
+    {
+     "file": "packages/opencode/src/permission/index.ts:102",
+     "label": "index.ts:102 - evaluate: last matching rule wins",
+     "line": 102,
+     "url": "https://github.com/Kilo-Org/kilocode/blob/b81761530650f8ec7b071441f4f54d2514f1a244/packages/opencode/src/permission/index.ts#L102"
+    },
+    {
+     "file": "packages/opencode/src/permission/index.ts:115",
+     "label": "index.ts:115 - resolve: saved always-rules + hardeners",
+     "line": 115,
+     "url": "https://github.com/Kilo-Org/kilocode/blob/b81761530650f8ec7b071441f4f54d2514f1a244/packages/opencode/src/permission/index.ts#L115"
+    }
+   ]
+  },
+  {
+   "step": 6,
+   "node": "tools",
+   "code": "tool/registry.ts",
+   "title": "Tools execute; results append",
+   "narrative": "Approved calls run: the reads, then the edit. Tool results are appended as message parts, and the snapshot service records the worktree state for this step - which is what will make this message a revert point later.",
+   "representation": "read a.ts -> ok    read b.ts -> ok\nedit routes.ts -> applied\nsnapshot: patch part stored on the message",
+   "modules": [
+    {
+     "file": "packages/opencode/src/snapshot/index.ts:79",
+     "label": "snapshot/index.ts:79 - the Snapshot service",
+     "line": 79,
+     "url": "https://github.com/Kilo-Org/kilocode/blob/b81761530650f8ec7b071441f4f54d2514f1a244/packages/opencode/src/snapshot/index.ts#L79"
+    },
+    {
+     "file": "packages/opencode/src/session/revert.ts:1",
+     "label": "revert.ts - revert walks message patch parts",
+     "line": 1,
+     "url": "https://github.com/Kilo-Org/kilocode/blob/b81761530650f8ec7b071441f4f54d2514f1a244/packages/opencode/src/session/revert.ts#L1"
+    }
+   ]
+  },
+  {
+   "step": 7,
+   "node": "providers",
+   "code": "provider.ts",
+   "title": "The next step goes to the model",
+   "narrative": "The loop iterates: history plus tool results go back to the provider layer - a catalog model, or the Kilo Gateway when the session uses a Kilo account. The model updates the callers and, satisfied, answers with text and no tool calls.",
+   "representation": "step 2: stream(model, history + results)\n  -> text, no tool calls => loop exits",
+   "modules": [
+    {
+     "file": "packages/opencode/src/provider/provider.ts:1",
+     "label": "provider.ts - the catalog-driven provider layer",
+     "line": 1,
+     "url": "https://github.com/Kilo-Org/kilocode/blob/b81761530650f8ec7b071441f4f54d2514f1a244/packages/opencode/src/provider/provider.ts#L1"
+    },
+    {
+     "file": "packages/kilo-gateway/src/types.ts:88",
+     "label": "types.ts:88 - default gateway base URL",
+     "line": 88,
+     "url": "https://github.com/Kilo-Org/kilocode/blob/b81761530650f8ec7b071441f4f54d2514f1a244/packages/kilo-gateway/src/types.ts#L88"
+    }
+   ]
+  },
+  {
+   "step": 8,
+   "node": "memory",
+   "code": "overflow.ts:9",
+   "title": "The turn closes; context is kept honest",
+   "narrative": "The run finishes. Had the history overflowed the model's usable context (limit minus a reserved buffer capped at 20,000 tokens), compaction would have summarized the older turns mid-loop. At turn close, project memory captures what is worth keeping for the next session; the recall tool can search this transcript later.",
+   "representation": "tokens < usable(context, reserved<=20k)\n  -> no compaction this turn\nmemory: capture at turn close; recall later",
+   "modules": [
+    {
+     "file": "packages/opencode/src/session/overflow.ts:9",
+     "label": "overflow.ts:9 - COMPACTION_BUFFER = 20_000",
+     "line": 9,
+     "url": "https://github.com/Kilo-Org/kilocode/blob/b81761530650f8ec7b071441f4f54d2514f1a244/packages/opencode/src/session/overflow.ts#L9"
+    },
+    {
+     "file": "packages/opencode/src/tool/recall.ts:1",
+     "label": "recall.ts - the kilo_local_recall tool",
+     "line": 1,
+     "url": "https://github.com/Kilo-Org/kilocode/blob/b81761530650f8ec7b071441f4f54d2514f1a244/packages/opencode/src/tool/recall.ts#L1"
+    }
+   ]
+  }
+ ]
+}
