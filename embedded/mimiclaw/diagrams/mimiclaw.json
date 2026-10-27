@@ -1,0 +1,455 @@
+{
+  "title": "mimiclaw \u2014 one turn loop, every input, no local fast path",
+  "repo": "https://github.com/memovai/mimiclaw",
+  "sha": "bb10ea0149080d506d920c09054f4c5b20409de2",
+  "nodes": [
+    {
+      "id": "onboard",
+      "label": "Wi-Fi onboarding AP",
+      "sub": "captive portal - blocks boot",
+      "x": 60,
+      "y": 100,
+      "w": 220,
+      "h": 120,
+      "grade": "verified",
+      "excerpt": "/* Block forever - onboarding ends with esp_restart() */",
+      "links": [
+        {
+          "label": "wifi_onboard.c:512-520",
+          "url": "https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/onboard/wifi_onboard.c#L491-L525"
+        },
+        {
+          "label": "mimi.c:160-164",
+          "url": "https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/mimi.c#L160-L164"
+        }
+      ]
+    },
+    {
+      "id": "boot",
+      "label": "Boot + Wi-Fi",
+      "sub": "mimi.c app_main - STA + backoff",
+      "x": 450,
+      "y": 100,
+      "w": 220,
+      "h": 120,
+      "grade": "verified",
+      "excerpt": "ESP_ERROR_CHECK(agent_loop_start());",
+      "links": [
+        {
+          "label": "mimi.c:170-187",
+          "url": "https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/mimi.c#L170-L187"
+        },
+        {
+          "label": "wifi_manager.c:48-58",
+          "url": "https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/wifi/wifi_manager.c#L42-L67"
+        }
+      ]
+    },
+    {
+      "id": "cron",
+      "label": "Cron service",
+      "sub": "cron.json - check every 60 s",
+      "x": 840,
+      "y": 100,
+      "w": 220,
+      "h": 120,
+      "grade": "verified",
+      "excerpt": "vTaskDelay(pdMS_TO_TICKS(MIMI_CRON_CHECK_INTERVAL_MS));",
+      "links": [
+        {
+          "label": "cron_service.c:301-309",
+          "url": "https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/cron/cron_service.c#L301-L309"
+        },
+        {
+          "label": "cron_service.c:256-269",
+          "url": "https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/cron/cron_service.c#L256-L269"
+        }
+      ]
+    },
+    {
+      "id": "heartbeat",
+      "label": "Heartbeat",
+      "sub": "HEARTBEAT.md - 30 min timer",
+      "x": 1230,
+      "y": 100,
+      "w": 220,
+      "h": 120,
+      "grade": "verified",
+      "excerpt": "#define HEARTBEAT_PROMPT \"Read \" MIMI_HEARTBEAT_FILE \" ...\"",
+      "links": [
+        {
+          "label": "heartbeat.c:16-18",
+          "url": "https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/heartbeat/heartbeat.c#L16-L18"
+        },
+        {
+          "label": "heartbeat.c:130-136",
+          "url": "https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/heartbeat/heartbeat.c#L123-L150"
+        }
+      ]
+    },
+    {
+      "id": "im-cloud",
+      "label": "IM cloud",
+      "sub": "Telegram Bot API + Feishu platform",
+      "x": 60,
+      "y": 254,
+      "w": 220,
+      "h": 120,
+      "grade": "verified",
+      "cloud": true,
+      "excerpt": "#define FEISHU_API_BASE \"https://open.feishu.cn/open-apis\"",
+      "links": [
+        {
+          "label": "feishu_bot.c:23-27",
+          "url": "https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/channels/feishu/feishu_bot.c#L23-L27"
+        },
+        {
+          "label": "telegram_bot.c:202",
+          "url": "https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/channels/telegram/telegram_bot.c#L197-L211"
+        }
+      ]
+    },
+    {
+      "id": "bus",
+      "label": "Message bus",
+      "sub": "2 FreeRTOS queues x depth 16",
+      "x": 450,
+      "y": 254,
+      "w": 220,
+      "h": 120,
+      "grade": "verified",
+      "excerpt": "s_inbound_queue = xQueueCreate(MIMI_BUS_QUEUE_LEN, sizeof(mimi_msg_t));",
+      "links": [
+        {
+          "label": "message_bus.c:11-23",
+          "url": "https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/bus/message_bus.c#L11-L23"
+        },
+        {
+          "label": "message_bus.h:15-19",
+          "url": "https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/bus/message_bus.h#L15-L19"
+        }
+      ]
+    },
+    {
+      "id": "agent",
+      "label": "Agent loop",
+      "sub": "ReAct - core 1 - cap 10 iterations",
+      "x": 840,
+      "y": 254,
+      "w": 220,
+      "h": 120,
+      "grade": "verified",
+      "excerpt": "while (iteration < MIMI_AGENT_MAX_TOOL_ITER) {",
+      "links": [
+        {
+          "label": "agent_loop.c:218",
+          "url": "https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/agent/agent_loop.c#L213-L271"
+        },
+        {
+          "label": "agent_loop.c:190",
+          "url": "https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/agent/agent_loop.c#L188-L211"
+        }
+      ]
+    },
+    {
+      "id": "llm-cloud",
+      "label": "Cloud LLM APIs",
+      "sub": "Anthropic Messages / OpenAI Chat",
+      "x": 1230,
+      "y": 254,
+      "w": 220,
+      "h": 120,
+      "grade": "verified",
+      "cloud": true,
+      "excerpt": "return provider_is_openai() ? MIMI_OPENAI_API_URL : MIMI_LLM_API_URL;",
+      "links": [
+        {
+          "label": "llm_proxy.c:185-202",
+          "url": "https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/llm/llm_proxy.c#L185-L202"
+        },
+        {
+          "label": "llm_proxy.c:550-601",
+          "url": "https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/llm/llm_proxy.c#L550-L601"
+        }
+      ]
+    },
+    {
+      "id": "channels",
+      "label": "Channels + dispatch",
+      "sub": "tg poll / feishu WS / WS :18789",
+      "x": 60,
+      "y": 408,
+      "w": 220,
+      "h": 120,
+      "grade": "verified",
+      "excerpt": "if (strcmp(msg.channel, MIMI_CHAN_TELEGRAM) == 0) {",
+      "links": [
+        {
+          "label": "mimi.c:66-103",
+          "url": "https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/mimi.c#L66-L103"
+        },
+        {
+          "label": "ws_server.c:129-136",
+          "url": "https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/gateway/ws_server.c#L127-L141"
+        }
+      ]
+    },
+    {
+      "id": "spiffs",
+      "label": "SPIFFS store",
+      "sub": "config / memory / sessions / skills",
+      "x": 450,
+      "y": 408,
+      "w": 220,
+      "h": 120,
+      "grade": "verified",
+      "excerpt": "#define MIMI_MEMORY_FILE MIMI_SPIFFS_MEMORY_DIR \"/MEMORY.md\"",
+      "links": [
+        {
+          "label": "mimi_config.h:102-124",
+          "url": "https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/mimi_config.h#L102-L124"
+        },
+        {
+          "label": "session_mgr.c:14-17",
+          "url": "https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/memory/session_mgr.c#L14-L17"
+        }
+      ]
+    },
+    {
+      "id": "tools",
+      "label": "Tool registry",
+      "sub": "12 tools - dispatch by name",
+      "x": 840,
+      "y": 408,
+      "w": 220,
+      "h": 120,
+      "grade": "verified",
+      "excerpt": "return s_tools[i].execute(input_json, output, output_size);",
+      "links": [
+        {
+          "label": "tool_registry.c:228-241",
+          "url": "https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/tools/tool_registry.c#L228-L241"
+        },
+        {
+          "label": "tool_registry.c:55-71",
+          "url": "https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/tools/tool_registry.c#L55-L71"
+        }
+      ]
+    },
+    {
+      "id": "search-cloud",
+      "label": "Search APIs",
+      "sub": "Tavily (preferred) / Brave",
+      "x": 1230,
+      "y": 408,
+      "w": 220,
+      "h": 120,
+      "grade": "verified",
+      "cloud": true,
+      "excerpt": ".url = \"https://api.tavily.com/search\",",
+      "links": [
+        {
+          "label": "tool_web_search.c:312",
+          "url": "https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/tools/tool_web_search.c#L312"
+        },
+        {
+          "label": "tool_web_search.c:249",
+          "url": "https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/tools/tool_web_search.c#L249-L255"
+        }
+      ]
+    },
+    {
+      "id": "cli",
+      "label": "Serial CLI",
+      "sub": "NVS config - local commands",
+      "x": 60,
+      "y": 562,
+      "w": 220,
+      "h": 120,
+      "grade": "verified",
+      "excerpt": ".command = \"set_api_key\",",
+      "links": [
+        {
+          "label": "serial_cli.c:871-876",
+          "url": "https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/cli/serial_cli.c#L871-L876"
+        },
+        {
+          "label": "serial_cli.c:1053-1057",
+          "url": "https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/cli/serial_cli.c#L1053-L1057"
+        }
+      ]
+    },
+    {
+      "id": "skills",
+      "label": "Skills",
+      "sub": "/spiffs/skills/*.md - prompt text",
+      "x": 450,
+      "y": 562,
+      "w": 220,
+      "h": 120,
+      "grade": "verified",
+      "excerpt": "\"- **%s**: %s (read with: read_file %s)\\n\"",
+      "links": [
+        {
+          "label": "skill_loader.c:149-152",
+          "url": "https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/skills/skill_loader.c#L149-L152"
+        },
+        {
+          "label": "context_builder.c:91-99",
+          "url": "https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/agent/context_builder.c#L91-L99"
+        }
+      ]
+    },
+    {
+      "id": "gpio",
+      "label": "GPIO policy + tools",
+      "sub": "21-pin allowlist - USB pins blocked",
+      "x": 840,
+      "y": 562,
+      "w": 220,
+      "h": 120,
+      "grade": "verified",
+      "excerpt": "#define MIMI_GPIO_ALLOWED_CSV \"1,2,3,4,5,...,21,38,46\"",
+      "links": [
+        {
+          "label": "gpio_policy.h:6-9",
+          "url": "https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/tools/gpio_policy.h#L6-L9"
+        },
+        {
+          "label": "gpio_policy.c:63-71",
+          "url": "https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/tools/gpio_policy.c#L63-L71"
+        },
+        {
+          "label": "tool_gpio.c:61-66",
+          "url": "https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/tools/tool_gpio.c#L61-L66"
+        }
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "from": "boot",
+      "to": "onboard",
+      "label": "Wi-Fi fail: captive AP",
+      "label_dx": -75,
+      "label_t": 0.4
+    },
+    {
+      "from": "boot",
+      "to": "agent",
+      "label": "starts tasks",
+      "label_dx": -30
+    },
+    {
+      "from": "im-cloud",
+      "to": "channels",
+      "label": "getUpdates / WS events",
+      "label_dx": -30
+    },
+    {
+      "from": "channels",
+      "to": "bus",
+      "label": "push_inbound",
+      "label_dx": -30,
+      "label_dy": -16
+    },
+    {
+      "from": "bus",
+      "to": "channels",
+      "label": "outbound dispatch",
+      "label_dx": -30,
+      "label_dy": 16
+    },
+    {
+      "from": "cron",
+      "to": "bus",
+      "label": "fires stored msg",
+      "label_dx": -30
+    },
+    {
+      "from": "heartbeat",
+      "to": "bus",
+      "label": "pushes check prompt",
+      "label_t": 0.3,
+      "label_dx": -60
+    },
+    {
+      "from": "bus",
+      "to": "agent",
+      "label": "pop_inbound",
+      "label_dx": -60,
+      "label_dy": -16
+    },
+    {
+      "from": "agent",
+      "to": "bus",
+      "label": "push_outbound",
+      "label_dx": -60,
+      "label_dy": 16
+    },
+    {
+      "from": "agent",
+      "to": "llm-cloud",
+      "label": "llm_chat_tools POST",
+      "label_dx": -100,
+      "label_dy": -16
+    },
+    {
+      "from": "llm-cloud",
+      "to": "agent",
+      "label": "text + tool_use",
+      "label_dx": -30,
+      "label_dy": 16
+    },
+    {
+      "from": "agent",
+      "to": "tools",
+      "label": "tool_registry_execute",
+      "label_dx": -30
+    },
+    {
+      "from": "agent",
+      "to": "spiffs",
+      "label": "session_append + history",
+      "label_dx": -30,
+      "label_dy": -14
+    },
+    {
+      "from": "spiffs",
+      "to": "agent",
+      "label": "prompt sections",
+      "label_dx": -30,
+      "label_dy": 14
+    },
+    {
+      "from": "tools",
+      "to": "gpio",
+      "label": "gpio_write / gpio_read",
+      "label_dx": -30
+    },
+    {
+      "from": "tools",
+      "to": "spiffs",
+      "label": "read / write / edit file",
+      "label_dx": 140
+    },
+    {
+      "from": "tools",
+      "to": "search-cloud",
+      "label": "HTTPS search query",
+      "label_dx": -30
+    },
+    {
+      "from": "skills",
+      "to": "spiffs",
+      "label": "scan + summaries",
+      "label_dx": -30
+    },
+    {
+      "from": "cli",
+      "to": "spiffs",
+      "label": "memory commands",
+      "label_dx": -10
+    }
+  ]
+}

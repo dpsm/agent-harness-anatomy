@@ -70,6 +70,22 @@
     </div>
   </div>
 
+  <div class="article">
+    <h2>E2 &mdash; MimiClaw: the turn loop that moved onto the chip</h2>
+    <p>The inverse of E1: not a bridge to a computer running the agent, but the
+    whole OpenClaw-style loop reimplemented in pure C on a $5 ESP32-S3. Every
+    input &mdash; a Telegram message, a cron firing, a heartbeat tick &mdash;
+    becomes a cloud LLM turn; there is no local fast path, no approval gate,
+    and memory is plain files on flash that the model edits itself. A
+    single-consumer queue and a 21-pin GPIO allowlist are the whole safety
+    story at v0.1.1.</p>
+    <div class="links">
+      <a class="primary" href="mimiclaw/trace.html">Follow one message</a>
+      <a class="secondary" href="../diagrams/template.html?data=../embedded/mimiclaw/diagrams/mimiclaw.json">Interactive diagram</a>
+      <a class="secondary" href="mimiclaw/">Read the article</a>
+    </div>
+  </div>
+
   <footer>
     Part of <a href="../">Agent Harness Anatomy</a> ·
     <a href="https://github.com/dpsm/agent-harness-anatomy">GitHub repo</a>
