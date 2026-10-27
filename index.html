@@ -324,6 +324,16 @@
     </div>
   </div>
 
+  <div class="article" id="strands">
+    <h2>#27 &mdash; Strands harness: the agent one call builds</h2>
+    <p>AWS&rsquo;s harness SDK is a library, not an application: <code>create_harness()</code> resolves a 39-line defaults table &mdash; a Bedrock Opus 5 model, eight built-in tools (shell, files, web fetch, a Monty-sandboxed programmatic caller, a <code>subagent</code> tool that rebuilds the factory itself), two plugins, the &ldquo;auto&rdquo; context manager (tool results truncated at 1,500 tokens, summarization at 85%), snapshot sessions and markdown memory under <code>./.agent</code> &mdash; and constructs a plain <code>strands.Agent</code> on the SDK&rsquo;s recursive event loop. What the one call does <em>not</em> build is just as precise: no turn or token cap (limits are per-invocation and opt-in), no approval gate (<code>interventions</code> defaults to <code>None</code>, an empty handler list), and no sandbox isolation (the default sandbox is the host itself) &mdash; each is one argument away, and none is in the box.</p>
+    <div class="links">
+      <a class="primary" href="strands/trace.html">Step through one task</a>
+      <a href="diagrams/template.html?data=../strands/diagrams/strands.json">Interactive diagram</a>
+      <a href="strands/">Read the article</a>
+    </div>
+  </div>
+
   <div class="contribute">
     <h2>Found a mistake?</h2>
     <p>These teardowns live or die on their grounding: every behavioral claim

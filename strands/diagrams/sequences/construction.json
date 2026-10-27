@@ -1,0 +1,67 @@
+{
+ "title": "Construction: one call, every default resolved",
+ "subtitle": "create_harness() wires the defaults table into a plain strands.Agent",
+ "participants": [
+  "Caller",
+  "create_harness()",
+  "Defaults + resolvers",
+  "strands.Agent",
+  "./.agent files"
+ ],
+ "messages": [
+  {
+   "from": 0,
+   "to": 1,
+   "label": "create_harness() - no arguments"
+  },
+  {
+   "from": 1,
+   "to": 2,
+   "label": "read defaults: model, effort, tools, dirs"
+  },
+  {
+   "from": 1,
+   "to": 2,
+   "label": "resolve_model: bedrock/global.anthropic.claude-opus-5"
+  },
+  {
+   "from": 1,
+   "to": 2,
+   "label": "build the 8 built-in tools + 2 plugins"
+  },
+  {
+   "from": 1,
+   "to": 2,
+   "label": "system prompt = HARNESS_CONTRACT + instructions"
+  },
+  {
+   "from": 1,
+   "to": 4,
+   "label": "session snapshot store under ./.agent/sessions"
+  },
+  {
+   "from": 1,
+   "to": 4,
+   "label": "memory store under ./.agent/memory"
+  },
+  {
+   "from": 1,
+   "to": 3,
+   "label": "Agent(model, tools, plugins, session, memory)"
+  },
+  {
+   "from": 1,
+   "to": 0,
+   "label": "a plain strands.Agent, ready to invoke",
+   "dashed": true
+  },
+  {
+   "note": "span",
+   "span": [
+    0,
+    4
+   ],
+   "text": "Interventions resolve to an empty list: no approval gate is built unless the caller asks for one"
+  }
+ ]
+}

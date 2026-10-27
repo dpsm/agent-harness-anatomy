@@ -1,0 +1,68 @@
+{
+ "title": "Delegation: the subagent tool rebuilds the factory",
+ "subtitle": "A child harness with the parent's configuration, a depth budget of 2, read-only memory",
+ "participants": [
+  "Parent loop",
+  "subagent tool",
+  "create_harness()",
+  "Child agent",
+  "Memory"
+ ],
+ "messages": [
+  {
+   "from": 0,
+   "to": 1,
+   "label": "subagent(task, role='generalist', tools=[read, shell])"
+  },
+  {
+   "from": 1,
+   "to": 2,
+   "label": "rebuild a child from the parent's config"
+  },
+  {
+   "from": 2,
+   "to": 3,
+   "label": "child Agent: same model, plugins, interventions"
+  },
+  {
+   "from": 2,
+   "to": 4,
+   "label": "memory shared read-only; session forced off"
+  },
+  {
+   "from": 3,
+   "to": 3,
+   "label": "child runs its own event loop (background task)"
+  },
+  {
+   "from": 3,
+   "to": 4,
+   "label": "search_memory: recall, never write"
+  },
+  {
+   "from": 1,
+   "to": 1,
+   "label": "depth budget on agent.state: 2 -> 1 -> 0 stops recursion"
+  },
+  {
+   "from": 3,
+   "to": 1,
+   "label": "final answer only",
+   "dashed": true
+  },
+  {
+   "from": 1,
+   "to": 0,
+   "label": "result joins the parent's history",
+   "dashed": true
+  },
+  {
+   "note": "span",
+   "span": [
+    0,
+    4
+   ],
+   "text": "The model may narrow a child's tools - it can never widen them past the parent's set"
+  }
+ ]
+}

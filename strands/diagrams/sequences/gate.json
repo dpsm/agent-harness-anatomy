@@ -1,0 +1,67 @@
+{
+ "title": "The opt-in gate: interventions='ask'",
+ "subtitle": "Off by default - with one argument, every tool call waits for a person",
+ "participants": [
+  "Caller",
+  "create_harness()",
+  "Agent loop",
+  "HumanInTheLoop",
+  "Tool"
+ ],
+ "messages": [
+  {
+   "from": 0,
+   "to": 1,
+   "label": "create_harness(interventions='ask')"
+  },
+  {
+   "from": 1,
+   "to": 3,
+   "label": "resolve to a HumanInTheLoop handler"
+  },
+  {
+   "from": 0,
+   "to": 2,
+   "label": "agent('Clean up the build directory')"
+  },
+  {
+   "from": 2,
+   "to": 3,
+   "label": "before_tool_call: shell rm -rf build/"
+  },
+  {
+   "from": 3,
+   "to": 0,
+   "label": "approve this call?",
+   "dashed": true
+  },
+  {
+   "from": 0,
+   "to": 3,
+   "label": "approved",
+   "dashed": true
+  },
+  {
+   "from": 3,
+   "to": 4,
+   "label": "call proceeds",
+   "dashed": true
+  },
+  {
+   "note": "span",
+   "span": [
+    0,
+    4
+   ],
+   "text": "Default is interventions=None: the handler list is empty and this gate does not exist"
+  },
+  {
+   "note": "span",
+   "span": [
+    0,
+    4
+   ],
+   "text": "'smart' swaps the person-first flow for an LLM risk classifier that escalates only flagged calls"
+  }
+ ]
+}

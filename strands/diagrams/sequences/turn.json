@@ -1,0 +1,73 @@
+{
+ "title": "One default turn, end to end",
+ "subtitle": "The SDK event loop: stream, execute, recurse - until the model stops asking for tools",
+ "participants": [
+  "Caller",
+  "strands.Agent",
+  "Event loop",
+  "Model (Bedrock)",
+  "Tools"
+ ],
+ "messages": [
+  {
+   "from": 0,
+   "to": 1,
+   "label": "agent('Find the slowest test and explain why')"
+  },
+  {
+   "from": 1,
+   "to": 2,
+   "label": "invoke: memory searched, environment injected"
+  },
+  {
+   "from": 2,
+   "to": 3,
+   "label": "stream one model call (system prompt + history)"
+  },
+  {
+   "from": 3,
+   "to": 2,
+   "label": "tool_use: read, shell",
+   "dashed": true
+  },
+  {
+   "from": 2,
+   "to": 4,
+   "label": "execute the tool calls"
+  },
+  {
+   "from": 4,
+   "to": 2,
+   "label": "results appended to history",
+   "dashed": true
+  },
+  {
+   "from": 2,
+   "to": 2,
+   "label": "recurse: next cycle, limits checked (none set)"
+  },
+  {
+   "from": 2,
+   "to": 3,
+   "label": "stream the next model call"
+  },
+  {
+   "from": 3,
+   "to": 2,
+   "label": "end_turn: final answer",
+   "dashed": true
+  },
+  {
+   "from": 2,
+   "to": 1,
+   "label": "session snapshot saved on the message",
+   "dashed": true
+  },
+  {
+   "from": 1,
+   "to": 0,
+   "label": "result",
+   "dashed": true
+  }
+ ]
+}

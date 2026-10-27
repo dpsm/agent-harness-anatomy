@@ -1,0 +1,318 @@
+{
+ "title": "Strands harness - what one call builds",
+ "repo": "https://github.com/strands-agents/harness-sdk",
+ "sha": "0abec0bca2ce86d3a3d2147b0dfffbc008654ae6",
+ "nodes": [
+  {
+   "id": "caller",
+   "step": 1,
+   "label": "Caller code",
+   "sub": "your process - Python",
+   "x": 20,
+   "y": 60,
+   "w": 240,
+   "h": 96,
+   "grade": "verified",
+   "excerpt": "The consumer: imports create_harness, calls it once, then invokes the returned agent with a task string.",
+   "links": [
+    {
+     "label": "README.md:83 - from strands_harness import create_harness",
+     "line": 83,
+     "url": "https://github.com/strands-agents/harness-sdk/blob/0abec0bca2ce86d3a3d2147b0dfffbc008654ae6/README.md#L83"
+    }
+   ]
+  },
+  {
+   "id": "factory",
+   "step": 1,
+   "label": "create_harness()",
+   "sub": "harness-py - agent.py",
+   "x": 20,
+   "y": 190,
+   "w": 240,
+   "h": 96,
+   "grade": "verified",
+   "excerpt": "The one-call factory: resolves model, tools, prompt, session, memory and interventions, then constructs a plain strands.Agent and returns it.",
+   "links": [
+    {
+     "label": "agent.py:238 - def create_harness(",
+     "line": 238,
+     "url": "https://github.com/strands-agents/harness-sdk/blob/0abec0bca2ce86d3a3d2147b0dfffbc008654ae6/harness-py/src/strands_harness/agent.py#L238"
+    },
+    {
+     "label": "agent.py:526 - agent = Agent(",
+     "line": 526,
+     "url": "https://github.com/strands-agents/harness-sdk/blob/0abec0bca2ce86d3a3d2147b0dfffbc008654ae6/harness-py/src/strands_harness/agent.py#L526"
+    }
+   ]
+  },
+  {
+   "id": "prompt",
+   "step": 2,
+   "label": "Prompt + plugins",
+   "sub": "HARNESS_CONTRACT - todos, environment",
+   "x": 20,
+   "y": 320,
+   "w": 240,
+   "h": 96,
+   "grade": "verified",
+   "excerpt": "The vended HARNESS_CONTRACT behavioral prompt, with the caller's instructions appended; the todos and environment plugins ride along.",
+   "links": [
+    {
+     "label": "prompt.py:11 - HARNESS_CONTRACT",
+     "line": 11,
+     "url": "https://github.com/strands-agents/harness-sdk/blob/0abec0bca2ce86d3a3d2147b0dfffbc008654ae6/harness-py/src/strands_harness/prompt.py#L11"
+    },
+    {
+     "label": "todos.py:53 - class Todos(Plugin)",
+     "line": 53,
+     "url": "https://github.com/strands-agents/harness-sdk/blob/0abec0bca2ce86d3a3d2147b0dfffbc008654ae6/harness-py/src/strands_harness/plugins/todos.py#L53"
+    }
+   ]
+  },
+  {
+   "id": "defaults",
+   "step": 2,
+   "label": "The defaults table",
+   "sub": "defaults.py - 39 lines",
+   "x": 20,
+   "y": 450,
+   "w": 240,
+   "h": 96,
+   "grade": "verified",
+   "excerpt": "Every default in one file: the Bedrock Opus 5 model, effort auto, context manager auto, the eight tool names, ./.agent directories, subagent depth 2.",
+   "links": [
+    {
+     "label": "defaults.py:5 - DEFAULT_MODEL",
+     "line": 5,
+     "url": "https://github.com/strands-agents/harness-sdk/blob/0abec0bca2ce86d3a3d2147b0dfffbc008654ae6/harness-py/src/strands_harness/defaults.py#L5"
+    }
+   ]
+  },
+  {
+   "id": "agent",
+   "step": 2,
+   "label": "strands.Agent",
+   "sub": "strands-py - agent/agent.py",
+   "x": 370,
+   "y": 60,
+   "w": 240,
+   "h": 96,
+   "grade": "verified",
+   "excerpt": "What the factory returns: a regular SDK Agent, fully modifiable after construction - no wrapper, no hidden subclass.",
+   "links": [
+    {
+     "label": "agent.py:526 - agent = Agent(",
+     "line": 526,
+     "url": "https://github.com/strands-agents/harness-sdk/blob/0abec0bca2ce86d3a3d2147b0dfffbc008654ae6/harness-py/src/strands_harness/agent.py#L526"
+    }
+   ]
+  },
+  {
+   "id": "loop",
+   "step": 3,
+   "label": "Event loop",
+   "sub": "strands-py - event_loop.py",
+   "x": 370,
+   "y": 190,
+   "w": 240,
+   "h": 96,
+   "grade": "verified",
+   "excerpt": "The SDK's recursive event loop: stream one model call, execute its tool calls, recurse; end_turn stops. The harness sets no turn or token cap.",
+   "links": [
+    {
+     "label": "event_loop.py:190 - event_loop_cycle",
+     "line": 190,
+     "url": "https://github.com/strands-agents/harness-sdk/blob/0abec0bca2ce86d3a3d2147b0dfffbc008654ae6/strands-py/src/strands/event_loop/event_loop.py#L190"
+    },
+    {
+     "label": "types/agent.py:150 - class Limits (opt-in, per call)",
+     "line": 150,
+     "url": "https://github.com/strands-agents/harness-sdk/blob/0abec0bca2ce86d3a3d2147b0dfffbc008654ae6/strands-py/src/strands/types/agent.py#L150"
+    }
+   ]
+  },
+  {
+   "id": "context",
+   "step": 6,
+   "label": "Context manager: auto",
+   "sub": "_context_manager - presets",
+   "x": 370,
+   "y": 320,
+   "w": 240,
+   "h": 96,
+   "grade": "verified",
+   "excerpt": "The auto preset: tool results over 1,500 tokens truncate to a 750-token preview (full text offloaded), summarization at 85% utilization, emergency truncation last.",
+   "links": [
+    {
+     "label": "context_manager.py:31 - _AUTO_TRUNCATE_THRESHOLD = 1_500",
+     "line": 31,
+     "url": "https://github.com/strands-agents/harness-sdk/blob/0abec0bca2ce86d3a3d2147b0dfffbc008654ae6/strands-py/src/strands/_context_manager/context_manager.py#L31"
+    }
+   ]
+  },
+  {
+   "id": "state",
+   "step": 8,
+   "label": "Files under ./.agent",
+   "sub": "sessions - memory - skills",
+   "x": 370,
+   "y": 450,
+   "w": 240,
+   "h": 96,
+   "grade": "verified",
+   "excerpt": "Snapshot sessions in ./.agent/sessions (fresh id per construction), markdown memory in ./.agent/memory, skills in ./.agent/skills when present.",
+   "links": [
+    {
+     "label": "agent.py:475 - SnapshotSessionManager(",
+     "line": 475,
+     "url": "https://github.com/strands-agents/harness-sdk/blob/0abec0bca2ce86d3a3d2147b0dfffbc008654ae6/harness-py/src/strands_harness/agent.py#L475"
+    },
+    {
+     "label": "memory.py:38 - def resolve_memory(",
+     "line": 38,
+     "url": "https://github.com/strands-agents/harness-sdk/blob/0abec0bca2ce86d3a3d2147b0dfffbc008654ae6/harness-py/src/strands_harness/memory.py#L38"
+    }
+   ]
+  },
+  {
+   "id": "model",
+   "step": 4,
+   "label": "Model provider",
+   "sub": "Bedrock default - 7 providers",
+   "x": 720,
+   "y": 60,
+   "w": 240,
+   "h": 96,
+   "grade": "verified",
+   "excerpt": "Bedrock global.anthropic.claude-opus-5 by default; provider/name strings resolve to bedrock, bedrock-mantle, anthropic, openai, google, ollama or litellm.",
+   "links": [
+    {
+     "label": "models.py:311 - _PROVIDERS",
+     "line": 311,
+     "url": "https://github.com/strands-agents/harness-sdk/blob/0abec0bca2ce86d3a3d2147b0dfffbc008654ae6/harness-py/src/strands_harness/models.py#L311"
+    }
+   ]
+  },
+  {
+   "id": "tools",
+   "step": 5,
+   "label": "Built-in tools (8)",
+   "sub": "shell - files - web - caller - subagent",
+   "x": 720,
+   "y": 190,
+   "w": 240,
+   "h": 96,
+   "grade": "verified",
+   "excerpt": "shell, read, write, edit, web_fetch, web_search, programmatic_tool_caller and subagent, plus todo_write and search_memory from the plugins and memory.",
+   "links": [
+    {
+     "label": "agent.py:79 - def _builtin_tools(",
+     "line": 79,
+     "url": "https://github.com/strands-agents/harness-sdk/blob/0abec0bca2ce86d3a3d2147b0dfffbc008654ae6/harness-py/src/strands_harness/agent.py#L79"
+    }
+   ]
+  },
+  {
+   "id": "gate",
+   "step": 5,
+   "label": "Interventions (opt-in)",
+   "sub": "ask - smart - policy - Cedar",
+   "x": 720,
+   "y": 320,
+   "w": 240,
+   "h": 96,
+   "grade": "verified",
+   "excerpt": "The approval layer, off by default: interventions=None resolves to no handlers, so every tool call runs. Presets, a policy string or a Cedar file turn it on.",
+   "links": [
+    {
+     "label": "interventions.py:83 - def resolve_interventions(",
+     "line": 83,
+     "url": "https://github.com/strands-agents/harness-sdk/blob/0abec0bca2ce86d3a3d2147b0dfffbc008654ae6/harness-py/src/strands_harness/interventions.py#L83"
+    }
+   ]
+  },
+  {
+   "id": "sandbox",
+   "step": 5,
+   "label": "Sandbox seam",
+   "sub": "default: the host itself",
+   "x": 720,
+   "y": 450,
+   "w": 240,
+   "h": 96,
+   "grade": "verified",
+   "excerpt": "File and shell tools route through agent.sandbox. With nothing passed, the SDK default is NotASandboxLocalEnvironment: the host, with no isolation.",
+   "links": [
+    {
+     "label": "agent.py:391 - NotASandboxLocalEnvironment()",
+     "line": 391,
+     "url": "https://github.com/strands-agents/harness-sdk/blob/0abec0bca2ce86d3a3d2147b0dfffbc008654ae6/strands-py/src/strands/agent/agent.py#L391"
+    }
+   ]
+  }
+ ],
+ "edges": [
+  {
+   "from": "caller",
+   "to": "factory",
+   "label": "one call, all optional",
+   "label_dx": 30
+  },
+  {
+   "from": "factory",
+   "to": "agent",
+   "label": "constructs and returns it",
+   "label_dy": 36
+  },
+  {
+   "from": "factory",
+   "to": "prompt",
+   "label": "builds contract + instructions"
+  },
+  {
+   "from": "defaults",
+   "to": "factory",
+   "label": "defaults feed the factory",
+   "side": "right"
+  },
+  {
+   "from": "agent",
+   "to": "loop",
+   "label": "invoke() / stream_async()"
+  },
+  {
+   "from": "loop",
+   "to": "model",
+   "label": "streams one call per cycle",
+   "label_dy": 30,
+   "label_t": 0.45
+  },
+  {
+   "from": "loop",
+   "to": "tools",
+   "label": "executes tools",
+   "label_dx": -58
+  },
+  {
+   "from": "loop",
+   "to": "context",
+   "label": "window checked as it grows"
+  },
+  {
+   "from": "context",
+   "to": "state",
+   "label": "offload stash + memory files"
+  },
+  {
+   "from": "tools",
+   "to": "gate",
+   "label": "each call passes here first"
+  },
+  {
+   "from": "gate",
+   "to": "sandbox",
+   "label": "then runs through the seam"
+  }
+ ]
+}
