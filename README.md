@@ -3,7 +3,7 @@
 # Agent Harness Anatomy
 
 Rigorous, source-grounded architecture teardowns of AI agent harnesses —
-22 teardowns and counting, from pi and aider to ZCode and Everruns.
+23 teardowns and counting, from pi and aider to Everruns and MIKE.
 Every behavioral claim is pinned to verifiable source code; no product-review prose.
 
 Companion repo to the Substack series.
@@ -38,6 +38,7 @@ By **David P. S. Marques** — [LinkedIn](https://ca.linkedin.com/in/dpsmarques)
 | 20 | dsh-superagent (v0.1.0) | [dsh-superagent/article.md](dsh-superagent/article.md) | [Read on Substack](https://agentharnessanatomy.substack.com/p/dsh-superagent-the-agent-that-decides) |
 | 21 | ZCode (3.16.2 @ 3c5b227) | [zcode/article.md](zcode/article.md) | [Read on Substack](https://agentharnessanatomy.substack.com/p/zcode-the-goal-outlives-the-turn) |
 | 22 | Everruns (v0.49.0) | [everruns/article.md](everruns/article.md) | [Read on Substack](https://agentharnessanatomy.substack.com/p/everruns-the-session-survives-its) |
+| 23 | MIKE (v0.1.0) | [mike/article.md](mike/article.md) | forthcoming |
 
 ## Embedded Harness Anatomy
 
