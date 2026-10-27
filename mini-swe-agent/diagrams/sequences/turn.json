@@ -1,0 +1,71 @@
+{
+ "title": "One turn, end to end",
+ "subtitle": "query -> parse -> execute -> observe -> append; the list is the whole state",
+ "participants": [
+  "DefaultAgent",
+  "Model (litellm)",
+  "Environment",
+  "Shell"
+ ],
+ "messages": [
+  {
+   "from": 0,
+   "to": 0,
+   "label": "query(): limits checked first (step / cost / wall time)"
+  },
+  {
+   "from": 0,
+   "to": 1,
+   "label": "query(messages): the entire linear history"
+  },
+  {
+   "from": 1,
+   "to": 0,
+   "label": "response: one bash tool call + cost",
+   "dashed": true
+  },
+  {
+   "from": 0,
+   "to": 0,
+   "label": "parse actions; append the model message"
+  },
+  {
+   "from": 0,
+   "to": 2,
+   "label": "execute({command}) for each action"
+  },
+  {
+   "from": 2,
+   "to": 3,
+   "label": "run in a fresh subprocess (shell=True)"
+  },
+  {
+   "from": 3,
+   "to": 2,
+   "label": "stdout + returncode",
+   "dashed": true
+  },
+  {
+   "from": 2,
+   "to": 0,
+   "label": "{output, returncode, exception_info}",
+   "dashed": true
+  },
+  {
+   "from": 0,
+   "to": 1,
+   "label": "format_observation_messages(outputs)"
+  },
+  {
+   "from": 1,
+   "to": 0,
+   "label": "observation messages (tool role, template-rendered)",
+   "dashed": true
+  },
+  {
+   "from": 0,
+   "to": 0,
+   "label": "append observations; save trajectory; loop"
+  }
+ ]
+}

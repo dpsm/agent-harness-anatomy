@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1109" width="1600" font-family="system-ui, -apple-system, sans-serif">
+<defs><marker id="arrc" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 1 L 9 5 L 0 9 z" fill="#d08c4e"/></marker><marker id="arrr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 1 L 9 5 L 0 9 z" fill="#8a7a66"/></marker></defs>
+<rect x="0" y="0" width="1600" height="1109" fill="#f7f2e9"/>
+<text x="110.3448275862069" y="44" font-size="26" font-weight="700" fill="#000000">One turn, end to end</text>
+<text x="110.3448275862069" y="74" font-size="15" fill="#000000">query -&gt; parse -&gt; execute -&gt; observe -&gt; append; the list is the whole state</text>
+<line x1="283" y1="110" x2="283" y2="1026" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="138" y="82" width="290" height="56" rx="10" fill="#ffffff" stroke="#3a2f26" stroke-width="1.5"/>
+<text x="283" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#000000">DefaultAgent</text>
+<line x1="628" y1="110" x2="628" y2="1026" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="483" y="82" width="290" height="56" rx="10" fill="#ffffff" stroke="#3a2f26" stroke-width="1.5"/>
+<text x="628" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#000000">Model (litellm)</text>
+<line x1="972" y1="110" x2="972" y2="1026" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="828" y="82" width="290" height="56" rx="10" fill="#ffffff" stroke="#3a2f26" stroke-width="1.5"/>
+<text x="972" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#000000">Environment</text>
+<line x1="1317" y1="110" x2="1317" y2="1026" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="1172" y="82" width="290" height="56" rx="10" fill="#ffffff" stroke="#3a2f26" stroke-width="1.5"/>
+<text x="1317" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#000000">Shell</text>
+<path d="M 283 232 h 61 v 36 H 293" fill="none" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="313" cy="216" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="313" y="221" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">1</text>
+<text x="353" y="237" font-size="14" fill="#000000">query(): limits checked first (step / cost / wall time)</text>
+<line x1="283" y1="306" x2="618" y2="306" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="377" cy="292" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="377" y="297" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">2</text>
+<text x="395" y="297" font-size="14" fill="#000000">query(messages): the entire linear history</text>
+<line x1="628" y1="381" x2="293" y2="381" stroke="#8a7a66" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrr)"/>
+<circle cx="377" cy="367" r="11" fill="#ffffff" stroke="#8a7a66" stroke-width="1.5"/>
+<text x="377" y="372" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">3</text>
+<text x="395" y="372" font-size="14" fill="#000000">response: one bash tool call + cost</text>
+<path d="M 283 455 h 61 v 36 H 293" fill="none" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="313" cy="439" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="313" y="444" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">4</text>
+<text x="353" y="460" font-size="14" fill="#000000">parse actions; append the model message</text>
+<line x1="283" y1="530" x2="962" y2="530" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="550" cy="516" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="550" y="521" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">5</text>
+<text x="568" y="521" font-size="14" fill="#000000">execute({command}) for each action</text>
+<line x1="972" y1="604" x2="1307" y2="604" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="1067" cy="590" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="1067" y="595" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">6</text>
+<text x="1085" y="595" font-size="14" fill="#000000">run in a fresh subprocess (shell=True)</text>
+<line x1="1317" y1="679" x2="982" y2="679" stroke="#8a7a66" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrr)"/>
+<circle cx="1067" cy="665" r="11" fill="#ffffff" stroke="#8a7a66" stroke-width="1.5"/>
+<text x="1067" y="670" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">7</text>
+<text x="1085" y="670" font-size="14" fill="#000000">stdout + returncode</text>
+<line x1="972" y1="753" x2="293" y2="753" stroke="#8a7a66" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrr)"/>
+<circle cx="550" cy="739" r="11" fill="#ffffff" stroke="#8a7a66" stroke-width="1.5"/>
+<text x="550" y="744" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">8</text>
+<text x="568" y="744" font-size="14" fill="#000000">{output, returncode, exception_info}</text>
+<line x1="283" y1="828" x2="618" y2="828" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="377" cy="814" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="377" y="819" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">9</text>
+<text x="395" y="819" font-size="14" fill="#000000">format_observation_messages(outputs)</text>
+<line x1="628" y1="902" x2="293" y2="902" stroke="#8a7a66" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrr)"/>
+<circle cx="377" cy="888" r="11" fill="#ffffff" stroke="#8a7a66" stroke-width="1.5"/>
+<text x="377" y="893" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">10</text>
+<text x="395" y="893" font-size="14" fill="#000000">observation messages (tool role, template-rendered)</text>
+<path d="M 283 977 h 61 v 36 H 293" fill="none" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="313" cy="961" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="313" y="966" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">11</text>
+<text x="353" y="982" font-size="14" fill="#000000">append observations; save trajectory; loop</text>
+</svg>

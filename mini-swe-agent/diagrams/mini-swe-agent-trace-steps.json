@@ -1,0 +1,185 @@
+{
+ "title": "One task, end to end: fix a failing test",
+ "repo": "https://github.com/SWE-agent/mini-swe-agent",
+ "sha": "a83fcae82d2a08f0ee0c688f9d137b3566c097f8",
+ "note": "A single bug-fix task traced through the two-message seed, the limit-checked query, the one-tool model call, the fresh-subprocess environment and the save-after-every-step trajectory.",
+ "example_input": "Fix the failing test in this repo",
+ "steps": [
+  {
+   "step": 1,
+   "node": "agent",
+   "code": "default.py:88",
+   "title": "run() seeds the history",
+   "narrative": "The caller hands DefaultAgent a task. run() renders the system template and the instance template (Jinja, StrictUndefined) and appends them as the first two messages. The message list - the agent's only state besides cost and call counters - now holds the whole context.",
+   "representation": "messages = [\n  {role: system, content: <system_template>},\n  {role: user, content: <instance_template + task>},\n]",
+   "modules": [
+    {
+     "file": "src/minisweagent/agents/default.py:88",
+     "label": "default.py:88 - def run(",
+     "line": 88,
+     "url": "https://github.com/SWE-agent/mini-swe-agent/blob/a83fcae82d2a08f0ee0c688f9d137b3566c097f8/src/minisweagent/agents/default.py#L88"
+    },
+    {
+     "file": "src/minisweagent/agents/default.py:19",
+     "label": "default.py:19 - AgentConfig: templates + limits",
+     "line": 19,
+     "url": "https://github.com/SWE-agent/mini-swe-agent/blob/a83fcae82d2a08f0ee0c688f9d137b3566c097f8/src/minisweagent/agents/default.py#L19"
+    }
+   ]
+  },
+  {
+   "step": 2,
+   "node": "agent",
+   "code": "default.py:130",
+   "title": "query() checks the limits first",
+   "narrative": "step() is execute_actions(query()). query() compares n_calls and cost against the configured step and cost limits (and the wall clock) before any API call: exceeding one raises LimitsExceeded, an exit message, not a crash. Then the counter increments and the full list goes to the model.",
+   "representation": "query():\n  if 0 < step_limit <= n_calls or 0 < cost_limit <= cost:\n      raise LimitsExceeded(exit message)\n  n_calls += 1; message = model.query(messages)",
+   "modules": [
+    {
+     "file": "src/minisweagent/agents/default.py:130",
+     "label": "default.py:130 - def query()",
+     "line": 130,
+     "url": "https://github.com/SWE-agent/mini-swe-agent/blob/a83fcae82d2a08f0ee0c688f9d137b3566c097f8/src/minisweagent/agents/default.py#L130"
+    },
+    {
+     "file": "src/minisweagent/exceptions.py:13",
+     "label": "exceptions.py:13 - class LimitsExceeded",
+     "line": 13,
+     "url": "https://github.com/SWE-agent/mini-swe-agent/blob/a83fcae82d2a08f0ee0c688f9d137b3566c097f8/src/minisweagent/exceptions.py#L13"
+    }
+   ]
+  },
+  {
+   "step": 3,
+   "node": "model",
+   "code": "litellm_model.py:69",
+   "title": "One litellm call, one bash tool",
+   "narrative": "The model layer calls litellm.completion with the messages and a single tool definition: bash, with one required string parameter, command. API errors retry inside the layer (tenacity, up to 10 attempts); the response's cost is calculated and attached to the message.",
+   "representation": "litellm.completion(model, messages,\n  tools=[{name: bash, parameters: {command: string}}])\n-> response + cost",
+   "modules": [
+    {
+     "file": "src/minisweagent/models/litellm_model.py:69",
+     "label": "litellm_model.py:69 - tools=[BASH_TOOL]",
+     "line": 69,
+     "url": "https://github.com/SWE-agent/mini-swe-agent/blob/a83fcae82d2a08f0ee0c688f9d137b3566c097f8/src/minisweagent/models/litellm_model.py#L69"
+    },
+    {
+     "file": "src/minisweagent/models/utils/actions_toolcall.py:11",
+     "label": "actions_toolcall.py:11 - BASH_TOOL",
+     "line": 11,
+     "url": "https://github.com/SWE-agent/mini-swe-agent/blob/a83fcae82d2a08f0ee0c688f9d137b3566c097f8/src/minisweagent/models/utils/actions_toolcall.py#L11"
+    }
+   ]
+  },
+  {
+   "step": 4,
+   "node": "parser",
+   "code": "actions_toolcall.py:30",
+   "title": "The response becomes actions - or a FormatError",
+   "narrative": "parse_toolcall_actions validates the calls: none at all, an unknown tool, bad JSON arguments or a missing command each raise FormatError carrying a corrective message. In the text variant, a regex must find exactly one mswea_bash_command block - zero or two fail the same way. A clean parse lands in the message's extra.actions.",
+   "representation": "actions = [{command: 'ls -la'}]  # in message.extra\n# no tool call / 0 or 2 text blocks -> FormatError(msg)",
+   "modules": [
+    {
+     "file": "src/minisweagent/models/utils/actions_toolcall.py:30",
+     "label": "actions_toolcall.py:30 - parse_toolcall_actions",
+     "line": 30,
+     "url": "https://github.com/SWE-agent/mini-swe-agent/blob/a83fcae82d2a08f0ee0c688f9d137b3566c097f8/src/minisweagent/models/utils/actions_toolcall.py#L30"
+    },
+    {
+     "file": "src/minisweagent/models/utils/actions_text.py:24",
+     "label": "actions_text.py:24 - re.findall; exactly one",
+     "line": 24,
+     "url": "https://github.com/SWE-agent/mini-swe-agent/blob/a83fcae82d2a08f0ee0c688f9d137b3566c097f8/src/minisweagent/models/utils/actions_text.py#L24"
+    }
+   ]
+  },
+  {
+   "step": 5,
+   "node": "env",
+   "code": "local.py:24",
+   "title": "execute_actions runs each command",
+   "narrative": "The agent loops over the parsed actions and calls env.execute for each, in order. The local environment starts a brand-new subprocess (shell=True) with the configured cwd and env and a 30-second default timeout; the Docker environment runs docker exec into its container instead.",
+   "representation": "outputs = [env.execute(a) for a in message.extra.actions]\n# each: subprocess.Popen(command, shell=True, cwd, env)",
+   "modules": [
+    {
+     "file": "src/minisweagent/agents/default.py:154",
+     "label": "default.py:154 - def execute_actions(",
+     "line": 154,
+     "url": "https://github.com/SWE-agent/mini-swe-agent/blob/a83fcae82d2a08f0ee0c688f9d137b3566c097f8/src/minisweagent/agents/default.py#L154"
+    },
+    {
+     "file": "src/minisweagent/environments/local.py:72",
+     "label": "local.py:72 - _run: subprocess.Popen(shell=True)",
+     "line": 72,
+     "url": "https://github.com/SWE-agent/mini-swe-agent/blob/a83fcae82d2a08f0ee0c688f9d137b3566c097f8/src/minisweagent/environments/local.py#L72"
+    }
+   ]
+  },
+  {
+   "step": 6,
+   "node": "env",
+   "code": "local.py:45",
+   "title": "The environment watches for the submission marker",
+   "narrative": "Before returning, the environment checks the output: if the first line is exactly COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT and the return code is 0, it raises Submitted and the rest of the output becomes the submission. Otherwise the result dict - output, returncode, exception_info - goes back to the agent. The shell that ran is gone; only files persist.",
+   "representation": "_check_finished(output):\n  if first_line == 'COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT'\n     and returncode == 0: raise Submitted(rest)",
+   "modules": [
+    {
+     "file": "src/minisweagent/environments/local.py:45",
+     "label": "local.py:45 - _check_finished",
+     "line": 45,
+     "url": "https://github.com/SWE-agent/mini-swe-agent/blob/a83fcae82d2a08f0ee0c688f9d137b3566c097f8/src/minisweagent/environments/local.py#L45"
+    },
+    {
+     "file": "src/minisweagent/environments/docker.py:140",
+     "label": "docker.py:140 - the same check, in Docker",
+     "line": 140,
+     "url": "https://github.com/SWE-agent/mini-swe-agent/blob/a83fcae82d2a08f0ee0c688f9d137b3566c097f8/src/minisweagent/environments/docker.py#L140"
+    }
+   ]
+  },
+  {
+   "step": 7,
+   "node": "obs",
+   "code": "litellm_model.py:40",
+   "title": "Outputs become observations",
+   "narrative": "The model layer renders each output through the observation template - returncode and output blocks; the shipped configs elide the middle of anything over 10,000 characters, keeping the first and last 5,000. In tool-call mode the result is a tool-role message with the call's id; the agent appends it to the list.",
+   "representation": "<returncode>0</returncode>\n<output>\n...command output (elided past 10k chars)...\n</output>",
+   "modules": [
+    {
+     "file": "src/minisweagent/models/litellm_model.py:40",
+     "label": "litellm_model.py:40 - observation_template",
+     "line": 40,
+     "url": "https://github.com/SWE-agent/mini-swe-agent/blob/a83fcae82d2a08f0ee0c688f9d137b3566c097f8/src/minisweagent/models/litellm_model.py#L40"
+    },
+    {
+     "file": "src/minisweagent/config/default.yaml:119",
+     "label": "default.yaml:119 - the 10,000-char elision rule",
+     "line": 119,
+     "url": "https://github.com/SWE-agent/mini-swe-agent/blob/a83fcae82d2a08f0ee0c688f9d137b3566c097f8/src/minisweagent/config/default.yaml#L119"
+    }
+   ]
+  },
+  {
+   "step": 8,
+   "node": "traj",
+   "code": "default.py:182",
+   "title": "Save, then loop or exit",
+   "narrative": "run() saves the trajectory in a finally after every step: the full message list plus cost, call count, configs, exit status and submission, in mini-swe-agent-1.1 format. If the last message is not an exit message, the loop repeats from step 2 with the longer list; if it is, run() returns its extra dict.",
+   "representation": "trajectory = {info: {model_stats, config,\n  exit_status, submission}, messages: [...],\n  trajectory_format: 'mini-swe-agent-1.1'}",
+   "modules": [
+    {
+     "file": "src/minisweagent/agents/default.py:159",
+     "label": "default.py:159 - def serialize(",
+     "line": 159,
+     "url": "https://github.com/SWE-agent/mini-swe-agent/blob/a83fcae82d2a08f0ee0c688f9d137b3566c097f8/src/minisweagent/agents/default.py#L159"
+    },
+    {
+     "file": "src/minisweagent/agents/default.py:182",
+     "label": "default.py:182 - def save(",
+     "line": 182,
+     "url": "https://github.com/SWE-agent/mini-swe-agent/blob/a83fcae82d2a08f0ee0c688f9d137b3566c097f8/src/minisweagent/agents/default.py#L182"
+    }
+   ]
+  }
+ ]
+}

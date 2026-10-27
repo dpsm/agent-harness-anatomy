@@ -1,0 +1,66 @@
+{
+ "title": "A format error, retried in the open",
+ "subtitle": "FormatError carries the correction as a message - the loop never sees a crash",
+ "participants": [
+  "DefaultAgent",
+  "Model (litellm)",
+  "Parser"
+ ],
+ "messages": [
+  {
+   "from": 0,
+   "to": 1,
+   "label": "query(messages)"
+  },
+  {
+   "from": 1,
+   "to": 2,
+   "label": "response with no tool call (or, text variant: 0 or 2 code blocks)"
+  },
+  {
+   "from": 2,
+   "to": 2,
+   "label": "parse fails: not exactly the required action shape"
+  },
+  {
+   "from": 2,
+   "to": 0,
+   "label": "raise FormatError(correction message)",
+   "dashed": true
+  },
+  {
+   "from": 0,
+   "to": 0,
+   "label": "cost of the failed call still charged; consecutive-error count +1"
+  },
+  {
+   "from": 0,
+   "to": 0,
+   "label": "append the error messages; trajectory saved"
+  },
+  {
+   "from": 0,
+   "to": 1,
+   "label": "query again: history now includes the correction"
+  },
+  {
+   "from": 1,
+   "to": 0,
+   "label": "a well-formed bash call",
+   "dashed": true
+  },
+  {
+   "from": 0,
+   "to": 0,
+   "label": "clean step: consecutive-error counter resets to 0"
+  },
+  {
+   "note": "cap",
+   "span": [
+    0,
+    2
+   ],
+   "text": "3 format errors in a row (default) -> exit message: RepeatedFormatError"
+  }
+ ]
+}

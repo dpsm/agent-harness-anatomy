@@ -1,0 +1,56 @@
+{
+ "title": "A limit hit ends the run as data",
+ "subtitle": "LimitsExceeded is an exit message in the trajectory, not an exception the caller catches",
+ "participants": [
+  "Caller",
+  "DefaultAgent",
+  "Model (litellm)"
+ ],
+ "messages": [
+  {
+   "from": 0,
+   "to": 1,
+   "label": "run(task) with step_limit / cost_limit set"
+  },
+  {
+   "from": 1,
+   "to": 2,
+   "label": "query(messages) - steps proceed, cost accumulates"
+  },
+  {
+   "from": 2,
+   "to": 1,
+   "label": "response + cost",
+   "dashed": true
+  },
+  {
+   "from": 1,
+   "to": 1,
+   "label": "next query(): 0 < cost_limit <= cost -> raise LimitsExceeded"
+  },
+  {
+   "from": 1,
+   "to": 1,
+   "label": "run() catches InterruptAgentFlow; appends the exit message"
+  },
+  {
+   "from": 1,
+   "to": 1,
+   "label": "save trajectory (exit_status: LimitsExceeded, submission: empty)"
+  },
+  {
+   "from": 1,
+   "to": 0,
+   "label": "return exit extra {exit_status, submission}",
+   "dashed": true
+  },
+  {
+   "note": "note",
+   "span": [
+    0,
+    2
+   ],
+   "text": "InteractiveAgent on a terminal instead prompts for new limits and continues"
+  }
+ ]
+}
