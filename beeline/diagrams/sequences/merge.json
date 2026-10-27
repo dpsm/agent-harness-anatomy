@@ -1,0 +1,77 @@
+{
+ "title": "The merge gate: green, a yes, no hold",
+ "subtitle": "One rule, read live from GitHub, on the exact PR head",
+ "participants": [
+  "GitHub",
+  "Beeline server",
+  "Reviewer agent",
+  "Implementer body",
+  "Person"
+ ],
+ "messages": [
+  {
+   "from": 0,
+   "to": 1,
+   "label": "webhook: checks completed on head H"
+  },
+  {
+   "from": 1,
+   "to": 1,
+   "label": "re-read the live check rollup for H"
+  },
+  {
+   "from": 1,
+   "to": 2,
+   "label": "green: dispatch review of head H"
+  },
+  {
+   "from": 2,
+   "to": 1,
+   "label": "approve_merge PASS on H"
+  },
+  {
+   "from": 1,
+   "to": 1,
+   "label": "gate: green AND yes on H AND no hold"
+  },
+  {
+   "from": 1,
+   "to": 3,
+   "label": "PASS wakes the implementer"
+  },
+  {
+   "from": 3,
+   "to": 1,
+   "label": "merge_corner"
+  },
+  {
+   "from": 1,
+   "to": 1,
+   "label": "brief allows merge? claim head H"
+  },
+  {
+   "from": 1,
+   "to": 0,
+   "label": "squash merge at H (or merge queue)"
+  },
+  {
+   "from": 0,
+   "to": 1,
+   "label": "webhook: merged"
+  },
+  {
+   "from": 1,
+   "to": 4,
+   "label": "corner archived; card shows merged",
+   "dashed": true
+  },
+  {
+   "note": "span",
+   "span": [
+    0,
+    4
+   ],
+   "text": "A new commit cancels the yes; a brief edit does not. A hold is the only veto, and yolo is not a merge condition"
+  }
+ ]
+}

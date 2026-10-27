@@ -1,0 +1,185 @@
+{
+ "title": "One request, from tag to merged PR",
+ "repo": "https://github.com/Beeline-Work/beeline",
+ "sha": "73c6ac2c055ebc7549d6e68afe6fc7a37004dae8",
+ "note": "Beeline is read-only in this teardown: the source was cloned and read, never run, so the trace is a code-level walk of one request, not a runtime capture.",
+ "example_input": "@codex the corner status line wraps onto two lines on small phones. fix it and open a PR.",
+ "steps": [
+  {
+   "step": 1,
+   "node": "commands",
+   "code": "agent-command.ts:973",
+   "title": "A tag becomes a command",
+   "narrative": "A person tags the agent in a repository Room: fix the wrapping status line and open a PR. The message itself authorizes nothing - routeHumanMessage turns it into a durable agent_commands row, with the human message recorded as the chain's root. Orders will travel down this chain; reports will come back one step up.",
+   "representation": "Room message: \"@codex the corner status line wraps onto\ntwo lines on small phones. fix it and open a PR.\"\n  -> routeHumanMessage -> agent_commands row\n     (root_source_message_id = the human message)",
+   "modules": [
+    {
+     "file": "apps/server/src/agent-command.ts:973",
+     "label": "routeHumanMessage: a human message becomes commands",
+     "line": 973,
+     "url": "https://github.com/Beeline-Work/beeline/blob/73c6ac2c055ebc7549d6e68afe6fc7a37004dae8/apps/server/src/agent-command.ts#L973"
+    },
+    {
+     "file": "apps/server/src/agent-command.ts:73",
+     "label": "COMMAND_MAX_DEPTH = 3: order chains are depth-bounded",
+     "line": 73,
+     "url": "https://github.com/Beeline-Work/beeline/blob/73c6ac2c055ebc7549d6e68afe6fc7a37004dae8/apps/server/src/agent-command.ts#L73"
+    }
+   ]
+  },
+  {
+   "step": 2,
+   "node": "body",
+   "code": "daemon-api-client.ts:154",
+   "title": "The order reaches the helper",
+   "narrative": "The paired machine's helper learns of the order over the machine's one live socket - helpers never poll. The body assembles the turn: the Room transcript as context, Beeline's MCP surface, and the standing instructions for the place the turn will run in.",
+   "representation": "live socket -> DaemonApiClient -> command claimed\nprompt assembly: transcript + beeline MCP tools\n  + CORNER_AUTHOR_CONTRACT for corner turns",
+   "modules": [
+    {
+     "file": "apps/body/src/daemon-api-client.ts:154",
+     "label": "DaemonApiClient: the agent's registration on the machine socket",
+     "line": 154,
+     "url": "https://github.com/Beeline-Work/beeline/blob/73c6ac2c055ebc7549d6e68afe6fc7a37004dae8/apps/body/src/daemon-api-client.ts#L154"
+    },
+    {
+     "file": "apps/body/src/prompt-assembly.ts:188",
+     "label": "CORNER_AUTHOR_CONTRACT: the standing corner instructions",
+     "line": 188,
+     "url": "https://github.com/Beeline-Work/beeline/blob/73c6ac2c055ebc7549d6e68afe6fc7a37004dae8/apps/body/src/prompt-assembly.ts#L188"
+    }
+   ]
+  },
+  {
+   "step": 3,
+   "node": "acp",
+   "code": "acp.ts:1226",
+   "title": "A session opens under bwrap",
+   "narrative": "The helper spawns the operator's own harness under bubblewrap and speaks ACP to it: session/new, then session/prompt. In a top-level Room the mount plan keeps the checkout read-only; the harness's own loop - not Beeline - runs the turn, with its own sign-in and its native session.",
+   "representation": "bwrap(mount plan: Room = checkout read-only)\n  -> harness process\nACP session/new -> sessionId\nACP session/prompt -> the request text",
+   "modules": [
+    {
+     "file": "apps/body/src/acp.ts:1226",
+     "label": "session/new: every ACP session the daemon opens",
+     "line": 1226,
+     "url": "https://github.com/Beeline-Work/beeline/blob/73c6ac2c055ebc7549d6e68afe6fc7a37004dae8/apps/body/src/acp.ts#L1226"
+    },
+    {
+     "file": "apps/body/src/bwrap-sandbox.ts:495",
+     "label": "sandboxMountPlan: one session's mount table",
+     "line": 495,
+     "url": "https://github.com/Beeline-Work/beeline/blob/73c6ac2c055ebc7549d6e68afe6fc7a37004dae8/apps/body/src/bwrap-sandbox.ts#L495"
+    }
+   ]
+  },
+  {
+   "step": 4,
+   "node": "corner",
+   "code": "corner-brief.ts:304",
+   "title": "open_corner: the brief is authorized",
+   "narrative": "Asked to do repository work, the agent calls open_corner. The server resolves the brief - a Markdown spec plus file manifest - against the dispatching human message, which is the authorization; the short objective is navigation only. The corner opens in state opened and moves at once to implement.",
+   "representation": "open_corner(objective <= 24 words, brief spec <= 16,000 chars)\n  -> resolveCornerBriefApproval(dispatching message)\n  -> corner_facts row; lifecycle: opened -> implement",
+   "modules": [
+    {
+     "file": "apps/server/src/corner-brief.ts:304",
+     "label": "resolveCornerBriefApproval: the dispatching message authorizes the brief",
+     "line": 304,
+     "url": "https://github.com/Beeline-Work/beeline/blob/73c6ac2c055ebc7549d6e68afe6fc7a37004dae8/apps/server/src/corner-brief.ts#L304"
+    },
+    {
+     "file": "apps/server/src/daemon-service.ts:8095",
+     "label": "DaemonService.createCorner, the daemon-operation route",
+     "line": 8095,
+     "url": "https://github.com/Beeline-Work/beeline/blob/73c6ac2c055ebc7549d6e68afe6fc7a37004dae8/apps/server/src/daemon-service.ts#L8095"
+    }
+   ]
+  },
+  {
+   "step": 5,
+   "node": "worktree",
+   "code": "room-runtime.ts:142",
+   "title": "A worktree is cut and synced",
+   "narrative": "On the helper, the corner gets a worktree at beeline/corners/<cornerId>, cut from a shared bare clone on the corner's feature branch, with a repository-scoped GitHub App token installed as a worktree-only credential helper. Before the turn - and every later turn - the worktree syncs to origin/<branch>: fast-forward, rebase, or realign on conflict.",
+   "representation": "<root>/beeline/corners/<cornerId>  (git worktree)\ncredential.helper = x-access-token / $GH_TOKEN (this repo only)\nsync: fetch -> ff | rebase | realign (never force-push)",
+   "modules": [
+    {
+     "file": "apps/body/src/room-runtime.ts:133",
+     "label": "materializeCornerWorktree: worktree, branch, credential helper",
+     "line": 133,
+     "url": "https://github.com/Beeline-Work/beeline/blob/73c6ac2c055ebc7549d6e68afe6fc7a37004dae8/apps/body/src/room-runtime.ts#L133"
+    },
+    {
+     "file": "apps/body/src/corner-branch-sync.ts:16",
+     "label": "syncCornerBranch: two agents, one branch",
+     "line": 16,
+     "url": "https://github.com/Beeline-Work/beeline/blob/73c6ac2c055ebc7549d6e68afe6fc7a37004dae8/apps/body/src/corner-branch-sync.ts#L16"
+    }
+   ]
+  },
+  {
+   "step": 6,
+   "node": "github",
+   "code": "github-operations.ts:953",
+   "title": "Push, PR, and live checks",
+   "narrative": "The agent works in the worktree, pushes the branch and opens the pull request. The Room shows the corner card with the PR and its checks. The server never trusts a stored verdict: check state is read live from the PR head's rollup, and webhooks only trigger re-reads.",
+   "representation": "git push origin <feature_branch>; gh pr create\nwebhook -> prChecksStatus(cornerId)\n  -> GraphQL statusCheckRollup on the live head",
+   "modules": [
+    {
+     "file": "apps/server/src/github-operations.ts:953",
+     "label": "prChecksStatus: the live check read behind the gate",
+     "line": 953,
+     "url": "https://github.com/Beeline-Work/beeline/blob/73c6ac2c055ebc7549d6e68afe6fc7a37004dae8/apps/server/src/github-operations.ts#L953"
+    },
+    {
+     "file": "apps/server/src/corner-lifecycle.ts:78",
+     "label": "advanceCorner: checks state, green wakes the reviewer",
+     "line": 78,
+     "url": "https://github.com/Beeline-Work/beeline/blob/73c6ac2c055ebc7549d6e68afe6fc7a37004dae8/apps/server/src/corner-lifecycle.ts#L78"
+    }
+   ]
+  },
+  {
+   "step": 7,
+   "node": "gate",
+   "code": "corner-merge-approval.ts:17",
+   "title": "Review: a yes on the exact head",
+   "narrative": "Green checks dispatch the Room's configured reviewer - never the implementer. Its approve_merge PASS writes the one approval row for this corner, bound to the PR number and head SHA. A Workspace owner or admin can give the same yes from the phone. A hold from any person would veto all of it, and a new commit cancels the yes.",
+   "representation": "corner_merge_approvals: (corner_id, approved_by,\n  pull_request_number, head_sha) - one row per corner\ngate = checks green AND yes on this head AND no hold",
+   "modules": [
+    {
+     "file": "apps/server/src/corner-merge-approval.ts:17",
+     "label": "recordCornerMergeApproval: the head-bound yes",
+     "line": 17,
+     "url": "https://github.com/Beeline-Work/beeline/blob/73c6ac2c055ebc7549d6e68afe6fc7a37004dae8/apps/server/src/corner-merge-approval.ts#L17"
+    },
+    {
+     "file": "apps/server/src/corner-lifecycle.ts:1400",
+     "label": "cornerMergeGate: who may supply the yes",
+     "line": 1400,
+     "url": "https://github.com/Beeline-Work/beeline/blob/73c6ac2c055ebc7549d6e68afe6fc7a37004dae8/apps/server/src/corner-lifecycle.ts#L1400"
+    }
+   ]
+  },
+  {
+   "step": 8,
+   "node": "github",
+   "code": "github-operations.ts:1223",
+   "title": "landCorner: merge and archive",
+   "narrative": "The PASS wakes the implementer, whose merge_corner runs the one merge path: the brief must still assign repository work, the gate is read live once more, the head is claimed so no second attempt can race it, and GitHub squash-merges - or enqueues, when a merge queue is configured. Confirmation archives the corner, cancels its pending commands and enqueues the branch for deletion; the helper reaps the worktree.",
+   "representation": "landCorner: assertCornerBriefAllowsMerge\n  -> gate live -> claimCornerMergeAttempt(head)\n  -> squash merge -> archived; branch deletion enqueued",
+   "modules": [
+    {
+     "file": "apps/server/src/github-operations.ts:1223",
+     "label": "landCorner / landCornerOutcome: the one merge path",
+     "line": 1223,
+     "url": "https://github.com/Beeline-Work/beeline/blob/73c6ac2c055ebc7549d6e68afe6fc7a37004dae8/apps/server/src/github-operations.ts#L1223"
+    },
+    {
+     "file": "apps/server/src/corner-merge-approval.ts:50",
+     "label": "recordPersonMergeYes: a person's yes lands at once",
+     "line": 50,
+     "url": "https://github.com/Beeline-Work/beeline/blob/73c6ac2c055ebc7549d6e68afe6fc7a37004dae8/apps/server/src/corner-merge-approval.ts#L50"
+    }
+   ]
+  }
+ ]
+}

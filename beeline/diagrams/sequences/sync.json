@@ -1,0 +1,55 @@
+{
+ "title": "Two helpers, one branch",
+ "subtitle": "Branch sync before every corner turn; the remote branch is the shared artifact",
+ "participants": [
+  "Helper A",
+  "GitHub branch",
+  "Helper B"
+ ],
+ "messages": [
+  {
+   "from": 0,
+   "to": 1,
+   "label": "push fixup commits"
+  },
+  {
+   "from": 2,
+   "to": 2,
+   "label": "turn starts on the same corner"
+  },
+  {
+   "from": 2,
+   "to": 1,
+   "label": "fetch origin/<feature_branch>"
+  },
+  {
+   "from": 1,
+   "to": 2,
+   "label": "remote head has moved",
+   "dashed": true
+  },
+  {
+   "from": 2,
+   "to": 2,
+   "label": "behind: fast-forward; diverged: rebase"
+  },
+  {
+   "from": 2,
+   "to": 2,
+   "label": "rebase conflict: realign to remote head"
+  },
+  {
+   "from": 2,
+   "to": 1,
+   "label": "push the new work"
+  },
+  {
+   "note": "span",
+   "span": [
+    0,
+    2
+   ],
+   "text": "Realignment discards only this helper's unpushed commits; the remote branch is never force-pushed"
+  }
+ ]
+}

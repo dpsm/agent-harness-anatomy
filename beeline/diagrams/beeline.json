@@ -1,0 +1,384 @@
+{
+ "title": "Beeline - the chat is the harness surface",
+ "repo": "https://github.com/Beeline-Work/beeline",
+ "sha": "73c6ac2c055ebc7549d6e68afe6fc7a37004dae8",
+ "nodes": [
+  {
+   "id": "app",
+   "step": 1,
+   "label": "Phone + desktop app",
+   "sub": "apps/mobile - the Room surface",
+   "x": 20,
+   "y": 60,
+   "w": 240,
+   "h": 96,
+   "grade": "verified",
+   "excerpt": "People and agents share one Room: talk it through, hand off the work, watch it merge. The app hands the user the pairing code that connect redeems.",
+   "links": [
+    {
+     "label": "phone-service.ts:5084 - the phone post path routes human messages",
+     "line": 5084,
+     "url": "https://github.com/Beeline-Work/beeline/blob/73c6ac2c055ebc7549d6e68afe6fc7a37004dae8/apps/server/src/phone-service.ts#L5084"
+    }
+   ]
+  },
+  {
+   "id": "server",
+   "step": 1,
+   "label": "Beeline server",
+   "sub": "apps/server/src - Postgres, hosted",
+   "x": 20,
+   "y": 190,
+   "w": 240,
+   "h": 96,
+   "grade": "verified",
+   "excerpt": "One hosted service owns Workspaces, Rooms, membership, corner state and push. Deployment is in-repo: Fly app beeline-server, server.usebeeline.app.",
+   "links": [
+    {
+     "label": "index.ts - server entry: PhoneService, DaemonService, LiveHub",
+     "line": 20,
+     "url": "https://github.com/Beeline-Work/beeline/blob/73c6ac2c055ebc7549d6e68afe6fc7a37004dae8/apps/server/src/index.ts#L20"
+    },
+    {
+     "label": "fly.beeline-server.toml - the hosted deployment",
+     "line": 1,
+     "url": "https://github.com/Beeline-Work/beeline/blob/73c6ac2c055ebc7549d6e68afe6fc7a37004dae8/fly.beeline-server.toml#L1"
+    }
+   ]
+  },
+  {
+   "id": "commands",
+   "step": 1,
+   "label": "Commands + commander",
+   "sub": "agent-command.ts - commander.ts",
+   "x": 20,
+   "y": 320,
+   "w": 240,
+   "h": 96,
+   "grade": "verified",
+   "excerpt": "Conversation is context, never authority: only an agent_commands row authorizes a turn. Orders go down a chain (depth <= 3); reports return one step up to the recorded commander.",
+   "links": [
+    {
+     "label": "agent-command.ts:73 - COMMAND_MAX_DEPTH = 3",
+     "line": 73,
+     "url": "https://github.com/Beeline-Work/beeline/blob/73c6ac2c055ebc7549d6e68afe6fc7a37004dae8/apps/server/src/agent-command.ts#L73"
+    },
+    {
+     "label": "commander.ts:18 - commandOrder resolves the report route",
+     "line": 18,
+     "url": "https://github.com/Beeline-Work/beeline/blob/73c6ac2c055ebc7549d6e68afe6fc7a37004dae8/apps/server/src/commander.ts#L18"
+    }
+   ]
+  },
+  {
+   "id": "corner",
+   "step": 4,
+   "label": "Corner lifecycle",
+   "sub": "corner-lifecycle.ts - corner-brief.ts",
+   "x": 20,
+   "y": 450,
+   "w": 240,
+   "h": 96,
+   "grade": "verified",
+   "excerpt": "opened -> implement -> checks -> review -> landed, closed terminal. Every transition goes through advanceCorner under the run lock; the brief authorized by a human message bounds the work.",
+   "links": [
+    {
+     "label": "corner-lifecycle.ts:78 - CORNER_LIFECYCLE_CONTRACT",
+     "line": 78,
+     "url": "https://github.com/Beeline-Work/beeline/blob/73c6ac2c055ebc7549d6e68afe6fc7a37004dae8/apps/server/src/corner-lifecycle.ts#L78"
+    },
+    {
+     "label": "corner-brief.ts:304 - resolveCornerBriefApproval",
+     "line": 304,
+     "url": "https://github.com/Beeline-Work/beeline/blob/73c6ac2c055ebc7549d6e68afe6fc7a37004dae8/apps/server/src/corner-brief.ts#L304"
+    }
+   ]
+  },
+  {
+   "id": "gate",
+   "step": 7,
+   "label": "Merge gate",
+   "sub": "corner-merge-approval.ts",
+   "x": 420,
+   "y": 60,
+   "w": 240,
+   "h": 96,
+   "grade": "verified",
+   "excerpt": "mergeAllowed = live checks green AND a yes on the exact head AND no hold. One approval row per corner, bound to PR number + head SHA; a new commit cancels the yes.",
+   "links": [
+    {
+     "label": "corner-lifecycle.ts:1400 - cornerMergeGate",
+     "line": 1400,
+     "url": "https://github.com/Beeline-Work/beeline/blob/73c6ac2c055ebc7549d6e68afe6fc7a37004dae8/apps/server/src/corner-lifecycle.ts#L1400"
+    },
+    {
+     "label": "corner-merge-approval.ts:17 - recordCornerMergeApproval",
+     "line": 17,
+     "url": "https://github.com/Beeline-Work/beeline/blob/73c6ac2c055ebc7549d6e68afe6fc7a37004dae8/apps/server/src/corner-merge-approval.ts#L17"
+    }
+   ]
+  },
+  {
+   "id": "github",
+   "step": 6,
+   "label": "GitHub (via GitHub App)",
+   "sub": "github-operations.ts",
+   "x": 420,
+   "y": 190,
+   "w": 240,
+   "h": 96,
+   "grade": "verified",
+   "excerpt": "Checks are read live from the PR head's rollup; webhooks only trigger re-reads. landCorner is the one merge path: brief gate, live gate, claim the head, squash-merge.",
+   "links": [
+    {
+     "label": "github-operations.ts:1223 - landCorner, the one merge path",
+     "line": 1223,
+     "url": "https://github.com/Beeline-Work/beeline/blob/73c6ac2c055ebc7549d6e68afe6fc7a37004dae8/apps/server/src/github-operations.ts#L1223"
+    }
+   ]
+  },
+  {
+   "id": "body",
+   "step": 2,
+   "label": "Body: machine helper",
+   "sub": "apps/body/src - one per machine",
+   "x": 420,
+   "y": 320,
+   "w": 240,
+   "h": 96,
+   "grade": "verified",
+   "excerpt": "One helper process per machine hosts every paired agent in-process. The server pings the live socket every 30s; helpers learn of work only through the socket - no polling.",
+   "links": [
+    {
+     "label": "device-pairing.ts:26 - the pairing grant: keys, identity, exchange token",
+     "line": 26,
+     "url": "https://github.com/Beeline-Work/beeline/blob/73c6ac2c055ebc7549d6e68afe6fc7a37004dae8/apps/body/src/device-pairing.ts#L26"
+    },
+    {
+     "label": "connect-command.ts:762 - requestConnectGrant: no API key in the request",
+     "line": 762,
+     "url": "https://github.com/Beeline-Work/beeline/blob/73c6ac2c055ebc7549d6e68afe6fc7a37004dae8/apps/body/src/connect-command.ts#L762"
+    }
+   ]
+  },
+  {
+   "id": "acp",
+   "step": 3,
+   "label": "ACP adapters",
+   "sub": "acp.ts - 7 harness kinds",
+   "x": 420,
+   "y": 450,
+   "w": 240,
+   "h": 96,
+   "grade": "verified",
+   "excerpt": "session/new, session/prompt, session/request_permission to the operator-installed CLI: Codex, Claude Code, Goose, Pi, Grok, Cursor, OpenCode. The harness's own loop runs the turn.",
+   "links": [
+    {
+     "label": "acp.ts:7 - the ACP surface every harness is driven through",
+     "line": 7,
+     "url": "https://github.com/Beeline-Work/beeline/blob/73c6ac2c055ebc7549d6e68afe6fc7a37004dae8/apps/body/src/acp.ts#L7"
+    },
+    {
+     "label": "agent-command.ts:11 - the seven harness kinds",
+     "line": 11,
+     "url": "https://github.com/Beeline-Work/beeline/blob/73c6ac2c055ebc7549d6e68afe6fc7a37004dae8/apps/body/src/agent-command.ts#L11"
+    }
+   ]
+  },
+  {
+   "id": "sandbox",
+   "step": 3,
+   "label": "bwrap sandbox",
+   "sub": "bwrap-sandbox.ts",
+   "x": 820,
+   "y": 60,
+   "w": 240,
+   "h": 96,
+   "grade": "verified",
+   "excerpt": "A pure mount plan per session: Room = checkout read-only; corner = worktree writable. Private /tmp, credential paths masked, sibling agents' homes masked. Not a security perimeter: one shared Unix account.",
+   "links": [
+    {
+     "label": "bwrap-sandbox.ts:495 - sandboxMountPlan, the session mount table",
+     "line": 495,
+     "url": "https://github.com/Beeline-Work/beeline/blob/73c6ac2c055ebc7549d6e68afe6fc7a37004dae8/apps/body/src/bwrap-sandbox.ts#L495"
+    }
+   ]
+  },
+  {
+   "id": "worktree",
+   "step": 5,
+   "label": "Corner worktree",
+   "sub": "room-runtime.ts - corner-branch-sync.ts",
+   "x": 820,
+   "y": 190,
+   "w": 240,
+   "h": 96,
+   "grade": "verified",
+   "excerpt": "Worktrees live at <root>/beeline/corners/<cornerId>, cut from a shared bare clone. Before every turn: fetch origin/<branch>, fast-forward, rebase, or realign on conflict. Never force-push.",
+   "links": [
+    {
+     "label": "room-runtime.ts:133 - materializeCornerWorktree",
+     "line": 133,
+     "url": "https://github.com/Beeline-Work/beeline/blob/73c6ac2c055ebc7549d6e68afe6fc7a37004dae8/apps/body/src/room-runtime.ts#L133"
+    },
+    {
+     "label": "corner-branch-sync.ts:16 - two agents, one branch",
+     "line": 16,
+     "url": "https://github.com/Beeline-Work/beeline/blob/73c6ac2c055ebc7549d6e68afe6fc7a37004dae8/apps/body/src/corner-branch-sync.ts#L16"
+    }
+   ]
+  },
+  {
+   "id": "harness",
+   "step": 3,
+   "label": "Harness CLI",
+   "sub": "the operator's own, installed locally",
+   "x": 820,
+   "y": 320,
+   "w": 240,
+   "h": 96,
+   "grade": "verified",
+   "excerpt": "The agent loop Beeline does not own: the operator's installed harness, its native session and its own sign-in, resumed across helper restarts. Beeline adds its MCP surface and the brief.",
+   "links": [
+    {
+     "label": "harness-tool-scope.ts:78 - CLAUDE_TOOL_SCOPE_SETTINGS: connectors off",
+     "line": 78,
+     "url": "https://github.com/Beeline-Work/beeline/blob/73c6ac2c055ebc7549d6e68afe6fc7a37004dae8/apps/body/src/harness-tool-scope.ts#L78"
+    }
+   ]
+  },
+  {
+   "id": "keys",
+   "step": 2,
+   "label": "Local keys + sign-ins",
+   "sub": "provider-key-store.ts - agent-home",
+   "x": 820,
+   "y": 450,
+   "w": 240,
+   "h": 96,
+   "grade": "verified",
+   "excerpt": "Provider keys live only in ~/.config/beeline/providers.json (mode 0600) and reach only the harness process. Wizard and sign-in secrets never become a server row, card or log.",
+   "links": [
+    {
+     "label": "provider-key-store.ts:30 - the 0600 local key store path",
+     "line": 30,
+     "url": "https://github.com/Beeline-Work/beeline/blob/73c6ac2c055ebc7549d6e68afe6fc7a37004dae8/apps/body/src/provider-key-store.ts#L30"
+    },
+    {
+     "label": "agent-pairing-code.ts:6 - pairing codes: 8 bytes of entropy",
+     "line": 6,
+     "url": "https://github.com/Beeline-Work/beeline/blob/73c6ac2c055ebc7549d6e68afe6fc7a37004dae8/packages/api-contract/src/agent-pairing-code.ts#L6"
+    }
+   ]
+  }
+ ],
+ "edges": [
+  {
+   "from": "app",
+   "to": "server",
+   "label": "messages, taps, grant decisions"
+  },
+  {
+   "from": "server",
+   "to": "commands",
+   "label": "routeHumanMessage -> commands"
+  },
+  {
+   "from": "commands",
+   "to": "body",
+   "label": "orders down the socket",
+   "label_dx": -85
+  },
+  {
+   "from": "commands",
+   "to": "corner",
+   "label": "open_corner; lifecycle events"
+  },
+  {
+   "from": "app",
+   "to": "gate",
+   "label": "person's yes; holds",
+   "label_dx": -50
+  },
+  {
+   "from": "github",
+   "to": "gate",
+   "label": "live check rollup",
+   "label_dx": -235,
+   "label_dy": 62
+  },
+  {
+   "from": "gate",
+   "to": "github",
+   "label": "landCorner: squash merge",
+   "label_dx": 125,
+   "label_dy": 10
+  },
+  {
+   "from": "body",
+   "to": "acp",
+   "label": "session/new, session/prompt",
+   "label_dx": -45
+  },
+  {
+   "from": "acp",
+   "to": "harness",
+   "label": "drives the CLI",
+   "label_dx": 15
+  },
+  {
+   "from": "body",
+   "to": "sandbox",
+   "label": "spawns under bwrap",
+   "label_dx": -50,
+   "label_dy": -30,
+   "label_t": 0.35
+  },
+  {
+   "from": "sandbox",
+   "to": "worktree",
+   "label": "corner mode: worktree writable"
+  },
+  {
+   "from": "body",
+   "to": "worktree",
+   "label": "materialize + sync per turn",
+   "label_dx": 95,
+   "label_dy": 30
+  },
+  {
+   "from": "worktree",
+   "to": "github",
+   "label": "push; PR opened",
+   "label_dx": -80
+  },
+  {
+   "from": "keys",
+   "to": "harness",
+   "label": "keys stay local",
+   "label_dx": -330,
+   "side": "left",
+   "label_dy": 22
+  },
+  {
+   "from": "body",
+   "to": "keys",
+   "label": "reads the 0600 key store",
+   "label_dx": 80,
+   "label_dy": 20
+  },
+  {
+   "from": "github",
+   "to": "server",
+   "label": "webhooks: checks",
+   "label_dx": -80
+  },
+  {
+   "from": "corner",
+   "to": "commands",
+   "label": "state + reports",
+   "label_dx": -45,
+   "label_dy": 55
+  }
+ ]
+}
