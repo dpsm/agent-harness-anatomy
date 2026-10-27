@@ -354,6 +354,15 @@
       <a href="zcode/">Read the article</a>
     </div>
   </div>
+  <div class="article" id="everruns">
+    <h2>#22 &mdash; Everruns: the session survives its workers</h2>
+    <p>A durable-execution harness engine in Rust: every message, model response, tool call and state transition is journaled to an append-only PostgreSQL event log, and a session runs as a leased actor &mdash; a worker claims it, runs the whole turn from the log, and renews a ten-second lease while it works. Kill the worker mid-turn and the lease expires, the fence rises, and the next worker folds the same log and continues: recorded results stand, calls that were cut off rerun only when their tool declares that safe, and a turn waiting on a person's approval holds no worker at all. Sessions have no wall-clock ceiling, 2,000+-tool MCP catalogs are searched and revealed within a fixed schema budget, and one agent is callable from code through a stable Agent API whose keys reach nothing else.</p>
+    <div class="links">
+      <a class="primary" href="everruns/trace.html">Step through one session, end to end</a>
+      <a href="diagrams/template.html?data=../everruns/diagrams/everruns.json">Interactive diagram</a>
+      <a href="everruns/">Read the article</a>
+    </div>
+  </div>
 
   <div class="contribute">
     <h2>Found a mistake?</h2>
