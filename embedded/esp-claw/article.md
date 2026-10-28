@@ -94,6 +94,15 @@ involved. Only when a rule says `run_agent` (or the default route catches
 an unmatched message) does the on-demand agent loop wake up, make HTTPS
 calls to a cloud LLM, and publish its reply back onto the same bus[^11][^12].
 
+One premise is worth stating plainly, because everything downstream
+follows from it: the LLM runs in the cloud. That is the expected
+placement for this hardware, not a finding — the memory scale in the
+hardware block above (hundreds of KB of internal SRAM, single-digit MB
+of flash and PSRAM on the primary target[^6][^7]) leaves no realistic
+room for a local large language model, so the interesting design
+questions are all about what runs on the device, given that the model
+is somewhere else.
+
 The governing tradeoff is latency-shaped: the cloud round-trip takes
 seconds, and an embedded device cannot stall its inputs for seconds. So
 the architecture splits into two loops with two queues and one bus — a
@@ -233,9 +242,11 @@ iteration[^27].
 
 ### LLM backends (cloud-only)
 
-**Compute placement: the LLM never runs on the chip.** All three backends
-are HTTPS clients: an OpenAI-compatible backend (OpenAI Responses-style
-API), an Anthropic backend (Messages API), and a custom backend for
+**Compute placement: cloud, as the hardware expects.** A local LLM is
+not a realistic option at this memory scale, so ESP-Claw does not
+attempt one. All three backends are HTTPS clients: an
+OpenAI-compatible backend (OpenAI Responses-style API), an Anthropic
+backend (Messages API), and a custom backend for
 user-supplied shapes[^36]. Presets cover DeepSeek (`deepseek-chat`),
 OpenAI (`gpt-4o-mini`), Qwen (`qwen-plus` on the OpenAI-compatible
 interface), and Anthropic (`claude-3-5-haiku-latest`), plus a `/llm setup
@@ -467,11 +478,12 @@ that is the honest shape of the sandbox: execution control, not language
 restriction.
 ## Comparison row
 
-**1. Compute placement — cloud-only.** The LLM never runs on the chip:
-three HTTPS backends (OpenAI-compatible, Anthropic, custom), presets down
-to `claude-3-5-haiku-latest` and `gpt-4o-mini`, config in NVS. Everything
-downstream — the seconds-long loop, the offline story, the stage-note UX
-— follows from this single placement decision[^36][^30].
+**1. Compute placement — cloud-only, by necessity.** This is the
+baseline placement for ESP32-class hardware, not a deviation from an
+on-device default: three HTTPS backends (OpenAI-compatible, Anthropic,
+custom), presets down to `claude-3-5-haiku-latest` and `gpt-4o-mini`,
+config in NVS. Everything downstream — the seconds-long loop, the
+offline story, the stage-note UX — follows from this placement[^36][^30].
 
 **2. Power envelope — always-on, unmeasured.** No deep-sleep or
 light-sleep API appears in the app code; the design is two FreeRTOS tasks
@@ -501,9 +513,10 @@ BLE…), and deterministic router rules or Lua-local callbacks that skip
 the LLM entirely[^41][^44][^33]. Remote tools arrive over mDNS-discovered
 MCP, consumed by one firmware image and served by another[^38][^39].
 
-**6. Model footprint — the prompt is the footprint.** No model lives on
-device, so there is no quantization story; the footprint question is how
-many KB of PSRAM the prompt fits in. The answer is schema: 4096 chars per
+**6. Model footprint — the prompt is the footprint.** With the model
+in the cloud (row 1), there is no on-device model and no quantization
+story; the footprint question is how many KB of PSRAM the prompt fits
+in. The answer is schema: 4096 chars per
 message, 150 KB of session history, fixed-size event buffers, no token
 counting anywhere[^37][^14].
 

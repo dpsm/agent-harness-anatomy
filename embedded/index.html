@@ -60,9 +60,10 @@
     <p>A reactive embedded system first and an agent second. Every input &mdash;
     an instant message, a schedule tick, a boot event &mdash; lands on an event
     bus; router rules decide what happens next, and the fast paths complete in
-    milliseconds with no LLM involved. The LLM is cloud-only, safety is
-    architectural rather than gated, and Lua is not sandboxed. Espressif's
-    reference design for agents on the ESP32.</p>
+    milliseconds with no LLM involved. The LLM sits in the cloud, as this
+    hardware dictates; on-device, safety is architectural rather than
+    gated, and Lua is not sandboxed. Espressif's reference design for
+    agents on the ESP32.</p>
     <div class="links">
       <a class="primary" href="esp-claw/trace.html">Follow one sensor event</a>
       <a class="secondary" href="../diagrams/template.html?data=../embedded/esp-claw/diagrams/esp-claw.json">Interactive diagram</a>
