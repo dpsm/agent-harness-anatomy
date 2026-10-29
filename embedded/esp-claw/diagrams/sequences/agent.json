@@ -1,0 +1,82 @@
+{
+  "messages": [
+    {
+      "from": 0,
+      "label": "run_agent submit (async)",
+      "to": 1
+    },
+    {
+      "from": 1,
+      "label": "build_iteration_context()",
+      "to": 2
+    },
+    {
+      "dashed": true,
+      "from": 2,
+      "label": "system prompt + memory + skills + tools",
+      "to": 1
+    },
+    {
+      "from": 1,
+      "label": "HTTPS POST full JSON body (no streaming)",
+      "to": 3
+    },
+    {
+      "dashed": true,
+      "from": 3,
+      "label": "tool_calls[]",
+      "to": 1
+    },
+    {
+      "from": 1,
+      "label": "execute lua_run_script",
+      "to": 4
+    },
+    {
+      "from": 4,
+      "label": "dispatch to cap_lua",
+      "to": 5
+    },
+    {
+      "from": 5,
+      "label": "gpio.set_level()",
+      "self": true,
+      "to": 5
+    },
+    {
+      "dashed": true,
+      "from": 5,
+      "label": "script result",
+      "to": 4
+    },
+    {
+      "dashed": true,
+      "from": 4,
+      "label": "tool result",
+      "to": 1
+    },
+    {
+      "note": "Loop repeats per tool round; hard cap max_tool_iterations = 10; stage notes keep IM updated mid-run",
+      "span": [
+        0,
+        5
+      ],
+      "text": "iteration cap = 10"
+    },
+    {
+      "from": 1,
+      "label": "publish out_message event",
+      "to": 0
+    }
+  ],
+  "participants": [
+    "Event router",
+    "Agent loop",
+    "Context providers",
+    "Cloud LLM",
+    "Capability registry",
+    "Lua VM"
+  ],
+  "subtitle": "event -> prompt assembly -> cloud LLM POST -> tool calls -> Lua/GPIO",
+  "title": "esp-claw: the on-demand agent loop"
+}

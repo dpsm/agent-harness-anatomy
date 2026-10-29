@@ -1,0 +1,76 @@
+{
+  "messages": [
+    {
+      "from": 0,
+      "label": "mcp_discover()",
+      "to": 1
+    },
+    {
+      "from": 1,
+      "label": "mDNS query for MCP services",
+      "to": 2
+    },
+    {
+      "dashed": true,
+      "from": 2,
+      "label": "server advertisements",
+      "to": 1
+    },
+    {
+      "from": 0,
+      "label": "mcp_call_tool(lua.run_script, args)",
+      "to": 1
+    },
+    {
+      "from": 1,
+      "label": "HTTP call_tool lua.run_script",
+      "to": 3
+    },
+    {
+      "from": 3,
+      "label": "dispatch lua.run_script",
+      "to": 4
+    },
+    {
+      "from": 4,
+      "label": "lua.run_script()",
+      "self": true,
+      "to": 4
+    },
+    {
+      "dashed": true,
+      "from": 4,
+      "label": "result",
+      "to": 3
+    },
+    {
+      "dashed": true,
+      "from": 3,
+      "label": "MCP response",
+      "to": 1
+    },
+    {
+      "dashed": true,
+      "from": 1,
+      "label": "tool result",
+      "to": 0
+    },
+    {
+      "note": "Two firmware images: edge_agent is the MCP client; mcp_server_point serves six lua.* tools",
+      "span": [
+        0,
+        4
+      ],
+      "text": "split across two apps"
+    }
+  ],
+  "participants": [
+    "Agent loop",
+    "MCP client",
+    "mDNS (LAN)",
+    "MCP server",
+    "Server Lua engine"
+  ],
+  "subtitle": "edge_agent consumes MCP over the LAN; a second firmware image serves lua.* tools",
+  "title": "esp-claw: the MCP client/server split"
+}
