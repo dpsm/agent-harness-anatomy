@@ -1,0 +1,1015 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body {
+    background: #161210; color: #ece1d3;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    line-height: 1.7; padding: 48px 24px; margin: 0;
+  }
+  main { max-width: 760px; margin: 0 auto; }
+  a { color: #d08c4e; }
+  h1 { font-size: 1.9rem; letter-spacing: -0.02em; line-height: 1.25; margin-bottom: 16px; }
+  h2 { font-size: 1.4rem; margin: 40px 0 12px; padding-top: 8px; border-top: 1px solid #2c231b; }
+  h3 { font-size: 1.1rem; margin: 28px 0 8px; }
+  p, li { margin-bottom: 12px; }
+  blockquote {
+    border-left: 3px solid #d08c4e; padding: 4px 16px; margin: 20px 0;
+    color: #a89880; background: #1f1a15; border-radius: 0 8px 8px 0;
+  }
+  blockquote p { margin-bottom: 6px; }
+  code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.88em; background: #1f1a15; padding: 2px 6px; border-radius: 6px;
+  }
+  pre { background: #1f1a15; border: 1px solid #3a2f26; border-radius: 8px;
+        padding: 16px; overflow-x: auto; }
+  pre code { background: none; padding: 0; }
+  img { max-width: 100%; height: auto; border: 1px solid #3a2f26;
+        border-radius: 12px; margin: 20px 0; background: #1f1a15; }
+  table { border-collapse: collapse; width: 100%; margin: 20px 0; font-size: 0.92rem;
+          display: block; overflow-x: auto; }
+  th, td { border: 1px solid #3a2f26; padding: 10px 12px; text-align: left;
+           vertical-align: top; }
+  th { background: #1f1a15; }
+  ul, ol { padding-left: 24px; }
+  hr { border: none; border-top: 1px solid #2c231b; margin: 32px 0; }
+  .footnote { font-size: 0.88rem; color: #a89880; }
+  .footnote hr { margin: 40px 0 16px; }
+  sup a { text-decoration: none; }
+  .topnav { max-width: 760px; margin: 0 auto 32px; font-size: 0.9rem; }
+  .topnav a { color: #a89880; text-decoration: none; }
+  .topnav a:hover { color: #ece1d3; }
+  .diagram-cta {
+    display: block; text-align: center; margin: 28px 0; padding: 16px;
+    background: #1f1a15; border: 1px solid #3a2f26; border-radius: 12px;
+    color: #ece1d3; text-decoration: none; font-weight: 600;
+  }
+  .diagram-cta:hover { border-color: #d08c4e; }
+  .diagram-cta span { display: block; font-weight: 400; font-size: 0.88rem;
+                      color: #a89880; margin-top: 4px; }
+  .hwblock { background: #1f1a15; border: 1px solid #3a2f26; border-radius: 12px;
+             padding: 4px 20px; margin: 20px 0; }
+  .concepts { border-left: 3px solid #d08c4e; background: #1f1a15;
+              border-radius: 0 8px 8px 0; padding: 12px 20px; margin: 20px 0; }
+.byline { color: #a89880; font-size: 0.95rem; margin: 4px 0 20px; } .byline a { color: #d08c4e; }
+</style>
+<title>Embedded Harness Anatomy E2: MimiClaw — the turn loop that moved onto the chip</title>
+<meta name="description" content="MimiClaw puts a full OpenClaw-style agent loop in pure C on a $5 ESP32-S3: every message — chat, cron, heartbeat — becomes a cloud LLM turn; no local fast path, no approval gate, memory as plain files on flash.">
+<meta name="author" content="David P. S. Marques">
+<meta property="og:title" content="Embedded Harness Anatomy E2: MimiClaw — the turn loop that moved onto the chip">
+<meta property="og:description" content="MimiClaw puts a full OpenClaw-style agent loop in pure C on a $5 ESP32-S3: every message — chat, cron, heartbeat — becomes a cloud LLM turn; no local fast path, no approval gate, memory as plain files on flash.">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://dpsm.github.io/agent-harness-anatomy/embedded/mimiclaw/">
+</head>
+<body>
+<main>
+  <nav class="topnav"><a href="../">&larr; Embedded Harness Anatomy</a></nav>
+<h1 id="embedded-harness-anatomy-e2-mimiclaw-the-turn-loop-that-moved-onto-the-chip">Embedded Harness Anatomy E2: MimiClaw — the turn loop that moved onto the chip</h1>
+  <p class="byline">by <a href="https://ca.linkedin.com/in/dpsmarques">David P. S. Marques</a></p>
+<blockquote>
+<p><strong>Series:</strong> Embedded Harness Anatomy — top-down dissections of agent
+harnesses that run on microcontrollers, grounded in verifiable pinned
+firmware. Every behavioral claim below carries a footnote to a pinned
+GitHub permalink; the full evidence lives in the endnotes.</p>
+</blockquote>
+<h2 id="version-block">Version block</h2>
+<ul>
+<li><strong>Repo:</strong> <a href="https://github.com/memovai/mimiclaw">memovai/mimiclaw</a></li>
+<li><strong>Pinned:</strong> tag <code>v0.1.1</code> → <code>bb10ea0149080d506d920c09054f4c5b20409de2</code> (2026-03-17)<sup id="fnref:1"><a class="footnote-ref" href="#fn:1">1</a></sup></li>
+<li><strong>Language:</strong> C, on ESP-IDF (Espressif's IoT Development Framework —
+  the SDK and build system for ESP32 chips) with FreeRTOS tasks. The
+  component manifest requires ESP-IDF <code>&gt;=5.5.0,&lt;5.6.0</code><sup id="fnref:2"><a class="footnote-ref" href="#fn:2">2</a></sup></li>
+<li><strong>License:</strong> MIT<sup id="fnref:3"><a class="footnote-ref" href="#fn:3">3</a></sup></li>
+<li><strong>Claim under test:</strong> "The world's first AI assistant (OpenClaw) on a
+  $5 chip. No Linux. No Node.js. Just pure C" — a personal assistant
+  you message on Telegram, with an agent loop, tools, local memory,
+  cron jobs, and heartbeats, all running on one ESP32-S3<sup id="fnref:4"><a class="footnote-ref" href="#fn:4">4</a></sup></li>
+</ul>
+<p>One clarification before anything else, because the name invites the
+wrong picture: <strong>MimiClaw is not a client of an OpenClaw gateway.</strong>
+Nothing in the tree speaks an OpenClaw protocol, pairs with a host, or
+offloads the loop. The README's own acknowledgment is the accurate
+framing — "Inspired by OpenClaw and Nanobot. MimiClaw reimplements the
+core AI agent architecture for embedded hardware"<sup id="fnref:5"><a class="footnote-ref" href="#fn:5">5</a></sup>. The gateway,
+the loop, the tools, and the memory all live on the microcontroller;
+the only things in the cloud are the model API and the messaging
+platforms. Where E1 (ESP-Claw) dissolved the turn loop into an event
+bus, MimiClaw does the opposite: it takes the desktop turn loop —
+the OpenClaw/Nanobot shape — and transplants it, intact, onto bare
+metal.</p>
+<p>Scale, for orientation: the tree is 96 files; the firmware is roughly
+7,748 lines of C under <code>main/</code>. The big files are <code>serial_cli.c</code>
+(1,083 lines), <code>feishu_bot.c</code> (991), and <code>llm_proxy.c</code> (811) — which
+already tells you where the complexity lives: the operator console,
+the second messaging channel, and the model client. The agent loop
+itself is 362 lines<sup id="fnref:6"><a class="footnote-ref" href="#fn:6">6</a></sup>.</p>
+<h2 id="hardware-block">Hardware block</h2>
+<p>MimiClaw targets exactly one SoC (system-on-chip — the microcontroller
+plus radio plus memory interfaces on one die): the <strong>ESP32-S3</strong>. The
+checked-in target config sets 16 MB QIO flash, 8 MB octal PSRAM
+(pseudo-static RAM — an external RAM chip wired to the SoC, much
+larger than the internal SRAM but slower) clocked at 80 MHz, and a
+240 MHz CPU clock<sup id="fnref:7"><a class="footnote-ref" href="#fn:7">7</a></sup>. The README's board requirement matches: an
+ESP32-S3 dev board with 16 MB flash and 8 MB PSRAM<sup id="fnref:8"><a class="footnote-ref" href="#fn:8">8</a></sup>. The GPIO
+policy header adds a board-level detail — its pin allowlist is tuned
+for the ESP32-S3-LCD-1.47B's safe user-accessible pins<sup id="fnref:9"><a class="footnote-ref" href="#fn:9">9</a></sup>.</p>
+<p>Flash layout is a single partition table, <code>partitions.csv</code>:</p>
+<table>
+<thead>
+<tr>
+<th>Offset</th>
+<th>Size</th>
+<th>Name</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0x009000</td>
+<td>24 KB</td>
+<td>nvs</td>
+<td>Settings (Wi-Fi, keys, config)</td>
+</tr>
+<tr>
+<td>0x00F000</td>
+<td>8 KB</td>
+<td>otadata</td>
+<td>OTA boot state</td>
+</tr>
+<tr>
+<td>0x020000</td>
+<td>2 MB</td>
+<td>ota_0</td>
+<td>Firmware slot A</td>
+</tr>
+<tr>
+<td>0x220000</td>
+<td>2 MB</td>
+<td>ota_1</td>
+<td>Firmware slot B</td>
+</tr>
+<tr>
+<td>0x420000</td>
+<td>~11.8 MB</td>
+<td>spiffs</td>
+<td>Memory, sessions, config, skills</td>
+</tr>
+<tr>
+<td>0xFF0000</td>
+<td>64 KB</td>
+<td>coredump</td>
+<td>Crash dump storage</td>
+</tr>
+</tbody>
+</table>
+<p><sup id="fnref:10"><a class="footnote-ref" href="#fn:10">10</a></sup></p>
+<p>The SPIFFS image is not formatted on first boot in the normal path —
+it is built from the <code>spiffs_data/</code> directory at build time and
+flashed with the firmware, which is how the seed persona, memory, and
+skill files arrive on the device<sup id="fnref:11"><a class="footnote-ref" href="#fn:11">11</a></sup>. Internal SRAM size is not
+stated as a budget number in the repo; the architecture doc instead
+budgets task stacks (~40 KB), Wi-Fi buffers, and PSRAM allocations for
+TLS, JSON, session, prompt, and response buffers<sup id="fnref:12"><a class="footnote-ref" href="#fn:12">12</a></sup>.</p>
+<p><img alt="MimiClaw architecture: one turn loop on-chip, models and messaging in the cloud" src="figures/mimiclaw.svg" /></p>
+<a class="diagram-cta" href="../../diagrams/template.html?data=../embedded/mimiclaw/diagrams/mimiclaw.json">
+    Explore the interactive architecture diagram
+    <span>15 nodes, 19 edges &mdash; on-chip vs cloud, pan, zoom, and follow every subsystem link</span>
+  </a>
+<h2 id="harness-concepts">Harness concepts</h2>
+<p>A five-line box for embedded readers — the harness ideas this teardown
+uses, translated to this device:</p>
+<ul>
+<li><strong>Turn loop:</strong> there is one, and it is the product. A single
+  FreeRTOS task pops messages from a queue and runs the classic
+  ReAct cycle — build prompt, call the model, execute tools, repeat —
+  one message at a time.</li>
+<li><strong>Tool dispatch:</strong> a static registry of 12 tools (name, description,
+  JSON input schema, C execute function), dispatched by a linear name
+  match. Every registered tool is visible to the model in every
+  session.</li>
+<li><strong>Approvals:</strong> there are none — no approve/deny step exists anywhere
+  in the code. The bounds are per-tool input policies: a GPIO pin
+  allowlist and a file-path fence.</li>
+<li><strong>Memory:</strong> plain files on flash — <code>MEMORY.md</code>, daily notes,
+  per-chat JSONL session files — read back into the prompt on every
+  turn. No index, no compaction.</li>
+<li><strong>Tools that move hardware:</strong> exactly three — <code>gpio_write</code>,
+  <code>gpio_read</code>, <code>gpio_read_all</code> — and every actuation pays a full
+  cloud round-trip first, because there is no local path around the
+  loop.</li>
+</ul>
+<h2 id="the-mental-model">The mental model</h2>
+<p>MimiClaw is <strong>a desktop-style agent that happens to run on a
+microcontroller</strong>. Channels produce text messages; a two-queue
+message bus carries them; one agent task consumes them strictly in
+order and runs each through a cloud LLM tool-call loop; replies ride
+the bus back out to whichever channel sent them. Cron firings and
+heartbeat ticks are not special machinery — they are just more
+messages pushed into the same inbound queue, so the device's
+proactive behavior is the loop talking to itself on a schedule<sup id="fnref:13"><a class="footnote-ref" href="#fn:13">13</a></sup><sup id="fnref:14"><a class="footnote-ref" href="#fn:14">14</a></sup>.</p>
+<p>The governing tradeoff is simplicity-shaped: with one consumer task,
+there is no routing layer, no rule engine, no concurrency to reason
+about — and also no fast path. E1's ESP-Claw can answer a sensor
+event in milliseconds because most events never reach the model.
+MimiClaw cannot: at this tag, <strong>every</strong> request, down to reading a
+single GPIO pin, is a cloud conversation measured in seconds. What
+that buys is fidelity to the desktop pattern — memory files, skills,
+cron, and heartbeat all behave the way an OpenClaw user expects,
+because the architecture is the same architecture, squeezed.</p>
+<h2 id="event-model">Event model</h2>
+<p><img alt="A Telegram message, end to end" src="figures/seq-telegram.svg" /></p>
+<p>The bus message is <code>mimi_msg_t</code>: a channel string (<code>telegram</code>,
+<code>feishu</code>, <code>websocket</code>, <code>cli</code>, <code>system</code>), a <code>chat_id[96]</code>, and a
+heap-allocated <code>content</code> pointer whose ownership transfers to the
+receiver<sup id="fnref:15"><a class="footnote-ref" href="#fn:15">15</a></sup>. Two FreeRTOS queues — inbound and outbound — each have
+depth 16. A push waits up to one second for space and then <strong>drops
+the message and logs it</strong>; there is no persistence, retry, or
+dead-letter anywhere in the bus<sup id="fnref:16"><a class="footnote-ref" href="#fn:16">16</a></sup>.</p>
+<p>Producers verified in code:</p>
+<ul>
+<li><strong>Telegram.</strong> A poll task on Core 0 long-polls <code>getUpdates</code> with a
+  30-second timeout and pushes each text message inbound. Non-text
+  updates are ignored<sup id="fnref:17"><a class="footnote-ref" href="#fn:17">17</a></sup>.</li>
+<li><strong>Feishu.</strong> A WebSocket long connection to Feishu's open platform
+  (endpoint fetched from the platform's WS config URL) carries events
+  inbound; replies go out over the REST <code>im/v1/messages</code> API with a
+  tenant access token<sup id="fnref:18"><a class="footnote-ref" href="#fn:18">18</a></sup>.</li>
+<li><strong>The WebSocket gateway.</strong> The device also <em>is</em> a server: an
+  <code>esp_http_server</code> WebSocket endpoint on port 18789 (max 4 clients)
+  accepts <code>{"type":"message","content":…}</code> frames and pushes them
+  inbound under channel <code>websocket</code><sup id="fnref2:19"><a class="footnote-ref" href="#fn:19">19</a></sup>. This is a local channel of
+  MimiClaw's own design — not an OpenClaw gateway link.</li>
+<li><strong>Cron.</strong> A check task wakes every 60 seconds; a due job pushes its
+  stored message inbound with the job's target channel and
+  chat_id<sup id="fnref4:13"><a class="footnote-ref" href="#fn:13">13</a></sup>.</li>
+<li><strong>Heartbeat.</strong> A FreeRTOS software timer fires every 30 minutes;
+  if <code>HEARTBEAT.md</code> has actionable lines, it pushes a fixed "read the
+  heartbeat file and follow it" prompt as a <code>system</code> message<sup id="fnref4:14"><a class="footnote-ref" href="#fn:14">14</a></sup>.</li>
+</ul>
+<p>The consumer is the agent loop task (§ below), blocked on
+<code>message_bus_pop_inbound</code> with an infinite timeout<sup id="fnref:20"><a class="footnote-ref" href="#fn:20">20</a></sup>. Two
+consequences follow from the single-consumer shape. First, turns are
+<strong>strictly serial</strong>: a slow turn — say, ten tool iterations against a
+slow API — delays every message queued behind it, with no
+prioritization. Second, there are <strong>no mid-turn interrupts</strong>: a
+"stop" message waits in the queue like any other (contrast E1, where
+user interrupts drain at four points inside an in-flight run).</p>
+<p>The one surface that bypasses the loop is the serial CLI: its
+commands — configuration, memory inspection, even a direct
+<code>tool_exec</code> — run locally on the console without the agent<sup id="fnref:21"><a class="footnote-ref" href="#fn:21">21</a></sup>. It
+is the operator's path, not the user's, and it is also the only path
+that works with the network down.</p>
+<h2 id="one-event-end-to-end">One event, end to end</h2>
+<p>The representative path is a Telegram user typing "turn on the relay
+on pin 5", assembled from the verified pieces — each hop is pinned,
+but this is a reconstruction of the flow, not a recorded trace:</p>
+<ol>
+<li><strong>Ingress.</strong> The poll task's <code>getUpdates</code> returns the update;
+   <code>process_updates</code> checks the persisted offset and a seen-message
+   dedup ring, then pushes <code>mimi_msg_t{channel="telegram",
+   chat_id=…, content="turn on the relay on pin 5"}</code> inbound<sup id="fnref2:17"><a class="footnote-ref" href="#fn:17">17</a></sup><sup id="fnref3:22"><a class="footnote-ref" href="#fn:22">22</a></sup>.</li>
+<li><strong>Prompt assembly.</strong> The agent task pops the message and builds
+   the system prompt from flash — persona, user profile, long-term
+   memory, the last three days of notes, skill summaries — plus a
+   per-turn appendix naming the source channel and chat_id, then
+   loads the session's last 20 messages and appends the new
+   one<sup id="fnref3:23"><a class="footnote-ref" href="#fn:23">23</a></sup><sup id="fnref2:24"><a class="footnote-ref" href="#fn:24">24</a></sup>.</li>
+<li><strong>Working status.</strong> Before the first API call, the loop pushes a
+   "mimi is working..." status message to the outbound queue, which
+   the dispatch task sends to Telegram — the same latency UX as E1,
+   for the same reason: the next step takes seconds<sup id="fnref2:25"><a class="footnote-ref" href="#fn:25">25</a></sup>.</li>
+<li><strong>LLM call.</strong> <code>llm_chat_tools</code> POSTs the full JSON body to the
+   configured provider in one blocking HTTPS call — no streaming;
+   the whole response is buffered in PSRAM, then parsed<sup id="fnref:26"><a class="footnote-ref" href="#fn:26">26</a></sup>.</li>
+<li><strong>Tool call.</strong> The model answers with <code>gpio_write {pin: 5,
+   state: 1}</code>.</li>
+</ol>
+<p><img alt="A tool call reaches a pin" src="figures/seq-gpio.svg" /></p>
+<p>The registry dispatches by name; the GPIO tool checks the pin
+   against the allowlist policy, configures the pin, and sets it
+   HIGH. The result returns as a <code>tool_result</code> block and the loop
+   iterates<sup id="fnref:27"><a class="footnote-ref" href="#fn:27">27</a></sup><sup id="fnref:28"><a class="footnote-ref" href="#fn:28">28</a></sup>.
+6. <strong>Reply.</strong> The next call returns plain text. The loop appends
+   <strong>only the user text and the final assistant text</strong> to the
+   session file — the tool rounds are not persisted — and pushes the
+   reply outbound; the dispatch task routes it by channel string to
+   <code>telegram_send_message</code>, which splits long replies into
+   4096-character chunks<sup id="fnref:29"><a class="footnote-ref" href="#fn:29">29</a></sup><sup id="fnref:30"><a class="footnote-ref" href="#fn:30">30</a></sup>.</p>
+<p>If the LLM call fails at any point, the loop instead pushes "Sorry, I
+encountered an error." and saves nothing — the turn leaves no trace
+in memory<sup id="fnref2:29"><a class="footnote-ref" href="#fn:29">29</a></sup>.</p>
+<a class="diagram-cta" href="trace.html">
+    Follow one message through MimiClaw
+    <span>A 10-step trace: Telegram message &rarr; message bus &rarr; agent loop &rarr; cloud LLM &rarr; GPIO policy check &rarr; reply</span>
+  </a>
+<h2 id="subsystem-inventory">Subsystem inventory</h2>
+<h3 id="llm-layer-cloud-only-anthropic-shaped-inside">LLM layer (cloud-only, Anthropic-shaped inside)</h3>
+<p><strong>Compute placement: the LLM never runs on the chip</strong> — the same
+placement as E1, with a different internal shape. Two providers are
+supported: Anthropic's Messages API and OpenAI's Chat Completions,
+selected by a single string comparison (<code>provider_is_openai()</code>); the
+endpoint, host, and path all switch on that one check<sup id="fnref:31"><a class="footnote-ref" href="#fn:31">31</a></sup>. The
+internal canonical format is <strong>Anthropic's</strong> — messages carry text
+and <code>tool_use</code>/<code>tool_result</code> blocks — and for OpenAI a conversion
+layer translates in both directions (system prompt becomes a system
+message, <code>tool_use</code> becomes <code>tool_calls</code>, <code>tool_result</code> becomes
+<code>role: "tool"</code>, and <code>finish_reason: "tool_calls"</code> maps back to tool
+use)<sup id="fnref:32"><a class="footnote-ref" href="#fn:32">32</a></sup>.</p>
+<p>Transport is one blocking <code>esp_http_client_perform</code> POST of the full
+body (or a CONNECT-tunnel + TLS path when an HTTP proxy is
+configured, shared with the Telegram, search, and time tools) —
+<strong>no streaming</strong>; the response accumulates in a PSRAM buffer that
+doubles from 32 KB as needed<sup id="fnref:33"><a class="footnote-ref" href="#fn:33">33</a></sup>. <code>max_tokens</code> is 4096 for both
+providers; the response parser keeps at most <strong>4 tool calls</strong> per
+response (<code>MIMI_MAX_TOOL_CALLS</code>)<sup id="fnref:34"><a class="footnote-ref" href="#fn:34">34</a></sup>. With no API key configured,
+<code>llm_chat_tools</code> returns <code>ESP_ERR_INVALID_STATE</code> immediately and the
+turn becomes the generic error reply<sup id="fnref:35"><a class="footnote-ref" href="#fn:35">35</a></sup>.</p>
+<p>Configuration is two-layer, and the priority is worth stating
+precisely because the header comment in <code>mimi_config.h</code> reads the
+other way: the code loads build-time <code>mimi_secrets.h</code> values first,
+then <strong>NVS values override them</strong> (the init comment says so
+explicitly) — so <code>set_api_key</code>, <code>set_model</code>, and
+<code>set_model_provider</code> on the serial CLI change the live configuration
+without a reflash<sup id="fnref:36"><a class="footnote-ref" href="#fn:36">36</a></sup>. Defaults are provider <code>anthropic</code>, model
+<code>claude-opus-4-5</code><sup id="fnref:37"><a class="footnote-ref" href="#fn:37">37</a></sup>.</p>
+<p>The loop's bounds are constants, not configuration: at most 10 tool
+iterations per turn, after which the loop simply stops iterating and
+— since no final text was produced — the user receives the generic
+error message. There is no "iteration limit reached" explanation
+sent to the user<sup id="fnref:38"><a class="footnote-ref" href="#fn:38">38</a></sup>.</p>
+<h3 id="tools-twelve-always-visible-policy-at-the-edges">Tools: twelve, always visible, policy at the edges</h3>
+<p>The registry is a static array (max 16) with 12 tools registered at
+boot; the tools JSON is built once, in Anthropic shape, and dispatch
+is a linear scan for a name match<sup id="fnref:39"><a class="footnote-ref" href="#fn:39">39</a></sup><sup id="fnref:40"><a class="footnote-ref" href="#fn:40">40</a></sup>:</p>
+<table>
+<thead>
+<tr>
+<th>Group</th>
+<th>Tools</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Web</td>
+<td><code>web_search</code></td>
+<td>Tavily preferred, Brave fallback; both HTTPS, proxy-aware<sup id="fnref:41"><a class="footnote-ref" href="#fn:41">41</a></sup></td>
+</tr>
+<tr>
+<td>Time</td>
+<td><code>get_current_time</code></td>
+<td>HEAD request to <code>api.telegram.org</code>, parses the <code>Date</code> header, <strong>sets the system clock</strong><sup id="fnref2:42"><a class="footnote-ref" href="#fn:42">42</a></sup></td>
+</tr>
+<tr>
+<td>Files</td>
+<td><code>read_file</code>, <code>write_file</code>, <code>edit_file</code>, <code>list_dir</code></td>
+<td>Fenced to <code>/spiffs/</code> paths, no <code>..</code>, 32 KB read cap<sup id="fnref3:43"><a class="footnote-ref" href="#fn:43">43</a></sup></td>
+</tr>
+<tr>
+<td>Cron</td>
+<td><code>cron_add</code>, <code>cron_list</code>, <code>cron_remove</code></td>
+<td>The model schedules its own future turns<sup id="fnref6:13"><a class="footnote-ref" href="#fn:13">13</a></sup></td>
+</tr>
+<tr>
+<td>GPIO</td>
+<td><code>gpio_write</code>, <code>gpio_read</code>, <code>gpio_read_all</code></td>
+<td>Behind the pin allowlist (below)<sup id="fnref5:27"><a class="footnote-ref" href="#fn:27">27</a></sup></td>
+</tr>
+</tbody>
+</table>
+<p><strong>There is no approval gate and no visibility gating.</strong> Every tool is
+offered to the model on every turn; there is nothing like E1's
+six-check eligibility chain or per-session tool sets. Safety, such as
+it is, lives inside two tools' input validation:</p>
+<ul>
+<li><strong>GPIO policy.</strong> An explicit allowlist of 21 pins (1–18, 21, 38,
+  46) governs all three GPIO tools; on ESP32-S3, pins 19/20 — the USB
+  Serial/JTAG pair — are hard-blocked with a explanatory error, and
+  on classic ESP32 the flash/PSRAM pins 6–11 are blocked<sup id="fnref3:9"><a class="footnote-ref" href="#fn:9">9</a></sup><sup id="fnref4:27"><a class="footnote-ref" href="#fn:27">27</a></sup>.
+  <code>gpio_write</code> then configures the pin <code>INPUT_OUTPUT</code> and sets the
+  level<sup id="fnref2:28"><a class="footnote-ref" href="#fn:28">28</a></sup>. The allowlist is the complete actuation safety story:
+  a compile-time list, checked per call.</li>
+<li><strong>File fence.</strong> File tools require the path to start with
+  <code>/spiffs/</code> and reject any path containing <code>..</code><sup id="fnref2:43"><a class="footnote-ref" href="#fn:43">43</a></sup>. Inside that
+  fence the model can overwrite anything — including <code>SOUL.md</code>,
+  <code>MEMORY.md</code>, skill files, and <code>cron.json</code> — which is by design for
+  memory and skills (§ below), and worth noticing for the rest.</li>
+</ul>
+<p><strong>Ingress authentication is the open flank at this tag.</strong> The
+Telegram path applies no sender check at all: <code>process_updates</code>
+accepts any chat that messages the bot, and the project's own TODO
+file lists a Telegram user allowlist as an open item, noting that
+anyone can message the bot and consume API credits<sup id="fnref:44"><a class="footnote-ref" href="#fn:44">44</a></sup>. The
+WebSocket gateway likewise accepts any LAN client that connects and
+sends a well-formed frame — no credential of any kind<sup id="fnref:19"><a class="footnote-ref" href="#fn:19">19</a></sup>. Feishu
+events arrive over Feishu's authenticated platform connection, but
+no sender filtering is applied in the device code. In practical
+terms: at v0.1.1, reaching the bot or the LAN socket <em>is</em> the
+authorization, and it includes GPIO writes and arbitrary file writes
+inside the fence. (Post-tag commits on the upstream main branch add
+group-chat mention filtering; that behavior is not in the pinned
+tag and is not claimed here.)</p>
+<h3 id="cron-and-heartbeat-the-loop-talks-to-itself">Cron and heartbeat: the loop talks to itself</h3>
+<p><img alt="Cron wakes the agent" src="figures/seq-cron.svg" /></p>
+<p>Cron supports up to 16 jobs of two kinds — <code>every</code> (interval in
+seconds) and <code>at</code> (a unix timestamp) — persisted as JSON in
+<code>/spiffs/cron.json</code> and rewritten in full on every change; the check
+task evaluates due jobs every 60 seconds<sup id="fnref2:13"><a class="footnote-ref" href="#fn:13">13</a></sup>. Destinations are
+sanitized when jobs are created or loaded: a telegram job whose
+chat_id is empty or literally <code>cron</code> falls back to <code>system:cron</code><sup id="fnref:45"><a class="footnote-ref" href="#fn:45">45</a></sup>.</p>
+<p>That fallback has a consequence worth following to the end. Outbound
+dispatch routes by channel string, and for channel <code>system</code> the
+dispatcher <strong>only logs the message</strong> (first 128 characters) — it is
+delivered nowhere<sup id="fnref:46"><a class="footnote-ref" href="#fn:46">46</a></sup>. The same is true of heartbeat turns: the
+heartbeat prompt itself is a <code>system</code> message, so when the agent
+finishes a heartbeat check, its text reply lands in the serial log.
+The side effects of a proactive turn (file writes, new cron jobs,
+GPIO actions) are real; its words are not delivered to any user
+channel unless the agent arranged delivery as a tool call — for
+example a cron job whose target is a real Telegram chat.</p>
+<p>Heartbeat's trigger is deliberately simple: any line of
+<code>HEARTBEAT.md</code> that is not blank, not a <code>#</code> header, and not a
+completed <code>- [x]</code> checkbox makes the file "actionable", and the
+30-minute timer pushes the check prompt<sup id="fnref2:14"><a class="footnote-ref" href="#fn:14">14</a></sup>. There is no boot-time
+heartbeat; the first check happens one interval after start.</p>
+<h3 id="memory-plain-files-rebuilt-every-turn">Memory: plain files, rebuilt every turn</h3>
+<p><img alt="Memory is files, rebuilt every turn" src="figures/seq-memory.svg" /></p>
+<p>All durable state is files on the SPIFFS partition (a flat filesystem
+— the "directories" are filename prefixes):</p>
+<ul>
+<li><code>config/SOUL.md</code> and <code>config/USER.md</code> — persona and user profile.</li>
+<li><code>memory/MEMORY.md</code> — long-term memory, read in full into every
+  system prompt. The model maintains it with the generic file tools;
+  the system prompt instructs it to save new facts about the user
+  proactively, reading before editing so nothing is lost<sup id="fnref2:47"><a class="footnote-ref" href="#fn:47">47</a></sup>.</li>
+<li><code>memory/&lt;YYYY-MM-DD&gt;.md</code> — daily notes; the last three days are
+  read into the prompt.</li>
+<li><code>sessions/tg_&lt;chat_id&gt;.jsonl</code> — one append-only JSONL file per
+  chat (<code>{"role","content","ts"}</code> per line). The <code>tg_</code> prefix is
+  hard-coded for <strong>every</strong> channel, so WebSocket and Feishu sessions
+  share the Telegram filename namespace<sup id="fnref2:48"><a class="footnote-ref" href="#fn:48">48</a></sup>.</li>
+<li><code>cron.json</code>, <code>HEARTBEAT.md</code>, <code>skills/*.md</code> (§ below).</li>
+</ul>
+<p>Prompt assembly happens <strong>from flash, on every message</strong>, into a
+fixed 16 KB PSRAM buffer: preamble and tool guidance, then SOUL and
+USER, long-term memory (via a 4 KB scratch buffer), three days of
+notes (4 KB), and skill summaries (2 KB). History rides in a separate
+32 KB buffer; tool output gets 8 KB. The budgets are buffer sizes,
+not token counts — there is no token accounting anywhere<sup id="fnref:23"><a class="footnote-ref" href="#fn:23">23</a></sup>.</p>
+<p>Two details reward a close read. First, session reads ring-buffer
+the last 20 messages, but <strong>appends are never truncated</strong>: the
+session file grows for the life of the chat, and nothing compacts,
+rotates, or caps any of these files. <code>cron.json</code> is rewritten whole
+on each change and <code>MEMORY.md</code> is overwritten whole on each edit.
+There is no app-level flash-wear strategy in the code — no compaction
+threshold like E1's, no write batching; the design treats SPIFFS as
+a small disk. Second, a path inconsistency: the system prompt tells
+the model daily notes live at <code>/spiffs/memory/daily/&lt;date&gt;.md</code>, but
+the memory store reads and writes them at <code>/spiffs/memory/&lt;date&gt;.md</code>
+— a note the model files at the prompted path is one the
+recent-notes reader never loads back<sup id="fnref:49"><a class="footnote-ref" href="#fn:49">49</a></sup>.</p>
+<h3 id="when-the-link-drops">When the link drops</h3>
+<p><img alt="When the link drops" src="figures/seq-offline.svg" /></p>
+<p>The two directions fail differently. <strong>Ingress is durable where the
+platform makes it so:</strong> Telegram's update offset is persisted to NVS
+(throttled — every 32 updates or 30 seconds) and reloaded at boot,
+and an in-RAM seen-message ring drops redelivered duplicates, so a
+reboot or outage does not re-run old messages<sup id="fnref:22"><a class="footnote-ref" href="#fn:22">22</a></sup>. The poll task
+backs off three seconds on error and retries indefinitely, and the
+Wi-Fi manager reconnects with exponential backoff (1 s doubling,
+30 s cap, at most 10 retries)<sup id="fnref:50"><a class="footnote-ref" href="#fn:50">50</a></sup>.</p>
+<p><strong>Inside the device, nothing is durable.</strong> The queues are RAM-only:
+a burst that fills the inbound queue loses messages at the producer,
+and a reply that meets a full outbound queue is dropped and freed.
+A turn whose HTTPS call fails mid-flight produces the generic error
+reply and is gone — no retry, no queueing for later, no record in
+memory<sup id="fnref2:16"><a class="footnote-ref" href="#fn:16">16</a></sup><sup id="fnref3:29"><a class="footnote-ref" href="#fn:29">29</a></sup>. And without Wi-Fi at boot there is no degraded
+mode at all: the device blocks in the onboarding access point until
+someone configures it (§ Extension points), which is a defensible
+choice for a personal gadget and a sharp contrast with E1, whose
+rules and Lua keep working offline.</p>
+<h3 id="skills-markdown-in-the-prompt-nothing-more">Skills: Markdown in the prompt, nothing more</h3>
+<p>Skills are Markdown files in <code>/spiffs/skills/</code> (seeds:
+<code>daily-briefing</code>, <code>gpio-control</code>, <code>skill-creator</code>, <code>weather</code>). The
+loader scans the directory and injects each skill's title and
+first-paragraph description into the system prompt, with an
+instruction to <code>read_file</code> the full text when a task matches; the
+model can also <strong>create new skills with <code>write_file</code></strong><sup id="fnref:51"><a class="footnote-ref" href="#fn:51">51</a></sup>. That is
+the whole mechanism — skills carry no capability scoping, no
+metadata contract, no gating (contrast E1, where a skill's
+front-matter declares which capability groups it unlocks). A skill
+is prompt text the model wrote for its future self, which is either
+admirably simple or entirely dependent on the model's judgment,
+depending on the reader's temperament. Both readings are fair; the
+code supports each.</p>
+<h3 id="serial-cli-and-onboarding">Serial CLI and onboarding</h3>
+<p>The serial console is the operator's control plane: roughly thirty
+commands covering runtime configuration (<code>set_wifi</code>, <code>set_tg_token</code>,
+<code>set_feishu_creds</code>, <code>set_api_key</code>, <code>set_model</code>,
+<code>set_model_provider</code>, <code>set_search_key</code>, <code>set_tavily_key</code>,
+<code>set_proxy</code>/<code>clear_proxy</code>, <code>config_show</code>, <code>config_reset</code>),
+maintenance (<code>memory_read</code>/<code>memory_write</code>, <code>session_list</code>/
+<code>session_clear</code>, <code>skill_list</code>/<code>skill_show</code>/<code>skill_search</code>,
+<code>heap_info</code>, <code>heartbeat_trigger</code>, <code>cron_start</code>, <code>restart</code>), and two
+that reach past inspection — <code>tool_exec</code>, which runs any registered
+tool directly, and a standalone <code>web_search</code><sup id="fnref2:21"><a class="footnote-ref" href="#fn:21">21</a></sup>. It starts before
+Wi-Fi and works with the network down<sup id="fnref2:11"><a class="footnote-ref" href="#fn:11">11</a></sup>.</p>
+<p>Wi-Fi onboarding is the same pattern at boot scale: if the STA
+connection fails, <code>app_main</code> calls the captive onboarding mode,
+which brings up an open <code>MimiClaw-XXXX</code> access point with a web
+form and <strong>blocks forever</strong> — the only exits are a successful save
+(which reboots the device) or power<sup id="fnref2:12"><a class="footnote-ref" href="#fn:12">12</a></sup>. After a successful
+connection, a second, non-blocking admin portal in APSTA mode stays
+available for reconfiguration<sup id="fnref3:11"><a class="footnote-ref" href="#fn:11">11</a></sup>.</p>
+<h2 id="extension-points-and-update-mechanism">Extension points and update mechanism</h2>
+<p>Layered, as in E1, by how hot the change is:</p>
+<ul>
+<li><strong>Skills and memory</strong> (hot, model-writable): Markdown files on
+  SPIFFS; the model itself can create and edit them through the file
+  tools, and they take effect on the next turn's prompt rebuild<sup id="fnref2:51"><a class="footnote-ref" href="#fn:51">51</a></sup>.</li>
+<li><strong>Cron jobs</strong> (hot, model-writable): created through <code>cron_add</code>,
+  persisted to flash, firing as future turns<sup id="fnref5:13"><a class="footnote-ref" href="#fn:13">13</a></sup>.</li>
+<li><strong>Configuration</strong> (warm): serial CLI writes to NVS — Wi-Fi
+  credentials, bot tokens, API keys, provider, model, proxy, search
+  keys — overriding the build-time <code>mimi_secrets.h</code> defaults with no
+  reflash<sup id="fnref3:36"><a class="footnote-ref" href="#fn:36">36</a></sup>. The onboarding and admin portals offer the same for
+  Wi-Fi specifically<sup id="fnref3:12"><a class="footnote-ref" href="#fn:12">12</a></sup>.</li>
+<li><strong>Firmware</strong> (cold): USB reflash with <code>idf.py flash</code>. The partition
+  table carries dual OTA slots and <code>main/ota/ota_manager.c</code> wraps
+  <code>esp_https_ota</code> — but that file is <strong>not listed in
+  <code>main/CMakeLists.txt</code>'s sources and its entry point has no
+  caller</strong>, so OTA is not compiled into the firmware at this tag.
+  The README's "OTA updates — flash new firmware over WiFi, no USB
+  needed" describes real code that ships unbuilt<sup id="fnref2:52"><a class="footnote-ref" href="#fn:52">52</a></sup><sup id="fnref2:53"><a class="footnote-ref" href="#fn:53">53</a></sup>. It is
+  the same failure shape E1 exhibited with its MCP server docs: the
+  claim is grounded in code a reader can open, and the wiring says
+  otherwise. The teardown records what the build does, not what the
+  README hopes.</li>
+</ul>
+<h2 id="tradeoffs">Tradeoffs</h2>
+<p><strong>No local fast path — simplicity is the bet.</strong> Every actuation pays
+a cloud round-trip, every message waits behind the turn in front of
+it, and nothing at all works offline beyond the serial console. In
+exchange, the firmware has exactly one execution model to get right:
+~360 lines of agent loop, a 59-line bus, a 241-line registry. For a
+personal assistant whose jobs are reminders, summaries, and the
+occasional relay, that exchange is coherent. For anything with a
+latency budget or a safety interlock, the architecture itself says
+no — there is no mechanism to add one without growing a second,
+local path beside the loop.</p>
+<p><strong>No approval gate, and thinner architecture around the tools than
+E1.</strong> E1 also has no approvals, but it gates what the model can
+<em>see</em>: an eligibility chain, per-session visibility, skill-scoped
+groups. MimiClaw gates what tools can <em>do</em>: a pin allowlist and a
+path fence, with everything visible always. Combined with unauthenticated
+ingress at this tag (§ Tools), the honest summary is that v0.1.1's
+security model is "the bot is obscure and the LAN is trusted" — the
+project's own TODO file says as much about the Telegram side<sup id="fnref2:44"><a class="footnote-ref" href="#fn:44">44</a></sup>.</p>
+<p><strong>Anthropic inside, OpenAI by translation.</strong> Making the Anthropic
+block format the canonical internal shape keeps one code path for
+the loop and one for parsing; the OpenAI converter is contained in
+the LLM module. The cost is asymmetry: OpenAI behavior is bounded by
+what the converter expresses (it caps at the same 4 tool calls, maps
+the same block types), and a provider-specific feature has nowhere
+to land. For two providers this is the right size of abstraction;
+it would creak at five.</p>
+<p><strong>Memory as files the user can read.</strong> <code>MEMORY.md</code> you can open,
+edit, or delete with a text editor is a genuinely friendly design —
+the same files are the prompt, the backup, and the audit log. The
+costs are the ones § Memory names: unbounded session growth, whole-file
+rewrites, no wear awareness, and one path mismatch between what the
+prompt tells the model and what the reader reads. None of these bite
+on day one; all of them are the kind of thing that bites on day
+three hundred, on a chip whose flash is the only disk it will ever
+have.</p>
+<p><strong>Docs drift is part of the artifact.</strong> At this tag, both
+<code>docs/ARCHITECTURE.md</code> and <code>docs/TODO.md</code> describe an earlier
+firmware: the architecture doc's module map ends before cron,
+heartbeat, skills, Feishu, and the second provider existed, and the
+TODO file lists shipped features as missing. The code is ahead of
+its documentation in every case checked — a good problem, but it
+means the docs cannot be used as evidence for this version, which is
+why every claim in this teardown pins to source.</p>
+<h2 id="comparison-row">Comparison row</h2>
+<p><strong>1. Compute placement — cloud-only, two providers.</strong> The LLM never
+runs on the chip: Anthropic Messages natively, OpenAI Chat
+Completions through a translation layer, both as single blocking
+HTTPS POSTs with 4096 max tokens<sup id="fnref2:31"><a class="footnote-ref" href="#fn:31">31</a></sup><sup id="fnref2:32"><a class="footnote-ref" href="#fn:32">32</a></sup><sup id="fnref2:33"><a class="footnote-ref" href="#fn:33">33</a></sup>. Identical placement
+to E1; the difference is E1's third, user-defined backend shape,
+which MimiClaw does not offer.</p>
+<p><strong>2. Power envelope — always-on, one brochure number.</strong> No sleep API
+appears anywhere in <code>main/</code> (tree-wide search, zero hits): the device
+runs 24/7 with Wi-Fi associated and a 30-second long poll
+outstanding<sup id="fnref:54"><a class="footnote-ref" href="#fn:54">54</a></sup>. The only power figure in the repo is the README's
+"USB power, 0.5 W, runs 24/7" — a claim with no measurement behind
+it in the tree, recorded here as [UNVERIFIED] beyond the README
+line itself<sup id="fnref:55"><a class="footnote-ref" href="#fn:55">55</a></sup>.</p>
+<p><strong>3. Connectivity dependence — total, by design.</strong> Offline, the agent
+does nothing: channels, model, search, and even the clock
+(<code>get_current_time</code> reads a <code>Date</code> header over HTTPS) are network
+services<sup id="fnref:42"><a class="footnote-ref" href="#fn:42">42</a></sup>. Boot without Wi-Fi blocks in a captive portal; runtime
+loss degrades to the serial console. Telegram ingress alone is
+durable, via the platform's redelivery plus a persisted offset<sup id="fnref2:22"><a class="footnote-ref" href="#fn:22">22</a></sup>.</p>
+<p><strong>4. Event model — a bus feeding a turn loop.</strong> Two depth-16 queues
+and one consumer: cron, heartbeat, and three channel types all
+become <code>mimi_msg_t</code> in one inbound queue, and every one of them runs
+the full ReAct loop<sup id="fnref2:15"><a class="footnote-ref" href="#fn:15">15</a></sup><sup id="fnref3:16"><a class="footnote-ref" href="#fn:16">16</a></sup><sup id="fnref2:20"><a class="footnote-ref" href="#fn:20">20</a></sup>. This is the exact inverse of E1,
+where the bus is the architecture and the loop is an attachment;
+here the loop is the architecture and the bus is plumbing.</p>
+<p><strong>5. Sensor/actuator interface — three GPIO tools, one allowlist.</strong>
+The physical world is digital pins: <code>gpio_write</code>, <code>gpio_read</code>,
+<code>gpio_read_all</code> over a 21-pin allowlist with the USB pair
+hard-blocked<sup id="fnref2:9"><a class="footnote-ref" href="#fn:9">9</a></sup><sup id="fnref2:27"><a class="footnote-ref" href="#fn:27">27</a></sup>. No I2C, ADC, PWM, camera, or display surface
+exists at this tag — a much smaller hardware surface than E1's 36
+Lua modules, and a much smaller policy problem as a result.</p>
+<p><strong>6. Model footprint — the prompt is 16 KB.</strong> No model on device, so
+the footprint question is again the prompt: a 16 KB system-prompt
+buffer assembled per turn from flash, 32 KB of history, 8 KB of tool
+output, 20 messages of session context, no token counting<sup id="fnref2:23"><a class="footnote-ref" href="#fn:23">23</a></sup><sup id="fnref:24"><a class="footnote-ref" href="#fn:24">24</a></sup>.</p>
+<p><strong>7. Memory architecture — plain files, no wear story.</strong> Persona,
+long-term memory, daily notes, and JSONL sessions as directly
+readable files on an ~11.8 MB SPIFFS partition; reads are bounded
+(ring buffer, scratch buffers), writes are not (append-only sessions,
+whole-file rewrites, no compaction)<sup id="fnref:47"><a class="footnote-ref" href="#fn:47">47</a></sup><sup id="fnref:48"><a class="footnote-ref" href="#fn:48">48</a></sup><sup id="fnref2:10"><a class="footnote-ref" href="#fn:10">10</a></sup>.</p>
+<p><strong>8. Update mechanism — reflash for firmware, everything else hot.</strong>
+Config via CLI→NVS, behavior via files and cron the model can edit,
+skills via Markdown — all without a build. Firmware is USB-only in
+practice: dual OTA partitions and an OTA wrapper exist, but the OTA
+module is not in the build<sup id="fnref:52"><a class="footnote-ref" href="#fn:52">52</a></sup><sup id="fnref:53"><a class="footnote-ref" href="#fn:53">53</a></sup>.</p>
+<p><strong>9. Real-time constraints — seconds, with one status message.</strong>
+There is no millisecond path through the agent; the local paths are
+the serial CLI's own commands. The latency UX is a single "working"
+status per turn<sup id="fnref:25"><a class="footnote-ref" href="#fn:25">25</a></sup>. Internal deadlines are queue-shaped instead:
+1-second push timeouts, a 60-second cron check, a 30-minute
+heartbeat timer<sup id="fnref4:16"><a class="footnote-ref" href="#fn:16">16</a></sup><sup id="fnref3:13"><a class="footnote-ref" href="#fn:13">13</a></sup><sup id="fnref3:14"><a class="footnote-ref" href="#fn:14">14</a></sup>.</p>
+<p><strong>10. Failure &amp; safety — policy at the edges, openness at the door.</strong>
+Failures are simple and final: a failed turn yields one generic
+error message and no memory trace<sup id="fnref4:29"><a class="footnote-ref" href="#fn:29">29</a></sup>. Safety is two input policies
+(GPIO allowlist, file fence) around an always-visible tool set, with
+no approvals — and, at this tag, no sender authentication on any
+channel, which the project's TODO file itself flags<sup id="fnref:43"><a class="footnote-ref" href="#fn:43">43</a></sup><sup id="fnref3:27"><a class="footnote-ref" href="#fn:27">27</a></sup><sup id="fnref3:44"><a class="footnote-ref" href="#fn:44">44</a></sup>.
+API keys and tokens live in NVS flash or the build-time secrets
+header<sup id="fnref2:36"><a class="footnote-ref" href="#fn:36">36</a></sup>.</p>
+<h2 id="what-transfers">What transfers</h2>
+<p><strong>What embedded teaches harness design.</strong> The single-consumer queue
+is a discipline desktop harnesses could borrow more often: when
+every stimulus — chat, schedule, self-check — must become the same
+message shape and wait its turn, whole categories of race and
+reentrancy design simply never arise, and proactive behavior (cron,
+heartbeat) stops being a subsystem and becomes a special case of
+ordinary input. The destination-sanitizing for cron jobs is a small
+gem in the same spirit: the system repairs an invalid delivery
+address at write time instead of failing at fire time. And
+memory-as-plain-files — prompt, backup, and audit log in one
+artifact the user can open — is a standing rebuke to opaque memory
+stores.</p>
+<p><strong>What harness design teaches embedded.</strong> The gaps here are the
+desktop series' solved problems wearing embedded clothes. Session
+files that grow forever are a log-rotation problem; whole-file
+rewrites on a wear-limited medium are a compaction problem (E1's
+memory subsystem is the worked example); an always-visible tool set
+with unauthenticated ingress is the approvals/visibility problem
+that both E1 and the desktop harnesses answer in their different
+ways. None of these require new ideas — they require porting old
+ones, which is precisely the work this series exists to track. The
+most instructive single line in the tree may be the TODO entry for
+the allowlist: the authors know exactly which harness idea comes
+next. Watching whether it arrives — and what it costs on a $5 chip —
+is what E3 and beyond are for.</p>
+<h2 id="endnotes">Endnotes</h2>
+<div class="footnote">
+<hr />
+<ol>
+<li id="fn:1">
+<p>Pinned tag <code>v0.1.1</code> (2026-03-17), commit
+<code>bb10ea0149080d506d920c09054f4c5b20409de2</code>:
+<a href="https://github.com/memovai/mimiclaw/tree/bb10ea0149080d506d920c09054f4c5b20409de2">https://github.com/memovai/mimiclaw/tree/bb10ea0149080d506d920c09054f4c5b20409de2</a>&#160;<a class="footnote-backref" href="#fnref:1" title="Jump back to footnote 1 in the text">&#8617;</a></p>
+</li>
+<li id="fn:2">
+<p>ESP-IDF version range in the component manifest:
+<a href="https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/idf_component.yml">https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/idf_component.yml</a>;
+README quick start requires ESP-IDF v5.5+:
+<a href="https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/README.md">https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/README.md</a>&#160;<a class="footnote-backref" href="#fnref:2" title="Jump back to footnote 2 in the text">&#8617;</a></p>
+</li>
+<li id="fn:3">
+<p>License (MIT, Copyright (c) 2026 Ziboyan Wang):
+<a href="https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/LICENSE">https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/LICENSE</a>&#160;<a class="footnote-backref" href="#fnref:3" title="Jump back to footnote 3 in the text">&#8617;</a></p>
+</li>
+<li id="fn:4">
+<p>"The world's first AI assistant (OpenClaw) on a $5 chip. No
+Linux. No Node.js. Just pure C"; Telegram flow and dual providers:
+<a href="https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/README.md#L18">https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/README.md#L18</a>,
+<a href="https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/README.md#L34">https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/README.md#L34</a>&#160;<a class="footnote-backref" href="#fnref:4" title="Jump back to footnote 4 in the text">&#8617;</a></p>
+</li>
+<li id="fn:5">
+<p>"Inspired by OpenClaw and Nanobot. MimiClaw reimplements the
+core AI agent architecture for embedded hardware":
+<a href="https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/README.md#L315">https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/README.md#L315</a>&#160;<a class="footnote-backref" href="#fnref:5" title="Jump back to footnote 5 in the text">&#8617;</a></p>
+</li>
+<li id="fn:6">
+<p>Firmware tree under <code>main/</code> (file sizes per the pinned tree;
+<code>serial_cli.c</code> 1,083 lines, <code>feishu_bot.c</code> 991, <code>llm_proxy.c</code> 811,
+<code>agent_loop.c</code> 362):
+<a href="https://github.com/memovai/mimiclaw/tree/bb10ea0149080d506d920c09054f4c5b20409de2/main">https://github.com/memovai/mimiclaw/tree/bb10ea0149080d506d920c09054f4c5b20409de2/main</a>&#160;<a class="footnote-backref" href="#fnref:6" title="Jump back to footnote 6 in the text">&#8617;</a></p>
+</li>
+<li id="fn:7">
+<p>ESP32-S3 target: 16 MB QIO flash, 8 MB octal PSRAM at 80 MHz,
+240 MHz CPU:
+<a href="https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/sdkconfig.defaults.esp32s3">https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/sdkconfig.defaults.esp32s3</a>&#160;<a class="footnote-backref" href="#fnref:7" title="Jump back to footnote 7 in the text">&#8617;</a></p>
+</li>
+<li id="fn:8">
+<p>Board requirement (ESP32-S3, 16 MB flash, 8 MB PSRAM):
+<a href="https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/README.md#L40">https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/README.md#L40</a>&#160;<a class="footnote-backref" href="#fnref:8" title="Jump back to footnote 8 in the text">&#8617;</a></p>
+</li>
+<li id="fn:9">
+<p>GPIO defaults "for ESP32-S3-LCD-1.47B safe user-accessible
+pins"; allowlist CSV (21 pins: 1–18, 21, 38, 46):
+<a href="https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/tools/gpio_policy.h#L6-L9">https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/tools/gpio_policy.h#L6-L9</a>&#160;<a class="footnote-backref" href="#fnref:9" title="Jump back to footnote 9 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:9" title="Jump back to footnote 9 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:9" title="Jump back to footnote 9 in the text">&#8617;</a></p>
+</li>
+<li id="fn:10">
+<p>Partition table <code>partitions.csv</code> (nvs 24 KB, ota_0/ota_1
+2 MB each, spiffs 0xBD0000, coredump 64 KB):
+<a href="https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/partitions.csv">https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/partitions.csv</a>&#160;<a class="footnote-backref" href="#fnref:10" title="Jump back to footnote 10 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:10" title="Jump back to footnote 10 in the text">&#8617;</a></p>
+</li>
+<li id="fn:11">
+<p>SPIFFS image built from <code>spiffs_data/</code> at build time
+(<code>spiffs_create_partition_image</code>); CLI starts before Wi-Fi; admin
+portal after connect:
+<a href="https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/CMakeLists.txt#L9">https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/CMakeLists.txt#L9</a>,
+<a href="https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/mimi.c#L140-L141">https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/mimi.c#L140-L141</a>,
+<a href="https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/mimi.c#L166-L187">https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/mimi.c#L166-L187</a>&#160;<a class="footnote-backref" href="#fnref:11" title="Jump back to footnote 11 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:11" title="Jump back to footnote 11 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:11" title="Jump back to footnote 11 in the text">&#8617;</a></p>
+</li>
+<li id="fn:12">
+<p>Captive onboarding blocks (<code>mimi.c</code> calls it when Wi-Fi
+fails; the portal "blocks forever" until a save reboots the device);
+architecture-doc memory budget table:
+<a href="https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/mimi.c#L160-L164">https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/mimi.c#L160-L164</a>,
+<a href="https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/onboard/wifi_onboard.c#L519">https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/onboard/wifi_onboard.c#L519</a>,
+<a href="https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/docs/ARCHITECTURE.md#L171-L180">https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/docs/ARCHITECTURE.md#L171-L180</a>&#160;<a class="footnote-backref" href="#fnref:12" title="Jump back to footnote 12 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:12" title="Jump back to footnote 12 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:12" title="Jump back to footnote 12 in the text">&#8617;</a></p>
+</li>
+<li id="fn:13">
+<p>Cron: max 16 jobs, 60-second check interval, due jobs push
+their stored message to the inbound queue; model-facing tools
+<code>cron_add</code>/<code>cron_list</code>/<code>cron_remove</code>:
+<a href="https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/cron/cron_service.c#L241-L269">https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/cron/cron_service.c#L241-L269</a>,
+<a href="https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/cron/cron_service.c#L301-L309">https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/cron/cron_service.c#L301-L309</a>,
+<a href="https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/mimi_config.h#L114-L116">https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/mimi_config.h#L114-L116</a>,
+<a href="https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/tools/tool_registry.c#L136-L178">https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/tools/tool_registry.c#L136-L178</a>&#160;<a class="footnote-backref" href="#fnref:13" title="Jump back to footnote 13 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:13" title="Jump back to footnote 13 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:13" title="Jump back to footnote 13 in the text">&#8617;</a><a class="footnote-backref" href="#fnref4:13" title="Jump back to footnote 13 in the text">&#8617;</a><a class="footnote-backref" href="#fnref5:13" title="Jump back to footnote 13 in the text">&#8617;</a><a class="footnote-backref" href="#fnref6:13" title="Jump back to footnote 13 in the text">&#8617;</a></p>
+</li>
+<li id="fn:14">
+<p>Heartbeat: fixed prompt, actionable-line check, 30-minute
+FreeRTOS timer, push to inbound as a <code>system</code> message:
+<a href="https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/heartbeat/heartbeat.c#L16-L18">https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/heartbeat/heartbeat.c#L16-L18</a>,
+<a href="https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/heartbeat/heartbeat.c#L31-L73">https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/heartbeat/heartbeat.c#L31-L73</a>,
+<a href="https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/heartbeat/heartbeat.c#L84-L100">https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/heartbeat/heartbeat.c#L84-L100</a>,
+<a href="https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/heartbeat/heartbeat.c#L123-L150">https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/heartbeat/heartbeat.c#L123-L150</a>&#160;<a class="footnote-backref" href="#fnref:14" title="Jump back to footnote 14 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:14" title="Jump back to footnote 14 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:14" title="Jump back to footnote 14 in the text">&#8617;</a><a class="footnote-backref" href="#fnref4:14" title="Jump back to footnote 14 in the text">&#8617;</a></p>
+</li>
+<li id="fn:15">
+<p><code>mimi_msg_t</code> (channel[16], chat_id[96], heap content) and
+channel identifiers:
+<a href="https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/bus/message_bus.h#L7-L19">https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/bus/message_bus.h#L7-L19</a>&#160;<a class="footnote-backref" href="#fnref:15" title="Jump back to footnote 15 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:15" title="Jump back to footnote 15 in the text">&#8617;</a></p>
+</li>
+<li id="fn:16">
+<p>Two queues of depth 16 (<code>MIMI_BUS_QUEUE_LEN</code>); push waits
+1 s then drops with a log line:
+<a href="https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/bus/message_bus.c#L11-L32">https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/bus/message_bus.c#L11-L32</a>,
+<a href="https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/bus/message_bus.c#L43-L50">https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/bus/message_bus.c#L43-L50</a>,
+<a href="https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/mimi_config.h#L97">https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/mimi_config.h#L97</a>&#160;<a class="footnote-backref" href="#fnref:16" title="Jump back to footnote 16 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:16" title="Jump back to footnote 16 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:16" title="Jump back to footnote 16 in the text">&#8617;</a><a class="footnote-backref" href="#fnref4:16" title="Jump back to footnote 16 in the text">&#8617;</a></p>
+</li>
+<li id="fn:17">
+<p>Telegram long polling (<code>getUpdates</code> with offset and 30 s
+timeout) and inbound push on text messages:
+<a href="https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/channels/telegram/telegram_bot.c#L375-L389">https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/channels/telegram/telegram_bot.c#L375-L389</a>,
+<a href="https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/channels/telegram/telegram_bot.c#L356-L372">https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/channels/telegram/telegram_bot.c#L356-L372</a>&#160;<a class="footnote-backref" href="#fnref:17" title="Jump back to footnote 17 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:17" title="Jump back to footnote 17 in the text">&#8617;</a></p>
+</li>
+<li id="fn:18">
+<p>Feishu: WS endpoint config URL, tenant access token, REST
+send URL; the WS client start:
+<a href="https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/channels/feishu/feishu_bot.c#L23-L27">https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/channels/feishu/feishu_bot.c#L23-L27</a>,
+<a href="https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/channels/feishu/feishu_bot.c#L616-L632">https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/channels/feishu/feishu_bot.c#L616-L632</a>&#160;<a class="footnote-backref" href="#fnref:18" title="Jump back to footnote 18 in the text">&#8617;</a></p>
+</li>
+<li id="fn:19">
+<p>WebSocket gateway: port 18789, max 4 clients; the handler
+parses <code>{"type":"message",…}</code> frames and pushes them inbound with
+no credential check:
+<a href="https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/mimi_config.h#L127-L128">https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/mimi_config.h#L127-L128</a>,
+<a href="https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/gateway/ws_server.c#L70-L141">https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/gateway/ws_server.c#L70-L141</a>&#160;<a class="footnote-backref" href="#fnref:19" title="Jump back to footnote 19 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:19" title="Jump back to footnote 19 in the text">&#8617;</a></p>
+</li>
+<li id="fn:20">
+<p>Agent loop task blocks on the inbound queue
+(<code>message_bus_pop_inbound(..., UINT32_MAX)</code>), Core 1, priority 6:
+<a href="https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/agent/agent_loop.c#L188-L193">https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/agent/agent_loop.c#L188-L193</a>,
+<a href="https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/mimi_config.h#L74-L76">https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/mimi_config.h#L74-L76</a>&#160;<a class="footnote-backref" href="#fnref:20" title="Jump back to footnote 20 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:20" title="Jump back to footnote 20 in the text">&#8617;</a></p>
+</li>
+<li id="fn:21">
+<p>Serial CLI command table (runtime config, maintenance,
+<code>tool_exec</code>, <code>web_search</code>):
+<a href="https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/cli/serial_cli.c#L809-L1076">https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/cli/serial_cli.c#L809-L1076</a>&#160;<a class="footnote-backref" href="#fnref:21" title="Jump back to footnote 21 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:21" title="Jump back to footnote 21 in the text">&#8617;</a></p>
+</li>
+<li id="fn:22">
+<p>Telegram offset persisted to NVS (throttled saves) and
+seen-message dedup; offset tracking in <code>process_updates</code>:
+<a href="https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/channels/telegram/telegram_bot.c#L73-L103">https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/channels/telegram/telegram_bot.c#L73-L103</a>,
+<a href="https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/channels/telegram/telegram_bot.c#L303-L314">https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/channels/telegram/telegram_bot.c#L303-L314</a>&#160;<a class="footnote-backref" href="#fnref:22" title="Jump back to footnote 22 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:22" title="Jump back to footnote 22 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:22" title="Jump back to footnote 22 in the text">&#8617;</a></p>
+</li>
+<li id="fn:23">
+<p>Prompt assembly into the 16 KB buffer (preamble, tool
+guidance, SOUL/USER, long-term memory, 3 days of notes, skill
+summaries); buffer constants:
+<a href="https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/agent/context_builder.c#L28-L103">https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/agent/context_builder.c#L28-L103</a>,
+<a href="https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/mimi_config.h#L110-L111">https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/mimi_config.h#L110-L111</a>&#160;<a class="footnote-backref" href="#fnref:23" title="Jump back to footnote 23 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:23" title="Jump back to footnote 23 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:23" title="Jump back to footnote 23 in the text">&#8617;</a></p>
+</li>
+<li id="fn:24">
+<p>Session history load (last 20) and current-message append;
+per-turn context appendix with source channel/chat_id:
+<a href="https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/agent/agent_loop.c#L65-L89">https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/agent/agent_loop.c#L65-L89</a>,
+<a href="https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/agent/agent_loop.c#L195-L211">https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/agent/agent_loop.c#L195-L211</a>&#160;<a class="footnote-backref" href="#fnref:24" title="Jump back to footnote 24 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:24" title="Jump back to footnote 24 in the text">&#8617;</a></p>
+</li>
+<li id="fn:25">
+<p>One-shot "working" status pushed outbound before the first
+API call of a turn (skipped for <code>system</code> messages):
+<a href="https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/agent/agent_loop.c#L218-L235">https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/agent/agent_loop.c#L218-L235</a>&#160;<a class="footnote-backref" href="#fnref:25" title="Jump back to footnote 25 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:25" title="Jump back to footnote 25 in the text">&#8617;</a></p>
+</li>
+<li id="fn:26">
+<p><code>llm_chat_tools</code>: full-body blocking POST, response parsed
+whole (see also the transport note):
+<a href="https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/llm/llm_proxy.c#L550-L601">https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/llm/llm_proxy.c#L550-L601</a>&#160;<a class="footnote-backref" href="#fnref:26" title="Jump back to footnote 26 in the text">&#8617;</a></p>
+</li>
+<li id="fn:27">
+<p>GPIO policy check (allowlist + reserved-pin blocks) inside
+the GPIO tools:
+<a href="https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/tools/gpio_policy.c#L50-L98">https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/tools/gpio_policy.c#L50-L98</a>,
+<a href="https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/tools/tool_gpio.c#L43-L59">https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/tools/tool_gpio.c#L43-L59</a>&#160;<a class="footnote-backref" href="#fnref:27" title="Jump back to footnote 27 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:27" title="Jump back to footnote 27 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:27" title="Jump back to footnote 27 in the text">&#8617;</a><a class="footnote-backref" href="#fnref4:27" title="Jump back to footnote 27 in the text">&#8617;</a><a class="footnote-backref" href="#fnref5:27" title="Jump back to footnote 27 in the text">&#8617;</a></p>
+</li>
+<li id="fn:28">
+<p><code>gpio_write</code> configures the pin and sets the level:
+<a href="https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/tools/tool_gpio.c#L61-L66">https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/tools/tool_gpio.c#L61-L66</a>&#160;<a class="footnote-backref" href="#fnref:28" title="Jump back to footnote 28 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:28" title="Jump back to footnote 28 in the text">&#8617;</a></p>
+</li>
+<li id="fn:29">
+<p>Only user text + final assistant text are saved; on error or
+empty text the loop sends "Sorry, I encountered an error." and
+saves nothing:
+<a href="https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/agent/agent_loop.c#L275-L315">https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/agent/agent_loop.c#L275-L315</a>&#160;<a class="footnote-backref" href="#fnref:29" title="Jump back to footnote 29 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:29" title="Jump back to footnote 29 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:29" title="Jump back to footnote 29 in the text">&#8617;</a><a class="footnote-backref" href="#fnref4:29" title="Jump back to footnote 29 in the text">&#8617;</a><a class="footnote-backref" href="#fnref5:29" title="Jump back to footnote 29 in the text">&#8617;</a></p>
+</li>
+<li id="fn:30">
+<p>Outbound dispatch routes by channel string; Telegram sends
+split at the 4096-char message limit:
+<a href="https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/mimi.c#L66-L103">https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/mimi.c#L66-L103</a>,
+<a href="https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/mimi_config.h#L57">https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/mimi_config.h#L57</a>&#160;<a class="footnote-backref" href="#fnref:30" title="Jump back to footnote 30 in the text">&#8617;</a></p>
+</li>
+<li id="fn:31">
+<p>Provider switch (endpoint, host, path all keyed on
+<code>provider_is_openai()</code>):
+<a href="https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/llm/llm_proxy.c#L185-L202">https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/llm/llm_proxy.c#L185-L202</a>&#160;<a class="footnote-backref" href="#fnref:31" title="Jump back to footnote 31 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:31" title="Jump back to footnote 31 in the text">&#8617;</a></p>
+</li>
+<li id="fn:32">
+<p>OpenAI translation layer (tools and messages, both
+directions):
+<a href="https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/llm/llm_proxy.c#L366-L400">https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/llm/llm_proxy.c#L366-L400</a>,
+<a href="https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/llm/llm_proxy.c#L436-L530">https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/llm/llm_proxy.c#L436-L530</a>&#160;<a class="footnote-backref" href="#fnref:32" title="Jump back to footnote 32 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:32" title="Jump back to footnote 32 in the text">&#8617;</a></p>
+</li>
+<li id="fn:33">
+<p>Blocking <code>esp_http_client_perform</code> transport; PSRAM response
+buffer doubling from 32 KB:
+<a href="https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/llm/llm_proxy.c#L249-L282">https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/llm/llm_proxy.c#L249-L282</a>,
+<a href="https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/llm/llm_proxy.c#L99-L130">https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/llm/llm_proxy.c#L99-L130</a>&#160;<a class="footnote-backref" href="#fnref:33" title="Jump back to footnote 33 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:33" title="Jump back to footnote 33 in the text">&#8617;</a></p>
+</li>
+<li id="fn:34">
+<p><code>max_tokens</code> 4096; at most 4 tool calls parsed per response
+(<code>llm_tool_call_t calls[MIMI_MAX_TOOL_CALLS]</code>):
+<a href="https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/mimi_config.h#L79-L88">https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/mimi_config.h#L79-L88</a>,
+<a href="https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/llm/llm_proxy.h#L39-L45">https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/llm/llm_proxy.h#L39-L45</a>&#160;<a class="footnote-backref" href="#fnref:34" title="Jump back to footnote 34 in the text">&#8617;</a></p>
+</li>
+<li id="fn:35">
+<p>No API key → <code>ESP_ERR_INVALID_STATE</code> before any request:
+<a href="https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/llm/llm_proxy.c#L550-L558">https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/llm/llm_proxy.c#L550-L558</a>&#160;<a class="footnote-backref" href="#fnref:35" title="Jump back to footnote 35 in the text">&#8617;</a></p>
+</li>
+<li id="fn:36">
+<p>Two-layer config: build-time secrets loaded first, then
+"NVS overrides take highest priority (set via CLI)":
+<a href="https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/llm/llm_proxy.c#L208-L243">https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/llm/llm_proxy.c#L208-L243</a>&#160;<a class="footnote-backref" href="#fnref:36" title="Jump back to footnote 36 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:36" title="Jump back to footnote 36 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:36" title="Jump back to footnote 36 in the text">&#8617;</a></p>
+</li>
+<li id="fn:37">
+<p>Defaults: provider <code>anthropic</code>, model <code>claude-opus-4-5</code>:
+<a href="https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/mimi_config.h#L86-L91">https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/mimi_config.h#L86-L91</a>&#160;<a class="footnote-backref" href="#fnref:37" title="Jump back to footnote 37 in the text">&#8617;</a></p>
+</li>
+<li id="fn:38">
+<p>ReAct loop bound (<code>MIMI_AGENT_MAX_TOOL_ITER</code> = 10) and the
+tool-execution path inside it; exhausting iterations leaves no
+final text, which the error path in <sup id="fnref5:29"><a class="footnote-ref" href="#fn:29">29</a></sup> turns into the generic
+reply:
+<a href="https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/agent/agent_loop.c#L213-L271">https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/agent/agent_loop.c#L213-L271</a>,
+<a href="https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/mimi_config.h#L78">https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/mimi_config.h#L78</a>&#160;<a class="footnote-backref" href="#fnref:38" title="Jump back to footnote 38 in the text">&#8617;</a></p>
+</li>
+<li id="fn:39">
+<p>Registry capacity (16) and static registration of the 12
+tools at init:
+<a href="https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/tools/tool_registry.c#L15-L19">https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/tools/tool_registry.c#L15-L19</a>,
+<a href="https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/tools/tool_registry.c#L55-L221">https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/tools/tool_registry.c#L55-L221</a>&#160;<a class="footnote-backref" href="#fnref:39" title="Jump back to footnote 39 in the text">&#8617;</a></p>
+</li>
+<li id="fn:40">
+<p>Dispatch by linear name match; unknown names return an
+error string:
+<a href="https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/tools/tool_registry.c#L228-L241">https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/tools/tool_registry.c#L228-L241</a>&#160;<a class="footnote-backref" href="#fnref:40" title="Jump back to footnote 40 in the text">&#8617;</a></p>
+</li>
+<li id="fn:41">
+<p>Web search: Tavily endpoint preferred, Brave via its API
+host (both proxy-aware):
+<a href="https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/tools/tool_web_search.c#L312">https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/tools/tool_web_search.c#L312</a>,
+<a href="https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/tools/tool_web_search.c#L249-L255">https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/tools/tool_web_search.c#L249-L255</a>&#160;<a class="footnote-backref" href="#fnref:41" title="Jump back to footnote 41 in the text">&#8617;</a></p>
+</li>
+<li id="fn:42">
+<p><code>get_current_time</code>: HEAD request to
+<code>https://api.telegram.org/</code>, <code>Date</code> header parsed, system clock
+set:
+<a href="https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/tools/tool_get_time.c#L120-L179">https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/tools/tool_get_time.c#L120-L179</a>&#160;<a class="footnote-backref" href="#fnref:42" title="Jump back to footnote 42 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:42" title="Jump back to footnote 42 in the text">&#8617;</a></p>
+</li>
+<li id="fn:43">
+<p>File-tool fence: path must start with <code>/spiffs/</code>, no <code>..</code>;
+32 KB read cap:
+<a href="https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/tools/tool_files.c#L15-L31">https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/tools/tool_files.c#L15-L31</a>&#160;<a class="footnote-backref" href="#fnref:43" title="Jump back to footnote 43 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:43" title="Jump back to footnote 43 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:43" title="Jump back to footnote 43 in the text">&#8617;</a></p>
+</li>
+<li id="fn:44">
+<p>No sender authentication at this tag; the project's TODO
+file lists a Telegram allowlist as an open item ("No
+authentication; anyone can message the bot and consume API
+credits"):
+<a href="https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/docs/TODO.md#L36-L38">https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/docs/TODO.md#L36-L38</a>&#160;<a class="footnote-backref" href="#fnref:44" title="Jump back to footnote 44 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:44" title="Jump back to footnote 44 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:44" title="Jump back to footnote 44 in the text">&#8617;</a></p>
+</li>
+<li id="fn:45">
+<p>Cron destination sanitizing (invalid telegram chat_id
+falls back to <code>system:cron</code>):
+<a href="https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/cron/cron_service.c#L25-L51">https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/cron/cron_service.c#L25-L51</a>&#160;<a class="footnote-backref" href="#fnref:45" title="Jump back to footnote 45 in the text">&#8617;</a></p>
+</li>
+<li id="fn:46">
+<p>Outbound dispatch: channel <code>system</code> is logged (first 128
+chars), not delivered:
+<a href="https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/mimi.c#L95-L96">https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/mimi.c#L95-L96</a>&#160;<a class="footnote-backref" href="#fnref:46" title="Jump back to footnote 46 in the text">&#8617;</a></p>
+</li>
+<li id="fn:47">
+<p>Long-term memory read/write as plain file operations; the
+system prompt's instruction to save user facts proactively:
+<a href="https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/memory/memory_store.c#L30-L55">https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/memory/memory_store.c#L30-L55</a>,
+<a href="https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/agent/context_builder.c#L59-L69">https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/agent/context_builder.c#L59-L69</a>&#160;<a class="footnote-backref" href="#fnref:47" title="Jump back to footnote 47 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:47" title="Jump back to footnote 47 in the text">&#8617;</a></p>
+</li>
+<li id="fn:48">
+<p>Session files: hard-coded <code>tg_&lt;chat_id&gt;.jsonl</code> path for
+every channel; append-only writes; last-20 ring buffer on read:
+<a href="https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/memory/session_mgr.c#L14-L17">https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/memory/session_mgr.c#L14-L17</a>,
+<a href="https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/memory/session_mgr.c#L25-L51">https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/memory/session_mgr.c#L25-L51</a>,
+<a href="https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/memory/session_mgr.c#L65-L88">https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/memory/session_mgr.c#L65-L88</a>&#160;<a class="footnote-backref" href="#fnref:48" title="Jump back to footnote 48 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:48" title="Jump back to footnote 48 in the text">&#8617;</a></p>
+</li>
+<li id="fn:49">
+<p>Daily-notes path mismatch: prompt says
+<code>/spiffs/memory/daily/&lt;YYYY-MM-DD&gt;.md</code>; the store uses
+<code>/spiffs/memory/&lt;YYYY-MM-DD&gt;.md</code>:
+<a href="https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/agent/context_builder.c#L62">https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/agent/context_builder.c#L62</a>,
+<a href="https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/memory/memory_store.c#L57-L63">https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/memory/memory_store.c#L57-L63</a>&#160;<a class="footnote-backref" href="#fnref:49" title="Jump back to footnote 49 in the text">&#8617;</a></p>
+</li>
+<li id="fn:50">
+<p>Wi-Fi reconnect: exponential backoff 1 s → 30 s cap, max
+10 retries:
+<a href="https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/wifi/wifi_manager.c#L42-L67">https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/wifi/wifi_manager.c#L42-L67</a>,
+<a href="https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/mimi_config.h#L51-L53">https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/mimi_config.h#L51-L53</a>&#160;<a class="footnote-backref" href="#fnref:50" title="Jump back to footnote 50 in the text">&#8617;</a></p>
+</li>
+<li id="fn:51">
+<p>Skills: directory scan + title/description summary for the
+prompt; the model loads full text with <code>read_file</code> and can create
+skills with <code>write_file</code>:
+<a href="https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/skills/skill_loader.c#L101-L160">https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/skills/skill_loader.c#L101-L160</a>,
+<a href="https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/agent/context_builder.c#L70-L73">https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/agent/context_builder.c#L70-L73</a>&#160;<a class="footnote-backref" href="#fnref:51" title="Jump back to footnote 51 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:51" title="Jump back to footnote 51 in the text">&#8617;</a></p>
+</li>
+<li id="fn:52">
+<p>OTA wrapper exists (<code>ota_update_from_url</code> over
+<code>esp_https_ota</code>) but <code>ota/ota_manager.c</code> is absent from the
+<code>main/CMakeLists.txt</code> source list, and the function has no caller
+in the tree:
+<a href="https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/ota/ota_manager.c#L11-L35">https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/ota/ota_manager.c#L11-L35</a>,
+<a href="https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/CMakeLists.txt#L2-L31">https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/CMakeLists.txt#L2-L31</a>&#160;<a class="footnote-backref" href="#fnref:52" title="Jump back to footnote 52 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:52" title="Jump back to footnote 52 in the text">&#8617;</a></p>
+</li>
+<li id="fn:53">
+<p>README claim: "OTA updates — flash new firmware over WiFi,
+no USB needed":
+<a href="https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/README.md#L280">https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/README.md#L280</a>&#160;<a class="footnote-backref" href="#fnref:53" title="Jump back to footnote 53 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:53" title="Jump back to footnote 53 in the text">&#8617;</a></p>
+</li>
+<li id="fn:54">
+<p>No <code>esp_sleep</code>, deep-sleep, light-sleep, or power-management
+API usage found in a tree-wide search of <code>main/</code> at the pinned
+tag — the design is always-on.&#160;<a class="footnote-backref" href="#fnref:54" title="Jump back to footnote 54 in the text">&#8617;</a></p>
+</li>
+<li id="fn:55">
+<p>"USB power, 0.5 W, runs 24/7" (README feature list). No
+measurement or current figure appears anywhere else in the repo —
+the number itself is [UNVERIFIED] beyond this line:
+<a href="https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/README.md#L27">https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/README.md#L27</a>&#160;<a class="footnote-backref" href="#fnref:55" title="Jump back to footnote 55 in the text">&#8617;</a></p>
+</li>
+</ol>
+</div>
+</main>
+</body>
+</html>

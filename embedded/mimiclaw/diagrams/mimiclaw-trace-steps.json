@@ -1,0 +1,241 @@
+{
+ "title": "One message through MimiClaw \u2014 step-by-step",
+ "repo": "memovai/mimiclaw",
+ "sha": "bb10ea0149080d506d920c09054f4c5b20409de2",
+ "example_input": "turn on the relay on pin 5",
+ "note": "Representations below are simplified shapes of the real types at the pinned SHA, not verbatim dumps.",
+ "steps": [
+  {
+   "step": 1,
+   "title": "Telegram update arrives",
+   "node": "telegram-poll",
+   "code": "main/channels/telegram/telegram_bot.c:365; main/bus/message_bus.h:15",
+   "modules": [
+    {
+     "file": "main/channels/telegram/telegram_bot.c",
+     "label": "telegram_bot.c:365",
+     "line": "365",
+     "url": "https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/channels/telegram/telegram_bot.c#L365"
+    },
+    {
+     "file": "main/bus/message_bus.h",
+     "label": "message_bus.h:15",
+     "line": "15",
+     "url": "https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/bus/message_bus.h#L15"
+    }
+   ],
+   "narrative": "The Telegram poll task's long-polling getUpdates returns an update with the text 'turn on the relay on pin 5'. process_updates checks the update against the NVS-persisted offset and the seen-message dedup ring, then wraps it in a mimi_msg_t \u2014 channel 'telegram', the chat id, and a heap copy of the text \u2014 and pushes it to the inbound queue. The bot applies no sender check: any chat that messages it reaches this point.",
+   "representation": "Telegram update { update_id, message { chat { id }, text } }\n  -> process_updates()                       # telegram_bot.c\n  -> mimi_msg_t { channel=\"telegram\",        # message_bus.h:15\n                  chat_id=\"<chat id>\",\n                  content=\"turn on the relay on pin 5\" }\n  -> message_bus_push_inbound(&msg)          # telegram_bot.c:365"
+  },
+  {
+   "step": 2,
+   "title": "Message waits on the bus",
+   "node": "message-bus",
+   "code": "main/bus/message_bus.c:13; main/bus/message_bus.c:25",
+   "modules": [
+    {
+     "file": "main/bus/message_bus.c",
+     "label": "message_bus.c:13",
+     "line": "13",
+     "url": "https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/bus/message_bus.c#L13"
+    },
+    {
+     "file": "main/bus/message_bus.c",
+     "label": "message_bus.c:25",
+     "line": "25",
+     "url": "https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/bus/message_bus.c#L25"
+    }
+   ],
+   "narrative": "The inbound queue is a FreeRTOS queue of depth 16 holding mimi_msg_t values; ownership of the content pointer transfers with the push. If the queue stays full for one second the push fails and the producer drops and frees the message \u2014 there is no persistence or retry. Here the queue is nearly empty, so the message simply waits for the single consumer.",
+   "representation": "xQueueSend(s_inbound_queue, &msg, 1000 ms)   # message_bus.c:25\n  queue depth: 16 (MIMI_BUS_QUEUE_LEN)       # mimi_config.h:97\n  on timeout: log 'dropping message',\n              return ESP_ERR_NO_MEM\ncontent ownership -> the queue's consumer"
+  },
+  {
+   "step": 3,
+   "title": "Agent loop builds the prompt",
+   "node": "agent-loop",
+   "code": "main/agent/agent_loop.c:195; main/agent/context_builder.c:28",
+   "modules": [
+    {
+     "file": "main/agent/agent_loop.c",
+     "label": "agent_loop.c:195",
+     "line": "195",
+     "url": "https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/agent/agent_loop.c#L195"
+    },
+    {
+     "file": "main/agent/context_builder.c",
+     "label": "context_builder.c:28",
+     "line": "28",
+     "url": "https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/agent/context_builder.c#L28"
+    }
+   ],
+   "narrative": "The agent loop task (Core 1) pops the message and rebuilds the system prompt from flash: the hard-coded preamble and tool guidance, SOUL.md, USER.md, MEMORY.md, the last three days of notes, and the skill summaries, all inside a 16 KB PSRAM buffer. A per-turn appendix adds the source channel and chat_id so tools like cron_add can target the right chat.",
+   "representation": "context_build_system_prompt(buf, 16 KB)    # context_builder.c:28\n  = preamble + tool guidance\n  + SOUL.md + USER.md + MEMORY.md\n  + last 3 days of notes + skill summaries\n+ '## Current Turn Context'                  # agent_loop.c:65\n    source_channel: telegram, source_chat_id: <id>"
+  },
+  {
+   "step": 4,
+   "title": "Session history joins the turn",
+   "node": "session",
+   "code": "main/memory/session_mgr.c:53; main/agent/agent_loop.c:200",
+   "modules": [
+    {
+     "file": "main/memory/session_mgr.c",
+     "label": "session_mgr.c:53",
+     "line": "53",
+     "url": "https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/memory/session_mgr.c#L53"
+    },
+    {
+     "file": "main/agent/agent_loop.c",
+     "label": "agent_loop.c:200",
+     "line": "200",
+     "url": "https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/agent/agent_loop.c#L200"
+    }
+   ],
+   "narrative": "The loop loads this chat's history from /spiffs/sessions/tg_<chat_id>.jsonl \u2014 the tg_ prefix is hard-coded for every channel \u2014 ring-buffering the last 20 stored messages into a 32 KB JSON buffer. It parses that into a cJSON messages array and appends the new user message. Only final user/assistant texts were ever stored, so no tool rounds appear in history.",
+   "representation": "session_get_history_json(chat_id, buf, 32 KB, 20)\n  reads tg_<chat_id>.jsonl                   # session_mgr.c:16\n  ring buffer: last 20 {role, content}       # session_mgr.c:65\nmessages = [ ...history,\n             {role: user, content: 'turn on the relay on pin 5'} ]"
+  },
+  {
+   "step": 5,
+   "title": "Working status goes out first",
+   "node": "outbound",
+   "code": "main/agent/agent_loop.c:220; main/mimi.c:66",
+   "modules": [
+    {
+     "file": "main/agent/agent_loop.c",
+     "label": "agent_loop.c:220",
+     "line": "220",
+     "url": "https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/agent/agent_loop.c#L220"
+    },
+    {
+     "file": "main/mimi.c",
+     "label": "mimi.c:66",
+     "line": "66",
+     "url": "https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/mimi.c#L66"
+    }
+   ],
+   "narrative": "Before the first API call, the loop pushes a one-shot 'mimi is working...' status message to the outbound queue (skipped for system-channel turns). The outbound dispatch task pops it and routes by channel string \u2014 here to telegram_send_message \u2014 so the user sees activity while the cloud call takes its seconds. Replies and status share the same queue and dispatcher.",
+   "representation": "mimi_msg_t status { channel=\"telegram\",    # agent_loop.c:222\n                     chat_id=<id>,\n                     content=\"mimi is working...\" }\n  -> message_bus_push_outbound(&status)\noutbound_dispatch_task:                      # mimi.c:66\n  channel == telegram -> telegram_send_message()"
+  },
+  {
+   "step": 6,
+   "title": "Cloud LLM call (blocking, whole response)",
+   "node": "llm-proxy",
+   "code": "main/llm/llm_proxy.c:550; main/llm/llm_proxy.c:280",
+   "modules": [
+    {
+     "file": "main/llm/llm_proxy.c",
+     "label": "llm_proxy.c:550",
+     "line": "550",
+     "url": "https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/llm/llm_proxy.c#L550"
+    },
+    {
+     "file": "main/llm/llm_proxy.c",
+     "label": "llm_proxy.c:280",
+     "line": "280",
+     "url": "https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/llm/llm_proxy.c#L280"
+    }
+   ],
+   "narrative": "llm_chat_tools serializes the system prompt, messages, and the pre-built tools JSON into one request body and performs a single blocking HTTPS POST to the configured provider \u2014 Anthropic Messages natively, or OpenAI Chat Completions through the translation layer. There is no streaming: the response accumulates in a PSRAM buffer and is parsed whole. max_tokens is 4096.",
+   "representation": "POST https://api.anthropic.com/v1/messages   # llm_proxy.c:192\n  { model, max_tokens: 4096, system,          # mimi_config.h:88\n    messages: [...], tools: [12 tools] }\n  esp_http_client_perform()  (blocking)       # llm_proxy.c:280\n  -> full JSON buffered in PSRAM, then parsed"
+  },
+  {
+   "step": 7,
+   "title": "Model asks for gpio_write",
+   "node": "llm-response",
+   "code": "main/llm/llm_proxy.c:695; main/agent/agent_loop.c:140",
+   "modules": [
+    {
+     "file": "main/llm/llm_proxy.c",
+     "label": "llm_proxy.c:695",
+     "line": "695",
+     "url": "https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/llm/llm_proxy.c#L695"
+    },
+    {
+     "file": "main/agent/agent_loop.c",
+     "label": "agent_loop.c:140",
+     "line": "140",
+     "url": "https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/agent/agent_loop.c#L140"
+    }
+   ],
+   "narrative": "The response's stop_reason is 'tool_use' with one call: gpio_write {pin: 5, state: 1}. At most 4 calls per response are parsed. The loop appends the assistant content (text plus tool_use blocks) to the messages array, then executes each call and builds the tool_result blocks. A cron_add call would get its chat target patched to this turn's chat here; gpio_write passes through unchanged.",
+   "representation": "llm_response_t { tool_use: true,           # llm_proxy.h:39\n  calls[0] = { name=\"gpio_write\",\n               input={\"pin\":5,\"state\":1} } }\nmessages += assistant [tool_use block]\nbuild_tool_results() executes the call       # agent_loop.c:140"
+  },
+  {
+   "step": 8,
+   "title": "Registry dispatches, policy checks, pin flips",
+   "node": "gpio",
+   "code": "main/tools/tool_registry.c:228; main/tools/gpio_policy.c:86; main/tools/tool_gpio.c:61",
+   "modules": [
+    {
+     "file": "main/tools/tool_registry.c",
+     "label": "tool_registry.c:228",
+     "line": "228",
+     "url": "https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/tools/tool_registry.c#L228"
+    },
+    {
+     "file": "main/tools/gpio_policy.c",
+     "label": "gpio_policy.c:86",
+     "line": "86",
+     "url": "https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/tools/gpio_policy.c#L86"
+    },
+    {
+     "file": "main/tools/tool_gpio.c",
+     "label": "tool_gpio.c:61",
+     "line": "61",
+     "url": "https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/tools/tool_gpio.c#L61"
+    }
+   ],
+   "narrative": "tool_registry_execute finds gpio_write by linear name match and calls its execute function \u2014 no approval step exists anywhere in this path. The tool parses the JSON, then gpio_policy_pin_is_allowed checks pin 5 against the 21-pin allowlist (and the hard blocks: USB pins 19/20 on ESP32-S3). Allowed: the pin is configured INPUT_OUTPUT and set HIGH, and the tool returns 'Pin 5 set to HIGH' into the 8 KB tool-output buffer.",
+   "representation": "tool_registry_execute(\"gpio_write\", input)  # tool_registry.c:228\n  -> gpio_policy_pin_is_allowed(5) == true    # gpio_policy.c:86\n     allowlist: 1-18, 21, 38, 46              # gpio_policy.h:9\n  -> gpio_set_direction(5, INPUT_OUTPUT)      # tool_gpio.c:61\n     gpio_set_level(5, 1)  // pin 5 = HIGH\n  -> tool_result: \"Pin 5 set to HIGH\""
+  },
+  {
+   "step": 9,
+   "title": "Second call returns the final text",
+   "node": "agent-loop",
+   "code": "main/agent/agent_loop.c:237; main/agent/agent_loop.c:245",
+   "modules": [
+    {
+     "file": "main/agent/agent_loop.c",
+     "label": "agent_loop.c:237",
+     "line": "237",
+     "url": "https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/agent/agent_loop.c#L237"
+    },
+    {
+     "file": "main/agent/agent_loop.c",
+     "label": "agent_loop.c:245",
+     "line": "245",
+     "url": "https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/agent/agent_loop.c#L245"
+    }
+   ],
+   "narrative": "The loop calls llm_chat_tools again with the tool_result appended. This time the response has no tool use, so the loop keeps its text ('The relay on pin 5 is on.') as the final answer and breaks. Had the model kept calling tools, the loop would stop after 10 iterations \u2014 and, producing no final text, would fall into the generic error reply instead of explaining the limit.",
+   "representation": "iteration 2: llm_chat_tools(...)             # agent_loop.c:238\n  resp.tool_use == false                     # agent_loop.c:245\n  final_text = strdup(resp.text)\n  break   // iteration cap is 10             # mimi_config.h:78"
+  },
+  {
+   "step": 10,
+   "title": "Session saved, reply dispatched",
+   "node": "outbound",
+   "code": "main/agent/agent_loop.c:275; main/memory/session_mgr.c:25; main/mimi.c:76",
+   "modules": [
+    {
+     "file": "main/agent/agent_loop.c",
+     "label": "agent_loop.c:275",
+     "line": "275",
+     "url": "https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/agent/agent_loop.c#L275"
+    },
+    {
+     "file": "main/memory/session_mgr.c",
+     "label": "session_mgr.c:25",
+     "line": "25",
+     "url": "https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/memory/session_mgr.c#L25"
+    },
+    {
+     "file": "main/mimi.c",
+     "label": "mimi.c:76",
+     "line": "76",
+     "url": "https://github.com/memovai/mimiclaw/blob/bb10ea0149080d506d920c09054f4c5b20409de2/main/mimi.c#L76"
+    }
+   ],
+   "narrative": "The loop appends exactly two lines to the session file \u2014 the user's text and the final assistant text, each as a JSON object with a timestamp \u2014 then pushes the reply to the outbound queue, transferring ownership of the string. The dispatch task sends it via telegram_send_message (splitting at 4096 characters if needed) and frees the content. The agent task blocks on the inbound queue again: one consumer, ready for the next message from any channel.",
+   "representation": "session_append(chat_id, \"user\", text)       # session_mgr.c:25\nsession_append(chat_id, \"assistant\", final)\n  -> tg_<chat_id>.jsonl += 2 lines\npush_outbound(reply) -> dispatch task        # mimi.c:66\n  -> telegram_send_message(chat_id, content)\nagent task: pop_inbound(UINT32_MAX) ...      # agent_loop.c:190"
+  }
+ ]
+}

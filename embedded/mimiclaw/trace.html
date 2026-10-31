@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>One message through MimiClaw — step-by-step · Embedded Harness Anatomy</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body {
+    background: #161210; color: #ece1d3;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    line-height: 1.7; padding: 48px 24px; margin: 0;
+  }
+  main { max-width: 960px; margin: 0 auto; }
+  a { color: #d08c4e; }
+  .topnav { font-size: 0.9rem; margin-bottom: 32px; }
+  .topnav a { color: #a89880; text-decoration: none; }
+  .topnav a:hover { color: #ece1d3; }
+  h1 { font-size: 1.8rem; letter-spacing: -0.02em; margin-bottom: 8px; }
+  .sub { color: #a89880; margin-bottom: 28px; max-width: 640px; }
+  .input-row { display: flex; gap: 12px; align-items: center; margin-bottom: 20px; flex-wrap: wrap; }
+  .input-row label { color: #a89880; font-size: 0.95rem; }
+  .input-row input {
+    flex: 1; min-width: 240px; background: #1f1a15; border: 1px solid #3a2f26;
+    border-radius: 8px; color: #ece1d3; padding: 10px 14px; font-size: 0.95rem;
+    font-family: inherit;
+  }
+  .input-row input:focus { outline: none; border-color: #d08c4e; }
+  .controls { display: flex; gap: 10px; align-items: center; margin-bottom: 24px; }
+  .controls button {
+    background: #1f1a15; border: 1px solid #3a2f26; color: #ece1d3;
+    border-radius: 8px; padding: 8px 16px; font-size: 0.9rem; cursor: pointer;
+    font-family: inherit; font-weight: 600;
+  }
+  .controls button:hover { border-color: #a89880; }
+  .controls button.primary { background: #d08c4e; border-color: #d08c4e; color: #161210; }
+  .controls button.primary:hover { background: #e0a266; }
+  .counter { color: #a89880; font-size: 0.9rem; margin-left: 4px; font-variant-numeric: tabular-nums; }
+  .trace { display: grid; grid-template-columns: 240px 1fr; gap: 24px; align-items: start; }
+  .rail { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 6px; }
+  .rail li {
+    border: 1px solid #2c231b; border-radius: 8px; padding: 10px 12px;
+    cursor: pointer; display: flex; gap: 10px; align-items: baseline;
+    background: transparent;
+  }
+  .rail li:hover { border-color: #a89880; }
+  .rail li.current { border-color: #d08c4e; background: #1f1a15; }
+  .rail .num {
+    color: #8a7a66; font-size: 0.8rem; font-variant-numeric: tabular-nums;
+    min-width: 16px;
+  }
+  .rail li.current .num { color: #d08c4e; font-weight: 700; }
+  .rail .t { font-size: 0.92rem; }
+  .detail {
+    border: 1px solid #3a2f26; border-radius: 12px; padding: 28px;
+    background: #1f1a15; min-height: 420px;
+  }
+  .step-head { display: flex; gap: 14px; align-items: baseline; margin-bottom: 12px; }
+  .step-head .n {
+    color: #d08c4e; font-weight: 700; font-size: 0.85rem;
+    border: 1px solid #d08c4e; border-radius: 6px; padding: 2px 8px;
+    white-space: nowrap;
+  }
+  .step-head h2 { font-size: 1.3rem; margin: 0; }
+  .node-tag {
+    display: inline-block; margin-top: 6px; font-size: 0.8rem; color: #a89880;
+    border: 1px solid #3a2f26; border-radius: 20px; padding: 2px 10px;
+  }
+  .node-tag b { color: #ece1d3; font-weight: 600; }
+  #dInputLine {
+    margin: 14px 0 4px; padding: 10px 14px; background: #161210;
+    border: 1px solid #3a2f26; border-radius: 8px; font-size: 0.92rem;
+  }
+  #dInputLine .k { color: #a89880; }
+  .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 20px; }
+  .cols h3 {
+    font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.06em;
+    color: #a89880; margin: 0 0 10px; font-weight: 600;
+  }
+  pre {
+    background: #161210; border: 1px solid #3a2f26; border-radius: 8px;
+    padding: 14px; overflow-x: auto; margin: 0; font-size: 0.82rem; line-height: 1.55;
+  }
+  pre code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    color: #ece1d3; background: none; padding: 0;
+  }
+  #dModules { list-style: none; padding: 0; margin: 0; }
+  #dModules li { margin-bottom: 8px; font-size: 0.9rem; }
+  #dModules .file { display: block; color: #8a7a66; font-size: 0.78rem;
+    font-family: ui-monospace, Menlo, Consolas, monospace; }
+  .loopnote {
+    margin-top: 20px; padding: 12px 16px; border-left: 3px solid #d08c4e;
+    background: #161210; border-radius: 0 8px 8px 0; font-size: 0.92rem;
+    color: #a89880;
+  }
+  .loopnote:empty { display: none; }
+  .loopnote b { color: #ece1d3; }
+  .loopmap { margin-top: 36px; border: 1px solid #2c231b; border-radius: 12px; padding: 24px; }
+  .loopmap h3 { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.06em;
+    color: #a89880; margin: 0 0 16px; }
+  .flow { display: flex; flex-direction: column; margin-bottom: 6px; }
+  .vstep { display: flex; gap: 14px; align-items: stretch; }
+  .vrail { display: flex; flex-direction: column; align-items: center; flex: 0 0 16px; }
+  .vdot { width: 10px; height: 10px; border-radius: 50%; border: 2px solid #8a7a66;
+          margin-top: 6px; flex: 0 0 auto; }
+  .vdot.hot { border-color: #d08c4e; background: #d08c4e; }
+  .vline { width: 2px; flex: 1; background: #3a2f26; min-height: 16px; }
+  .vbody { padding: 2px 0 16px; }
+  .vstep:last-child .vbody { padding-bottom: 2px; }
+  .chip {
+    border: 1px solid #3a2f26; border-radius: 20px; padding: 4px 12px;
+    font-size: 0.82rem; background: #1f1a15; white-space: nowrap;
+  }
+  .chip.hot { border-color: #d08c4e; color: #d08c4e; }
+  .arrow { color: #8a7a66; }
+  .ret {
+    margin: 2px 0 14px 8px; padding-left: 16px; border-left: 2px solid #d08c4e;
+    font-size: 0.88rem; color: #a89880;
+  }
+  .ret b { color: #ece1d3; }
+  footer { margin-top: 48px; color: #8a7a66; font-size: 0.85rem; }
+  @media (max-width: 760px) {
+    .trace { grid-template-columns: 1fr; }
+    .rail { flex-direction: row; overflow-x: auto; padding-bottom: 8px; }
+    .rail li { flex: 0 0 auto; }
+    .cols { grid-template-columns: 1fr; }
+    .detail { padding: 20px; }
+  }
+</style>
+</head>
+<body>
+<main>
+  <nav class="topnav"><a href="../">&larr; Embedded Harness Anatomy E2: MimiClaw</a></nav>
+  <h1 id="pageTitle">One message through MimiClaw</h1>
+  <p class="sub" id="pageSub"></p>
+
+  <div class="input-row">
+    <label for="userInput">Trace it with your own input:</label>
+    <input id="userInput" type="text" value="" autocomplete="off" spellcheck="false">
+  </div>
+
+  <div class="controls">
+    <button id="prevBtn" aria-label="Previous step">&larr; Prev</button>
+    <button id="playBtn" class="primary" aria-label="Play or pause">&#9654; Play</button>
+    <button id="nextBtn" aria-label="Next step">Next &rarr;</button>
+    <span class="counter" id="counter"></span>
+  </div>
+
+  <div class="trace">
+    <ol class="rail" id="rail"></ol>
+    <section class="detail" aria-live="polite">
+      <div class="step-head">
+        <span class="n" id="dNum"></span>
+        <div>
+          <h2 id="dTitle"></h2>
+          <span class="node-tag">architecture node: <b id="dNode"></b></span>
+        </div>
+      </div>
+      <div id="dInputLine" hidden><span class="k">Triggering event:</span> <span id="dInputVal"></span></div>
+      <p id="dNarrative"></p>
+      <div class="cols">
+        <div>
+          <h3>Representation at this boundary</h3>
+          <pre><code id="dRepr"></code></pre>
+        </div>
+        <div>
+          <h3>Source modules</h3>
+          <ul id="dModules"></ul>
+        </div>
+      </div>
+      <div class="loopnote" id="dLoop"></div>
+    </section>
+  </div>
+
+  <section class="loopmap">
+    <h3>Message map</h3>
+    <div class="flow" id="flowMain"></div>
+<div class="ret"><b>One message shape</b> &mdash; Telegram polls, Feishu events, WebSocket frames, cron firings, and heartbeat ticks all become the same <code>mimi_msg_t</code> (channel, chat_id, heap text) in one inbound FreeRTOS queue of depth 16 (<code>message_bus.c</code>). There is no router and no rule engine: the queue's only consumer is the agent loop, and every message &mdash; user chat or the device's own scheduled prompt &mdash; runs the full cloud ReAct loop. A full queue drops messages after a 1-second push timeout; nothing is persisted.</div>
+    <div class="flow" id="flowBranch"></div>
+<div class="ret"><b>The single-consumer loop</b> &mdash; one FreeRTOS task on Core 1 (<code>agent_loop.c</code>) pops a message, rebuilds the prompt from SPIFFS files, loads the last 20 session messages, and iterates <code>llm_chat_tools()</code> &rarr; tool execution against the 12-tool registry &rarr; repeat, bounded by <code>MIMI_AGENT_MAX_TOOL_ITER</code> = 10 and at most 4 tool calls per response. There is <strong>no human approval gate</strong> and no mid-turn interrupt: a new message waits in the queue until the current turn finishes. Only the user text and the final answer are saved to the session file.</div>
+<div class="ret" style="border-color:#d08c4e"><b>Idle and offline</b> &mdash; with the queue empty the agent task parks on <code>pop_inbound(UINT32_MAX)</code> and the Telegram task sits in its 30-second long poll: always-on, no sleep modes anywhere in the firmware. The cron task wakes every 60 s and the heartbeat timer every 30 min, each feeding the same queue. If Wi-Fi is down, channels and the model are unreachable and turns fail with a generic error reply &mdash; only the serial CLI keeps working locally.</div>
+  </section>
+
+  <footer>Simplified shapes of real MimiClaw types, not verbatim runtime dumps. All module links pin <span id="sha"></span>.</footer>
+</main>
+
+<script>
+(function () {
+  var LOOP_NOTES = {
+    1: "<b>Channel ingress.</b> <code>process_updates()</code> in <code>telegram_bot.c</code> validates the update against the NVS-persisted offset and the seen-message ring, then pushes an <code>mimi_msg_t</code> via <code>message_bus_push_inbound()</code> (:365). Feishu events (WebSocket long connection) and WebSocket-gateway frames take the same path into the same queue. No sender allowlist is applied at this tag.",
+    2: "<b>The bus.</b> Two FreeRTOS queues created in <code>message_bus_init()</code> (message_bus.c:13), depth <code>MIMI_BUS_QUEUE_LEN</code> = 16 (mimi_config.h:97). Push semantics are <code>xQueueSend(..., 1000 ms)</code> then drop-and-log (:25) &mdash; the bus is RAM-only transport, not a store. Content ownership transfers to whoever pops.",
+    3: "<b>Prompt assembly.</b> <code>context_build_system_prompt()</code> (context_builder.c:28) reads SOUL.md, USER.md, MEMORY.md, three days of notes, and skill summaries from SPIFFS into a 16 KB PSRAM buffer (<code>MIMI_CONTEXT_BUF_SIZE</code>), rebuilt on every message. <code>append_turn_context_prompt()</code> (agent_loop.c:65) adds the source channel/chat_id so cron tools can address the right chat.",
+    4: "<b>History.</b> <code>session_get_history_json()</code> (session_mgr.c:53) reads <code>tg_&lt;chat_id&gt;.jsonl</code> &mdash; the <code>tg_</code> prefix is hard-coded for all channels (session_mgr.c:16) &mdash; and ring-buffers the last <code>MIMI_SESSION_MAX_MSGS</code> = 20 entries. Files are append-only and never truncated; only the read is bounded.",
+    5: "<b>Latency UX.</b> The working status is pushed once per turn from <code>agent_loop.c:221</code>, guarded by <code>MIMI_AGENT_SEND_WORKING_STATUS</code> and skipped for <code>system</code> messages (cron sanitizations and heartbeat replies to <code>system</code> are instead only logged by the dispatcher, mimi.c:95). Outbound routing is a channel-string if-chain in <code>outbound_dispatch_task()</code> (mimi.c:66).",
+    6: "<b>Cloud call.</b> <code>llm_chat_tools()</code> (llm_proxy.c:550) builds one JSON body &mdash; Anthropic shape natively, translated for OpenAI by <code>convert_messages_openai()</code> (:400) &mdash; and performs it with a single blocking <code>esp_http_client_perform()</code> (:280), or through the CONNECT-tunnel proxy path when configured. No streaming; the response buffer doubles from 32 KB in PSRAM.",
+    7: "<b>Tool request.</b> Parsing sets <code>tool_use</code> from <code>stop_reason</code> (llm_proxy.c:695) and caps parsed calls at <code>MIMI_MAX_TOOL_CALLS</code> = 4 (llm_proxy.h:42). <code>build_tool_results()</code> (agent_loop.c:140) is also where <code>cron_add</code> inputs get their channel/chat_id patched from the current turn (<code>patch_tool_input_with_context()</code>, :91) &mdash; the loop's one piece of argument repair.",
+    8: "<b>Actuation.</b> <code>tool_registry_execute()</code> (tool_registry.c:228) is a linear name scan &mdash; no eligibility chain, no session visibility, no approval. The GPIO tool's own policy (<code>gpio_policy_pin_is_allowed()</code>, gpio_policy.c:86) checks the 21-pin allowlist in <code>gpio_policy.h:9</code> and hard-blocks the USB pins 19/20 on ESP32-S3 before <code>gpio_set_level()</code> runs (tool_gpio.c:61).",
+    9: "<b>Finalize.</b> A response without tool use ends the loop (agent_loop.c:245): the text is kept and the turn completes. The cap is <code>MIMI_AGENT_MAX_TOOL_ITER</code> = 10 (mimi_config.h:78); exhausting it produces no final text, so the error branch (:302) sends the generic apology instead &mdash; the limit is never explained to the user.",
+    10: "<b>Persistence and reply.</b> <code>session_append()</code> (session_mgr.c:25) writes exactly two JSONL lines &mdash; tool rounds are not persisted &mdash; and the reply rides the outbound queue to <code>telegram_send_message()</code> via the dispatch task (mimi.c:76). The agent task then blocks on the inbound queue again; cron (60 s) and heartbeat (30 min) feed the same queue between user messages."
+  };
+  var FLOW_MAIN = [1,2,3,4,5,6,7,8,9,10], FLOW_BRANCH = [5,6,7,8];
+
+  var data, idx = 0, timer = null;
+  var $ = function (id) { return document.getElementById(id); };
+  var rail = $("rail"), userInput = $("userInput");
+
+  function esc(s) {
+    return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
+
+  function renderFlow(el, steps, hot) {
+    el.innerHTML = steps.map(function (n, i) {
+      var s = data.steps[n - 1];
+      var last = i === steps.length - 1;
+      var dot = '<span class="vdot' + (n === hot ? ' hot' : '') + '"></span>';
+      var line = last ? '' : '<span class="vline"></span>';
+      var chip = '<span class="chip' + (n === hot ? ' hot' : '') + '">' + n + ' &middot; ' + esc(s.title) + '</span>';
+      return '<div class="vstep"><div class="vrail">' + dot + line + '</div>' +
+             '<div class="vbody">' + chip + '</div></div>';
+    }).join("");
+  }
+
+  function buildRail() {
+    rail.innerHTML = "";
+    data.steps.forEach(function (s, i) {
+      var li = document.createElement("li");
+      li.innerHTML = '<span class="num">' + s.step + '</span><span class="t"></span>';
+      li.querySelector(".t").textContent = s.title;
+      li.addEventListener("click", function () { stop(); go(i); });
+      rail.appendChild(li);
+    });
+  }
+
+  function go(i) {
+    idx = Math.max(0, Math.min(data.steps.length - 1, i));
+    var s = data.steps[idx];
+    Array.prototype.forEach.call(rail.children, function (li, j) {
+      li.classList.toggle("current", j === idx);
+    });
+    var cur = rail.children[idx];
+    if (cur) cur.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    $("dNum").textContent = "Step " + s.step;
+    $("dTitle").textContent = s.title;
+    $("dNode").textContent = s.node;
+    if (idx === 0) {
+      $("dInputLine").hidden = false;
+      $("dInputVal").textContent = "\u201c" + userInput.value + "\u201d";
+    } else {
+      $("dInputLine").hidden = true;
+    }
+    $("dNarrative").textContent = s.narrative;
+    $("dRepr").textContent = s.representation;
+    var ul = $("dModules");
+    ul.innerHTML = "";
+    s.modules.forEach(function (m) {
+      var li = document.createElement("li");
+      var a = document.createElement("a");
+      a.href = m.url; a.target = "_blank"; a.rel = "noopener";
+      a.textContent = m.label;
+      li.appendChild(a);
+      var f = document.createElement("span");
+      f.className = "file"; f.textContent = m.file;
+      li.appendChild(f);
+      ul.appendChild(li);
+    });
+    $("dLoop").innerHTML = LOOP_NOTES[s.step] || "";
+    $("counter").textContent = (idx + 1) + " / " + data.steps.length;
+    renderFlow($("flowMain"), FLOW_MAIN, s.step);
+    renderFlow($("flowBranch"), FLOW_BRANCH, -1);
+  }
+
+  function stop() {
+    if (timer) { clearInterval(timer); timer = null; }
+    $("playBtn").innerHTML = "&#9654; Play";
+  }
+  function play() {
+    if (timer) { stop(); return; }
+    if (idx >= data.steps.length - 1) go(0);
+    $("playBtn").innerHTML = "&#10074;&#10074; Pause";
+    timer = setInterval(function () {
+      if (idx >= data.steps.length - 1) { stop(); return; }
+      go(idx + 1);
+    }, 4500);
+  }
+
+  $("prevBtn").addEventListener("click", function () { stop(); go(idx - 1); });
+  $("nextBtn").addEventListener("click", function () { stop(); go(idx + 1); });
+  $("playBtn").addEventListener("click", play);
+  userInput.addEventListener("input", function () { if (idx === 0) go(0); });
+  document.addEventListener("keydown", function (e) {
+    if (document.activeElement === userInput) return;
+    if (e.key === "ArrowRight") { stop(); go(idx + 1); }
+    if (e.key === "ArrowLeft") { stop(); go(idx - 1); }
+    if (e.key === " ") { e.preventDefault(); play(); }
+  });
+
+  fetch("diagrams/mimiclaw-trace-steps.json")
+    .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
+    .then(function (d) {
+      data = d;
+      document.title = d.title + " \u00b7 Embedded Harness Anatomy";
+      $("pageTitle").textContent = d.title;
+      $("pageSub").textContent = "Follow one Telegram message through MimiClaw: long poll \u2192 message bus \u2192 agent loop \u2192 cloud LLM \u2192 GPIO tool \u2192 reply. " +
+        "Each step shows the representation at that boundary and the source modules involved. " + d.note;
+      $("sha").textContent = "v0.1.1 (" + d.sha.slice(0, 12) + "\u2026)";
+      if (!userInput.value) userInput.value = d.example_input;
+      buildRail();
+      go(0);
+    })
+    .catch(function () {
+      $("pageSub").textContent = "Could not load the trace data (diagrams/mimiclaw-trace-steps.json).";
+    });
+})();
+</script>
+</body>
+</html>

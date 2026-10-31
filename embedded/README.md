@@ -15,6 +15,7 @@ actuation?" — and what each world teaches the other.
 | # | Harness | Article | Trace |
 |---|---------|---------|-------|
 | E1 | ESP-Claw (v0.1.0) | [esp-claw/article.md](esp-claw/article.md) | [Follow one sensor event](esp-claw/trace.html) |
+| E2 | MimiClaw (v0.1.1) | [mimiclaw/article.md](mimiclaw/article.md) | [Follow one message](mimiclaw/trace.html) |
 
 ## Dimensions
 
