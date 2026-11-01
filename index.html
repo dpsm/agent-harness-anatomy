@@ -299,17 +299,17 @@
     <p>xAI's CLI, open-sourced as a one-way export from an internal monorepo: some 820K lines of Rust, 103 crates, and a turn loop you can point at &mdash; an explicit <code>loop {}</code> with one sampler round-trip per iteration, no default turn cap, and a stationarity guard that counts identical steps (nudge at 8, hard stop at 12) as the real brake. Below it: a six-mode permission pipeline whose auto mode is an LLM classifier, an opt-in sandbox that confines the whole process before the agent boots, and a control plane whose highest tier is a server response. The egress audit is the centerpiece: the repository-upload wire types survive in full, but both producers return "unavailable in this build", and session traces are real machinery gated off by default in this tree &mdash; with a coding-data opt-out that blocks the xAI-bound path while exempting a deployment's own trace bucket.</p>
     <div class="links">
       <a class="primary" href="grok-build/trace.html">Step through a live turn</a>
-      <a href="diagrams/template.html?data=../grok-build/diagrams/grok-build.json">Interactive diagram</a>
-      <a href="grok-build/">Read the article</a>
+      <a class="secondary" href="diagrams/template.html?data=../grok-build/diagrams/grok-build.json">Interactive diagram</a>
+      <a class="secondary" href="grok-build/">Read the article</a>
     </div>
   </div>
   <div class="article" id="harness2">
     <h2>#18 &mdash; Harness²: the harness is the thing being optimized</h2>
     <p>Google Research's recursive harness optimizer: there is no agent loop in the package &mdash; instead a budgeted search (Propose&ndash;Probe&ndash;Compose) edits the harness of a borrowed executor, OpenCode by default or Codex. The k base rollouts become evidence files; two one-sided proposer sessions &mdash; one may only fix procedure, the other may only add practitioner knowledge &mdash; edit the component tree; a validator that encodes how the substrates silently fail gates every edit; and blind selection over exactly the finals adopts one &mdash; it cannot abstain, because the base is not in the pool. The adopted tree is stored whole in a per-domain experience library for the next task. The method is score-blind by construction (its <code>RunView</code> type has no score field, and the judge is never imported), while the executor side runs with network access unrestricted &mdash; a split the docs disclose plainly, including a validation run where a rollout downloaded its own rubric.</p>
     <div class="links">
-      <a class="primary" href="harness2/trace.html">Step through one task's optimization</a>
-      <a href="diagrams/template.html?data=../harness2/diagrams/harness2.json">Interactive diagram</a>
-      <a href="harness2/">Read the article</a>
+      <a class="primary" href="harness2/trace.html">Step through a live turn</a>
+      <a class="secondary" href="diagrams/template.html?data=../harness2/diagrams/harness2.json">Interactive diagram</a>
+      <a class="secondary" href="harness2/">Read the article</a>
 
     </div>
   </div>
