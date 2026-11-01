@@ -1,0 +1,465 @@
+{
+  "title": "zenclaw - hot state in PSRAM, write-through to the bucket, flash by snapshot",
+  "repo": "https://github.com/bennyzen/zenclaw",
+  "sha": "9d3dc42480b24463969c00034f060ab3db2b8fca",
+  "nodes": [
+    {
+      "id": "boot",
+      "label": "Boot sequence",
+      "sub": "NVS config - LittleFS - seed files",
+      "x": 60,
+      "y": 100,
+      "w": 220,
+      "h": 120,
+      "grade": "verified",
+      "excerpt": "littlefs_conf.set_format_if_mount_failed(1);",
+      "links": [
+        {
+          "label": "main.rs:232-258",
+          "url": "https://github.com/bennyzen/zenclaw/blob/9d3dc42480b24463969c00034f060ab3db2b8fca/agent/src/main.rs#L232-L258"
+        },
+        {
+          "label": "main.rs:401-430",
+          "url": "https://github.com/bennyzen/zenclaw/blob/9d3dc42480b24463969c00034f060ab3db2b8fca/agent/src/main.rs#L401-L430"
+        }
+      ]
+    },
+    {
+      "id": "snapshot",
+      "label": "Snapshot timer",
+      "sub": "whole cache -> /data/.snapshot.bin",
+      "x": 450,
+      "y": 100,
+      "w": 220,
+      "h": 120,
+      "grade": "verified",
+      "excerpt": "snapshots::write_to(&cache_for_snap, &snap_path)",
+      "links": [
+        {
+          "label": "main.rs:553-571",
+          "url": "https://github.com/bennyzen/zenclaw/blob/9d3dc42480b24463969c00034f060ab3db2b8fca/agent/src/main.rs#L553-L571"
+        },
+        {
+          "label": "snapshots.rs:41-53",
+          "url": "https://github.com/bennyzen/zenclaw/blob/9d3dc42480b24463969c00034f060ab3db2b8fca/agent/src/core/cloud/snapshots.rs#L41-L53"
+        }
+      ]
+    },
+    {
+      "id": "cron",
+      "label": "Cron + heartbeat",
+      "sub": "scaffolding - execution not wired",
+      "x": 840,
+      "y": 100,
+      "w": 220,
+      "h": 120,
+      "grade": "verified",
+      "excerpt": "// TODO: dispatch job through gateway for actual execution",
+      "links": [
+        {
+          "label": "background/mod.rs:25-40",
+          "url": "https://github.com/bennyzen/zenclaw/blob/9d3dc42480b24463969c00034f060ab3db2b8fca/agent/src/desktop/background/mod.rs#L25-L40"
+        },
+        {
+          "label": "cron.rs:343-401",
+          "url": "https://github.com/bennyzen/zenclaw/blob/9d3dc42480b24463969c00034f060ab3db2b8fca/agent/src/core/cron.rs#L343-L401"
+        }
+      ]
+    },
+    {
+      "id": "bucket",
+      "label": "S3-compatible bucket",
+      "sub": "R2 / B2 / S3 - SigV4 signed PUTs",
+      "x": 1230,
+      "y": 100,
+      "w": 220,
+      "h": 120,
+      "grade": "verified",
+      "cloud": true,
+      "excerpt": "pub fn strict_put(store: &Arc<dyn ObjectStore>, key: &str, ...)",
+      "links": [
+        {
+          "label": "strict.rs:25-44",
+          "url": "https://github.com/bennyzen/zenclaw/blob/9d3dc42480b24463969c00034f060ab3db2b8fca/agent/src/core/cloud/strict.rs#L25-L44"
+        },
+        {
+          "label": "sigv4.rs",
+          "url": "https://github.com/bennyzen/zenclaw/blob/9d3dc42480b24463969c00034f060ab3db2b8fca/agent/src/core/cloud/sigv4.rs"
+        }
+      ]
+    },
+    {
+      "id": "tg-cloud",
+      "label": "Telegram cloud",
+      "sub": "Bot API - getUpdates",
+      "x": 60,
+      "y": 254,
+      "w": 220,
+      "h": 120,
+      "grade": "verified",
+      "cloud": true,
+      "excerpt": "https://api.telegram.org/bot{}/getUpdates?offset={}&timeout={}",
+      "links": [
+        {
+          "label": "telegram.rs:43-56",
+          "url": "https://github.com/bennyzen/zenclaw/blob/9d3dc42480b24463969c00034f060ab3db2b8fca/agent/src/core/channels/telegram.rs#L43-L56"
+        }
+      ]
+    },
+    {
+      "id": "agent",
+      "label": "Agent thread",
+      "sub": "one thread - serial turns - 24 KB stack",
+      "x": 450,
+      "y": 254,
+      "w": 220,
+      "h": 120,
+      "grade": "verified",
+      "excerpt": "while let Ok(req) = chat_rx.try_recv() { ... }",
+      "links": [
+        {
+          "label": "main.rs:2040-2083",
+          "url": "https://github.com/bennyzen/zenclaw/blob/9d3dc42480b24463969c00034f060ab3db2b8fca/agent/src/main.rs#L2040-L2083"
+        },
+        {
+          "label": "main.rs:2085-2094",
+          "url": "https://github.com/bennyzen/zenclaw/blob/9d3dc42480b24463969c00034f060ab3db2b8fca/agent/src/main.rs#L2085-L2094"
+        }
+      ]
+    },
+    {
+      "id": "gateway",
+      "label": "Gateway",
+      "sub": "chat() - cancel - compaction - prompt",
+      "x": 840,
+      "y": 254,
+      "w": 220,
+      "h": 120,
+      "grade": "verified",
+      "excerpt": "if let Some(cmd) = crate::core::commands::parse(message) {",
+      "links": [
+        {
+          "label": "gateway.rs:133-146",
+          "url": "https://github.com/bennyzen/zenclaw/blob/9d3dc42480b24463969c00034f060ab3db2b8fca/agent/src/core/gateway.rs#L133-L146"
+        },
+        {
+          "label": "gateway.rs:164-197",
+          "url": "https://github.com/bennyzen/zenclaw/blob/9d3dc42480b24463969c00034f060ab3db2b8fca/agent/src/core/gateway.rs#L164-L197"
+        }
+      ]
+    },
+    {
+      "id": "commands",
+      "label": "Slash commands",
+      "sub": "/new /clear /status - answered locally",
+      "x": 1230,
+      "y": 254,
+      "w": 220,
+      "h": 120,
+      "grade": "verified",
+      "excerpt": "pub fn parse(text: &str) -> Option<Command>",
+      "links": [
+        {
+          "label": "commands.rs:95",
+          "url": "https://github.com/bennyzen/zenclaw/blob/9d3dc42480b24463969c00034f060ab3db2b8fca/agent/src/core/commands.rs#L95"
+        },
+        {
+          "label": "commands.rs:200-215",
+          "url": "https://github.com/bennyzen/zenclaw/blob/9d3dc42480b24463969c00034f060ab3db2b8fca/agent/src/core/commands.rs#L200-L215"
+        }
+      ]
+    },
+    {
+      "id": "http-api",
+      "label": "HTTP / WS API",
+      "sub": "port 80 - web UI - unauthenticated",
+      "x": 60,
+      "y": 408,
+      "w": 220,
+      "h": 120,
+      "grade": "verified",
+      "excerpt": "The on-device HTTP and WebSocket API (port 80) is unauthenticated by design",
+      "links": [
+        {
+          "label": "SECURITY.md",
+          "url": "https://github.com/bennyzen/zenclaw/blob/9d3dc42480b24463969c00034f060ab3db2b8fca/SECURITY.md"
+        },
+        {
+          "label": "main.rs:607-645",
+          "url": "https://github.com/bennyzen/zenclaw/blob/9d3dc42480b24463969c00034f060ab3db2b8fca/agent/src/main.rs#L607-L645"
+        }
+      ]
+    },
+    {
+      "id": "cache",
+      "label": "PSRAM cache",
+      "sub": "Tier 1 working set - sessions/memory/cron",
+      "x": 450,
+      "y": 408,
+      "w": 220,
+      "h": 120,
+      "grade": "verified",
+      "excerpt": "pub struct CloudCache { inner: Arc<Mutex<HashMap<String, Vec<u8>>>> }",
+      "links": [
+        {
+          "label": "cache.rs:1-30",
+          "url": "https://github.com/bennyzen/zenclaw/blob/9d3dc42480b24463969c00034f060ab3db2b8fca/agent/src/core/cloud/cache.rs#L1-L30"
+        }
+      ]
+    },
+    {
+      "id": "loop",
+      "label": "Agent loop",
+      "sub": "ReAct - circuit breaker - error budget",
+      "x": 840,
+      "y": 408,
+      "w": 220,
+      "h": 120,
+      "grade": "verified",
+      "excerpt": "const MAX_CONSECUTIVE_ERRORS: usize = 3;",
+      "links": [
+        {
+          "label": "agent_loop.rs:29-140",
+          "url": "https://github.com/bennyzen/zenclaw/blob/9d3dc42480b24463969c00034f060ab3db2b8fca/agent/src/core/agent_loop.rs#L29-L140"
+        },
+        {
+          "label": "tool_loop.rs:32-70",
+          "url": "https://github.com/bennyzen/zenclaw/blob/9d3dc42480b24463969c00034f060ab3db2b8fca/agent/src/core/tool_loop.rs#L32-L70"
+        }
+      ]
+    },
+    {
+      "id": "llm-cloud",
+      "label": "Cloud LLM APIs",
+      "sub": "one OpenAI-compatible wire - Bearer auth",
+      "x": 1230,
+      "y": 408,
+      "w": 220,
+      "h": 120,
+      "grade": "verified",
+      "cloud": true,
+      "excerpt": "let url = format!(\"{}/chat/completions\", base_url);",
+      "links": [
+        {
+          "label": "esp32/runner.rs:38-66",
+          "url": "https://github.com/bennyzen/zenclaw/blob/9d3dc42480b24463969c00034f060ab3db2b8fca/agent/src/esp32/runner.rs#L38-L66"
+        },
+        {
+          "label": "runner.rs:71-95",
+          "url": "https://github.com/bennyzen/zenclaw/blob/9d3dc42480b24463969c00034f060ab3db2b8fca/agent/src/core/runner.rs#L71-L95"
+        }
+      ]
+    },
+    {
+      "id": "littlefs",
+      "label": "LittleFS /data",
+      "sub": "8 MB storage partition - wear-leveling FS",
+      "x": 60,
+      "y": 562,
+      "w": 220,
+      "h": 120,
+      "grade": "verified",
+      "excerpt": "storage,  data, littlefs, ,       8M,",
+      "links": [
+        {
+          "label": "partitions.csv",
+          "url": "https://github.com/bennyzen/zenclaw/blob/9d3dc42480b24463969c00034f060ab3db2b8fca/agent/partitions.csv"
+        },
+        {
+          "label": "Cargo.toml:97",
+          "url": "https://github.com/bennyzen/zenclaw/blob/9d3dc42480b24463969c00034f060ab3db2b8fca/agent/Cargo.toml#L97"
+        }
+      ]
+    },
+    {
+      "id": "sessions",
+      "label": "Sessions",
+      "sub": "branching JSONL - base + log-NN segments",
+      "x": 450,
+      "y": 562,
+      "w": 220,
+      "h": 120,
+      "grade": "verified",
+      "excerpt": "fn append_via_cloud(&self, chat_id: &str, lines: &[u8], ...)",
+      "links": [
+        {
+          "label": "sessions/mod.rs:617-636",
+          "url": "https://github.com/bennyzen/zenclaw/blob/9d3dc42480b24463969c00034f060ab3db2b8fca/agent/src/core/sessions/mod.rs#L617-L636"
+        },
+        {
+          "label": "sessions/mod.rs:638-668",
+          "url": "https://github.com/bennyzen/zenclaw/blob/9d3dc42480b24463969c00034f060ab3db2b8fca/agent/src/core/sessions/mod.rs#L638-L668"
+        }
+      ]
+    },
+    {
+      "id": "tools",
+      "label": "Tool registry",
+      "sub": "7 action-param tools - all always visible",
+      "x": 840,
+      "y": 562,
+      "w": 220,
+      "h": 120,
+      "grade": "verified",
+      "excerpt": "// message_send and subagent omitted - not viable on ESP32 hardware",
+      "links": [
+        {
+          "label": "tools/mod.rs:82-91",
+          "url": "https://github.com/bennyzen/zenclaw/blob/9d3dc42480b24463969c00034f060ab3db2b8fca/agent/src/core/tools/mod.rs#L82-L91"
+        },
+        {
+          "label": "file_tools.rs:46-56",
+          "url": "https://github.com/bennyzen/zenclaw/blob/9d3dc42480b24463969c00034f060ab3db2b8fca/agent/src/core/tools/file_tools.rs#L46-L56"
+        }
+      ]
+    },
+    {
+      "id": "memory",
+      "label": "MEMORY.md store",
+      "sub": "structured entries - 64 KB / 200 caps",
+      "x": 1230,
+      "y": 562,
+      "w": 220,
+      "h": 120,
+      "grade": "verified",
+      "excerpt": "const MAX_BYTES: usize = 64 * 1024; const MAX_ENTRIES: usize = 200;",
+      "links": [
+        {
+          "label": "memory_tools.rs:45-58",
+          "url": "https://github.com/bennyzen/zenclaw/blob/9d3dc42480b24463969c00034f060ab3db2b8fca/agent/src/core/tools/memory_tools.rs#L45-L58"
+        },
+        {
+          "label": "memory_tools.rs:385-410",
+          "url": "https://github.com/bennyzen/zenclaw/blob/9d3dc42480b24463969c00034f060ab3db2b8fca/agent/src/core/tools/memory_tools.rs#L385-L410"
+        }
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "from": "boot",
+      "to": "snapshot",
+      "label": "starts timer",
+      "label_dx": -9,
+      "label_dy": 0
+    },
+    {
+      "from": "boot",
+      "to": "agent",
+      "label": "spawns agent thread",
+      "label_dx": -40,
+      "label_dy": -10
+    },
+    {
+      "from": "snapshot",
+      "to": "cache",
+      "label": "boot restore",
+      "label_dx": 140,
+      "label_dy": 46,
+      "side": "right"
+    },
+    {
+      "from": "cache",
+      "to": "snapshot",
+      "label": "serialize",
+      "label_dx": -17,
+      "label_dy": 44,
+      "side": "right"
+    },
+    {
+      "from": "cron",
+      "to": "bucket",
+      "label": "cron strict PUT",
+      "label_dx": -51,
+      "label_dy": 0
+    },
+    {
+      "from": "tg-cloud",
+      "to": "agent",
+      "label": "getUpdates poll",
+      "label_dx": -33,
+      "label_dy": 0
+    },
+    {
+      "from": "http-api",
+      "to": "agent",
+      "label": "mpsc requests",
+      "label_dx": 0,
+      "label_dy": -16
+    },
+    {
+      "from": "agent",
+      "to": "gateway",
+      "label": "chat()",
+      "label_dx": -34,
+      "label_dy": 0
+    },
+    {
+      "from": "gateway",
+      "to": "commands",
+      "label": "answered locally",
+      "label_dx": -54,
+      "label_dy": 0
+    },
+    {
+      "from": "gateway",
+      "to": "loop",
+      "label": "run_loop",
+      "label_dx": -30
+    },
+    {
+      "from": "loop",
+      "to": "llm-cloud",
+      "label": "POST completions",
+      "label_dx": -74,
+      "label_dy": -16
+    },
+    {
+      "from": "llm-cloud",
+      "to": "loop",
+      "label": "text + tool_calls",
+      "label_dx": -69,
+      "label_dy": 16
+    },
+    {
+      "from": "loop",
+      "to": "tools",
+      "label": "tool dispatch",
+      "label_dx": -30
+    },
+    {
+      "from": "tools",
+      "to": "memory",
+      "label": "memory actions",
+      "label_dx": -68,
+      "label_dy": 0
+    },
+    {
+      "from": "tools",
+      "to": "sessions",
+      "label": "session actions",
+      "label_dx": -42,
+      "label_dy": 0
+    },
+    {
+      "from": "sessions",
+      "to": "cache",
+      "label": "append via cache + queue",
+      "label_dx": -30
+    },
+    {
+      "from": "sessions",
+      "to": "littlefs",
+      "label": "JSONL append",
+      "label_dx": -38,
+      "label_dy": 0
+    },
+    {
+      "from": "memory",
+      "to": "bucket",
+      "label": "strict PUT",
+      "side": "right",
+      "label_dx": -55
+    }
+  ]
+}

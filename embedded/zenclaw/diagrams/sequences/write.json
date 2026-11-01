@@ -1,0 +1,69 @@
+{
+ "title": "zenclaw: a write, three tiers, and the snapshot timer",
+ "subtitle": "PSRAM cache -> coalesced replication -> flash snapshot every 900 s",
+ "participants": [
+  "Session store",
+  "PSRAM cache",
+  "Replicator",
+  "S3 bucket",
+  "Snapshot timer / flash"
+ ],
+ "messages": [
+  {
+   "from": 0,
+   "to": 1,
+   "label": "append: extend active log-NN in cache"
+  },
+  {
+   "from": 1,
+   "to": 2,
+   "label": "enqueue(log key, whole updated blob)"
+  },
+  {
+   "from": 2,
+   "to": 2,
+   "label": "coalesce: same key already queued -> replace bytes",
+   "self": true
+  },
+  {
+   "from": 2,
+   "to": 3,
+   "label": "drainer: SigV4 PUT"
+  },
+  {
+   "from": 3,
+   "to": 2,
+   "label": "error: backoff 2^(n-1) s, retry to retry_max",
+   "dashed": true
+  },
+  {
+   "from": 2,
+   "to": 2,
+   "label": "still failing: demote to dead-letter list",
+   "self": true
+  },
+  {
+   "from": 0,
+   "to": 1,
+   "label": "log reaches 16,384 B: fold into base.jsonl"
+  },
+  {
+   "from": 4,
+   "to": 1,
+   "label": "every 900 s: snapshot() the whole cache"
+  },
+  {
+   "from": 1,
+   "to": 4,
+   "label": "write .snapshot.bin.tmp, sync, rename over old"
+  },
+  {
+   "note": "Flash sees one atomic whole-state write per interval - not one write per turn",
+   "span": [
+    0,
+    4
+   ],
+   "text": "wear by avoidance"
+  }
+ ]
+}

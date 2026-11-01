@@ -87,6 +87,23 @@
     </div>
   </div>
 
+  <div class="article">
+    <h2>E3 &mdash; ZenClaw: persistence that routes around the flash</h2>
+    <p>The series' first Rust harness (esp-idf-svc, ESP32-S3 and P4) and its
+    first real answer to flash wear: hot state lives in a PSRAM cache, every
+    write replicates write-through to an S3-compatible bucket &mdash; a
+    coalesced eager path for sessions, a blocking strict path for memory,
+    cron, and config &mdash; and flash receives one atomic snapshot every
+    15 minutes. Slash commands are the only local fast path; the HTTP API
+    is unauthenticated by documented design; cron and heartbeat are
+    scaffolding the README itself labels unwired.</p>
+    <div class="links">
+      <a class="primary" href="zenclaw/trace.html">Follow one message</a>
+      <a class="secondary" href="../diagrams/template.html?data=../embedded/zenclaw/diagrams/zenclaw.json">Interactive diagram</a>
+      <a class="secondary" href="zenclaw/">Read the article</a>
+    </div>
+  </div>
+
   <footer>
     Part of <a href="../">Agent Harness Anatomy</a> ·
     <a href="https://github.com/dpsm/agent-harness-anatomy">GitHub repo</a>

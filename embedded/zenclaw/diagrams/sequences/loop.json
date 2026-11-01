@@ -1,0 +1,82 @@
+{
+ "title": "zenclaw: the loop, its breaker, and a memory save",
+ "subtitle": "ReAct loop -> memory tool -> strict write -> final text",
+ "participants": [
+  "Gateway",
+  "Agent loop",
+  "Cloud LLM",
+  "Memory tool",
+  "S3 bucket"
+ ],
+ "messages": [
+  {
+   "from": 0,
+   "to": 1,
+   "label": "run_loop(messages, tools)"
+  },
+  {
+   "from": 1,
+   "to": 2,
+   "label": "call(messages + tool schemas)"
+  },
+  {
+   "from": 2,
+   "to": 1,
+   "label": "tool_call: memory save",
+   "dashed": true
+  },
+  {
+   "from": 1,
+   "to": 1,
+   "label": "LoopDetector check: repeat / no-progress / ping-pong",
+   "self": true
+  },
+  {
+   "from": 1,
+   "to": 3,
+   "label": "memory(action=save, title, content)"
+  },
+  {
+   "from": 3,
+   "to": 3,
+   "label": "cache.put(sys/MEMORY.md) + local flash copy",
+   "self": true
+  },
+  {
+   "from": 3,
+   "to": 4,
+   "label": "strict_put: PUT, block on confirmation"
+  },
+  {
+   "from": 4,
+   "to": 3,
+   "label": "200 OK (or error after retries)",
+   "dashed": true
+  },
+  {
+   "from": 1,
+   "to": 2,
+   "label": "call(messages + tool result, no schemas)"
+  },
+  {
+   "from": 2,
+   "to": 1,
+   "label": "final text",
+   "dashed": true
+  },
+  {
+   "from": 1,
+   "to": 0,
+   "label": "return text",
+   "dashed": true
+  },
+  {
+   "note": "3 consecutive provider errors abort the turn; a repeated call trips the breaker",
+   "span": [
+    0,
+    4
+   ],
+   "text": "guarded loop"
+  }
+ ]
+}

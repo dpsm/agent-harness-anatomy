@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 985" width="1600" font-family="system-ui, -apple-system, sans-serif">
+<defs><marker id="arrc" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 1 L 9 5 L 0 9 z" fill="#d08c4e"/></marker><marker id="arrr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 1 L 9 5 L 0 9 z" fill="#8a7a66"/></marker></defs>
+<rect x="0" y="0" width="1600" height="985" fill="#f7f2e9"/>
+<text x="90.78014184397163" y="44" font-size="26" font-weight="700" fill="#000000">zenclaw: the loop, its breaker, and a memory save</text>
+<text x="90.78014184397163" y="74" font-size="15" fill="#000000">ReAct loop -&gt; memory tool -&gt; strict write -&gt; final text</text>
+<line x1="233" y1="110" x2="233" y2="917" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="113" y="82" width="238" height="56" rx="10" fill="#ffffff" stroke="#3a2f26" stroke-width="1.5"/>
+<text x="233" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#000000">Gateway</text>
+<line x1="516" y1="110" x2="516" y2="917" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="397" y="82" width="238" height="56" rx="10" fill="#ffffff" stroke="#3a2f26" stroke-width="1.5"/>
+<text x="516" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#000000">Agent loop</text>
+<line x1="800" y1="110" x2="800" y2="917" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="681" y="82" width="238" height="56" rx="10" fill="#ffffff" stroke="#3a2f26" stroke-width="1.5"/>
+<text x="800" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#000000">Cloud LLM</text>
+<line x1="1084" y1="110" x2="1084" y2="917" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="965" y="82" width="238" height="56" rx="10" fill="#ffffff" stroke="#3a2f26" stroke-width="1.5"/>
+<text x="1084" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#000000">Memory tool</text>
+<line x1="1367" y1="110" x2="1367" y2="917" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="1248" y="82" width="238" height="56" rx="10" fill="#ffffff" stroke="#3a2f26" stroke-width="1.5"/>
+<text x="1367" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#000000">S3 bucket</text>
+<line x1="233" y1="191" x2="506" y2="191" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="296" cy="177" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="296" y="182" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">1</text>
+<text x="314" y="182" font-size="14" fill="#000000">run_loop(messages, tools)</text>
+<line x1="516" y1="252" x2="790" y2="252" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="580" cy="238" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="580" y="243" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">2</text>
+<text x="598" y="243" font-size="14" fill="#000000">call(messages + tool schemas)</text>
+<line x1="800" y1="313" x2="526" y2="313" stroke="#8a7a66" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrr)"/>
+<circle cx="580" cy="299" r="11" fill="#ffffff" stroke="#8a7a66" stroke-width="1.5"/>
+<text x="580" y="304" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">3</text>
+<text x="598" y="304" font-size="14" fill="#000000">tool_call: memory save</text>
+<path d="M 516 374 h 50 v 30 H 526" fill="none" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="541" cy="358" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="541" y="363" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">4</text>
+<text x="576" y="379" font-size="14" fill="#000000">LoopDetector check: repeat / no-progress / ping-pong</text>
+<line x1="516" y1="436" x2="1074" y2="436" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="722" cy="422" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="722" y="427" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">5</text>
+<text x="740" y="427" font-size="14" fill="#000000">memory(action=save, title, content)</text>
+<path d="M 1084 497 h 50 v 30 H 1094" fill="none" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="1109" cy="481" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="1109" y="486" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">6</text>
+<text x="1144" y="502" font-size="14" fill="#000000">cache.put(sys/MEMORY.md) + local flash copy</text>
+<line x1="1084" y1="558" x2="1357" y2="558" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="1148" cy="544" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="1148" y="549" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">7</text>
+<text x="1166" y="549" font-size="14" fill="#000000">strict_put: PUT, block on confirmation</text>
+<line x1="1367" y1="620" x2="1094" y2="620" stroke="#8a7a66" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrr)"/>
+<circle cx="1148" cy="606" r="11" fill="#ffffff" stroke="#8a7a66" stroke-width="1.5"/>
+<text x="1148" y="611" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">8</text>
+<text x="1166" y="611" font-size="14" fill="#000000">200 OK (or error after retries)</text>
+<line x1="516" y1="681" x2="790" y2="681" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="580" cy="667" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="580" y="672" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">9</text>
+<text x="598" y="672" font-size="14" fill="#000000">call(messages + tool result, no schemas)</text>
+<line x1="800" y1="742" x2="526" y2="742" stroke="#8a7a66" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrr)"/>
+<circle cx="580" cy="728" r="11" fill="#ffffff" stroke="#8a7a66" stroke-width="1.5"/>
+<text x="580" y="733" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">10</text>
+<text x="598" y="733" font-size="14" fill="#000000">final text</text>
+<line x1="516" y1="803" x2="243" y2="803" stroke="#8a7a66" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrr)"/>
+<circle cx="296" cy="789" r="11" fill="#ffffff" stroke="#8a7a66" stroke-width="1.5"/>
+<text x="296" y="794" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">11</text>
+<text x="314" y="794" font-size="14" fill="#000000">return text</text>
+<rect x="113" y="837" width="1373" height="44" rx="8" fill="#d08c4e" fill-opacity="0.13" stroke="#d08c4e" stroke-width="1"/>
+<text x="800" y="864" text-anchor="middle" font-size="14" fill="#000000">guarded loop</text>
+</svg>

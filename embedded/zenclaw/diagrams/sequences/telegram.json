@@ -1,0 +1,76 @@
+{
+ "title": "zenclaw: a Telegram message, end to end",
+ "subtitle": "long poll -> allowlist -> gateway -> cloud LLM -> reply",
+ "participants": [
+  "User (Telegram)",
+  "Agent thread",
+  "Gateway",
+  "Cloud LLM",
+  "Telegram channel"
+ ],
+ "messages": [
+  {
+   "from": 1,
+   "to": 0,
+   "label": "getUpdates long poll (10 s timeout)"
+  },
+  {
+   "from": 0,
+   "to": 1,
+   "label": "update: message text",
+   "dashed": true
+  },
+  {
+   "from": 1,
+   "to": 1,
+   "label": "allowed_chat_ids check (if configured)",
+   "self": true
+  },
+  {
+   "from": 1,
+   "to": 2,
+   "label": "gateway.chat(chat_id, text, telegram)"
+  },
+  {
+   "from": 2,
+   "to": 2,
+   "label": "not a slash command: compaction check + prompt",
+   "self": true
+  },
+  {
+   "from": 2,
+   "to": 3,
+   "label": "POST /chat/completions (warm TLS)"
+  },
+  {
+   "from": 3,
+   "to": 2,
+   "label": "final text (no tool calls)",
+   "dashed": true
+  },
+  {
+   "from": 2,
+   "to": 1,
+   "label": "reply text"
+  },
+  {
+   "from": 1,
+   "to": 4,
+   "label": "deliver(reply)"
+  },
+  {
+   "from": 4,
+   "to": 0,
+   "label": "sendMessage",
+   "dashed": true
+  },
+  {
+   "note": "One agent thread serves Telegram and HTTP chat: turns are strictly serial",
+   "span": [
+    0,
+    4
+   ],
+   "text": "serial turns"
+  }
+ ]
+}
