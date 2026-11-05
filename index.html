@@ -349,7 +349,7 @@
     <h2>#21 &mdash; ZCode: the goal outlives the turn</h2>
     <p>Z.ai's first-party harness for GLM: one agent runtime behind three surfaces &mdash; an Electron desktop app, a browser UI served by a local host, and a terminal CLI &mdash; unified by a single runtime command queue and a SQLite session store. Its distinctive system is the Goal: a persisted objective (status, token budget, usage counters) that the runtime injects into every turn, continues automatically when the session goes idle, and closes only through a separate completion verifier &mdash; a tool-less, JSON-only model pass the working model cannot influence, since its only goal tool is read-only. Also in the dissection: six collaboration modes over a per-tool permission service, a 21-template provider registry ordered GLM-first, remote triggering from WeChat, Feishu and Telegram with single-actor binding, and a pinned-source audit of what leaves the machine &mdash; at this commit the workspace snapshot machinery is local-only, and the telemetry paths are build- or environment-gated.</p>
     <div class="links">
-      <a class="primary" href="zcode/trace.html">Step through one session, end to end</a>
+      <a class="primary" href="zcode/trace.html">Step through a live turn</a>
       <a href="diagrams/template.html?data=../zcode/diagrams/zcode.json">Interactive diagram</a>
       <a href="zcode/">Read the article</a>
     </div>
