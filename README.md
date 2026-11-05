@@ -36,7 +36,7 @@ By **David P. S. Marques** — [LinkedIn](https://ca.linkedin.com/in/dpsmarques)
 | 18 | Harness² (1cfe254) | [harness2/article.md](harness2/article.md) | [Read on Substack](https://agentharnessanatomy.substack.com/p/harness-the-harness-is-the-thing) |
 | 19 | Agensh (v1.0) | [agensh/article.md](agensh/article.md) | [Read on Substack](https://agentharnessanatomy.substack.com/p/agensh-the-orchestrator-is-a-prompt) |
 | 20 | dsh-superagent (v0.1.0) | [dsh-superagent/article.md](dsh-superagent/article.md) | [Read on Substack](https://agentharnessanatomy.substack.com/p/dsh-superagent-the-agent-that-decides) |
-| 20 | ZCode (3.16.2 @ 3c5b227) | [zcode/article.md](zcode/article.md) | forthcoming |
+| 21 | ZCode (3.16.2 @ 3c5b227) | [zcode/article.md](zcode/article.md) | forthcoming |
 
 ## Embedded Harness Anatomy
 
