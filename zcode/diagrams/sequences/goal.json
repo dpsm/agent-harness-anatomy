@@ -1,0 +1,16 @@
+{
+ "title": "The Goal lifecycle: set, continue, verify",
+ "subtitle": "The model works toward the goal; the runtime decides when it is done",
+ "participants": ["User", "Runtime", "Goal row (SQLite)", "Verifier", "Model"],
+ "messages": [
+  {"from": 0, "to": 1, "label": "/goal <objective> (token budget optional)"},
+  {"from": 1, "to": 2, "label": "insert goal: status=active, tokensUsed=0"},
+  {"from": 1, "to": 4, "label": "turns run; goal state injected as a reminder"},
+  {"from": 4, "to": 1, "label": "turn ends; session goes idle", "dashed": true},
+  {"from": 1, "to": 3, "label": "verify completion (no tools, JSON only)"},
+  {"from": 3, "to": 1, "label": "{passed: false, reason, nextAction}", "dashed": true},
+  {"from": 1, "to": 4, "label": "continuation: budget + audit checklist + nextAction"},
+  {"from": 1, "to": 2, "label": "on pass or budget reached: status=complete / budget_limited"},
+  {"note": "span", "span": [0, 4], "text": "The model cannot mark its own goal complete — GoalRead is its only goal tool, and it is read-only"}
+ ]
+}

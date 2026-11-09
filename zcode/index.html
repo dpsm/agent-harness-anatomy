@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body {
+    background: #161210; color: #ece1d3;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    line-height: 1.7; padding: 48px 24px; margin: 0;
+  }
+  main { max-width: 760px; margin: 0 auto; }
+  a { color: #d08c4e; }
+  h1 { font-size: 1.9rem; letter-spacing: -0.02em; line-height: 1.25; margin-bottom: 16px; }
+  h2 { font-size: 1.4rem; margin: 40px 0 12px; padding-top: 8px; border-top: 1px solid #2c231b; }
+  h3 { font-size: 1.1rem; margin: 28px 0 8px; }
+  p, li { margin-bottom: 12px; }
+  blockquote {
+    border-left: 3px solid #d08c4e; padding: 4px 16px; margin: 20px 0;
+    color: #a89880; background: #1f1a15; border-radius: 0 8px 8px 0;
+  }
+  blockquote p { margin-bottom: 6px; }
+  code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.88em; background: #1f1a15; padding: 2px 6px; border-radius: 6px;
+  }
+  pre { background: #1f1a15; border: 1px solid #3a2f26; border-radius: 8px;
+        padding: 16px; overflow-x: auto; }
+  pre code { background: none; padding: 0; }
+  img { max-width: 100%; height: auto; border: 1px solid #3a2f26;
+        border-radius: 12px; margin: 20px 0; background: #1f1a15; }
+  table { border-collapse: collapse; width: 100%; margin: 20px 0; font-size: 0.92rem;
+          display: block; overflow-x: auto; }
+  th, td { border: 1px solid #3a2f26; padding: 10px 12px; text-align: left;
+           vertical-align: top; }
+  th { background: #1f1a15; }
+  ul, ol { padding-left: 24px; }
+  hr { border: none; border-top: 1px solid #2c231b; margin: 32px 0; }
+  .footnote { font-size: 0.88rem; color: #a89880; }
+  .footnote hr { margin: 40px 0 16px; }
+  sup a { text-decoration: none; }
+  .topnav { max-width: 760px; margin: 0 auto 32px; font-size: 0.9rem; }
+  .topnav a { color: #a89880; text-decoration: none; }
+  .topnav a:hover { color: #ece1d3; }
+  .diagram-cta {
+    display: block; text-align: center; margin: 28px 0; padding: 16px;
+    background: #1f1a15; border: 1px solid #3a2f26; border-radius: 12px;
+    color: #ece1d3; text-decoration: none; font-weight: 600;
+  }
+  .diagram-cta:hover { border-color: #d08c4e; }
+  .diagram-cta span { display: block; font-weight: 400; font-size: 0.88rem;
+                      color: #a89880; margin-top: 4px; }
+  .byline { color: #a89880; font-size: 0.95rem; margin: 4px 0 20px; } .byline a { color: #d08c4e; }
+</style>
+<title>Agent Harness Anatomy #21: ZCode — the goal outlives the turn</title>
+<meta name="description" content="Z.ai's first-party GLM harness: one agent across desktop, browser and terminal, a Goal system whose completion is decided by a verifier rather than the working model, chat-app remote triggers — and a pinned-source audit of what leaves the machine.">
+<meta name="author" content="David P. S. Marques">
+<meta property="og:title" content="Agent Harness Anatomy #21: ZCode — the goal outlives the turn">
+<meta property="og:description" content="Z.ai's first-party GLM harness: one agent across desktop, browser and terminal, a Goal system whose completion is decided by a verifier rather than the working model, chat-app remote triggers — and a pinned-source audit of what leaves the machine.">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://dpsm.github.io/agent-harness-anatomy/zcode/">
+</head>
+<body>
+<main>
+<nav class="topnav"><a href="../#zcode">&larr; Agent Harness Anatomy</a></nav>
+<h1 id="agent-harness-anatomy-21-zcode-the-goal-outlives-the-turn">Agent Harness Anatomy #21: ZCode — the goal outlives the turn</h1>
+  <p class="byline">by <a href="https://ca.linkedin.com/in/dpsmarques">David P. S. Marques</a></p>
+<blockquote>
+<p><strong>Series:</strong> Agent Harness Anatomy — top-down dissections of real agent harnesses, grounded in verifiable source code. Every behavioral claim below carries a footnote to a pinned GitHub permalink; the full evidence lives in the endnotes.</p>
+</blockquote>
+<h2 id="version-block">Version block</h2>
+<ul>
+<li><strong>Repo:</strong> <a href="https://github.com/zai-org/ZCode">zai-org/ZCode</a></li>
+<li><strong>Pinned:</strong> commit <code>3c5b227649371507ddc4eb46ac5133afe6db1cab</code> (2026-10-20) — HEAD at the pin; the root package reports version 3.16.2, but there is no v3.16.2 tag (tags stop at v3.15.1), so the commit is the only exact pin. The history is a squashed code drop: seven commits in total, each a whole-tree sync of an internally developed codebase, beginning with an initial commit and a "feat: open source" commit in September 2026. There is no incremental history to bisect — the pin is a snapshot, and this teardown treats it as one.</li>
+<li><strong>Language:</strong> TypeScript throughout — a pnpm monorepo of ~18,300 tracked files: the Electron desktop app, the web/server host and the shared UI at the root, and the agent itself (runtime, contracts, adapters, bootstrap, CLI, TUI, plus some twenty bundled plugin packages) in a nested workspace at <code>apps/zcode-cli</code>.</li>
+<li><strong>License:</strong> Apache-2.0</li>
+<li><strong>Claim under test:</strong> a first-party harness for GLM that ships three surfaces (desktop, browser, terminal) over one agent runtime, adds a "Goal" system in which long-horizon tasks persist in the session store and resume automatically — with completion decided by a verifier rather than by the model doing the work — and can be triggered remotely from WeChat, Feishu and Telegram. A second claim, examined in its own section below, concerns what the client sends off the machine: in September 2026 the then-closed client was reported to be uploading workspace snapshots (reported context, attributed as such where it appears); Z.ai's reported response was to delete the storage bucket and open-source the client. This teardown audits the pinned source for what leaves the machine now, and pins every audit statement to that source.</li>
+</ul>
+<p>Two framing notes. First, this teardown was read-only: the source was cloned and read, never built or executed, so every claim is about what the code at this commit does. Second, scale: this is by a wide margin the largest codebase in the series — an entire product (marketplace, subscriptions, sharing, feedback, browser) wrapped around the agent. The dissection keeps its focus on the agent: the loop, the Goal system, tools and permissions, memory, providers, the remote-trigger surface, and the egress audit. Product machinery is covered where it touches one of those.</p>
+<p><img alt="ZCode architecture" src="figures/zcode.svg" /></p>
+<p><a class="diagram-cta" href="../diagrams/template.html?data=../zcode/diagrams/zcode.json">Explore the interactive architecture diagram<span>11 nodes, 12 edges — pan, zoom, and follow every source link</span></a></p>
+<h2 id="the-mental-model">The mental model</h2>
+<p>Hold three layers apart.</p>
+<p><strong>Three surfaces, one agent.</strong> The README's own summary is exact: "ZCode is an AI coding workspace with desktop, browser, and terminal interfaces. This repository contains the clients, backend services, shared UI, and Agent CLI and runtime source code."<sup id="fnref:1"><a class="footnote-ref" href="#fn:1">1</a></sup> The desktop app is an Electron shell; the browser UI is the same shared UI package served by a local HTTP/WebSocket host; the terminal is a TUI. Even the distribution reflects the unification: one <code>zcode</code> command, where no arguments start the TUI, a leading <code>--web</code> starts Web mode, and anything else goes to the Agent CLI — both modes running locally without Electron.<sup id="fnref:2"><a class="footnote-ref" href="#fn:2">2</a></sup> Under the surfaces sits a host services layer (<code>packages/services</code>: sessions, providers, bots, plugins, sharing, telemetry) and, under that, the agent proper in <code>apps/zcode-cli</code>, reached through the zcode-protocol (v4): session commands in, session events out.</p>
+<p><strong>The loop is a command queue.</strong> Nothing calls the model directly. User prompts, steering, background-subagent results, workflow results and goal continuations all enter the runtime as commands on one queue, and the turn loop drains them between model steps. That single decision explains much of the system's behavior — including how a goal can resume "by itself": a continuation is just another command.</p>
+<p><strong>The Goal is a row, not a prompt trick.</strong> A goal is a persisted record in the SQLite session store — objective, status, token budget, usage counters — that the runtime injects into turns as state, continues when the session goes idle, and closes only through a separate verification pass or by exhausting its budget. The model working toward the goal cannot mark it complete; it cannot even write to it. Its only goal tool is read-only.</p>
+<h2 id="component-map">Component map</h2>
+<table>
+<thead>
+<tr>
+<th>Component</th>
+<th>Where</th>
+<th>Role</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Desktop app</td>
+<td><code>packages/desktop</code></td>
+<td>Electron shell: updater, embedded browser (+ Chrome-data import), computer-use broker, packaged-build wiring</td>
+</tr>
+<tr>
+<td>Web surface</td>
+<td><code>packages/web</code>, <code>packages/server</code>, <code>packages/ui</code></td>
+<td>The shared UI, served over HTTP/WebSocket by a local host</td>
+</tr>
+<tr>
+<td>Host services</td>
+<td><code>packages/services</code></td>
+<td>Sessions, model providers/accounts, bots, plugins, conversation share, feedback, telemetry</td>
+</tr>
+<tr>
+<td>Protocol bridge</td>
+<td><code>apps/zcode-cli/packages/bootstrap/src/zcode-protocol-v4</code></td>
+<td>Host &lt;-&gt; agent: session commands and events (v4), plus the host-side adapter in <code>packages/services/src/zcode-agent</code></td>
+</tr>
+<tr>
+<td>Agent runtime</td>
+<td><code>apps/zcode-cli/packages/core</code></td>
+<td>The turn loop, tools, permissions, memory, compaction, hooks, MCP, subagents, workflows</td>
+</tr>
+<tr>
+<td>Contracts</td>
+<td><code>apps/zcode-cli/packages/contracts</code></td>
+<td>Ports, schemas and shared types — including the Goal contracts</td>
+</tr>
+<tr>
+<td>Adapters</td>
+<td><code>apps/zcode-cli/packages/adapters</code></td>
+<td>Model transport (incl. the coding-plan gateway), the SQLite session store, MCP transports</td>
+</tr>
+<tr>
+<td>CLI / TUI</td>
+<td><code>apps/zcode-cli/packages/cli</code>, <code>packages/tui</code></td>
+<td>The terminal surface, the command center (<code>/goal</code> lives here)</td>
+</tr>
+<tr>
+<td>Bundled plugins</td>
+<td><code>apps/zcode-cli/packages/*-plugin</code></td>
+<td>Browser use, computer use, documents/PDF/spreadsheets/presentations, image search, simulators, creators</td>
+</tr>
+</tbody>
+</table>
+<h2 id="the-core-loop">The core loop</h2>
+<p><code>runRegularTurnLoop</code> is an unbounded <code>while (true)</code>.<sup id="fnref:3"><a class="footnote-ref" href="#fn:3">3</a></sup> Each iteration, in order: drain any runtime commands that arrived during the previous model step (steering messages, background-subagent and workflow results are folded into the turn here); run microcompaction, then auto-compaction if the context needs it; initialize MCP and refresh MCP tools if their list changed; assemble the request — system sections, mode/todo/goal reminders, prefetched project-memory recall; and execute one model step. Tool results from that step feed the next iteration. The loop exits when the model stops calling tools, when the turn is aborted, or when a guard trips — the compaction guard is the visible one: if compaction refills the context too fast too often (three consecutive rapid refills), the loop throws a dedicated error rather than spinning.<sup id="fnref:4"><a class="footnote-ref" href="#fn:4">4</a></sup></p>
+<p>Turns themselves are commands. <code>executeTurn</code> enqueues a prompt as a cancellable runtime command, which is why user input, goal continuations and protocol-level control all share one ordering and one cancellation model.<sup id="fnref:5"><a class="footnote-ref" href="#fn:5">5</a></sup> MCP is not a side channel: servers are initialized and their tool lists refreshed inside the loop, at turn boundaries.<sup id="fnref:6"><a class="footnote-ref" href="#fn:6">6</a></sup></p>
+<p><img alt="One turn through the loop" src="figures/seq-turn.svg" /></p>
+<h2 id="one-session-end-to-end">One session, end to end</h2>
+<p>A concrete pass: a user sets a goal in the desktop app and asks for a change that takes several turns, closing the app mid-way and finishing from the terminal.</p>
+<ol>
+<li><strong>The goal is set.</strong> In the TUI this is <code>/goal &lt;objective&gt;</code>; the handler checks for an existing goal and asks for confirmation before replacing it, and <code>pause</code> / <code>resume</code> / <code>clear</code> are sub-commands of the same handler.<sup id="fnref:7"><a class="footnote-ref" href="#fn:7">7</a></sup> The goal lands in the session store as a row: status <code>active</code>, <code>tokensUsed</code> 0, the objective capped at 4,000 characters.<sup id="fnref2:8"><a class="footnote-ref" href="#fn:8">8</a></sup></li>
+<li><strong>Turns run with the goal in view.</strong> Each turn's request assembly includes the goal state block — status, tokens used, budget, elapsed time, and the objective wrapped as untrusted data.<sup id="fnref:9"><a class="footnote-ref" href="#fn:9">9</a></sup> The model can also read the goal itself with <code>GoalRead</code>, the one goal tool it is given.<sup id="fnref3:10"><a class="footnote-ref" href="#fn:10">10</a></sup></li>
+<li><strong>Tool work proceeds normally.</strong> The model edits and runs commands; each call passes the permission service under the session's collaboration mode, and results return to the loop.<sup id="fnref2:11"><a class="footnote-ref" href="#fn:11">11</a></sup></li>
+<li><strong>The user closes the desktop app.</strong> Nothing about the goal lives in the window: the session — messages, todos, goal row — is in the SQLite store, so the state survives the surface.</li>
+<li><strong>The session resumes in the terminal.</strong> Resume reads the goal back from the store and injects its state into the restored history, so the model picks up the same objective with the same counters.<sup id="fnref:12"><a class="footnote-ref" href="#fn:12">12</a></sup></li>
+<li><strong>The work finishes; the session goes idle.</strong> The runtime does not take the model's word for completion. Before continuing — and to decide whether to continue at all — it runs the completion verifier: a separate, tool-less model request that must answer in JSON whether every requirement in the objective is evidenced as done.<sup id="fnref2:13"><a class="footnote-ref" href="#fn:13">13</a></sup></li>
+<li><strong>The verifier says not yet.</strong> Its <code>nextAction</code> seeds a continuation command: a fresh turn whose prompt carries the budget accounting, the verifier's reason and next action, and the completion-audit checklist.<sup id="fnref3:14"><a class="footnote-ref" href="#fn:14">14</a></sup> The cycle repeats — work, idle, verify — until the verifier passes (status becomes <code>complete</code>) or the accounting stops it (<code>budget_limited</code>).</li>
+</ol>
+<p><img alt="The Goal lifecycle" src="figures/seq-goal.svg" /></p>
+<p><a class="diagram-cta" href="trace.html">Play the 8-step trace<span>follow one session — a prompt becomes a command, turns persist to the store, and the Goal system verifies and continues the work after the user walks away</span></a></p>
+<h2 id="the-goal-system-closely">The Goal system, closely</h2>
+<p>The Goal system is the part of ZCode with no close equivalent in the earlier entries of this series, and it rewards a close read. (Naming note: the product calls it Goal; the persisted row and the wire payload still call it a <em>target</em> — the goal's id field is <code>targetID</code>, with a comment in the contracts explaining the compatibility reason. The contracts file itself is headed "Goal Tools - session-local long-running goal".)<sup id="fnref:15"><a class="footnote-ref" href="#fn:15">15</a></sup></p>
+<p><strong>Representation.</strong> <code>SessionGoal</code> is a small, complete record: session id, goal id, objective, a UI summary title, status (<code>active | paused | budget_limited | complete</code>), an optional token budget, <code>tokensUsed</code>, <code>timeUsedSeconds</code>, and active-run timestamps.<sup id="fnref:8"><a class="footnote-ref" href="#fn:8">8</a></sup><sup id="fnref:16"><a class="footnote-ref" href="#fn:16">16</a></sup> One goal per session. It is stored with the session in SQLite — <code>readTarget</code> on the session store is how every surface reads the same goal.<sup id="fnref:17"><a class="footnote-ref" href="#fn:17">17</a></sup></p>
+<p><strong>Authority.</strong> Three actors can touch the goal, and the model is not one of them. The user sets, pauses, resumes and clears it (the CLI handler above; the desktop and web surfaces reach the same store through the protocol). The runtime changes its status — on verifier pass, on budget exhaustion, on pause/resume. The model's entire goal interface is <code>GoalRead</code>, whose tool entry is read-only, approval-free and explicitly scoped to "session-local goal state"; there is no goal-write tool in the registry.<sup id="fnref:10"><a class="footnote-ref" href="#fn:10">10</a></sup> The continuation prompt states the rule to the model directly: "Do not mark the goal complete yourself. The runtime will run a completion verifier after this turn and update the goal status only if every requirement is complete."<sup id="fnref:14"><a class="footnote-ref" href="#fn:14">14</a></sup></p>
+<p><strong>Continuation.</strong> When a session with an active goal goes idle, <code>continueActiveTargetIfIdle</code> enqueues a target-continuation command on the same queue as user prompts, at "next" priority.<sup id="fnref:18"><a class="footnote-ref" href="#fn:18">18</a></sup> Executing it is deliberately conservative: it defers while background tasks are running; it runs the verifier <em>first</em> and skips continuation if the verifier passes; if the verifier fails <em>without</em> a next action — the signature of a verifier malfunction rather than a model judgment — it also skips, so an internal error cannot turn into an infinite goal loop; and it re-reads the goal after verification, so a Stop the user pressed while the verifier was running is honored rather than overridden by a stale snapshot.<sup id="fnref:19"><a class="footnote-ref" href="#fn:19">19</a></sup></p>
+<p><strong>Verification.</strong> The verifier is a model request wearing a referee's constraints: the dedicated prompt forbids implementation work, file writes and tool calls, and demands a single JSON object — <code>{passed, reason, nextAction}</code> — judged against the conversation as the evidence source.<sup id="fnref:13"><a class="footnote-ref" href="#fn:13">13</a></sup> The prompt is unusually explicit about what does not count: a completed plan, a todo update, elapsed effort, or proxy signals like passing tests that do not cover the objective's requirements. The continuation prompt carries the same doctrine as a checklist the working model must apply to itself before claiming completion.<sup id="fnref2:14"><a class="footnote-ref" href="#fn:14">14</a></sup> Two failure-handling details are worth naming. If the verifier returns malformed JSON, parsing fails <em>open</em> — the goal is treated as passed, with the reason recorded — on the stated reasoning that a formatting failure in the referee chain should not trap a finished goal in endless iteration.<sup id="fnref:20"><a class="footnote-ref" href="#fn:20">20</a></sup> And a goal recorded in plan mode is never auto-continued: the CLI tells the user exactly that when they set one there.<sup id="fnref:21"><a class="footnote-ref" href="#fn:21">21</a></sup></p>
+<p><strong>Budget as a stopping rule.</strong> Because <code>tokensUsed</code> and <code>timeUsedSeconds</code> are accounted on the goal row itself, the budget needs no cooperation from the model: when the tokens run out, the status becomes <code>budget_limited</code> and continuation stops. Termination of a long-horizon task is thus decided by three non-model mechanisms — a verifier's pass, an accounting limit, or the user's pause/clear.</p>
+<h2 id="tools-permissions-modes">Tools, permissions, modes</h2>
+<p>The built-in registry holds roughly forty-five tools. The file/shell core is familiar (<code>Bash</code>, <code>Read</code>, <code>Write</code>, <code>Edit</code>, <code>ApplyPatch</code>, <code>Glob</code>, <code>Grep</code>), with a notably large bash-analysis family behind the <code>Bash</code> tool (command parsing, read-only detection, cwd and git-safety policies). Around it: <code>WebFetch</code>/<code>WebSearch</code>; <code>TodoRead</code>/<code>TodoWrite</code>; plan-mode enter/exit; <code>AskUserQuestion</code>; subagents (<code>Agent</code>, <code>SendMessage</code>, <code>RespondToCoordinator</code>, <code>ReplyToChannel</code>); a dynamic-workflow family — authoring tools that create, amend, fill and evaluate multi-agent workflow programs, plus <code>Workflow</code> to run them; scheduling (<code>CronCreate/List/Update/Delete</code>, <code>OffPeak*</code>); a <code>js</code> node-repl; <code>Skill</code>; <code>ToolSearch</code> for deferred tool discovery; and <code>GoalRead</code>. Every tool entry carries the same metadata shape: JSON schemas, a result budget, a timeout, a trace policy, and a permission spec — risk level, side-effect scope, read-only/destructive flags, and whether approval is needed.<sup id="fnref2:10"><a class="footnote-ref" href="#fn:10">10</a></sup></p>
+<p>Approvals are modal. The session's collaboration mode is one of six — <code>plan | build | edit | yolo | guarded | auto</code> — and a permission service evaluates each call from the tool's capability metadata against the mode, the configured rulesets and plan-mode policy.<sup id="fnref:11"><a class="footnote-ref" href="#fn:11">11</a></sup><sup id="fnref:22"><a class="footnote-ref" href="#fn:22">22</a></sup> Hooks see the decision point as a <code>PermissionRequest</code> event, one of seven lifecycle hook events (<code>SessionStart</code>, <code>UserPromptSubmit</code>, <code>PreToolUse</code>, <code>PermissionRequest</code>, <code>PostToolUse</code>, <code>PostToolUseFailure</code>, <code>Stop</code>); workspace-defined hooks additionally pass through a trust/review flow before they run.<sup id="fnref:23"><a class="footnote-ref" href="#fn:23">23</a></sup><sup id="fnref:24"><a class="footnote-ref" href="#fn:24">24</a></sup> One containment note, stated plainly: in the core at this pin, containment is the permission layer, the modes and the bash analysis — there is no OS-level sandbox wrapper around tool execution comparable to a Seatbelt/bubblewrap layer in some earlier teardowns.</p>
+<h2 id="memory-and-context">Memory and context</h2>
+<p>Project memory is file-based and two-layered: a <code>MEMORY.md</code> index — one-line pointers, kept under 200 lines and ~25 KB by instruction — over topic files holding the detail.<sup id="fnref:25"><a class="footnote-ref" href="#fn:25">25</a></sup> Extraction is delegated to a dedicated memory agent loop whose tool policy confines its writes to the memory directory, and a consolidation ("dream") pass maintains the index.<sup id="fnref:26"><a class="footnote-ref" href="#fn:26">26</a></sup> Recall is selective rather than total: a prefetch runs during the turn and its result is consumed only after a real tool batch completes, so memory lands in context at a point where it can affect the next step. Session state is the SQLite event/message store; context size is managed by the micro/auto compaction pair described above, with summaries replacing history at the threshold.</p>
+<h2 id="providers-glm-first-abstraction-intact">Providers: GLM first, abstraction intact</h2>
+<p>ZCode is Z.ai's first-party harness, and the provider layer shows both facts — the preference and the abstraction. The bundled built-in provider configuration (revision 33 at the pin) defines 21 provider templates over three API shapes (<code>anthropic-messages</code>, <code>openai-chat-completions</code>, <code>openai-responses</code>). The first four templates are Z.ai's: Z.ai Coding Plan and BigModel Coding Plan (Anthropic-messages shape, GLM-5.3 / GLM-5.3-Flash), and Z.ai API / BigModel API with a 24-model GLM list.<sup id="fnref:27"><a class="footnote-ref" href="#fn:27">27</a></sup><sup id="fnref:28"><a class="footnote-ref" href="#fn:28">28</a></sup> After them come Moonshot Kimi, MiniMax, DeepSeek, Qwen, Xiaomi MiMo, OpenAI, Anthropic, xAI, OpenRouter and OpenCode Go/Zen — a genuine multi-provider registry, ordered GLM-first. Personal providers can be added as config files alongside.</p>
+<p>Three mechanisms deserve note. First, the built-in config is a <em>release</em>: bundled, active (last-known-good) and remote layers, with revision checks that reject stale or same-revision-different-content updates — the provider list itself is remotely refreshable configuration.<sup id="fnref:29"><a class="footnote-ref" href="#fn:29">29</a></sup> Second, the official coding-plan path has a gateway rewrite: requests to the public Anthropic-shaped endpoints are rewritten to plan gateway paths for both the international (api.z.ai) and China (open.bigmodel.cn) services.<sup id="fnref:30"><a class="footnote-ref" href="#fn:30">30</a></sup> Third, official MCP servers are credentialed from the host side under explicit rules: credentials are issued only for trusted origins, and with no auth resolver the request fails as <code>official_auth_unavailable</code> — the code comments state it never degrades to an anonymous request.<sup id="fnref:31"><a class="footnote-ref" href="#fn:31">31</a></sup></p>
+<h2 id="remote-triggers-the-bots">Remote triggers: the bots</h2>
+<p>A ZCode task does not have to start at a keyboard. The bots subsystem lets a private chat — WeChat, Feishu/Lark, Telegram, or a generic webhook — "drive the same ZCode task flow as the UI input box": send a task, steer it, pick the model and mode, and answer permission prompts from the chat.<sup id="fnref:32"><a class="footnote-ref" href="#fn:32">32</a></sup> Each bot is a complete access instance: provider credentials (by reference), one bound actor, an allow-list of workspaces, an allow-list of commands (<code>status</code>, <code>new</code>, <code>workspace</code>, <code>model</code>, <code>mode</code>, <code>thoughtLevel</code>, <code>sandboxMode</code>, <code>approvalPolicy</code>, <code>reply</code>), its own current options, and a reply mode. Group chats are supported on Feishu/Lark with owner-gated administration.</p>
+<p>The authentication is binding-based and worth stating precisely, because it is the security boundary for a channel that can run code:</p>
+<ul>
+<li><strong>One bot, one actor.</strong> An inbound message is authorized only when an enabled bot exists for that provider whose bound <code>providerUserId</code> equals the sender's provider user id — <code>findAuthorizedBot</code> is an exact match, and group contexts add owner checks on top.<sup id="fnref:33"><a class="footnote-ref" href="#fn:33">33</a></sup></li>
+<li><strong>Secrets stay in the credential service.</strong> The persisted bot config stores only references (<code>credentialRef</code>, <code>webhookSecretRef</code>); the secrets themselves live in the CredentialService.<sup id="fnref:34"><a class="footnote-ref" href="#fn:34">34</a></sup></li>
+<li><strong>Webhooks refuse to run unsecreted.</strong> A webhook bot without a configured secret fails its check with "Webhook secret is missing. Configure a secret before exposing the callback endpoint", and outbound posts carry the secret in a header (default <code>x-zcode-bot-secret</code>).<sup id="fnref:35"><a class="footnote-ref" href="#fn:35">35</a></sup></li>
+<li><strong>No silent workspace fallback.</strong> A disconnected remote workspace never reconnects as a side effect of an ordinary message; only an explicit <code>/reconnect</code> command reconnects it, so a chat message cannot fall back to a local workspace that happens to share a path.<sup id="fnref2:32"><a class="footnote-ref" href="#fn:32">32</a></sup></li>
+</ul>
+<p><img alt="A remote trigger, authenticated" src="figures/seq-bot.svg" /></p>
+<h2 id="extensions-plugins-ui-plugins-skills-workflows">Extensions: plugins, UI plugins, skills, workflows</h2>
+<p>The plugin system is a marketplace, not a folder. A plugin manifest (<code>plugin.json</code>) can declare commands, agents, skills, hooks, MCP servers and user configuration. Distribution runs through the Official Marketplace (<code>zcode-plugins-official</code>), which mixes builtin plugins seeded into it at startup with CDN plugins delivered as sha256-checked zip packages; users can add personal sources — git, GitHub, URL or local directory marketplaces — and compatibility layers accept Claude-ecosystem marketplace formats.<sup id="fnref:36"><a class="footnote-ref" href="#fn:36">36</a></sup> Some twenty plugin packages ship inside this repo (browser-use, computer-use, documents, PDF, spreadsheets, presentations, image search, iOS/Android simulators, plugin/skill creators, visualize, and more).</p>
+<p>UI plugins are the distinctive layer: a plugin can declare <code>ui.surfaces</code> and render an interactive page — via the MCP Apps protocol — in a side panel, where the agent's tools and the user's hands edit the same document (the bundled documentation walks through an Excalidraw canvas: the agent draws, the user adjusts, the agent revises a selection, one shared undo history).<sup id="fnref:37"><a class="footnote-ref" href="#fn:37">37</a></sup> At this pin, interactive panels run in local desktop workspaces; web, mobile and remote workspaces keep ordinary MCP tool records instead.</p>
+<p>Skills ride the same machinery (a <code>Skill</code> tool, bundled skills, a lockfile, host-side sync, skills delivered by plugins), and dynamic workflows — agent-authored multi-agent programs with run artifacts and resumable runs — are the deepest extension point: the harness lets the model write the orchestration, then runs it as a first-class object.</p>
+<p><img alt="Plugins: install to shared panel" src="figures/seq-plugin.svg" /></p>
+<h2 id="the-privacy-audit-what-leaves-the-machine-at-this-pin">The privacy audit: what leaves the machine at this pin</h2>
+<p>Context, attributed: in September 2026, third-party reporting described the then-closed ZCode client uploading workspace snapshots, with one captured payload consisting mostly of a workspace's <code>.git</code> directory; Z.ai's reported response was to delete the storage bucket and to open-source the client — the repository's second commit (2026-09-21) is the open-sourcing. This teardown does not re-verify those reports, and asserts nothing from them about the current code. What follows is only what the pinned source does, with the evidence in the endnotes.</p>
+<p><strong>Workspace snapshots are local at this pin.</strong> The checkpoint machinery — the code that snapshots a workspace, <code>.git</code> included, for restore and rewind — writes local git objects and refs through the local git CLI (<code>createCheckpoint</code> in the git checkpoint repository). There is no network call in that module.<sup id="fnref:38"><a class="footnote-ref" href="#fn:38">38</a></sup> Searching the pinned tree for background upload paths over workspace content found none; the two flows that do upload workspace-derived content are explicit user actions: conversation sharing, whose public projection first drops subagent and hook-invocation rows, remaps every id into a closed public set, and verifies each artifact's size and SHA-256 as it uploads;<sup id="fnref:39"><a class="footnote-ref" href="#fn:39">39</a></sup> and feedback submission, a ticket flow with user-attached files and a log archive.<sup id="fnref:40"><a class="footnote-ref" href="#fn:40">40</a></sup></p>
+<p><strong>Product telemetry is build-gated event metadata.</strong> Both client-reporting endpoints — the event telemetry endpoint and the ARMS RUM endpoint — are build-time defines that default to empty, and the code comments state the consequence: empty means the SDK initializes disabled and nothing is reported.<sup id="fnref:41"><a class="footnote-ref" href="#fn:41">41</a></sup> When an endpoint <em>is</em> configured, the event payload is metadata-shaped: event name/region/type/text, extra detail passed through a sanitizer (error text scrubbed, login URLs reduced to hostnames), the account's user id, timezone and language, screen resolution, app version, OS category and version, marketing attribution parameters, optional conversation/message ids, and a <code>device_mid</code> — a locally generated UUID persisted in a telemetry state file, not a hardware identifier; the <code>mac_id</code> field is sent as an empty string.<sup id="fnref:42"><a class="footnote-ref" href="#fn:42">42</a></sup><sup id="fnref:43"><a class="footnote-ref" href="#fn:43">43</a></sup><sup id="fnref:44"><a class="footnote-ref" href="#fn:44">44</a></sup></p>
+<p><strong>Agent traces are endpoint-from-environment.</strong> The CLI's OpenTelemetry pipeline samples traces at 10% and exports metrics every five minutes — but only when an OTLP endpoint is present in the host environment; with none configured, the telemetry runtime is a no-op and reports itself disabled.<sup id="fnref:45"><a class="footnote-ref" href="#fn:45">45</a></sup><sup id="fnref:46"><a class="footnote-ref" href="#fn:46">46</a></sup> In packaged desktop builds, an endpoint can be compiled in at build time — validated, and required to be HTTPS in production builds — which makes the endpoint a property of the build, not a constant in this repository.<sup id="fnref:47"><a class="footnote-ref" href="#fn:47">47</a></sup> The spans record model-call structure and statuses (the recorder is a status sink: attempts, status codes, failures), not prompt or response bodies.</p>
+<p><strong>The remaining flows are the ordinary ones.</strong> The desktop auto-updater checks its feed on a fifteen-minute poll (two minutes while the update UI is visible), with the feed URL overridable and a force-update guard that can require an update before use.<sup id="fnref:48"><a class="footnote-ref" href="#fn:48">48</a></sup> The built-in provider configuration can be remotely refreshed under the revision checks described above — a download of configuration.<sup id="fnref2:29"><a class="footnote-ref" href="#fn:29">29</a></sup> Model traffic itself goes to whichever provider endpoint the session is configured for — Z.ai/BigModel by default — which is inherent to a hosted-model harness, and which the provider layer keeps visible and changeable. And one <em>inbound</em> local flow deserves a precise mention because it touches sensitive data: the desktop's embedded browser can import the user's Chrome data, copying the local Chrome cookie database and decrypting it locally (including the macOS Safe Storage and Windows App-Bound key paths) into ZCode's own browser session.<sup id="fnref:49"><a class="footnote-ref" href="#fn:49">49</a></sup> The movement is Chrome -&gt; ZCode on the same machine, initiated from the browser-data import flow; no upload path is attached to that module.</p>
+<p><strong>Headline.</strong> At this pin, there is no code path that uploads workspace contents in the background. What leaves the machine is: model traffic to the configured provider; event telemetry and OTLP traces when (and only when) an endpoint has been configured by the build or the host environment; update and provider-config checks; and content the user explicitly shares or attaches to feedback.</p>
+<p><img alt="What leaves the machine" src="figures/seq-privacy.svg" /></p>
+<h2 id="observations">Observations</h2>
+<ul>
+<li><strong>The Goal system separates working from judging — structurally.</strong> The model doing the work holds no write access to the goal, cannot declare completion, and is told so in its own continuation prompt. Completion is a runtime status change driven by a constrained verifier (no tools, JSON only) or by accounting. Most long-horizon mechanisms in this series let the worker grade its own homework; this one builds the proctor into the loop.</li>
+<li><strong>The verifier's failure modes were designed, not discovered.</strong> Fail-without-next-action stops instead of looping; malformed referee JSON fails open with the reason recorded; a Stop pressed mid-verification wins over the stale snapshot. These are small decisions, but they are exactly the decisions a naive implementation gets wrong, and they are commented as deliberate in the source.</li>
+<li><strong>One queue explains the product.</strong> Prompts, steering, background results, workflow completions and goal continuations are all runtime commands; surfaces, bots and the goal system differ only in who enqueues. The architecture's uniformity is why a chat message, a desktop window and an idle timer can all drive the same session coherently.</li>
+<li><strong>GLM-first is an ordering, not a lock-in.</strong> The first four provider templates are Z.ai's and the default experience is built around the coding plan and its gateway — but the registry, the API-shape abstraction and personal providers are real. The first-party preference lives in defaults and ordering, where it is visible, rather than in a hard-coded endpoint.</li>
+<li><strong>The auditability is the story of the open-sourcing.</strong> Whatever happened in September (reported, not re-verified here), the code at this pin answers the audit questions in the open: the snapshot path is local, the reporting paths are build- or environment-gated, and the payload shapes are readable in one file each. A reader does not have to trust a statement about this; they can read the modules named in the endnotes.</li>
+</ul>
+<h2 id="tradeoffs">Tradeoffs</h2>
+<ul>
+<li><strong>Auto-continuation spends money while you are away.</strong> A goal that keeps failing verification keeps consuming turns and tokens until its budget or the user stops it. The budget cap and the verifier gates bound the spend, but the default posture — resume work when idle — is an autonomy/cost tradeoff the user opts into per goal.</li>
+<li><strong>The verifier is a model.</strong> Its pass/fail is a judgment over the transcript, not an executed test suite; the prompts work hard to make it strict (evidence per requirement, no proxy signals), and fail-open parsing means a malformed verdict can end a goal early. The design prefers a goal that stops over one that spins forever — a defensible choice, and a real one.</li>
+<li><strong>Permission modes carry the containment.</strong> With no OS sandbox in the core loop at this pin, the quality of the bash analysis and the mode rules is the containment story. Six modes give finer control than a single approve-all switch, and they also give the user more ways to configure their way into a permissive posture — <code>yolo</code> is a mode, not a hack.</li>
+<li><strong>One goal per session is a real limit.</strong> Long-horizon work that branches into independent objectives must be split across sessions (or carried by todos and workflows inside one objective). The single-goal record keeps the state machine — and the verifier's job — tractable.</li>
+<li><strong>The web surface's default is local trust.</strong> <code>zcode --web</code> binds 127.0.0.1 without token authentication by default (a token is generated for non-local binds, and can be set or disabled explicitly).<sup id="fnref:50"><a class="footnote-ref" href="#fn:50">50</a></sup> Reasonable for a developer tool on a personal machine; worth knowing before binding it anywhere else.</li>
+<li><strong>The codebase's size is a cost as well as a capability.</strong> Three surfaces, a marketplace, subscriptions, sharing and a product backend make for a very large tree around a comparatively compact runtime; auditing any single property (as the privacy section does) means tracing across the services/protocol/runtime seam rather than reading one package.</li>
+</ul>
+<h2 id="comparison-matrix-row">Comparison matrix row</h2>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Dimension</th>
+<th>ZCode (3.16.2 @ 3c5b227)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>Agent loop</td>
+<td>An unbounded model/tool loop (<code>runRegularTurnLoop</code>) fed by a single runtime command queue: prompts, steering, background-subagent and workflow results, and goal continuations are all commands; per iteration it drains the queue, micro/auto-compacts (with a rapid-refill circuit breaker), refreshes MCP tools, assembles reminders (mode, todo, goal state, memory recall) and runs one model step; a session-level Goal layer continues the loop across turns when idle</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Tool system</td>
+<td>~45 built-ins: Bash (with a deep command-analysis/policy family), Read/Write/Edit/ApplyPatch, Glob/Grep, WebFetch/WebSearch, TodoRead/Write, plan-mode, AskUserQuestion, Agent subagents + coordinator/channel messaging, a dynamic-workflow authoring family, Cron/OffPeak scheduling, a <code>js</code> node-repl, Skill, ToolSearch (deferred discovery), GoalRead; MCP servers as a second source, initialized and refreshed in-loop; every tool entry carries schema, result budget, timeout, trace policy and a permission spec</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Model providers</td>
+<td>A real registry: the bundled built-in config (revision 33) defines 21 provider templates over three API shapes (anthropic-messages, openai-chat-completions, openai-responses) — Z.ai Coding Plan / Z.ai API / BigModel (GLM-5.3 first) ahead of Kimi, MiniMax, DeepSeek, Qwen, MiMo, OpenAI, Anthropic, xAI, OpenRouter, OpenCode Go/Zen; built-in configs are revision-checked releases (bundled / last-known-good / remote-synced); personal providers via config files; an official coding-plan gateway rewrites plan endpoints</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Prompt construction</td>
+<td>Per-turn assembly in the loop: system sections plus injected reminders — collaboration-mode, todo, goal state (authoritative block, objective wrapped as <code>&lt;untrusted_objective&gt;</code>), prefetched memory recall, plan-mode; continuation turns get a generated prompt with budget accounting and a completion-audit checklist; verifier turns get a dedicated no-tools, JSON-only prompt</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Memory/session</td>
+<td>Sessions persist in a SQLite store (messages, events, todos, and the goal row) shared by all surfaces and by resume/fork; project memory is file-based — a <code>MEMORY.md</code> index (&lt;200 lines) over topic files — written by a sandboxed memory agent loop, consolidated by a "dream" pass, recalled by prefetch mid-turn; context bounded by micro + auto compaction</td>
+</tr>
+<tr>
+<td>6</td>
+<td>Reasoning/planning</td>
+<td>No separate planner: TodoRead/Write and plan mode structure the work; decomposition via subagents and agent-authored dynamic workflows; long-horizon planning is the Goal system — a persisted objective the runtime continues turn-over-turn, with completion judged by a separate verifier (evidence per requirement, no proxy signals) rather than by the working model</td>
+</tr>
+<tr>
+<td>7</td>
+<td>Extensibility</td>
+<td>The largest extension surface in the series: a plugin marketplace (Official Marketplace <code>zcode-plugins-official</code> — builtin-seeded + sha256-checked CDN zips; personal git/GitHub/URL/local sources; Claude-marketplace compatibility) whose manifests carry commands/agents/skills/hooks/MCP servers/config; UI plugins render interactive MCP Apps panels the user and agent co-edit (desktop-local at this pin); skills via bundles, plugins and a lockfile; hooks on 7 lifecycle events behind a workspace trust/review flow</td>
+</tr>
+<tr>
+<td>8</td>
+<td>Interfaces</td>
+<td>Three surfaces over one runtime: Electron desktop (updater, embedded browser, computer use), browser UI served by a local host (also <code>zcode --web</code>; token auth for non-local binds), terminal TUI/CLI (one <code>zcode</code> command, SEA-packaged); plus remote triggering from WeChat/Feishu/Telegram/webhook bots that drive the same task flow, and conversation sharing with a public-projection export</td>
+</tr>
+<tr>
+<td>9</td>
+<td>Failure handling</td>
+<td>Goal continuation is conservative: defers to background tasks, verifies before continuing, stops on verifier failure without a next action, re-reads state after verification so a user Stop wins; verifier JSON parsing fails open (recorded) rather than trapping a goal; compaction has a rapid-refill circuit breaker; turns are cancellable commands; provider configs fall back to last-known-good; bot-triggered work cannot silently fall back to a local workspace</td>
+</tr>
+<tr>
+<td>10</td>
+<td>Security model</td>
+<td>Six collaboration modes (plan/build/edit/yolo/guarded/auto) with a per-tool permission service (risk, side-effect scope, rulesets, plan-mode policy) and hook-visible PermissionRequest events; containment rests on that layer plus extensive bash command analysis — no OS sandbox in the core at this pin; bots are bound to a single provider user id with workspace/command allow-lists and credential-service secrets; at this pin the workspace checkpoint/snapshot machinery is local-only, telemetry endpoints are build-gated (empty = off) and OTLP traces are environment-gated</td>
+</tr>
+</tbody>
+</table>
+<h2 id="endnotes">Endnotes</h2>
+<p>All notes are pinned permalinks into the source tree at <code>3c5b227649371507ddc4eb46ac5133afe6db1cab</code>; quoted text is verbatim from that tree unless marked otherwise. Paths under <code>apps/zcode-cli/</code> are the agent workspace inside the monorepo.</p>
+<div class="footnote">
+<hr />
+<ol>
+<li id="fn:1">
+<p><a href="https://github.com/zai-org/ZCode/blob/3c5b227649371507ddc4eb46ac5133afe6db1cab/README.en.md#L14"><code>README.en.md#L14</code></a> — "ZCode is an AI coding workspace with desktop, browser, and terminal interfaces. This repository contains the clients, backend services, shared UI, and Agent CLI and runtime source code."&#160;<a class="footnote-backref" href="#fnref:1" title="Jump back to footnote 1 in the text">&#8617;</a></p>
+</li>
+<li id="fn:2">
+<p><a href="https://github.com/zai-org/ZCode/blob/3c5b227649371507ddc4eb46ac5133afe6db1cab/README.en.md#L83-L85"><code>README.en.md#L83-L85</code></a> — "The command-line distribution includes the TUI, Web client, and Agent behind one <code>zcode</code> command. With no arguments it starts the TUI; a leading <code>--web</code> starts Web mode; all other arguments go to the existing Agent CLI. Both modes run locally without Electron."&#160;<a class="footnote-backref" href="#fnref:2" title="Jump back to footnote 2 in the text">&#8617;</a></p>
+</li>
+<li id="fn:3">
+<p><a href="https://github.com/zai-org/ZCode/blob/3c5b227649371507ddc4eb46ac5133afe6db1cab/apps/zcode-cli/packages/core/src/runtime/methods/turn-loop.ts#L49-L53"><code>turn-loop.ts#L49-L53</code></a> — <code>runRegularTurnLoop</code> and its <code>while (true)</code> body.&#160;<a class="footnote-backref" href="#fnref:3" title="Jump back to footnote 3 in the text">&#8617;</a></p>
+</li>
+<li id="fn:4">
+<p><a href="https://github.com/zai-org/ZCode/blob/3c5b227649371507ddc4eb46ac5133afe6db1cab/apps/zcode-cli/packages/core/src/runtime/methods/turn-loop-state.ts#L24"><code>turn-loop-state.ts#L24</code></a> — <code>MAX_CONSECUTIVE_RAPID_REFILLS = 3</code>; a blocked rapid refill throws from the loop.&#160;<a class="footnote-backref" href="#fnref:4" title="Jump back to footnote 4 in the text">&#8617;</a></p>
+</li>
+<li id="fn:5">
+<p><a href="https://github.com/zai-org/ZCode/blob/3c5b227649371507ddc4eb46ac5133afe6db1cab/apps/zcode-cli/packages/core/src/runtime/methods/turn.ts#L105"><code>turn.ts#L105</code></a> — <code>executeTurn</code> enqueues the prompt via <code>enqueueCancellableRuntimeCommand</code> as a <code>PromptRuntimeCommand</code>.&#160;<a class="footnote-backref" href="#fnref:5" title="Jump back to footnote 5 in the text">&#8617;</a></p>
+</li>
+<li id="fn:6">
+<p><a href="https://github.com/zai-org/ZCode/blob/3c5b227649371507ddc4eb46ac5133afe6db1cab/apps/zcode-cli/packages/core/src/runtime/methods/turn-loop.ts#L124"><code>turn-loop.ts#L124</code></a> — inside the loop: <code>initializeMcp</code>, then <code>refreshMcpToolsIfChanged</code> before the model step.&#160;<a class="footnote-backref" href="#fnref:6" title="Jump back to footnote 6 in the text">&#8617;</a></p>
+</li>
+<li id="fn:7">
+<p><a href="https://github.com/zai-org/ZCode/blob/3c5b227649371507ddc4eb46ac5133afe6db1cab/apps/zcode-cli/packages/cli/src/command-center/handlers/goal.ts#L15"><code>goal.ts#L15</code></a> — <code>handleTargetCommand</code>: show/set with replace confirmation, <code>pause</code>, <code>resume</code>, <code>clear</code>.&#160;<a class="footnote-backref" href="#fnref:7" title="Jump back to footnote 7 in the text">&#8617;</a></p>
+</li>
+<li id="fn:8">
+<p><a href="https://github.com/zai-org/ZCode/blob/3c5b227649371507ddc4eb46ac5133afe6db1cab/apps/zcode-cli/packages/contracts/src/tools/target.ts#L46-L66"><code>target.ts#L46-L66</code></a> — the <code>SessionGoal</code> interface; the 4,000-character objective cap is <code>MAX_GOAL_OBJECTIVE_CHARS</code> at <code>target.ts#L18</code>.&#160;<a class="footnote-backref" href="#fnref:8" title="Jump back to footnote 8 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:8" title="Jump back to footnote 8 in the text">&#8617;</a></p>
+</li>
+<li id="fn:9">
+<p><a href="https://github.com/zai-org/ZCode/blob/3c5b227649371507ddc4eb46ac5133afe6db1cab/apps/zcode-cli/packages/contracts/src/tools/target.ts#L119-L135"><code>target.ts#L119-L135</code></a> — <code>formatGoalStateForModel</code>: "Current session goal state (authoritative)", with the objective inside <code>&lt;untrusted_objective&gt;</code> tags.&#160;<a class="footnote-backref" href="#fnref:9" title="Jump back to footnote 9 in the text">&#8617;</a></p>
+</li>
+<li id="fn:10">
+<p><a href="https://github.com/zai-org/ZCode/blob/3c5b227649371507ddc4eb46ac5133afe6db1cab/apps/zcode-cli/packages/core/src/tool/handlers/target.ts#L16-L60"><code>tool/handlers/target.ts#L16-L60</code></a> — the <code>GoalRead</code> handler and tool entry: "Read the current session goal without modifying external state", <code>readOnly: true</code>, permission spec <code>target.read</code>, <code>needsApproval: false</code>. No goal-write tool exists in the registry.&#160;<a class="footnote-backref" href="#fnref:10" title="Jump back to footnote 10 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:10" title="Jump back to footnote 10 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:10" title="Jump back to footnote 10 in the text">&#8617;</a></p>
+</li>
+<li id="fn:11">
+<p><a href="https://github.com/zai-org/ZCode/blob/3c5b227649371507ddc4eb46ac5133afe6db1cab/apps/zcode-cli/packages/contracts/src/interfaces/session.port.ts#L32"><code>session.port.ts#L32</code></a> — <code>CollaborationMode = "plan" | "build" | "edit" | "yolo" | "guarded" | "auto"</code>.&#160;<a class="footnote-backref" href="#fnref:11" title="Jump back to footnote 11 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:11" title="Jump back to footnote 11 in the text">&#8617;</a></p>
+</li>
+<li id="fn:12">
+<p><a href="https://github.com/zai-org/ZCode/blob/3c5b227649371507ddc4eb46ac5133afe6db1cab/apps/zcode-cli/packages/core/src/runtime/methods/resume.ts#L419-L443"><code>resume.ts#L419-L443</code></a> — <code>readSessionTargetForContext</code> and <code>injectTargetStateIntoMessageHistory</code> on resume.&#160;<a class="footnote-backref" href="#fnref:12" title="Jump back to footnote 12 in the text">&#8617;</a></p>
+</li>
+<li id="fn:13">
+<p><a href="https://github.com/zai-org/ZCode/blob/3c5b227649371507ddc4eb46ac5133afe6db1cab/apps/zcode-cli/packages/contracts/src/tools/target.ts#L196-L245"><code>target.ts#L196-L245</code></a> — <code>formatGoalCompletionVerificationPrompt</code>: "This is a verification request only. Do not continue implementation work, do not write files, and do not call tools. Return only a JSON object…"&#160;<a class="footnote-backref" href="#fnref:13" title="Jump back to footnote 13 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:13" title="Jump back to footnote 13 in the text">&#8617;</a></p>
+</li>
+<li id="fn:14">
+<p><a href="https://github.com/zai-org/ZCode/blob/3c5b227649371507ddc4eb46ac5133afe6db1cab/apps/zcode-cli/packages/contracts/src/tools/target.ts#L137-L194"><code>target.ts#L137-L194</code></a> — <code>formatGoalContinuationPrompt</code>: budget block, the prompt-to-artifact completion audit, and "Do not mark the goal complete yourself. The runtime will run a completion verifier after this turn…"&#160;<a class="footnote-backref" href="#fnref:14" title="Jump back to footnote 14 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:14" title="Jump back to footnote 14 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:14" title="Jump back to footnote 14 in the text">&#8617;</a></p>
+</li>
+<li id="fn:15">
+<p><a href="https://github.com/zai-org/ZCode/blob/3c5b227649371507ddc4eb46ac5133afe6db1cab/apps/zcode-cli/packages/contracts/src/tools/target.ts#L1-L2"><code>target.ts#L1-L2</code></a> — "Goal Tools - session-local long-running goal"; the compatibility comment on <code>targetID</code> is at <code>target.ts#L48</code>.&#160;<a class="footnote-backref" href="#fnref:15" title="Jump back to footnote 15 in the text">&#8617;</a></p>
+</li>
+<li id="fn:16">
+<p><a href="https://github.com/zai-org/ZCode/blob/3c5b227649371507ddc4eb46ac5133afe6db1cab/apps/zcode-cli/packages/contracts/src/tools/target.ts#L8-L13"><code>target.ts#L8-L13</code></a> — <code>GoalStatus</code>: <code>active</code>, <code>paused</code>, <code>budget_limited</code>, <code>complete</code>.&#160;<a class="footnote-backref" href="#fnref:16" title="Jump back to footnote 16 in the text">&#8617;</a></p>
+</li>
+<li id="fn:17">
+<p><a href="https://github.com/zai-org/ZCode/blob/3c5b227649371507ddc4eb46ac5133afe6db1cab/apps/zcode-cli/packages/adapters/src/storage/session-store/sqlite-session-store.ts#L733"><code>sqlite-session-store.ts#L733</code></a> — <code>readTarget</code> in the SQLite session store (the store opens a <code>node:sqlite</code> database; the goal is one of its rows).&#160;<a class="footnote-backref" href="#fnref:17" title="Jump back to footnote 17 in the text">&#8617;</a></p>
+</li>
+<li id="fn:18">
+<p><a href="https://github.com/zai-org/ZCode/blob/3c5b227649371507ddc4eb46ac5133afe6db1cab/apps/zcode-cli/packages/core/src/runtime/methods/target.ts#L36-L76"><code>methods/target.ts#L36-L76</code></a> — <code>continueActiveTargetIfIdle</code> enqueues a <code>target-continuation</code> command at priority "next".&#160;<a class="footnote-backref" href="#fnref:18" title="Jump back to footnote 18 in the text">&#8617;</a></p>
+</li>
+<li id="fn:19">
+<p><a href="https://github.com/zai-org/ZCode/blob/3c5b227649371507ddc4eb46ac5133afe6db1cab/apps/zcode-cli/packages/core/src/runtime/methods/target.ts#L77-L140"><code>methods/target.ts#L77-L140</code></a> — <code>executeTargetContinuationCommand</code>: background-task deferral, verifier-first, skip on pass or on failure without a next action, and the post-verification re-read of the goal; the verification itself is <code>verifyActiveTargetCompletionForContinuation</code> in <a href="https://github.com/zai-org/ZCode/blob/3c5b227649371507ddc4eb46ac5133afe6db1cab/apps/zcode-cli/packages/core/src/runtime/methods/target-completion-verification.ts#L40"><code>target-completion-verification.ts#L40</code></a>.&#160;<a class="footnote-backref" href="#fnref:19" title="Jump back to footnote 19 in the text">&#8617;</a></p>
+</li>
+<li id="fn:20">
+<p><a href="https://github.com/zai-org/ZCode/blob/3c5b227649371507ddc4eb46ac5133afe6db1cab/apps/zcode-cli/packages/contracts/src/tools/target.ts#L289-L340"><code>target.ts#L289-L340</code></a> — <code>parseGoalCompletionVerificationText</code> and <code>failOpenGoalCompletionVerification</code>, with the comment explaining the fail-open choice (a referee-chain format failure must not trap a delivered goal in infinite iteration).&#160;<a class="footnote-backref" href="#fnref:20" title="Jump back to footnote 20 in the text">&#8617;</a></p>
+</li>
+<li id="fn:21">
+<p><a href="https://github.com/zai-org/ZCode/blob/3c5b227649371507ddc4eb46ac5133afe6db1cab/apps/zcode-cli/packages/cli/src/command-center/handlers/goal.ts#L11-L13"><code>goal.ts#L11-L13</code></a> — the plan-mode message: under plan mode a goal is recorded but not automatically continued.&#160;<a class="footnote-backref" href="#fnref:21" title="Jump back to footnote 21 in the text">&#8617;</a></p>
+</li>
+<li id="fn:22">
+<p><a href="https://github.com/zai-org/ZCode/blob/3c5b227649371507ddc4eb46ac5133afe6db1cab/apps/zcode-cli/packages/core/src/permission/service.ts#L87"><code>permission/service.ts#L87</code></a> — the <code>PermissionService</code>; tool capability metadata (risk, side-effect scope, read-only/destructive, needsApproval) plus rulesets and plan-mode policy drive its decisions.&#160;<a class="footnote-backref" href="#fnref:22" title="Jump back to footnote 22 in the text">&#8617;</a></p>
+</li>
+<li id="fn:23">
+<p><a href="https://github.com/zai-org/ZCode/blob/3c5b227649371507ddc4eb46ac5133afe6db1cab/apps/zcode-cli/packages/contracts/src/hooks/index.ts#L7-L15"><code>hooks/index.ts#L7-L15</code></a> — the seven <code>HookEventName</code> values.&#160;<a class="footnote-backref" href="#fnref:23" title="Jump back to footnote 23 in the text">&#8617;</a></p>
+</li>
+<li id="fn:24">
+<p><a href="https://github.com/zai-org/ZCode/blob/3c5b227649371507ddc4eb46ac5133afe6db1cab/apps/zcode-cli/packages/contracts/src/hooks/workspace-hook-trust.ts"><code>workspace-hook-trust.ts</code></a> — the workspace hook trust contract; the review/trust/revoke flow is implemented across <code>core/src/hooks/workspace-hook-*.ts</code>.&#160;<a class="footnote-backref" href="#fnref:24" title="Jump back to footnote 24 in the text">&#8617;</a></p>
+</li>
+<li id="fn:25">
+<p><a href="https://github.com/zai-org/ZCode/blob/3c5b227649371507ddc4eb46ac5133afe6db1cab/apps/zcode-cli/packages/core/src/memory/dream.ts#L115-L141"><code>memory/dream.ts#L115-L141</code></a> — "Update <code>MEMORY.md</code> so it stays under 200 lines AND under ~25KB. It's an <strong>index</strong>, not a dump"; the index discipline is also stated for the working model in <a href="https://github.com/zai-org/ZCode/blob/3c5b227649371507ddc4eb46ac5133afe6db1cab/apps/zcode-cli/packages/core/src/context/sections/memory.ts#L55"><code>context/sections/memory.ts#L55</code></a>.&#160;<a class="footnote-backref" href="#fnref:25" title="Jump back to footnote 25 in the text">&#8617;</a></p>
+</li>
+<li id="fn:26">
+<p><a href="https://github.com/zai-org/ZCode/blob/3c5b227649371507ddc4eb46ac5133afe6db1cab/apps/zcode-cli/packages/core/src/memory/memory-agent-loop.ts#L1-L40"><code>memory/memory-agent-loop.ts#L1-L40</code></a> — the memory agent loop and its tool-policy type; memory file paths are containment-checked in <code>memory-file-path.ts</code>.&#160;<a class="footnote-backref" href="#fnref:26" title="Jump back to footnote 26 in the text">&#8617;</a></p>
+</li>
+<li id="fn:27">
+<p><a href="https://github.com/zai-org/ZCode/blob/3c5b227649371507ddc4eb46ac5133afe6db1cab/config/provider/zcode-builtin.json#L3-L8"><code>zcode-builtin.json#L3-L8</code></a> — <code>revision: 33</code>; the first template rule is <code>zai-api</code> (Z.ai Coding Plan, <code>anthropic-messages</code>, GLM-5.3 / GLM-5.3-Flash).&#160;<a class="footnote-backref" href="#fnref:27" title="Jump back to footnote 27 in the text">&#8617;</a></p>
+</li>
+<li id="fn:28">
+<p><a href="https://github.com/zai-org/ZCode/blob/3c5b227649371507ddc4eb46ac5133afe6db1cab/config/provider/zcode-builtin.json#L30"><code>zcode-builtin.json#L30</code></a>, <a href="https://github.com/zai-org/ZCode/blob/3c5b227649371507ddc4eb46ac5133afe6db1cab/config/provider/zcode-builtin.json#L77"><code>zcode-builtin.json#L77</code></a>, <a href="https://github.com/zai-org/ZCode/blob/3c5b227649371507ddc4eb46ac5133afe6db1cab/config/provider/zcode-builtin.json#L99"><code>zcode-builtin.json#L99</code></a> — <code>zai-standard-api</code>, <code>bigmodel-api</code> and <code>bigmodel-standard-api</code> templates; 21 templates in total in the file at the pin.&#160;<a class="footnote-backref" href="#fnref:28" title="Jump back to footnote 28 in the text">&#8617;</a></p>
+</li>
+<li id="fn:29">
+<p><a href="https://github.com/zai-org/ZCode/blob/3c5b227649371507ddc4eb46ac5133afe6db1cab/packages/provider-node/src/zcode-builtin-provider-config-source.ts#L23-L41"><code>zcode-builtin-provider-config-source.ts#L23-L41</code></a> — "Bundled, Active/LKG and Remote share one Release" — the layered built-in provider config source, with stale/same-revision rejection in <code>applyRemoteRelease</code>.&#160;<a class="footnote-backref" href="#fnref:29" title="Jump back to footnote 29 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:29" title="Jump back to footnote 29 in the text">&#8617;</a></p>
+</li>
+<li id="fn:30">
+<p><a href="https://github.com/zai-org/ZCode/blob/3c5b227649371507ddc4eb46ac5133afe6db1cab/apps/zcode-cli/packages/adapters/src/model/official-coding-plan-gateway.ts#L9-L10"><code>official-coding-plan-gateway.ts#L9-L10</code></a> — the gateway rewrite table: <code>open.bigmodel.cn … /api/anthropic/v1/messages</code> -&gt; <code>/api/v1/ultra/…</code>; <code>api.z.ai …</code> -&gt; <code>/api/v1/ultra-zai/…</code>.&#160;<a class="footnote-backref" href="#fnref:30" title="Jump back to footnote 30 in the text">&#8617;</a></p>
+</li>
+<li id="fn:31">
+<p><a href="https://github.com/zai-org/ZCode/blob/3c5b227649371507ddc4eb46ac5133afe6db1cab/packages/services/src/zcode-agent/zcodeAgentService.ts#L1069-L1094"><code>zcodeAgentService.ts#L1069-L1094</code></a> — official MCP auth: trusted origins + a host auth-headers resolver; absent a resolver the request returns <code>official_auth_unavailable</code> and never degrades to an anonymous request.&#160;<a class="footnote-backref" href="#fnref:31" title="Jump back to footnote 31 in the text">&#8617;</a></p>
+</li>
+<li id="fn:32">
+<p><a href="https://github.com/zai-org/ZCode/blob/3c5b227649371507ddc4eb46ac5133afe6db1cab/docs/bots.md#L3-L12"><code>docs/bots.md#L3-L12</code></a> — "Bots lets a private third-party chat drive the same ZCode task flow as the UI input box"; the bot model (bound actor, workspace scope, command policy) and the remote-workspace reconnect rule are in the same document.&#160;<a class="footnote-backref" href="#fnref:32" title="Jump back to footnote 32 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:32" title="Jump back to footnote 32 in the text">&#8617;</a></p>
+</li>
+<li id="fn:33">
+<p><a href="https://github.com/zai-org/ZCode/blob/3c5b227649371507ddc4eb46ac5133afe6db1cab/packages/services/src/bots/botConfigHelpers.ts#L39-L62"><code>botConfigHelpers.ts#L39-L62</code></a> — <code>findAuthorizedBot</code>: an enabled bot whose provider and bound <code>providerUserId</code> match the actor (Feishu/Lark group and Weixin resolve by bot id, with owner checks in <code>botsService.ts</code>, e.g. the group-owner comparison at <code>botsService.ts#L1582</code>).&#160;<a class="footnote-backref" href="#fnref:33" title="Jump back to footnote 33 in the text">&#8617;</a></p>
+</li>
+<li id="fn:34">
+<p><a href="https://github.com/zai-org/ZCode/blob/3c5b227649371507ddc4eb46ac5133afe6db1cab/docs/bots.md#L12"><code>docs/bots.md#L12</code></a> — "Secrets still live in <code>CredentialService</code>; config files only store refs such as <code>credentialRef</code> and <code>webhookSecretRef</code>."&#160;<a class="footnote-backref" href="#fnref:34" title="Jump back to footnote 34 in the text">&#8617;</a></p>
+</li>
+<li id="fn:35">
+<p><a href="https://github.com/zai-org/ZCode/blob/3c5b227649371507ddc4eb46ac5133afe6db1cab/packages/services/src/bots/providers/webhookProvider.ts#L176-L200"><code>webhookProvider.ts#L176-L200</code></a> — the webhook provider's test path refuses a missing secret ("Configure a secret before exposing the callback endpoint") and sends the secret in the configured header (default <code>x-zcode-bot-secret</code>).&#160;<a class="footnote-backref" href="#fnref:35" title="Jump back to footnote 35 in the text">&#8617;</a></p>
+</li>
+<li id="fn:36">
+<p><a href="https://github.com/zai-org/ZCode/blob/3c5b227649371507ddc4eb46ac5133afe6db1cab/CONTEXT.md#L9-L30"><code>CONTEXT.md#L9-L30</code></a> — the plugin-store glossary: Official Marketplace (<code>zcode-plugins-official</code>) = builtin plugins + CDN plugins; builtin = shipped with the app and seeded at startup; CDN = distributed by official CDN as sha256-checked zips, installed on demand; personal sources are their own category.&#160;<a class="footnote-backref" href="#fnref:36" title="Jump back to footnote 36 in the text">&#8617;</a></p>
+</li>
+<li id="fn:37">
+<p><a href="https://github.com/zai-org/ZCode/blob/3c5b227649371507ddc4eb46ac5133afe6db1cab/UI_PLUGIN.en.md#L18-L32"><code>UI_PLUGIN.en.md#L18-L32</code></a> — UI plugins: interactive pages over MCP Apps; agent and user edit the same content; "Interactive pages currently run in <strong>local workspaces in ZCode Desktop</strong>" at this pin.&#160;<a class="footnote-backref" href="#fnref:37" title="Jump back to footnote 37 in the text">&#8617;</a></p>
+</li>
+<li id="fn:38">
+<p><a href="https://github.com/zai-org/ZCode/blob/3c5b227649371507ddc4eb46ac5133afe6db1cab/packages/services/src/git/repo/gitCheckpointRepo.ts#L32-L60"><code>gitCheckpointRepo.ts#L32-L60</code></a> and <a href="https://github.com/zai-org/ZCode/blob/3c5b227649371507ddc4eb46ac5133afe6db1cab/packages/services/src/git/repo/gitCheckpointRepo.ts#L255"><code>gitCheckpointRepo.ts#L255</code></a> — the checkpoint repository interface and <code>createCheckpoint</code>: local git objects/refs under the app's own directories via the local git CLI; no network code in the module.&#160;<a class="footnote-backref" href="#fnref:38" title="Jump back to footnote 38 in the text">&#8617;</a></p>
+</li>
+<li id="fn:39">
+<p><a href="https://github.com/zai-org/ZCode/blob/3c5b227649371507ddc4eb46ac5133afe6db1cab/packages/services/src/conversation-share/conversationSharePublicProjection.ts#L619-L660"><code>conversationSharePublicProjection.ts#L619-L660</code></a> — <code>buildConversationSharePublicProjection</code>: asserts the selection is terminal and safe, drops <code>subagent</code> and <code>hookInvocation</code> rows, and remaps ids into a closed public set before upload.&#160;<a class="footnote-backref" href="#fnref:39" title="Jump back to footnote 39 in the text">&#8617;</a></p>
+</li>
+<li id="fn:40">
+<p><a href="https://github.com/zai-org/ZCode/blob/3c5b227649371507ddc4eb46ac5133afe6db1cab/packages/services/src/feedback/feedbackService.ts#L165-L240"><code>feedbackService.ts#L165-L240</code></a> — the feedback service's explicit <code>uploadAttachment</code> / <code>uploadAttachmentWithProgress</code> calls (user-initiated ticket flow; the log archive is built by <code>feedbackLogArchive.ts</code> in the same package).&#160;<a class="footnote-backref" href="#fnref:40" title="Jump back to footnote 40 in the text">&#8617;</a></p>
+</li>
+<li id="fn:41">
+<p><a href="https://github.com/zai-org/ZCode/blob/3c5b227649371507ddc4eb46ac5133afe6db1cab/packages/shared/src/env.ts#L53-L60"><code>env.ts#L53-L60</code></a> — <code>ZCODE_ARMS_RUM_ENDPOINT</code> ("when empty, the SDK initializes with enable=false and produces no reporting") and <code>ZCODE_TELEMETRY_REPORT_ENDPOINT</code> ("when empty, no reporting"), both build-time defines.&#160;<a class="footnote-backref" href="#fnref:41" title="Jump back to footnote 41 in the text">&#8617;</a></p>
+</li>
+<li id="fn:42">
+<p><a href="https://github.com/zai-org/ZCode/blob/3c5b227649371507ddc4eb46ac5133afe6db1cab/packages/services/src/telemetry/telemetryCore.ts#L411-L460"><code>telemetryCore.ts#L411-L460</code></a> — <code>sendReport</code>: the exact request body — event fields, sanitized extra detail, <code>user_id</code>, timezone/language, screen resolution, app version, OS fields, <code>device_mid</code>, <code>mac_id: ""</code>, marketing params, optional talk/message ids; it returns without sending when no endpoint is configured.&#160;<a class="footnote-backref" href="#fnref:42" title="Jump back to footnote 42 in the text">&#8617;</a></p>
+</li>
+<li id="fn:43">
+<p><a href="https://github.com/zai-org/ZCode/blob/3c5b227649371507ddc4eb46ac5133afe6db1cab/packages/services/src/telemetry/telemetryCore.ts#L285-L297"><code>telemetryCore.ts#L285-L297</code></a> — <code>deviceMid</code>: generated locally (UUID) only when the persisted telemetry state lacks one, and written back to that state file.&#160;<a class="footnote-backref" href="#fnref:43" title="Jump back to footnote 43 in the text">&#8617;</a></p>
+</li>
+<li id="fn:44">
+<p><a href="https://github.com/zai-org/ZCode/blob/3c5b227649371507ddc4eb46ac5133afe6db1cab/packages/shared/src/telemetry.ts#L216-L241"><code>telemetry.ts#L216-L241</code></a> — <code>sanitizeTelemetryEventDetail</code>: <code>error_msg</code> values are sanitized and, for the login event, the URL is reduced to its hostname before anything is sent.&#160;<a class="footnote-backref" href="#fnref:44" title="Jump back to footnote 44 in the text">&#8617;</a></p>
+</li>
+<li id="fn:45">
+<p><a href="https://github.com/zai-org/ZCode/blob/3c5b227649371507ddc4eb46ac5133afe6db1cab/apps/zcode-cli/packages/telemetry/src/bootstrap.ts#L76-L98"><code>telemetry/bootstrap.ts#L76-L98</code></a> and <a href="https://github.com/zai-org/ZCode/blob/3c5b227649371507ddc4eb46ac5133afe6db1cab/apps/zcode-cli/packages/telemetry/src/bootstrap.ts#L154-L185"><code>bootstrap.ts#L154-L185</code></a> — OTLP trace/metric endpoints resolve from <code>OTEL_EXPORTER_OTLP_*</code> environment variables; with no endpoint, no runtime is created and <code>createModelTelemetry</code> returns the no-op, <code>enabled: false</code> telemetry.&#160;<a class="footnote-backref" href="#fnref:45" title="Jump back to footnote 45 in the text">&#8617;</a></p>
+</li>
+<li id="fn:46">
+<p><a href="https://github.com/zai-org/ZCode/blob/3c5b227649371507ddc4eb46ac5133afe6db1cab/apps/zcode-cli/packages/telemetry/src/otlp-exporter.ts#L31-L32"><code>otlp-exporter.ts#L31-L32</code></a> — <code>AGENT_METRIC_EXPORT_INTERVAL_MS = 300_000</code>, <code>AGENT_TRACE_SAMPLE_RATIO = 0.1</code>.&#160;<a class="footnote-backref" href="#fnref:46" title="Jump back to footnote 46 in the text">&#8617;</a></p>
+</li>
+<li id="fn:47">
+<p><a href="https://github.com/zai-org/ZCode/blob/3c5b227649371507ddc4eb46ac5133afe6db1cab/packages/desktop/tsup.config.ts#L120-L156"><code>tsup.config.ts#L120-L156</code></a> — the packaged-agent OTLP endpoint is a build input (<code>ZCODE_PACKAGED_AGENT_OTEL_ENDPOINT</code>), validated (HTTPS required in production) and compiled in as <code>OTEL_EXPORTER_OTLP_ENDPOINT</code> + headers, marking the distribution "packaged".&#160;<a class="footnote-backref" href="#fnref:47" title="Jump back to footnote 47 in the text">&#8617;</a></p>
+</li>
+<li id="fn:48">
+<p><a href="https://github.com/zai-org/ZCode/blob/3c5b227649371507ddc4eb46ac5133afe6db1cab/packages/desktop/src/main/autoUpdater.ts#L34-L35"><code>autoUpdater.ts#L34-L35</code></a> — <code>AUTO_UPDATE_POLL_INTERVAL_MS = 15 * 60 * 1000</code>, <code>AUTO_UPDATE_VISIBLE_POLL_INTERVAL_MS = 2 * 60 * 1000</code>; the feed URL is overridable via <code>ZCODE_UPDATE_FEED_URL</code> in the same file.&#160;<a class="footnote-backref" href="#fnref:48" title="Jump back to footnote 48 in the text">&#8617;</a></p>
+</li>
+<li id="fn:49">
+<p><a href="https://github.com/zai-org/ZCode/blob/3c5b227649371507ddc4eb46ac5133afe6db1cab/packages/desktop/src/main/chromeCookieManager.ts#L1-L50"><code>chromeCookieManager.ts#L1-L50</code></a> — the Chrome cookie import: a snapshot copy of the local Chrome cookie database, local decryption (Safe Storage / App-Bound helpers in <code>chromeCredentialManager.ts</code>), and writes into ZCode's embedded-browser session — all on-device.&#160;<a class="footnote-backref" href="#fnref:49" title="Jump back to footnote 49 in the text">&#8617;</a></p>
+</li>
+<li id="fn:50">
+<p><a href="https://github.com/zai-org/ZCode/blob/3c5b227649371507ddc4eb46ac5133afe6db1cab/README.en.md#L100"><code>README.en.md#L100</code></a> — Web mode: "listens on <code>127.0.0.1</code> without token authentication by default… For LAN access, use <code>--host 0.0.0.0</code>; listening on a non-local address generates an access token by default. Use <code>--token</code> to set one, or <code>--no-token</code> to disable token authentication."&#160;<a class="footnote-backref" href="#fnref:50" title="Jump back to footnote 50 in the text">&#8617;</a></p>
+</li>
+</ol>
+</div>
+</main>
+</body>
+</html>

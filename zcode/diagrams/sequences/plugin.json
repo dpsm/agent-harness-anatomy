@@ -1,0 +1,16 @@
+{
+ "title": "Plugins: from marketplace to a shared side panel",
+ "subtitle": "A manifest can carry commands, skills, hooks, MCP servers — and a UI",
+ "participants": ["User", "Plugin store", "CDN / bundled seed", "Agent runtime", "Plugin MCP server", "Side panel"],
+ "messages": [
+  {"from": 0, "to": 1, "label": "browse the Official Marketplace"},
+  {"from": 1, "to": 2, "label": "catalog fetch; CDN plugins are sha256-checked zips"},
+  {"from": 0, "to": 1, "label": "install + enable"},
+  {"from": 1, "to": 3, "label": "manifest loads: commands, skills, hooks, mcpServers"},
+  {"from": 3, "to": 4, "label": "start the plugin MCP server"},
+  {"from": 3, "to": 5, "label": "tool result carries a ui resource -> panel opens"},
+  {"from": 0, "to": 5, "label": "edit the document directly"},
+  {"from": 5, "to": 4, "label": "commit (one undo history for user + agent edits)"},
+  {"note": "span", "span": [0, 5], "text": "Interactive panels run in local desktop workspaces at this pin; web and remote keep ordinary tool records"}
+ ]
+}

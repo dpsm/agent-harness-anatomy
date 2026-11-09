@@ -1,0 +1,209 @@
+{
+ "title": "One session, end to end — ZCode",
+ "example_input": "A user sets a goal in the desktop app, works through several turns, closes the app, resumes in the terminal, and lets the Goal system drive the session to a verified finish.",
+ "note": "Every module link pins the exact commit this teardown is based on — zai-org/ZCode @ 3c5b2276 (package version 3.16.2, pinned by commit; there is no v3.16.2 tag).",
+ "repo": "https://github.com/zai-org/ZCode",
+ "sha": "3c5b227649371507ddc4eb46ac5133afe6db1cab",
+ "steps": [
+  {
+   "step": 1,
+   "node": "desktop",
+   "code": "README.en.md:14",
+   "title": "A prompt arrives on any surface",
+   "narrative": "The user types a task in the desktop app — or the same shared UI in a browser, or the terminal TUI. All three surfaces are clients of the same host services and the same agent; the desktop is an Electron shell around the shared UI, and even the CLI distribution can serve the web surface (zcode --web). What the surface contributes is presentation and host features, not a different agent.",
+   "representation": "surface (desktop | web | tui)\n  -> shared UI (packages/ui)\n  -> host services (packages/services)\n  -> zcode-protocol v4 session command",
+   "modules": [
+    {
+     "file": "README.en.md:14",
+     "label": "desktop, browser and terminal interfaces, one repo",
+     "line": 14,
+     "url": "https://github.com/zai-org/ZCode/blob/3c5b227649371507ddc4eb46ac5133afe6db1cab/README.en.md#L14"
+    },
+    {
+     "file": "README.en.md:83",
+     "label": "one zcode command: TUI, --web, or Agent CLI args",
+     "line": 83,
+     "url": "https://github.com/zai-org/ZCode/blob/3c5b227649371507ddc4eb46ac5133afe6db1cab/README.en.md#L83-L85"
+    }
+   ]
+  },
+  {
+   "step": 2,
+   "node": "protocol",
+   "code": "session-flow.ts",
+   "title": "The prompt becomes a cancellable runtime command",
+   "narrative": "Host and agent speak the zcode-protocol (v4): session commands in, session events out. Inside the runtime, executeTurn enqueues the prompt as a cancellable PromptRuntimeCommand on the single runtime command queue — the same queue that will later carry steering, background results and goal continuations, which is why all of them share one ordering and one Stop button.",
+   "representation": "executeTurn(input):\n  enqueueCancellableRuntimeCommand({\n    kind: PromptRuntimeCommand,\n    input, abortSignal })\n  -> drained by the turn loop in order",
+   "modules": [
+    {
+     "file": "apps/zcode-cli/packages/core/src/runtime/methods/turn.ts:105",
+     "label": "executeTurn enqueues a cancellable prompt command",
+     "line": 105,
+     "url": "https://github.com/zai-org/ZCode/blob/3c5b227649371507ddc4eb46ac5133afe6db1cab/apps/zcode-cli/packages/core/src/runtime/methods/turn.ts#L105"
+    },
+    {
+     "file": "apps/zcode-cli/packages/bootstrap/src/zcode-protocol-v4/commands/handlers/session-flow.ts:1",
+     "label": "protocol v4 session command handlers",
+     "line": 1,
+     "url": "https://github.com/zai-org/ZCode/blob/3c5b227649371507ddc4eb46ac5133afe6db1cab/apps/zcode-cli/packages/bootstrap/src/zcode-protocol-v4/commands/handlers/session-flow.ts#L1"
+    }
+   ]
+  },
+  {
+   "step": 3,
+   "node": "loop",
+   "code": "turn-loop.ts:49",
+   "title": "The turn loop assembles the request",
+   "narrative": "runRegularTurnLoop iterates without a cap. Each iteration drains queued commands, runs microcompact and auto-compact (a third consecutive rapid refill throws instead of spinning), initializes MCP and refreshes MCP tools if their list changed, then assembles the request: system sections, mode/todo/goal reminders, prefetched memory recall — and runs one model step.",
+   "representation": "while (true):\n  drain runtime commands\n  microcompact(); autoCompactIfNeeded()\n  initializeMcp(); refreshMcpToolsIfChanged()\n  request = sections + reminders + recall\n  step = model(request, tools)",
+   "modules": [
+    {
+     "file": "apps/zcode-cli/packages/core/src/runtime/methods/turn-loop.ts:49",
+     "label": "runRegularTurnLoop — the unbounded loop",
+     "line": 49,
+     "url": "https://github.com/zai-org/ZCode/blob/3c5b227649371507ddc4eb46ac5133afe6db1cab/apps/zcode-cli/packages/core/src/runtime/methods/turn-loop.ts#L49-L53"
+    },
+    {
+     "file": "apps/zcode-cli/packages/core/src/runtime/methods/turn-loop.ts:124",
+     "label": "MCP initialized and refreshed inside the loop",
+     "line": 124,
+     "url": "https://github.com/zai-org/ZCode/blob/3c5b227649371507ddc4eb46ac5133afe6db1cab/apps/zcode-cli/packages/core/src/runtime/methods/turn-loop.ts#L124"
+    },
+    {
+     "file": "apps/zcode-cli/packages/core/src/runtime/methods/turn-loop-state.ts:24",
+     "label": "MAX_CONSECUTIVE_RAPID_REFILLS = 3 — the circuit breaker",
+     "line": 24,
+     "url": "https://github.com/zai-org/ZCode/blob/3c5b227649371507ddc4eb46ac5133afe6db1cab/apps/zcode-cli/packages/core/src/runtime/methods/turn-loop-state.ts#L24"
+    }
+   ]
+  },
+  {
+   "step": 4,
+   "node": "provider",
+   "code": "zcode-builtin.json:8",
+   "title": "One model step, GLM by default",
+   "narrative": "The model step goes through the provider layer. The bundled built-in config (revision 33) puts the Z.ai Coding Plan template first — GLM-5.3 over the anthropic-messages API shape — ahead of 20 other templates over three API shapes. On the official coding-plan path, the gateway rewrites the public endpoints to the plan gateway paths.",
+   "representation": "builtin config rev 33, template #1:\n  zai-api: anthropic-messages\n  baseUrl https://api.z.ai/api/anthropic\n  models  GLM-5.3, GLM-5.3-Flash\n  (gateway: /api/anthropic -> /api/v1/ultra-zai/...)",
+   "modules": [
+    {
+     "file": "config/provider/zcode-builtin.json:8",
+     "label": "zai-api — the first built-in template",
+     "line": 8,
+     "url": "https://github.com/zai-org/ZCode/blob/3c5b227649371507ddc4eb46ac5133afe6db1cab/config/provider/zcode-builtin.json#L8"
+    },
+    {
+     "file": "apps/zcode-cli/packages/adapters/src/model/official-coding-plan-gateway.ts:9",
+     "label": "the coding-plan gateway rewrite table",
+     "line": 9,
+     "url": "https://github.com/zai-org/ZCode/blob/3c5b227649371507ddc4eb46ac5133afe6db1cab/apps/zcode-cli/packages/adapters/src/model/official-coding-plan-gateway.ts#L9-L10"
+    }
+   ]
+  },
+  {
+   "step": 5,
+   "node": "tools",
+   "code": "session.port.ts:32",
+   "title": "Tool calls run through the permission service",
+   "narrative": "The model answers with tool calls. Each call is evaluated by the permission service from the tool's own capability metadata — risk level, side-effect scope, read-only/destructive — against the session's collaboration mode (plan, build, edit, yolo, guarded, auto), the rulesets and plan-mode policy. Hooks observe the decision as a PermissionRequest event. Approved calls execute; results return to the loop for the next iteration.",
+   "representation": "toolCall -> PermissionService.evaluate(\n  capability {risk, sideEffectScope, readOnly},\n  mode in {plan|build|edit|yolo|guarded|auto},\n  rulesets, planModePolicy)\n  -> allow | ask | deny -> execute -> result",
+   "modules": [
+    {
+     "file": "apps/zcode-cli/packages/contracts/src/interfaces/session.port.ts:32",
+     "label": "the six collaboration modes",
+     "line": 32,
+     "url": "https://github.com/zai-org/ZCode/blob/3c5b227649371507ddc4eb46ac5133afe6db1cab/apps/zcode-cli/packages/contracts/src/interfaces/session.port.ts#L32"
+    },
+    {
+     "file": "apps/zcode-cli/packages/core/src/permission/service.ts:87",
+     "label": "the PermissionService class",
+     "line": 87,
+     "url": "https://github.com/zai-org/ZCode/blob/3c5b227649371507ddc4eb46ac5133afe6db1cab/apps/zcode-cli/packages/core/src/permission/service.ts#L87"
+    },
+    {
+     "file": "apps/zcode-cli/packages/core/src/tool/handlers/target.ts:45",
+     "label": "a tool's own permission spec (GoalRead shown)",
+     "line": 45,
+     "url": "https://github.com/zai-org/ZCode/blob/3c5b227649371507ddc4eb46ac5133afe6db1cab/apps/zcode-cli/packages/core/src/tool/handlers/target.ts#L45-L60"
+    }
+   ]
+  },
+  {
+   "step": 6,
+   "node": "store",
+   "code": "sqlite-session-store.ts:733",
+   "title": "The turn is persisted as session events",
+   "narrative": "Everything the turn produced — messages, events, todos, usage — is written to the SQLite session store shared by all surfaces. This is what makes the surface disposable: close the desktop app here and the session, including its goal row (readTarget is a store read), can be resumed from the terminal with counters and state intact.",
+   "representation": "SQLite session DB (node:sqlite):\n  sessions / messages / events\n  todos\n  target row  <- the goal lives here\n  (status, tokenBudget, tokensUsed, ...)",
+   "modules": [
+    {
+     "file": "apps/zcode-cli/packages/adapters/src/storage/session-store/sqlite-session-store.ts:733",
+     "label": "readTarget — the goal as a store row",
+     "line": 733,
+     "url": "https://github.com/zai-org/ZCode/blob/3c5b227649371507ddc4eb46ac5133afe6db1cab/apps/zcode-cli/packages/adapters/src/storage/session-store/sqlite-session-store.ts#L733"
+    },
+    {
+     "file": "apps/zcode-cli/packages/core/src/runtime/methods/resume.ts:419",
+     "label": "resume reads the goal back and injects its state",
+     "line": 419,
+     "url": "https://github.com/zai-org/ZCode/blob/3c5b227649371507ddc4eb46ac5133afe6db1cab/apps/zcode-cli/packages/core/src/runtime/methods/resume.ts#L419-L443"
+    }
+   ]
+  },
+  {
+   "step": 7,
+   "node": "goal",
+   "code": "methods/target.ts:36",
+   "title": "Idle with an active goal: verifier first, then continuation",
+   "narrative": "The user had set a goal earlier (/goal, or the UI equivalent). Now the session goes idle with the goal still active, so continueActiveTargetIfIdle enqueues a target-continuation command. Executing it first runs the completion verifier — a separate, tool-less, JSON-only model request. Only if the verifier fails with a concrete next action does a continuation turn run, carrying the budget accounting and the audit checklist. The model never marks its own goal complete.",
+   "representation": "continueActiveTargetIfIdle():\n  enqueue(target-continuation, priority=next)\nexecuteTargetContinuationCommand():\n  if background tasks running -> defer\n  verdict = verify(goal)   # no tools, JSON only\n  if verdict.passed -> stop\n  if no nextAction -> stop\n  re-read goal; if changed -> stop\n  turn(formatGoalContinuationPrompt(goal, verdict))",
+   "modules": [
+    {
+     "file": "apps/zcode-cli/packages/core/src/runtime/methods/target.ts:36",
+     "label": "continueActiveTargetIfIdle enqueues the continuation",
+     "line": 36,
+     "url": "https://github.com/zai-org/ZCode/blob/3c5b227649371507ddc4eb46ac5133afe6db1cab/apps/zcode-cli/packages/core/src/runtime/methods/target.ts#L36-L76"
+    },
+    {
+     "file": "apps/zcode-cli/packages/core/src/runtime/methods/target.ts:77",
+     "label": "executeTargetContinuationCommand — defer, verify, re-read",
+     "line": 77,
+     "url": "https://github.com/zai-org/ZCode/blob/3c5b227649371507ddc4eb46ac5133afe6db1cab/apps/zcode-cli/packages/core/src/runtime/methods/target.ts#L77"
+    },
+    {
+     "file": "apps/zcode-cli/packages/contracts/src/tools/target.ts:137",
+     "label": "the continuation prompt: budget + completion audit",
+     "line": 137,
+     "url": "https://github.com/zai-org/ZCode/blob/3c5b227649371507ddc4eb46ac5133afe6db1cab/apps/zcode-cli/packages/contracts/src/tools/target.ts#L137-L194"
+    },
+    {
+     "file": "apps/zcode-cli/packages/contracts/src/tools/target.ts:196",
+     "label": "the verifier prompt: no tools, JSON only",
+     "line": 196,
+     "url": "https://github.com/zai-org/ZCode/blob/3c5b227649371507ddc4eb46ac5133afe6db1cab/apps/zcode-cli/packages/contracts/src/tools/target.ts#L196-L245"
+    }
+   ]
+  },
+  {
+   "step": 8,
+   "node": "cli",
+   "code": "goal.ts:15",
+   "title": "The same session, resumed anywhere — and stopped by accounting",
+   "narrative": "The cycle of work, idle, verify and continue repeats across surfaces — the goal was set in the desktop app and can be inspected in the TUI with /goal, paused, resumed or cleared by the user at any time. It ends in exactly three ways: the verifier passes (status complete), the token budget is exhausted (budget_limited), or the user stops it. Termination never depends on the working model deciding it is done.",
+   "representation": "goal status transitions:\n  active -> complete        (verifier passed)\n  active -> budget_limited  (tokensUsed >= tokenBudget)\n  active <-> paused         (user: /goal pause|resume)\n  any    -> (cleared)       (user: /goal clear)",
+   "modules": [
+    {
+     "file": "apps/zcode-cli/packages/cli/src/command-center/handlers/goal.ts:15",
+     "label": "the /goal handler: set, pause, resume, clear",
+     "line": 15,
+     "url": "https://github.com/zai-org/ZCode/blob/3c5b227649371507ddc4eb46ac5133afe6db1cab/apps/zcode-cli/packages/cli/src/command-center/handlers/goal.ts#L15"
+    },
+    {
+     "file": "apps/zcode-cli/packages/contracts/src/tools/target.ts:8",
+     "label": "the four goal statuses",
+     "line": 8,
+     "url": "https://github.com/zai-org/ZCode/blob/3c5b227649371507ddc4eb46ac5133afe6db1cab/apps/zcode-cli/packages/contracts/src/tools/target.ts#L8-L13"
+    }
+   ]
+  }
+ ]
+}

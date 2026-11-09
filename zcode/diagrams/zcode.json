@@ -1,0 +1,318 @@
+{
+ "title": "ZCode — three surfaces, one agent, a goal that outlives the turn",
+ "repo": "https://github.com/zai-org/ZCode",
+ "sha": "3c5b227649371507ddc4eb46ac5133afe6db1cab",
+ "nodes": [
+  {
+   "id": "desktop",
+   "step": 1,
+   "label": "Electron desktop app",
+   "sub": "packages/desktop",
+   "x": 20,
+   "y": 60,
+   "w": 240,
+   "h": 96,
+   "grade": "verified",
+   "excerpt": "Desktop adds the updater, the embedded browser and packaged-build wiring around the shared UI.",
+   "links": [
+    {
+     "label": "README.en.md — desktop, browser and terminal interfaces in one repo",
+     "line": 14,
+     "url": "https://github.com/zai-org/ZCode/blob/3c5b227649371507ddc4eb46ac5133afe6db1cab/README.en.md#L14"
+    },
+    {
+     "label": "autoUpdater.ts:34 — update polls every 15 min (2 min while visible)",
+     "line": 34,
+     "url": "https://github.com/zai-org/ZCode/blob/3c5b227649371507ddc4eb46ac5133afe6db1cab/packages/desktop/src/main/autoUpdater.ts#L34-L35"
+    }
+   ]
+  },
+  {
+   "id": "web",
+   "step": 1,
+   "label": "Browser UI + server",
+   "sub": "packages/web · packages/server",
+   "x": 20,
+   "y": 190,
+   "w": 240,
+   "h": 96,
+   "grade": "verified",
+   "excerpt": "The browser UI is the shared UI package served by a local HTTP/WebSocket host.",
+   "links": [
+    {
+     "label": "entry-http.ts — the server host entry for the web surface",
+     "line": 1,
+     "url": "https://github.com/zai-org/ZCode/blob/3c5b227649371507ddc4eb46ac5133afe6db1cab/packages/server/src/entry-http.ts#L1"
+    }
+   ]
+  },
+  {
+   "id": "cli",
+   "step": 1,
+   "label": "Terminal CLI / TUI",
+   "sub": "apps/zcode-cli/packages/cli",
+   "x": 20,
+   "y": 320,
+   "w": 240,
+   "h": 96,
+   "grade": "verified",
+   "excerpt": "One zcode command: no args starts the TUI; --web starts Web mode; other args go to the Agent CLI.",
+   "links": [
+    {
+     "label": "goal.ts:14 — the /goal command handler in the CLI command center",
+     "line": 15,
+     "url": "https://github.com/zai-org/ZCode/blob/3c5b227649371507ddc4eb46ac5133afe6db1cab/apps/zcode-cli/packages/cli/src/command-center/handlers/goal.ts#L15"
+    }
+   ]
+  },
+  {
+   "id": "bots",
+   "step": 2,
+   "label": "Bots: remote triggers",
+   "sub": "packages/services/src/bots",
+   "x": 20,
+   "y": 450,
+   "w": 240,
+   "h": 96,
+   "grade": "verified",
+   "excerpt": "A private third-party chat drives the same ZCode task flow as the UI input box.",
+   "links": [
+    {
+     "label": "bots.md — the bot model: one bot, one bound actor, workspace scope",
+     "line": 3,
+     "url": "https://github.com/zai-org/ZCode/blob/3c5b227649371507ddc4eb46ac5133afe6db1cab/docs/bots.md#L3"
+    },
+    {
+     "label": "botConfigHelpers.ts:39 — findAuthorizedBot: provider + bound user must match",
+     "line": 39,
+     "url": "https://github.com/zai-org/ZCode/blob/3c5b227649371507ddc4eb46ac5133afe6db1cab/packages/services/src/bots/botConfigHelpers.ts#L39-L62"
+    }
+   ]
+  },
+  {
+   "id": "services",
+   "step": 2,
+   "label": "Host services layer",
+   "sub": "packages/services",
+   "x": 420,
+   "y": 60,
+   "w": 240,
+   "h": 96,
+   "grade": "verified",
+   "excerpt": "Sessions, providers, bots, plugins, sharing and telemetry live in the host service layer.",
+   "links": [
+    {
+     "label": "zcodeAgentService.ts:1069 — official MCP auth is host-issued, never anonymous",
+     "line": 1069,
+     "url": "https://github.com/zai-org/ZCode/blob/3c5b227649371507ddc4eb46ac5133afe6db1cab/packages/services/src/zcode-agent/zcodeAgentService.ts#L1069-L1094"
+    }
+   ]
+  },
+  {
+   "id": "protocol",
+   "step": 2,
+   "label": "Protocol v4 bridge",
+   "sub": "bootstrap/zcode-protocol-v4",
+   "x": 420,
+   "y": 190,
+   "w": 240,
+   "h": 96,
+   "grade": "verified",
+   "excerpt": "Host and agent speak the zcode-protocol: session commands in, session events out.",
+   "links": [
+    {
+     "label": "session-flow.ts — protocol v4 session command handlers",
+     "line": 1,
+     "url": "https://github.com/zai-org/ZCode/blob/3c5b227649371507ddc4eb46ac5133afe6db1cab/apps/zcode-cli/packages/bootstrap/src/zcode-protocol-v4/commands/handlers/session-flow.ts#L1"
+    }
+   ]
+  },
+  {
+   "id": "store",
+   "step": 8,
+   "label": "SQLite session store",
+   "sub": "adapters/storage/session-store",
+   "x": 420,
+   "y": 320,
+   "w": 240,
+   "h": 96,
+   "grade": "verified",
+   "excerpt": "Sessions, messages, todos and the goal row persist in one SQLite database (node:sqlite).",
+   "links": [
+    {
+     "label": "sqlite-session-store.ts:733 — readTarget: the goal is a row in the session store",
+     "line": 733,
+     "url": "https://github.com/zai-org/ZCode/blob/3c5b227649371507ddc4eb46ac5133afe6db1cab/apps/zcode-cli/packages/adapters/src/storage/session-store/sqlite-session-store.ts#L733"
+    }
+   ]
+  },
+  {
+   "id": "goal",
+   "step": 7,
+   "label": "Goal system",
+   "sub": "contracts/tools/target.ts",
+   "x": 420,
+   "y": 450,
+   "w": 240,
+   "h": 96,
+   "grade": "verified",
+   "excerpt": "Goal Tools - session-local long-running goal",
+   "links": [
+    {
+     "label": "target.ts:46 — SessionGoal: objective, status, token budget, usage",
+     "line": 46,
+     "url": "https://github.com/zai-org/ZCode/blob/3c5b227649371507ddc4eb46ac5133afe6db1cab/apps/zcode-cli/packages/contracts/src/tools/target.ts#L46-L66"
+    },
+    {
+     "label": "target.ts:137 — the continuation prompt and its completion audit",
+     "line": 137,
+     "url": "https://github.com/zai-org/ZCode/blob/3c5b227649371507ddc4eb46ac5133afe6db1cab/apps/zcode-cli/packages/contracts/src/tools/target.ts#L137-L194"
+    }
+   ]
+  },
+  {
+   "id": "loop",
+   "step": 3,
+   "label": "Agent runtime turn loop",
+   "sub": "core/runtime/methods/turn-loop.ts",
+   "x": 820,
+   "y": 60,
+   "w": 240,
+   "h": 96,
+   "grade": "verified",
+   "excerpt": "runRegularTurnLoop: drain commands, compact, refresh MCP tools, run one model step, repeat.",
+   "links": [
+    {
+     "label": "turn-loop.ts:49 — runRegularTurnLoop, the unbounded while loop",
+     "line": 49,
+     "url": "https://github.com/zai-org/ZCode/blob/3c5b227649371507ddc4eb46ac5133afe6db1cab/apps/zcode-cli/packages/core/src/runtime/methods/turn-loop.ts#L49-L53"
+    }
+   ]
+  },
+  {
+   "id": "provider",
+   "step": 4,
+   "label": "Provider layer: GLM-first",
+   "sub": "config/provider/zcode-builtin.json",
+   "x": 820,
+   "y": 190,
+   "w": 240,
+   "h": 96,
+   "grade": "verified",
+   "excerpt": "21 built-in provider templates over three API shapes; the Z.ai and BigModel GLM templates come first.",
+   "links": [
+    {
+     "label": "zcode-builtin.json:8 — zai-api template: GLM-5.3 via anthropic-messages",
+     "line": 8,
+     "url": "https://github.com/zai-org/ZCode/blob/3c5b227649371507ddc4eb46ac5133afe6db1cab/config/provider/zcode-builtin.json#L8"
+    },
+    {
+     "label": "official-coding-plan-gateway.ts:9 — plan gateway rewrites for bigmodel + z.ai",
+     "line": 9,
+     "url": "https://github.com/zai-org/ZCode/blob/3c5b227649371507ddc4eb46ac5133afe6db1cab/apps/zcode-cli/packages/adapters/src/model/official-coding-plan-gateway.ts#L9-L10"
+    }
+   ]
+  },
+  {
+   "id": "tools",
+   "step": 5,
+   "label": "Tools, permissions, MCP",
+   "sub": "core/tool/handlers",
+   "x": 820,
+   "y": 450,
+   "w": 240,
+   "h": 96,
+   "grade": "verified",
+   "excerpt": "Each tool entry carries its own permission spec: risk, side-effect scope, approval need.",
+   "links": [
+    {
+     "label": "session.port.ts:32 — six collaboration modes: plan/build/edit/yolo/guarded/auto",
+     "line": 32,
+     "url": "https://github.com/zai-org/ZCode/blob/3c5b227649371507ddc4eb46ac5133afe6db1cab/apps/zcode-cli/packages/contracts/src/interfaces/session.port.ts#L32"
+    },
+    {
+     "label": "target.ts:50 — a tool's permission spec (GoalRead: read-only, no approval)",
+     "line": 50,
+     "url": "https://github.com/zai-org/ZCode/blob/3c5b227649371507ddc4eb46ac5133afe6db1cab/apps/zcode-cli/packages/core/src/tool/handlers/target.ts#L50-L60"
+    }
+   ]
+  }
+ ],
+ "edges": [
+  {
+   "from": "desktop",
+   "to": "services",
+   "label": "hosts services in-process",
+   "label_dx": -45
+  },
+  {
+   "from": "web",
+   "to": "services",
+   "label": "HTTP + WebSocket sessions",
+   "label_dy": -40
+  },
+  {
+   "from": "cli",
+   "to": "protocol",
+   "label": "in-process protocol commands",
+   "label_dx": -55,
+   "label_dy": 18
+  },
+  {
+   "from": "bots",
+   "to": "services",
+   "label": "bound-actor task commands",
+   "label_dx": 10,
+   "label_dy": 28
+  },
+  {
+   "from": "services",
+   "to": "protocol",
+   "label": "session commands + events"
+  },
+  {
+   "from": "protocol",
+   "to": "loop",
+   "label": "cancellable runtime commands",
+   "label_dx": -30,
+   "label_dy": 22
+  },
+  {
+   "from": "loop",
+   "to": "provider",
+   "label": "model steps, 3 API shapes"
+  },
+  {
+   "from": "loop",
+   "to": "tools",
+   "label": "tool calls + results",
+   "label_dx": -95
+  },
+  {
+   "from": "loop",
+   "to": "goal",
+   "label": "goal state injected per turn",
+   "label_dx": -35,
+   "label_dy": 5
+  },
+  {
+   "from": "goal",
+   "to": "loop",
+   "label": "continuation when idle",
+   "side": "right",
+   "label_t": 0.5,
+   "label_dx": -15
+  },
+  {
+   "from": "goal",
+   "to": "store",
+   "label": "goal row persisted with session",
+   "label_dx": 45
+  },
+  {
+   "from": "protocol",
+   "to": "store",
+   "label": "session state persisted"
+  }
+ ]
+}

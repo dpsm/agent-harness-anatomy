@@ -1,0 +1,16 @@
+{
+ "title": "A remote trigger: chat message to running task",
+ "subtitle": "One bot, one bound actor — there is no anonymous path",
+ "participants": ["Chat user", "Telegram / Feishu", "Bots service", "Host services", "Agent runtime"],
+ "messages": [
+  {"from": 0, "to": 1, "label": "message the bot"},
+  {"from": 1, "to": 2, "label": "inbound event: provider + user id"},
+  {"from": 2, "to": 2, "label": "findAuthorizedBot: enabled bot, bound user id match?"},
+  {"from": 2, "to": 3, "label": "task command (workspace allow-list applies)"},
+  {"from": 3, "to": 4, "label": "session command on the same protocol"},
+  {"from": 4, "to": 2, "label": "permission request relayed to chat", "dashed": true},
+  {"from": 0, "to": 2, "label": "approve / deny in chat"},
+  {"from": 2, "to": 4, "label": "permission decision"},
+  {"note": "span", "span": [0, 4], "text": "Webhook bots refuse to run without a configured secret; bot secrets live in the credential service, not the config file"}
+ ]
+}
