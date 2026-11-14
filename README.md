@@ -50,6 +50,15 @@ physical constraints.
 | E2 | MimiClaw (v0.1.1) | [embedded/mimiclaw/article.md](embedded/mimiclaw/article.md) | [Follow one message](embedded/mimiclaw/trace.html) | [Read on Substack](https://agentharnessanatomy.substack.com/p/mimiclaw-the-turn-loop-that-moved) |
 | E3 | ZenClaw (v0.2.1-zai-tls-fix) | [embedded/zenclaw/article.md](embedded/zenclaw/article.md) | [Follow one message](embedded/zenclaw/trace.html) | [Read on Substack](https://agentharnessanatomy.substack.com/p/zenclaw-persistence-that-routes-around) |
 
+## Field Notes
+
+Shorter pieces on systems that don't host an agent loop of their own —
+memory stacks, routers, judges — read with the same source-grounded method.
+
+| Field Note | Write-up | Substack |
+|------------|----------|----------|
+| Hy Memory 2.0 | [hy-memory/field-notes.md](hy-memory/field-notes.md) | forthcoming |
+
 ## What's here
 
 - `<harness>/article.md` — the full article text with evidence endnotes
