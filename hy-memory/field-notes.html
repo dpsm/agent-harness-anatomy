@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Field Notes: The memory is not the harness — Hy Memory 2.0</title>
+<style>
+:root{color-scheme:dark}*{box-sizing:border-box}
+body{background:#161210;color:#ece1d3;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;line-height:1.7;margin:0}
+.wrap{max-width:760px;margin:0 auto;padding:48px 24px 80px}
+h1{color:#fff;font-size:1.9em;line-height:1.25}h2{color:#d08c4e;font-size:1.35em;margin:2.2em 0 .6em}
+a{color:#d08c4e;text-decoration:none}a:hover{text-decoration:underline}
+strong{color:#fff}code{background:#1f1a15;padding:2px 6px;border-radius:4px;font-size:.88em;color:#d08c4e}
+blockquote{background:#1f1a15;border-left:3px solid #d08c4e;margin:1.5em 0;padding:12px 20px}
+img{width:100%;border-radius:4px;border:1px solid #3a2f24}
+table{border-collapse:collapse;margin:1em 0}th,td{border:1px solid #3a2f24;padding:6px 12px;text-align:left}
+.footnote{font-size:.85em;color:#a89880;border-top:1px solid #3a2f24;margin-top:3em;padding-top:1em}
+.footnote hr{display:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>Field Notes: The memory is not the harness — Hy Memory 2.0 and the writer-model idea</h1>
+<p><strong>Series framing.</strong> This is a Field Notes piece, not a numbered teardown.
+Every teardown in this series dissects a system that runs an agent: a loop,
+tools, approvals, a session lifecycle. Tencent Hunyuan's Hy Memory 2.0 runs
+none of those. It is a <em>memory stack</em> — a dedicated writer model, a Python
+framework (<code>hy-memory</code>), and a local product (MemHub) that negotiates one
+shared memory across ten coding tools. There is no turn to trace because
+there is no turn: the loops that consume this memory belong to other
+harnesses, several of which this series has already taken apart. What Hy
+Memory offers instead is a complete, source-readable answer to a question
+every teardown has touched and none has centred: <strong>what should writing to
+long-term memory actually look like, as engineering?</strong> That is a Field
+Notes question, and it is the one this piece answers.</p>
+<blockquote>
+<p><strong>Pin:</strong> <code>Tencent-Hunyuan/Hy-Memory</code> @ <code>5a5650fc946621759a55eb8f1a7eafa7354d7c4f</code>
+(2026-10-27), Apache-2.0. Framework package <code>hy-memory</code> v2.0.5 in-tree;
+MemHub v1.0.5 in-tree. Cloned and read, never executed. The writer model
+(Hy-Memory-30B-A3B) is weights on Hugging Face, not code in this repo;
+its benchmark results are the authors' own and are flagged as vendor
+claims wherever they appear.</p>
+</blockquote>
+<p><img alt="Hy Memory 2.0 architecture" src="figures/hy-memory@2x.png" /></p>
+<h2>Three layers, three different kinds of thing</h2>
+<p>Hy Memory 2.0 is easiest to hold as three layers that are often conflated
+in coverage of the release:</p>
+<ol>
+<li><strong>A model.</strong> Hy-Memory-30B-A3B is a mixture-of-experts model (30B total
+   parameters, roughly 3B active) trained, per its technical report, for
+   one job: executing the <em>write path</em> of a long-term memory system —
+   deciding what to retain, how precisely to represent it, and how new
+   evidence should update what is already stored.<sup id="fnref4:1"><a class="footnote-ref" href="#fn:1">1</a></sup> It does not chat.
+   In this repository it appears only as a name a configuration can
+   point at.</li>
+<li><strong>A framework.</strong> The <code>hy_memory</code> Python SDK is the memory engine:
+   scene routing, extraction, reconciliation, three kinds of storage,
+   hybrid retrieval, and an optional slower "System 2" that induces
+   schemas over accumulated facts. It is model-agnostic — any
+   OpenAI-compatible LLM and embedding endpoint can fill the writer
+   slot, and the defaults are ordinary general models.<sup id="fnref4:2"><a class="footnote-ref" href="#fn:2">2</a></sup></li>
+<li><strong>A product.</strong> MemHub is a local-first desktop and CLI application
+   that builds one governed memory out of the session stores of ten
+   coding tools, using the SDK as its only data plane, and offers that
+   memory back to the same tools as recall.<sup id="fnref2:3"><a class="footnote-ref" href="#fn:3">3</a></sup></li>
+</ol>
+<p>The separation matters because the claims attach to different layers.
+The framework's mechanisms can be verified in source, and this piece
+verifies them. The model's quality claims can only be reported. MemHub's
+consent model sits in between: implemented in source, expressed as a
+product contract.</p>
+<h2>The mental model: memory quality is a writing problem</h2>
+<p>Most memory systems are described from the read side — embeddings,
+ranking, injection. Hy Memory's design centre is the opposite end. Its
+paper's framing is that a memory bank's quality is decided at write time:
+what is kept, how exactly it is stated, and what happens when July's
+evidence contradicts March's.<sup id="fnref:1"><a class="footnote-ref" href="#fn:1">1</a></sup> The framework is built around that
+conviction in concrete ways: writes are multi-stage LLM pipelines with
+an explicit reconciliation step; reads, by default, spend no LLM calls
+at all. The budget flows toward writing. That asymmetry — expensive,
+judged writes; cheap, deterministic reads — is the single most portable
+idea in the release.</p>
+<h2>One entry point, three scenes</h2>
+<p>Everything enters through <code>HyMemoryClient.add()</code> — text, or OpenAI-format
+messages, scoped by <code>user_id</code>, <code>agent_id</code>, and <code>session_id</code>, which are
+isolation keys the caller supplies; the SDK owns no session lifecycle.<sup id="fnref:4"><a class="footnote-ref" href="#fn:4">4</a></sup>
+The first thing <code>add()</code> does is route by <em>scene</em>, and the router is a
+small lesson in cost discipline:</p>
+<ul>
+<li>Input with <strong>no tool messages</strong> goes to the <code>chat</code> scene immediately,
+  with zero LLM calls.<sup id="fnref:5"><a class="footnote-ref" href="#fn:5">5</a></sup></li>
+<li>Input <strong>with tool messages</strong> and no explicit scene costs exactly one
+  LLM classification call, which sorts it into <code>chat</code>, <code>working</code>, or
+  <code>coding</code>; if the judge fails, the input falls back to chat and the
+  tool messages are stripped.<sup id="fnref:6"><a class="footnote-ref" href="#fn:6">6</a></sup></li>
+<li>An explicit scene skips the judge but not the shape check: forcing
+  <code>coding</code> on input without tool messages falls back to chat, because
+  there is no trace to extract from.<sup id="fnref2:5"><a class="footnote-ref" href="#fn:5">5</a></sup></li>
+</ul>
+<p>The three scenes are three memory shapes. Chat gets a hierarchy.
+Working and coding share a two-layer design; coding adds a third
+component, the diff chain.<sup id="fnref:7"><a class="footnote-ref" href="#fn:7">7</a></sup></p>
+<table>
+<thead>
+<tr>
+<th>Scene</th>
+<th>Input shape</th>
+<th>Memory shape</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>chat</code></td>
+<td>Conversation</td>
+<td>Hierarchy L0–L7 (below)</td>
+</tr>
+<tr>
+<td><code>working</code></td>
+<td>Tool-call trace from productivity work</td>
+<td>One fact + reusable experiences</td>
+</tr>
+<tr>
+<td><code>coding</code></td>
+<td>Tool-call trace from software work</td>
+<td>The same two layers, plus a version-evolution diff chain</td>
+</tr>
+</tbody>
+</table>
+<p>Modes scale the spend. <code>lite</code> is embedding-only — no LLM calls, scene
+ignored, effectively disciplined vector RAG. <code>pro</code> adds extraction and
+reconciliation. <code>ultra</code> adds System 2 and turns the graph store on.
+Nothing about the mode is ambient: System 2 runs when the caller invokes
+<code>evolve()</code>, not on a schedule the SDK invents.<sup id="fnref:8"><a class="footnote-ref" href="#fn:8">8</a></sup></p>
+<h2>Chat memory: a hierarchy with a reconcile step</h2>
+<p>Chat memory is organised in eight layers: L0 basic information (the
+assembled profile), L1 raw conversation (append-only), L2 atomic facts
+(versioned, immutable records), L3 session summaries, L4 identity and
+L5 knowledge (both marked reserved in the current design), L6 schemas —
+abstract narrative templates, held in the graph layer — and L7
+prospective intentions, which carry an expiry and demote to ordinary
+facts when it passes.<sup id="fnref:9"><a class="footnote-ref" href="#fn:9">9</a></sup></p>
+<p>A <code>pro</code>-mode write runs as a pipeline. The raw input lands at L1. An
+extraction stage — an internal coordinator over an extractor and
+reflector, driven by long, Chinese-first prompt files — proposes
+candidate facts, entities, and intentions.<sup id="fnref:10"><a class="footnote-ref" href="#fn:10">10</a></sup> Candidates are
+deduplicated, and then the step that distinguishes this design from
+"extract and append" runs: a <strong>reconciler</strong> compares the candidates
+against existing memories and emits operations — ADD for genuinely new
+information, UPDATE to merge same-topic, non-contradictory nodes into a
+denser one, DELETE as a logical delete (the node is shadowed, not
+erased), and contradictions expressed as an ADD that names the nodes it
+supersedes.<sup id="fnref:11"><a class="footnote-ref" href="#fn:11">11</a></sup> A write's receipt itemises its own cost: input tokens,
+extraction tokens, and reconciliation tokens are reported as separate
+counters, so the price of remembering is visible per call.<sup id="fnref2:4"><a class="footnote-ref" href="#fn:4">4</a></sup></p>
+<p>Two side effects are deliberately kept off the critical path: episode
+summaries and graph projection are scheduled in the background, while
+every <em>judgement</em> — extraction, reconciliation — stays synchronous and
+priced. The design consistently prefers explicit steps a caller can see
+over ambient background cognition.</p>
+<h2>Working and coding: one fact, some lessons, no threshold games</h2>
+<p>The working/coding writer takes a whole traced session and produces two
+layers in one pass.<sup id="fnref:12"><a class="footnote-ref" href="#fn:12">12</a></sup></p>
+<p>The <strong>fact</strong> layer records what this session did: exactly one
+<code>WorkingFact</code> per trace, with no value threshold — work that was done is
+remembered, full stop. Its fields repay attention: a <code>statement</code> (the
+searchable summary), a <code>subject</code> (the person, file, service, or
+component the session operated on), the <code>files</code> touched, and <code>details</code> —
+the session's addressable output kept <em>verbatim</em> and deliberately kept
+<em>out</em> of the embedding, so the summary does the finding and the details
+hold the values a summary would inevitably drop.<sup id="fnref:13"><a class="footnote-ref" href="#fn:13">13</a></sup></p>
+<p>The <strong>experience</strong> layer records what can be reused: zero to N
+<code>CodingMemory</code> records per session, each gated by a value judgement in
+extraction. An experience carries a <code>task</code>, <code>search_keys</code>, a <code>solution</code>,
+<code>boundary_envs</code> — the environment the lesson depends on, so a future
+reader can judge whether it still applies — and a <code>confidence</code>.<sup id="fnref:14"><a class="footnote-ref" href="#fn:14">14</a></sup>
+The layers cross-link in both directions, so a recalled lesson can be
+traced to the sessions that produced it and a fact can name the lessons
+it derived.</p>
+<p>Updates respect the same asymmetry. When a newer fact continues the same
+task, the older fact is not deleted: it is marked <code>superseded</code>, linked
+to its successor, and an LLM rewrites a one-sentence progress summary
+of how the task evolved — a summary that is itself excluded from the
+vector index, so superseded wording loses its power to be recalled as
+current.<sup id="fnref2:13"><a class="footnote-ref" href="#fn:13">13</a></sup> A subject gate can forbid supersession across different
+subjects entirely; it ships <strong>off</strong> by default, and the long comment
+explaining why — in both directions — is preserved in the type
+definitions, a candid record of the authors reasoning about a real
+failure mode: parallel subjects with similar wording overwriting each
+other.<sup id="fnref3:13"><a class="footnote-ref" href="#fn:13">13</a></sup></p>
+<h2>The diff chain: storing what summarisation is told to throw away</h2>
+<p>Coding extraction is instructed to record exact coordinates — file,
+function, branch — and <em>not</em> to paste code; a record that quotes thirty
+lines of diff but omits the branch is, in the prompt's own terms, a bad
+trade.<sup id="fnref:15"><a class="footnote-ref" href="#fn:15">15</a></sup> That is a sound budget rule with one structural hole: the
+version of the code that was tried and reverted exists neither in the
+working tree nor at HEAD, so no later reader can recover it — including
+the reason it was abandoned, which often lives in the user's words at
+the moment of the change.</p>
+<p>The diff chain exists to fill exactly that hole, and it fills it with
+<strong>zero LLM calls</strong>. As a coding write completes, the chain store's
+<code>observe()</code> records each change — sourced from a local Git repository's
+diffs when one is configured, or from deterministic replace actions in
+the tool trace — as a <em>round</em>: the user's own words for that revision
+plus the real diff. Rounds accumulate on <em>threads</em> keyed by owner,
+branch, file, symbol, and line range, in a dedicated SQLite store.<sup id="fnref:16"><a class="footnote-ref" href="#fn:16">16</a></sup></p>
+<p>At read time the chain is, in its own header's words, "a decorator, not
+a retriever": vector retrieval decides which facts return, and
+<code>decorate()</code> attaches under each fact the full revision history of the
+code it touches — every version, in order, with what was said about
+each — ranked by overlap with the instruction and capped by explicit
+character budgets.<sup id="fnref:17"><a class="footnote-ref" href="#fn:17">17</a></sup> The chain pointedly does not choose a winning
+version. The consuming model sees the sequence, including the reverted
+attempt, and judges with the evidence the fact layer was designed to
+omit. As a pattern, this is the piece's most quotable mechanism: a
+deterministic, model-free store for exactly the class of information
+that LLM summarisation is instructed to discard, composed with — not
+competing against — the summarised layer.</p>
+<p><img alt="The write path" src="figures/seq-write@2x.png" /></p>
+<h2>The read path: deliberately boring, deliberately cheap</h2>
+<p><code>search()</code> in its default mode makes zero LLM calls. The hybrid reader
+recalls by vector similarity and BM25 together, then applies a shared
+post-processing chain — reciprocal-rank fusion, deduplication,
+diversity, temporal and entity handling, and an optional local
+cross-encoder rerank — and returns results in channels rather than a
+flat list: <code>profile</code>, <code>normal</code>, and <code>proactive</code>, the last carrying
+intentions and schemas that are due to surface rather than merely
+similar.<sup id="fnref:18"><a class="footnote-ref" href="#fn:18">18</a></sup><sup id="fnref:19"><a class="footnote-ref" href="#fn:19">19</a></sup> Working and coding searches return <code>facts</code> and
+<code>experiences</code> separately, and a coding search adds the chain block when
+the operator has enabled it. The priced alternative exists and is
+labelled as such: <code>search_mode="agentic"</code> spends one LLM call on scene
+classification, query rewriting, and time-range parsing before
+retrieval.<sup id="fnref:20"><a class="footnote-ref" href="#fn:20">20</a></sup> A separate <code>get_user_profile()</code> assembles the L0 profile
+directly instead of searching for it.</p>
+<p>Storage is local files by default, under <code>~/.hy_memory/data/</code>: Chroma
+for vectors (Qdrant and FAISS are options), Kuzu for the graph (Neo4j
+optional), SQLite for cache, history, and both coding databases, with
+working and coding kept fully isolated from each other.<sup id="fnref:21"><a class="footnote-ref" href="#fn:21">21</a></sup> The
+privacy shape follows from the architecture rather than from a promise:
+the store never leaves the machine; what transits a network is the
+content being written or embedded, sent to whichever model endpoints
+the operator configured — a hosted frontier API in the documented
+defaults, or a local OpenAI-compatible server, which is also how the
+dedicated writer model would typically be served.<sup id="fnref:2"><a class="footnote-ref" href="#fn:2">2</a></sup><sup id="fnref2:21"><a class="footnote-ref" href="#fn:21">21</a></sup></p>
+<p><img alt="The read path and MemHub" src="figures/seq-read@2x.png" /></p>
+<h2>The writer model: a specialist for a protocol-bound job</h2>
+<p>Nothing in the framework requires Tencent's model. The extraction and
+reconciliation prompts are written for a general LLM, the configured
+default is <code>gpt-4.1-nano</code>, and the documentation's example is
+<code>deepseek-chat</code>; a repo-wide search finds Hy-Memory-30B-A3B only in
+README prose and badges.<sup id="fnref2:2"><a class="footnote-ref" href="#fn:2">2</a></sup> The model is a separate artefact — weights
+on Hugging Face in BF16, FP8, and GGUF forms — trained, per its
+technical report, in two stages: on-policy distillation that teaches it
+the write protocols of several memory frameworks (Mem0, MemOS, and
+Hy-Memory) on states it generated itself, then attributed reinforcement
+learning that scores the resulting memory banks by downstream
+answerability, assigning credit per chunk of input.<sup id="fnref2:1"><a class="footnote-ref" href="#fn:1">1</a></sup></p>
+<p>The report's headline result — that on fixed 20% benchmark subsamples
+the specialist ranks first on all four evaluated frameworks, including
+one held out from training, with a 55.49% macro average against 54.62%
+for the frontier model it names — is the authors' own evaluation of
+their own model, on subsamples, and has not been reproduced here or
+independently verified. It should be read as a vendor claim.<sup id="fnref3:1"><a class="footnote-ref" href="#fn:1">1</a></sup></p>
+<p>What can be said without the numbers is the shape of the bet, because
+the framework makes it testable: memory writing is a narrow,
+protocol-bound, judgeable job — the same prompts, the same operation
+vocabulary, the same reconciliation contract, applied millions of
+times. If a small specialist can be trained to do that job as well as
+a large generalist following the same prompts, then the write path's
+running cost drops by an order of magnitude and "use the big model to
+remember" stops being the default. The framework being model-agnostic
+is what makes the claim falsifiable by anyone with two endpoints: the
+writer is a configuration value, <code>MEMORY_LLM_MODEL</code>, not a
+dependency.<sup id="fnref3:2"><a class="footnote-ref" href="#fn:2">2</a></sup></p>
+<h2>MemHub: one memory, ten front doors, two switches</h2>
+<p>MemHub, the product layer, answers the question the framework leaves
+open: whose conversations become the memory, and who may read it back?
+Its Core owns authorization, model profiles, and a job queue; the SDK
+remains the only authority over memory content — MemHub's own store may
+hold <code>memory_id</code> receipts, never memory bodies, and its formal write
+path is a queue: <code>memory_write_jobs</code> → one SDK <code>add()</code> → receipt, after
+which the queued body is cleared.<sup id="fnref:3"><a class="footnote-ref" href="#fn:3">3</a></sup><sup id="fnref:22"><a class="footnote-ref" href="#fn:22">22</a></sup> Under MemHub's policy the
+SDK's raw layer is a rolling three days, one record per complete turn,
+human and assistant turns only.<sup id="fnref:23"><a class="footnote-ref" href="#fn:23">23</a></sup></p>
+<p>Per harness, MemHub keeps two switches rigorously apart:</p>
+<ul>
+<li><strong>Sync</strong> (harness → MemHub): Core scans the tool's own session store
+  — <code>.claude/projects</code>, <code>.codex/sessions</code>, <code>$QWEN_HOME/projects</code>,
+  OpenCode's database, Pi's sessions — and, where the host supports it,
+  capture hooks or plugins stream new sessions in as they happen.</li>
+<li><strong>Insert</strong> (MemHub → harness): a one-click install writes the host's
+  native recall surface — an MCP server entry exposing <code>om_recall</code>,
+  <code>om_conversations</code>, and <code>om_diagnostic_trace</code> under a per-host
+  credential and explicit scopes; a recall Skill that tells the model
+  when to use it; and the capture hooks. Uninstall revokes the
+  credential first, then restores or removes exactly what it
+  installed, leaving user-modified files alone.<sup id="fnref2:24"><a class="footnote-ref" href="#fn:24">24</a></sup></li>
+</ul>
+<p>The support matrix lists ten harnesses — Hermes, Cursor, Claude Code,
+Codex, WorkBuddy, OpenCode, Qwen Code, and Pi open; OpenClaw frozen in
+the product (its standalone plugin is the live route); DeepSeek Harness
+integrated per profile — and it is unusually candid about depth.<sup id="fnref:24"><a class="footnote-ref" href="#fn:24">24</a></sup>
+For most hosts, recall is <strong>model-invoked</strong>: the tools exist and the
+Skill argues for them, but nothing enters a Cursor or Codex prompt
+unless the model decides to ask. Automatic prefetch exists only where
+the host offers a memory slot to fill. Source reading, model
+processing, and host recall are three separate grants, so "MemHub may
+keep learning from Claude Code" and "Claude Code may read the shared
+memory" are independent decisions, each reversible on its own.</p>
+<p>The two adapters in <code>plugins/</code> show the same care at the boundary of
+someone else's loop. The Hermes provider, in its MemHub-managed mode,
+is read-only by design: Hermes warms recall at the end of one turn and
+injects it at the start of the next, deduplicated per session by opaque
+memory ID, and the provider exposes no write tool at all — specifically
+so that recalled memory, injected into a conversation and perhaps
+paraphrased by the assistant, cannot be written back as a new
+memory.<sup id="fnref:25"><a class="footnote-ref" href="#fn:25">25</a></sup> The OpenClaw plugin takes the opposite host's shape: five
+memory tools plus auto-recall and auto-capture, both off by default in
+the documented configuration, served by the SDK's small local HTTP
+server, which exists for exactly this purpose.<sup id="fnref:26"><a class="footnote-ref" href="#fn:26">26</a></sup><sup id="fnref:27"><a class="footnote-ref" href="#fn:27">27</a></sup></p>
+<h2>What to take from it</h2>
+<p>Hy Memory 2.0 will not replace anything in the teardown series, because
+it does not compete with anything in it. Its contribution is to treat
+memory as a designed subsystem with its own economics: a router that
+spends LLM calls only where judgement is needed, a reconciliation step
+that treats contradiction as a first-class operation rather than an
+overwrite, a fact layer that keeps the verbatim details beside the
+summary that finds them, a deterministic chain that stores what the
+summary is told to drop, and — at the product layer — a consent model
+that separates learning-from from reading-by, per tool. Above all of
+it sits the release's organising idea: that writing memory is a job
+specific enough to train a model for. Whether the specialist's numbers
+hold up under independent evaluation is an open question, and this
+piece has treated them as such. The architecture that makes the
+question worth asking is in the source, and it holds up fine.</p>
+<hr />
+<h2>Endnotes</h2>
+<p><em>Read at a pinned commit: Tencent-Hunyuan/Hy-Memory @ 5a5650f
+(Apache-2.0), cloned and read, never executed. Independent personal
+project. Views are my own.</em></p>
+<div class="footnote">
+<hr />
+<ol>
+<li id="fn:1">
+<p>Fei et al., "Hy-Memory-30B-A3B: Attributed Reinforcement Learning
+for Long-Term Memory Writing," arXiv:2610.22196 (2026) — abstract
+and training description; benchmark figures are the authors' own,
+unreproduced: https://arxiv.org/abs/2610.22196. Model weights:
+https://huggingface.co/tencent/Hy-Memory-30B-A3B&#160;<a class="footnote-backref" href="#fnref:1" title="Jump back to footnote 1 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:1" title="Jump back to footnote 1 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:1" title="Jump back to footnote 1 in the text">&#8617;</a><a class="footnote-backref" href="#fnref4:1" title="Jump back to footnote 1 in the text">&#8617;</a></p>
+</li>
+<li id="fn:2">
+<p>LLM/embedder defaults are general models and no code path names
+the specialist model:
+https://github.com/Tencent-Hunyuan/Hy-Memory/blob/5a5650fc946621759a55eb8f1a7eafa7354d7c4f/hy_memory/config.py#L179-L181
+and https://github.com/Tencent-Hunyuan/Hy-Memory/blob/5a5650fc946621759a55eb8f1a7eafa7354d7c4f/.env.example#L22&#160;<a class="footnote-backref" href="#fnref:2" title="Jump back to footnote 2 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:2" title="Jump back to footnote 2 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:2" title="Jump back to footnote 2 in the text">&#8617;</a><a class="footnote-backref" href="#fnref4:2" title="Jump back to footnote 2 in the text">&#8617;</a></p>
+</li>
+<li id="fn:3">
+<p>MemHub's product contract — one Runtime, one data directory, the
+SDK as sole data-plane authority, the queued write path:
+https://github.com/Tencent-Hunyuan/Hy-Memory/blob/5a5650fc946621759a55eb8f1a7eafa7354d7c4f/memhub/README.md#L41-L46&#160;<a class="footnote-backref" href="#fnref:3" title="Jump back to footnote 3 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:3" title="Jump back to footnote 3 in the text">&#8617;</a></p>
+</li>
+<li id="fn:4">
+<p><code>add()</code> — signature, isolation keys, scene contract, and the
+token-accounted receipt:
+https://github.com/Tencent-Hunyuan/Hy-Memory/blob/5a5650fc946621759a55eb8f1a7eafa7354d7c4f/hy_memory/client.py#L1655&#160;<a class="footnote-backref" href="#fnref:4" title="Jump back to footnote 4 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:4" title="Jump back to footnote 4 in the text">&#8617;</a></p>
+</li>
+<li id="fn:5">
+<p>The scene router in <code>_async_add_impl</code> — no-tool short-circuit,
+forced-scene fallbacks:
+https://github.com/Tencent-Hunyuan/Hy-Memory/blob/5a5650fc946621759a55eb8f1a7eafa7354d7c4f/hy_memory/client.py#L2690-L2830&#160;<a class="footnote-backref" href="#fnref:5" title="Jump back to footnote 5 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:5" title="Jump back to footnote 5 in the text">&#8617;</a></p>
+</li>
+<li id="fn:6">
+<p>The one-call scene judge and its chat fallback:
+https://github.com/Tencent-Hunyuan/Hy-Memory/blob/5a5650fc946621759a55eb8f1a7eafa7354d7c4f/hy_memory/client.py#L2779&#160;<a class="footnote-backref" href="#fnref:6" title="Jump back to footnote 6 in the text">&#8617;</a></p>
+</li>
+<li id="fn:7">
+<p>The three scenes and their memory shapes (README architecture
+table):
+https://github.com/Tencent-Hunyuan/Hy-Memory/blob/5a5650fc946621759a55eb8f1a7eafa7354d7c4f/README.md#L178-L184&#160;<a class="footnote-backref" href="#fnref:7" title="Jump back to footnote 7 in the text">&#8617;</a></p>
+</li>
+<li id="fn:8">
+<p>Modes and the explicit <code>evolve()</code> trigger for System 2:
+https://github.com/Tencent-Hunyuan/Hy-Memory/blob/5a5650fc946621759a55eb8f1a7eafa7354d7c4f/hy_memory/client.py#L2096
+and https://github.com/Tencent-Hunyuan/Hy-Memory/blob/5a5650fc946621759a55eb8f1a7eafa7354d7c4f/hy_memory/pipelines/system2_writer.py#L1152&#160;<a class="footnote-backref" href="#fnref:8" title="Jump back to footnote 8 in the text">&#8617;</a></p>
+</li>
+<li id="fn:9">
+<p><code>MemoryLayer</code> — the L0–L7 hierarchy and its storage split:
+https://github.com/Tencent-Hunyuan/Hy-Memory/blob/5a5650fc946621759a55eb8f1a7eafa7354d7c4f/hy_memory/models/memory.py#L25-L48&#160;<a class="footnote-backref" href="#fnref:9" title="Jump back to footnote 9 in the text">&#8617;</a></p>
+</li>
+<li id="fn:10">
+<p><code>MemoryWriter</code> and the extraction-stage coordinator:
+https://github.com/Tencent-Hunyuan/Hy-Memory/blob/5a5650fc946621759a55eb8f1a7eafa7354d7c4f/hy_memory/pipelines/writer.py#L110
+and https://github.com/Tencent-Hunyuan/Hy-Memory/blob/5a5650fc946621759a55eb8f1a7eafa7354d7c4f/hy_memory/agent/mem_agent.py#L105&#160;<a class="footnote-backref" href="#fnref:10" title="Jump back to footnote 10 in the text">&#8617;</a></p>
+</li>
+<li id="fn:11">
+<p>The reconcile contract — ADD / UPDATE / DELETE, supersedes,
+logical delete:
+https://github.com/Tencent-Hunyuan/Hy-Memory/blob/5a5650fc946621759a55eb8f1a7eafa7354d7c4f/hy_memory/agent/reconciler.py#L13-L26
+and https://github.com/Tencent-Hunyuan/Hy-Memory/blob/5a5650fc946621759a55eb8f1a7eafa7354d7c4f/hy_memory/agent/reconciler.py#L86-L101&#160;<a class="footnote-backref" href="#fnref:11" title="Jump back to footnote 11 in the text">&#8617;</a></p>
+</li>
+<li id="fn:12">
+<p><code>CodingWriter</code> — one pass producing both layers:
+https://github.com/Tencent-Hunyuan/Hy-Memory/blob/5a5650fc946621759a55eb8f1a7eafa7354d7c4f/hy_memory/coding/writer.py#L37&#160;<a class="footnote-backref" href="#fnref:12" title="Jump back to footnote 12 in the text">&#8617;</a></p>
+</li>
+<li id="fn:13">
+<p><code>WorkingFact</code> — statement, subject, verbatim details, supersede
+chain, and the subject-gate rationale in the module comments:
+https://github.com/Tencent-Hunyuan/Hy-Memory/blob/5a5650fc946621759a55eb8f1a7eafa7354d7c4f/hy_memory/coding/types.py#L148-L296&#160;<a class="footnote-backref" href="#fnref:13" title="Jump back to footnote 13 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:13" title="Jump back to footnote 13 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:13" title="Jump back to footnote 13 in the text">&#8617;</a></p>
+</li>
+<li id="fn:14">
+<p><code>CodingMemory</code> — the persisted experience record:
+https://github.com/Tencent-Hunyuan/Hy-Memory/blob/5a5650fc946621759a55eb8f1a7eafa7354d7c4f/hy_memory/coding/types.py#L83-L146&#160;<a class="footnote-backref" href="#fnref:14" title="Jump back to footnote 14 in the text">&#8617;</a></p>
+</li>
+<li id="fn:15">
+<p>The chain store's header on why extraction omits code — and what
+that omission loses:
+https://github.com/Tencent-Hunyuan/Hy-Memory/blob/5a5650fc946621759a55eb8f1a7eafa7354d7c4f/hy_memory/coding/chain_store.py#L14-L60&#160;<a class="footnote-backref" href="#fnref:15" title="Jump back to footnote 15 in the text">&#8617;</a></p>
+</li>
+<li id="fn:16">
+<p><code>HyCodeMem.observe()</code> — one round per change, words plus diff:
+https://github.com/Tencent-Hunyuan/Hy-Memory/blob/5a5650fc946621759a55eb8f1a7eafa7354d7c4f/hy_memory/coding/chain_store.py#L182
+and https://github.com/Tencent-Hunyuan/Hy-Memory/blob/5a5650fc946621759a55eb8f1a7eafa7354d7c4f/hy_memory/coding/chain_store.py#L227&#160;<a class="footnote-backref" href="#fnref:16" title="Jump back to footnote 16 in the text">&#8617;</a></p>
+</li>
+<li id="fn:17">
+<p><code>decorate()</code> — the chain as a decorator over retrieved facts,
+with budgeted rendering:
+https://github.com/Tencent-Hunyuan/Hy-Memory/blob/5a5650fc946621759a55eb8f1a7eafa7354d7c4f/hy_memory/coding/chain_store.py#L635&#160;<a class="footnote-backref" href="#fnref:17" title="Jump back to footnote 17 in the text">&#8617;</a></p>
+</li>
+<li id="fn:18">
+<p><code>HybridReadPipeline</code> — vector + BM25, shared post-processing:
+https://github.com/Tencent-Hunyuan/Hy-Memory/blob/5a5650fc946621759a55eb8f1a7eafa7354d7c4f/hy_memory/pipelines/reader_hybrid.py#L6-L11&#160;<a class="footnote-backref" href="#fnref:18" title="Jump back to footnote 18 in the text">&#8617;</a></p>
+</li>
+<li id="fn:19">
+<p>The three search channels — profile / normal / proactive:
+https://github.com/Tencent-Hunyuan/Hy-Memory/blob/5a5650fc946621759a55eb8f1a7eafa7354d7c4f/hy_memory/client.py#L112-L127&#160;<a class="footnote-backref" href="#fnref:19" title="Jump back to footnote 19 in the text">&#8617;</a></p>
+</li>
+<li id="fn:20">
+<p>Default search is LLM-free; <code>agentic</code> search spends one call on
+classification, rewrite, and time parsing:
+https://github.com/Tencent-Hunyuan/Hy-Memory/blob/5a5650fc946621759a55eb8f1a7eafa7354d7c4f/hy_memory/client.py#L3565-L3676&#160;<a class="footnote-backref" href="#fnref:20" title="Jump back to footnote 20 in the text">&#8617;</a></p>
+</li>
+<li id="fn:21">
+<p>The data directory and per-store paths, all local by default:
+https://github.com/Tencent-Hunyuan/Hy-Memory/blob/5a5650fc946621759a55eb8f1a7eafa7354d7c4f/hy_memory/config.py#L74-L85&#160;<a class="footnote-backref" href="#fnref:21" title="Jump back to footnote 21 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:21" title="Jump back to footnote 21 in the text">&#8617;</a></p>
+</li>
+<li id="fn:22">
+<p>MemHub's write contract — queue, one <code>add()</code>, body cleared on
+receipt:
+https://github.com/Tencent-Hunyuan/Hy-Memory/blob/5a5650fc946621759a55eb8f1a7eafa7354d7c4f/memhub/MEMORY.md#L136&#160;<a class="footnote-backref" href="#fnref:22" title="Jump back to footnote 22 in the text">&#8617;</a></p>
+</li>
+<li id="fn:23">
+<p>Raw retention under MemHub policy — rolling three days, complete
+turns, human + assistant only:
+https://github.com/Tencent-Hunyuan/Hy-Memory/blob/5a5650fc946621759a55eb8f1a7eafa7354d7c4f/memhub/MEMORY.md#L16-L18&#160;<a class="footnote-backref" href="#fnref:23" title="Jump back to footnote 23 in the text">&#8617;</a></p>
+</li>
+<li id="fn:24">
+<p>The harness support matrix — the two switches, the recall tools
+and scopes, per-host depth:
+https://github.com/Tencent-Hunyuan/Hy-Memory/blob/5a5650fc946621759a55eb8f1a7eafa7354d7c4f/memhub/docs/harness-support/README.md#L1-L40&#160;<a class="footnote-backref" href="#fnref:24" title="Jump back to footnote 24 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:24" title="Jump back to footnote 24 in the text">&#8617;</a></p>
+</li>
+<li id="fn:25">
+<p>The Hermes provider — prefetch lifecycle and the read-only,
+anti-recursion boundary:
+https://github.com/Tencent-Hunyuan/Hy-Memory/blob/5a5650fc946621759a55eb8f1a7eafa7354d7c4f/plugins/hermes/README.md#L54-L58
+and https://github.com/Tencent-Hunyuan/Hy-Memory/blob/5a5650fc946621759a55eb8f1a7eafa7354d7c4f/plugins/hermes/README.md#L84-L100&#160;<a class="footnote-backref" href="#fnref:25" title="Jump back to footnote 25 in the text">&#8617;</a></p>
+</li>
+<li id="fn:26">
+<p>The OpenClaw plugin — five tools, auto-recall, auto-capture:
+https://github.com/Tencent-Hunyuan/Hy-Memory/blob/5a5650fc946621759a55eb8f1a7eafa7354d7c4f/plugins/openclaw/README.md#L7-L11&#160;<a class="footnote-backref" href="#fnref:26" title="Jump back to footnote 26 in the text">&#8617;</a></p>
+</li>
+<li id="fn:27">
+<p>The stdlib-only local HTTP server the plugin runs against:
+https://github.com/Tencent-Hunyuan/Hy-Memory/blob/5a5650fc946621759a55eb8f1a7eafa7354d7c4f/hy_memory/server.py#L1-L25&#160;<a class="footnote-backref" href="#fnref:27" title="Jump back to footnote 27 in the text">&#8617;</a></p>
+</li>
+</ol>
+</div>
+</div>
+</body>
+</html>
