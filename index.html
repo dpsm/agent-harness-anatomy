@@ -355,7 +355,7 @@
     </div>
   </div>
   <div class="article" id="mike">
-    <h2>#24 &mdash; MIKE: the board is the control plane</h2>
+    <h2>#23 &mdash; MIKE: the board is the control plane</h2>
     <p>A self-hosted kanban harness in Go: a task is a card, and moving the card is the control surface &mdash; drag it into In Progress and the executor starts, drag it out and the run stops. Every tool call the model makes crosses a stdio bridge into a per-task gVisor sandbox built by rootless Podman: the task's git worktree mounted read-write, its <code>.git</code> pointer file pinned read-only over it because host git would execute the configuration it names, and the project's <code>.git</code> read-only beside it. There are no per-tool approval prompts; the gates are the workflow's own &mdash; a question parks the card in Review, a merge waits for the card's auto flags or a person's commit-and-done click, and only staged changes are ever committed. Extensions are isolated by kind (opaque-origin iframes, their own gVisor sandboxes, wazero adapters, or pure data), auth is passkey pairing with codes that authorize a registration and never a session, and the PWA client keeps the board usable offline behind an IndexedDB mirror and a write queue.</p>
     <div class="links">
       <a class="primary" href="mike/trace.html">Step through one card's run</a>
