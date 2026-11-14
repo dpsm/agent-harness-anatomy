@@ -1,4 +1,4 @@
-# Agent Harness Anatomy #24: MIKE — the board is the control plane
+# Agent Harness Anatomy #23: MIKE — the board is the control plane
 
 > **Series:** Agent Harness Anatomy — top-down dissections of real agent harnesses, grounded in verifiable source code. Every behavioral claim below carries a footnote to a pinned GitHub permalink; the full evidence lives in the endnotes.
 
