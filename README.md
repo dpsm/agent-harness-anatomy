@@ -3,7 +3,7 @@
 # Agent Harness Anatomy
 
 Rigorous, source-grounded architecture teardowns of AI agent harnesses —
-27 teardowns and counting, from pi and aider to Strands and mini-SWE-agent.
+28 teardowns and counting, from pi and aider to mini-SWE-agent and TalkAct.
 Every behavioral claim is pinned to verifiable source code; no product-review prose.
 
 Companion repo to the Substack series.
@@ -43,6 +43,7 @@ By **David P. S. Marques** — [LinkedIn](https://ca.linkedin.com/in/dpsmarques)
 | 25 | Kilo Code (v7.8.18) | [kilo-code/article.md](kilo-code/article.md) | [Read on Substack](https://agentharnessanatomy.substack.com/p/kilo-code-one-core-every-surface) |
 | 26 | Strands harness (harness-python/v0.3.2) | [strands/article.md](strands/article.md) | [Read on Substack](https://agentharnessanatomy.substack.com/p/strands-harness-the-agent-one-call) |
 | 27 | mini-SWE-agent (v2.4.6) | [mini-swe-agent/article.md](mini-swe-agent/article.md) | [Read on Substack](https://agentharnessanatomy.substack.com/p/mini-swe-agent-what-remains-when) |
+| 28 | TalkAct (7d70007) | [talkact/article.md](talkact/article.md) | forthcoming |
 
 ## Embedded Harness Anatomy
 
