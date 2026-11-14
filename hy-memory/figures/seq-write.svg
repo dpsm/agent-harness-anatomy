@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 985" width="1600" font-family="system-ui, -apple-system, sans-serif">
+<defs><marker id="arrc" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 1 L 9 5 L 0 9 z" fill="#d08c4e"/></marker><marker id="arrr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 1 L 9 5 L 0 9 z" fill="#8a7a66"/></marker></defs>
+<rect x="0" y="0" width="1600" height="985" fill="#f7f2e9"/>
+<text x="90.78014184397163" y="44" font-size="26" font-weight="700" fill="#000000">The write path: one add() call, priced in LLM calls</text>
+<text x="90.78014184397163" y="74" font-size="15" fill="#000000">Chat, working and coding writes share one router — and differ in what they store</text>
+<line x1="233" y1="110" x2="233" y2="917" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="113" y="82" width="238" height="56" rx="10" fill="#ffffff" stroke="#3a2f26" stroke-width="1.5"/>
+<text x="233" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#000000">Caller</text>
+<line x1="516" y1="110" x2="516" y2="917" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="397" y="82" width="238" height="56" rx="10" fill="#ffffff" stroke="#3a2f26" stroke-width="1.5"/>
+<text x="516" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#000000">Scene router</text>
+<line x1="800" y1="110" x2="800" y2="917" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="681" y="82" width="238" height="56" rx="10" fill="#ffffff" stroke="#3a2f26" stroke-width="1.5"/>
+<text x="800" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#000000">Writer (LLM stages)</text>
+<line x1="1084" y1="110" x2="1084" y2="917" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="965" y="82" width="238" height="56" rx="10" fill="#ffffff" stroke="#3a2f26" stroke-width="1.5"/>
+<text x="1084" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#000000">Stores</text>
+<line x1="1367" y1="110" x2="1367" y2="917" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="1248" y="82" width="238" height="56" rx="10" fill="#ffffff" stroke="#3a2f26" stroke-width="1.5"/>
+<text x="1367" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#000000">Diff chain</text>
+<line x1="233" y1="191" x2="506" y2="191" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="296" cy="177" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="296" y="182" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">1</text>
+<text x="314" y="182" font-size="14" fill="#000000">add(messages, scene?, user_id, workspace_id?)</text>
+<path d="M 516 252 h 50 v 30 H 526" fill="none" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="541" cy="236" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="541" y="241" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">2</text>
+<text x="576" y="257" font-size="14" fill="#000000">no tool messages? route = chat, zero LLM calls</text>
+<line x1="516" y1="313" x2="790" y2="313" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="580" cy="299" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="580" y="304" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">3</text>
+<text x="598" y="304" font-size="14" fill="#000000">tool trace, scene unset: one judge call -&gt; chat / working / coding</text>
+<path d="M 800 374 h 50 v 30 H 810" fill="none" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="825" cy="358" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="825" y="363" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">4</text>
+<text x="860" y="379" font-size="14" fill="#000000">chat: extract candidates from the conversation</text>
+<path d="M 800 436 h 50 v 30 H 810" fill="none" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="825" cy="420" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="825" y="425" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">5</text>
+<text x="860" y="441" font-size="14" fill="#000000">reconcile vs existing memories: ADD / UPDATE / DELETE</text>
+<line x1="800" y1="497" x2="1074" y2="497" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="864" cy="483" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="864" y="488" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">6</text>
+<text x="882" y="488" font-size="14" fill="#000000">store raw (L1), facts (L2), summaries, intentions</text>
+<path d="M 800 558 h 50 v 30 H 810" fill="none" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="825" cy="542" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="825" y="547" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">7</text>
+<text x="860" y="563" font-size="14" fill="#000000">working/coding: extract 1 fact + 0..N experiences</text>
+<line x1="800" y1="620" x2="1074" y2="620" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="864" cy="606" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="864" y="611" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">8</text>
+<text x="882" y="611" font-size="14" fill="#000000">store both layers, cross-linked; old fact -&gt; superseded</text>
+<line x1="800" y1="681" x2="1357" y2="681" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="1006" cy="667" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="1006" y="672" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">9</text>
+<text x="1024" y="672" font-size="14" fill="#000000">coding only: observe() each change (said + real diff)</text>
+<line x1="1367" y1="742" x2="526" y2="742" stroke="#8a7a66" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrr)"/>
+<circle cx="864" cy="728" r="11" fill="#ffffff" stroke="#8a7a66" stroke-width="1.5"/>
+<text x="864" y="733" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">10</text>
+<text x="882" y="733" font-size="14" fill="#000000">chain rounds recorded, zero LLM calls</text>
+<line x1="516" y1="803" x2="243" y2="803" stroke="#8a7a66" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrr)"/>
+<circle cx="296" cy="789" r="11" fill="#ffffff" stroke="#8a7a66" stroke-width="1.5"/>
+<text x="296" y="794" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">11</text>
+<text x="314" y="794" font-size="14" fill="#000000">receipt: ids + extract / reconcile token counts</text>
+<rect x="113" y="837" width="1373" height="44" rx="8" fill="#d08c4e" fill-opacity="0.13" stroke="#d08c4e" stroke-width="1"/>
+<text x="800" y="864" text-anchor="middle" font-size="14" fill="#000000">lite mode skips every LLM stage (embedding-only); ultra adds System 2, but only when evolve() is called</text>
+</svg>
