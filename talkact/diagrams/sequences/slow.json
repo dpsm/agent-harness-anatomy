@@ -1,0 +1,19 @@
+{
+ "title": "The slow loop: every action carries the digest",
+ "subtitle": "A tool-use loop whose mandatory side output is the other agent's grounding",
+ "participants": ["Slow agent", "LLM (tool use)", "Browser (Playwright)", "SharedState", "Task site"],
+ "messages": [
+  {"from": 0, "to": 2, "label": "observe(): indexed elements + page text + screenshot"},
+  {"from": 2, "to": 0, "label": "observation", "dashed": true},
+  {"from": 0, "to": 3, "label": "drain fast_to_slow: notes join the observation as [PHONE CHANNEL]"},
+  {"from": 0, "to": 1, "label": "messages + tools (tool_choice: any — a tool is mandatory)"},
+  {"from": 1, "to": 0, "label": "one or more tool calls, each with state_summary", "dashed": true},
+  {"from": 0, "to": 3, "label": "state_summary -> digest (written before the tool runs)"},
+  {"from": 0, "to": 2, "label": "click / type / select / navigate by [n] index"},
+  {"from": 2, "to": 4, "label": "page action"},
+  {"from": 0, "to": 1, "label": "tool results — only the last carries the new observation"},
+  {"from": 0, "to": 0, "self": true, "label": "repeat, up to 60 steps; screenshots trimmed to the newest 2"},
+  {"note": "span", "span": [0, 4], "text": "ask_user / tell_user are ordinary tools here: they enqueue a message and return at once. The loop never blocks on the conversation."},
+  {"from": 0, "to": 3, "label": "task_done(result) -> slow_done + slow_result"}
+ ]
+}
