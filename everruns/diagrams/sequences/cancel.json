@@ -1,0 +1,60 @@
+{
+ "title": "Cancel ends only its own turn",
+ "subtitle": "The cancel carries the inbox position it targets",
+ "participants": [
+  "User",
+  "Control plane",
+  "Worker (holder)",
+  "Session log"
+ ],
+ "messages": [
+  {
+   "from": 0,
+   "to": 1,
+   "label": "message 1 (turn running on the holder)"
+  },
+  {
+   "from": 0,
+   "to": 1,
+   "label": "POST /sessions/{id}/cancel"
+  },
+  {
+   "from": 1,
+   "to": 1,
+   "label": "record cancel on the actor row, at its inbox position"
+  },
+  {
+   "from": 1,
+   "to": 2,
+   "label": "cancel notification: holder renews now and sees it"
+  },
+  {
+   "from": 2,
+   "to": 3,
+   "label": "append turn.cancelled (exactly one terminal event)"
+  },
+  {
+   "from": 0,
+   "to": 1,
+   "label": "message 2 \u2014 sent after the cancel"
+  },
+  {
+   "from": 1,
+   "to": 3,
+   "label": "stored + actor runnable; the pending cancel does not reach it"
+  },
+  {
+   "from": 2,
+   "to": 3,
+   "label": "next lease: message 2 starts a fresh turn"
+  },
+  {
+   "note": "span",
+   "span": [
+    0,
+    3
+   ],
+   "text": "A position is sound where a clear-on-release is not: nothing must run after turn.cancelled to stop it applying"
+  }
+ ]
+}

@@ -1,0 +1,185 @@
+{
+ "title": "One session, end to end \u2014 Everruns",
+ "example_input": "An application drives an agent through the Agent API: a message starts a turn, a risky tool call waits for a person's approval, the worker running the turn crashes and another takes over, and the session idles \u2014 ready to be woken days later.",
+ "note": "Every module link pins the exact tag this teardown is based on \u2014 everruns/everruns @ v0.49.0 (4e8002ac).",
+ "repo": "https://github.com/everruns/everruns",
+ "sha": "4e8002acce3f567c99ae18c9aceea0c32634ecbd",
+ "steps": [
+  {
+   "step": 1,
+   "node": "clients",
+   "code": "agent-api.md:207",
+   "title": "A message arrives on the Agent API",
+   "narrative": "An application holding an agent key for one agent's channel sends a message. The key reaches only that channel's routes, and the caller sees only sessions it started. The management UI, Slack and the other channels enter through the same intake: a message is a message, whatever carried it.",
+   "representation": "POST /v1/channels/{channel_id}/sessions/{id}/messages\n  Authorization: Bearer evr_ak_...\n  -> control plane intake",
+   "modules": [
+    {
+     "file": "docs/features/agent-api.md:200",
+     "label": "the Agent API routes: sessions, messages, events, SSE, answers, approvals, cancel",
+     "line": 200,
+     "url": "https://github.com/everruns/everruns/blob/4e8002acce3f567c99ae18c9aceea0c32634ecbd/docs/features/agent-api.md#L200-L215"
+    },
+    {
+     "file": "docs/features/agent-api.md:7",
+     "label": "one agent exposed to your own code; the key reaches only its channel",
+     "line": 7,
+     "url": "https://github.com/everruns/everruns/blob/4e8002acce3f567c99ae18c9aceea0c32634ecbd/docs/features/agent-api.md#L7"
+    }
+   ]
+  },
+  {
+   "step": 2,
+   "node": "worker",
+   "code": "session_actors/mod.rs:1",
+   "title": "Intake marks the actor runnable; a worker leases it",
+   "narrative": "Storing the input and marking the session's actor runnable commit in one transaction, so a worker can never see one without the other. A worker leases the runnable session: the lease locks the actor row with FOR UPDATE SKIP LOCKED and raises its fence. The default lease TTL is ten seconds, renewed while the turn runs.",
+   "representation": "tx { append input.message; mark_session_actor_runnable }\nlease: SELECT ... FOR UPDATE SKIP LOCKED\n  lease_fence += 1; lease_expires_at = now + 10s",
+   "modules": [
+    {
+     "file": "crates/server/src/storage/repositories/session_actors/mod.rs:1",
+     "label": "the lease protocol: one-transaction runnable marking, SKIP LOCKED, fence raised per lease",
+     "line": 1,
+     "url": "https://github.com/everruns/everruns/blob/4e8002acce3f567c99ae18c9aceea0c32634ecbd/crates/server/src/storage/repositories/session_actors/mod.rs#L1-L60"
+    },
+    {
+     "file": "crates/core/src/host/actor.rs:47",
+     "label": "DEFAULT_SESSION_LEASE_TTL = 10 seconds",
+     "line": 47,
+     "url": "https://github.com/everruns/everruns/blob/4e8002acce3f567c99ae18c9aceea0c32634ecbd/crates/core/src/host/actor.rs#L47"
+    }
+   ]
+  },
+  {
+   "step": 3,
+   "node": "fold",
+   "code": "turn_resume.rs:1",
+   "title": "The lease folds the log tail",
+   "narrative": "The worker reads the journal tail from the session's latest turn.started and folds it: an open turn to resume, an already-answered turn to complete, or no open turn \u2014 in which case the first unconsumed input starts a fresh turn. The log is the only turn state; there is nothing else to load.",
+   "representation": "journal tail (from latest turn.started)\n  -> TurnLogFold { turn_id, input, reasons,\n       calls[], started{}, settled{}, answered? }\n  -> resume plan | complete | fresh turn",
+   "modules": [
+    {
+     "file": "crates/core/src/host/turn_resume.rs:1",
+     "label": "a turn that has not ended is resumed from the log alone",
+     "line": 1,
+     "url": "https://github.com/everruns/everruns/blob/4e8002acce3f567c99ae18c9aceea0c32634ecbd/crates/core/src/host/turn_resume.rs#L1-L40"
+    },
+    {
+     "file": "crates/core/src/host/session_actor/turn.rs:1",
+     "label": "the log decides: resume, complete, or start fresh",
+     "line": 1,
+     "url": "https://github.com/everruns/everruns/blob/4e8002acce3f567c99ae18c9aceea0c32634ecbd/crates/core/src/host/session_actor/turn.rs#L1-L60"
+    }
+   ]
+  },
+  {
+   "step": 4,
+   "node": "loop",
+   "code": "turn.rs:1",
+   "title": "Reason: one model call, journaled",
+   "narrative": "The turn loop reasons: the folded history goes to the model through the provider drivers. The response is appended to the log as an llm.generation event before anything acts on it \u2014 a recorded response is never requested again, which is what makes resume safe against a non-deterministic model.",
+   "representation": "reason(history) -> llm.generation appended\n  response has tool calls? -> act\n  response is text only?  -> turn completes",
+   "modules": [
+    {
+     "file": "crates/contracts/src/runtime/events/mod.rs:91",
+     "label": "LLM_GENERATION \u2014 the persisted record of a model call",
+     "line": 91,
+     "url": "https://github.com/everruns/everruns/blob/4e8002acce3f567c99ae18c9aceea0c32634ecbd/crates/contracts/src/runtime/events/mod.rs#L91"
+    },
+    {
+     "file": "crates/core/src/engine/turn.rs:1",
+     "label": "the sans-IO turn planner: pure, deterministic, host performs effects",
+     "line": 1,
+     "url": "https://github.com/everruns/everruns/blob/4e8002acce3f567c99ae18c9aceea0c32634ecbd/crates/core/src/engine/turn.rs#L1-L10"
+    }
+   ]
+  },
+  {
+   "step": 5,
+   "node": "tools",
+   "code": "tool_types.rs:452",
+   "title": "Act: tool calls run in parallel, results recorded",
+   "narrative": "The model requested tool calls; they run concurrently. Each call stores tool.started before it runs and tool.completed with its result. If the tools live behind a large MCP catalog, the model found them through bounded tool_search: schemas are revealed within a fixed budget (32 active tools, 64 KiB by default) instead of shipped in full.",
+   "representation": "act: for each call in parallel:\n  append tool.started -> run -> append tool.completed\n  (catalog tools: tool_search first, schema revealed\n   within max_active_tools / max_active_bytes)",
+   "modules": [
+    {
+     "file": "crates/contracts/src/tool_types.rs:452",
+     "label": "SideEffectClass: Pure / Idempotent / AtMostOnce",
+     "line": 452,
+     "url": "https://github.com/everruns/everruns/blob/4e8002acce3f567c99ae18c9aceea0c32634ecbd/crates/contracts/src/tool_types.rs#L452-L462"
+    },
+    {
+     "file": "crates/core/src/builtins/tool_search.rs:443",
+     "label": "bounded defaults: 32 active tools, 65,536 active bytes",
+     "line": 443,
+     "url": "https://github.com/everruns/everruns/blob/4e8002acce3f567c99ae18c9aceea0c32634ecbd/crates/core/src/builtins/tool_search.rs#L443-L444"
+    }
+   ]
+  },
+  {
+   "step": 6,
+   "node": "approval",
+   "code": "tool_approval.rs:1",
+   "title": "A declared-risky call parks the turn",
+   "narrative": "One call is declared destructive, and the tool_approval gate has no recorded decision for it. The turn parks on a synthetic approve_tool_call and the lease is released \u2014 a turn waiting on a person holds no worker. The person answers through the tool-approvals API; an allow binds the exact arguments that were shown.",
+   "representation": "gate: destructive + no decision -> Deferred\n  -> tool_approval_required; turn parked; lease released\nanswer: POST /v1/sessions/{id}/tool-approvals\n  { decision: allow } (fingerprint-bound)",
+   "modules": [
+    {
+     "file": "crates/core/src/builtins/tool_approval.rs:1",
+     "label": "the durable approver: decisions recorded in session storage, otherwise Deferred",
+     "line": 1,
+     "url": "https://github.com/everruns/everruns/blob/4e8002acce3f567c99ae18c9aceea0c32634ecbd/crates/core/src/builtins/tool_approval.rs#L1-L25"
+    },
+    {
+     "file": "crates/server/src/api/tool_approvals.rs:1",
+     "label": "what was approved is read back from the emitted event, not the body",
+     "line": 1,
+     "url": "https://github.com/everruns/everruns/blob/4e8002acce3f567c99ae18c9aceea0c32634ecbd/crates/server/src/api/tool_approvals.rs#L1-L25"
+    }
+   ]
+  },
+  {
+   "step": 7,
+   "node": "worker",
+   "code": "actor_runtime/mod.rs:1",
+   "title": "Crash and takeover: the fence moves, the turn goes on",
+   "narrative": "Suppose instead the worker dies mid-act. Its renewals stop; the lease expires after about ten seconds; another worker leases the session with a higher fence and folds the tail. Finished calls stand. The cut-off call reruns only if its tool declares that safe \u2014 otherwise it is settled as interrupted and the model is told its outcome is unknown.",
+   "representation": "worker A dies -> no renewal -> lease expires (~10s)\nworker B leases (fence n+1) -> fold:\n  settled calls stand\n  unfinished: Pure/Idempotent -> rerun\n              AtMostOnce + started -> interrupted",
+   "modules": [
+    {
+     "file": "crates/worker/src/actor_runtime/mod.rs:1",
+     "label": "sessions as actors on the worker: the log is the only turn state",
+     "line": 1,
+     "url": "https://github.com/everruns/everruns/blob/4e8002acce3f567c99ae18c9aceea0c32634ecbd/crates/worker/src/actor_runtime/mod.rs#L1-L30"
+    },
+    {
+     "file": "crates/core/src/host/session_actor/store.rs:20",
+     "label": "ActorFence: appends checked in the insert transaction; a stale holder cannot land a write",
+     "line": 20,
+     "url": "https://github.com/everruns/everruns/blob/4e8002acce3f567c99ae18c9aceea0c32634ecbd/crates/core/src/host/session_actor/store.rs#L20-L40"
+    }
+   ]
+  },
+  {
+   "step": 8,
+   "node": "server",
+   "code": "durable-execution.md:24",
+   "title": "The turn completes; the session outlives every process",
+   "narrative": "The final answer is appended as output.message.completed and turn.completed, the lease is released, and clients following the SSE stream read the same events from the same log. The session goes idle \u2014 a status, not a teardown. It has no wall-clock ceiling: a timer, a schedule or a message next week wakes the same actor, and a new lease folds the same log.",
+   "representation": "append output.message.completed + turn.completed\nrelease lease (cursor committed)\nSSE tail delivers the events; session -> idle\n(no expiry: timers/messages wake it later)",
+   "modules": [
+    {
+     "file": "docs/explanation/durable-execution.md:24",
+     "label": "every step appended to the log in PostgreSQL before anything acts on it",
+     "line": 24,
+     "url": "https://github.com/everruns/everruns/blob/4e8002acce3f567c99ae18c9aceea0c32634ecbd/docs/explanation/durable-execution.md#L24-L28"
+    },
+    {
+     "file": "docs/advanced/physical-architecture.md:25",
+     "label": "workers never talk to PostgreSQL directly; PostgreSQL is the only required stateful component",
+     "line": 25,
+     "url": "https://github.com/everruns/everruns/blob/4e8002acce3f567c99ae18c9aceea0c32634ecbd/docs/advanced/physical-architecture.md#L25-L27"
+    }
+   ]
+  }
+ ]
+}
