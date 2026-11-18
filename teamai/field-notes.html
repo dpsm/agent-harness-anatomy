@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Field Notes: The layer above the harness — TeamAI CLI</title>
+<style>
+:root{color-scheme:dark}*{box-sizing:border-box}
+body{background:#161210;color:#ece1d3;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;line-height:1.7;margin:0}
+.wrap{max-width:760px;margin:0 auto;padding:48px 24px 80px}
+h1{color:#fff;font-size:1.9em;line-height:1.25}h2{color:#d08c4e;font-size:1.35em;margin:2.2em 0 .6em}
+a{color:#d08c4e;text-decoration:none}a:hover{text-decoration:underline}
+strong{color:#fff}code{background:#1f1a15;padding:2px 6px;border-radius:4px;font-size:.88em;color:#d08c4e}
+blockquote{background:#1f1a15;border-left:3px solid #d08c4e;margin:1.5em 0;padding:12px 20px}
+img{width:100%;border-radius:4px;border:1px solid #3a2f24}
+table{border-collapse:collapse;margin:1em 0}th,td{border:1px solid #3a2f24;padding:6px 12px;text-align:left}
+.footnote{font-size:.85em;color:#a89880;border-top:1px solid #3a2f24;margin-top:3em;padding-top:1em}
+.footnote hr{display:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>Field Notes: The layer above the harness: what a team repo can put on your machine</h1>
+<p><strong>Series framing.</strong> This is a Field Notes piece, not a numbered teardown.
+Every teardown in this series dissects a system that runs an agent: a loop,
+tools, approvals, a session lifecycle. Tencent's TeamAI CLI runs no agent
+at all. It never executes a turn and calls no model for its core work; it
+is a <em>team layer</em> — one Git repository holding a team's shared skills,
+rules, instructions, subagent definitions, environment variables, hooks,
+MCP servers, and model settings, plus a CLI (<code>teamai</code>) that renders those
+canonical assets into the on-disk formats of the agent tools a team's
+members already use, and keeps every machine reconciled. There is no turn
+to trace because the loops belong to other harnesses — several of which
+this series has already taken apart. What TeamAI offers instead is a
+complete, source-readable answer to a question no single-harness teardown
+can ask: <strong>when the unit of configuration is a team rather than a person,
+where does the trust boundary actually sit?</strong> That is a Field Notes
+question, and it is the one this piece answers.</p>
+<blockquote>
+<p><strong>Pin:</strong> <code>Tencent/teamai-cli</code> @ <code>208b97bb6218573b63d2445ac74f3a09999dd30d</code>
+(2026-10-18), MIT. npm package <code>teamai-cli</code> v0.22.0, bin <code>teamai</code>.
+Cloned and read, never executed. The codebase at the pin is ~150k lines
+of production TypeScript against ~221k lines of tests; breadth claims
+in coverage of the project (including "20+ tools") are checked against
+the source wherever they appear below.</p>
+</blockquote>
+<h2>One canonical form, rendered in both directions</h2>
+<p>Everything shared lives in the team repo in one canonical form:
+<code>teamai.yaml</code> at the root, skills as whole directories under <code>skills/</code>,
+rules as Markdown, subagents as <code>agents/&lt;name&gt;.yaml</code>, hooks and MCP
+servers as YAML lists, env and secret declarations under <code>env/</code>, plus a
+knowledge base of docs and learnings.<sup id="fnref:1"><a class="footnote-ref" href="#fn:1">1</a></sup> The canonical forms are
+deliberately tool-neutral. A subagent is an <code>AgentSpec</code> — name,
+description, instructions, optional model and tools, with per-tool
+differences preserved under <code>tool_extras</code> — rendered per tool as Markdown
+frontmatter for most, TOML for the Codex family, <code>.agent.md</code> for Copilot,
+JSON for Kiro.<sup id="fnref:2"><a class="footnote-ref" href="#fn:2">2</a></sup> One MCP schema renders into <strong>eight</strong> distinct config
+shapes, including Codex TOML tables and OpenCode's <code>type: local/remote</code>
+form.<sup id="fnref:3"><a class="footnote-ref" href="#fn:3">3</a></sup> Rules have dedicated format modules for Cursor, CodeBuddy,
+Qoder, Trae, Kiro, Copilot, and others, and can be inlined as a context
+block for tools with no rules surface at all.<sup id="fnref:4"><a class="footnote-ref" href="#fn:4">4</a></sup> Hooks are declared once
+using Claude's event names as a lingua franca.</p>
+<p>The rendering runs in both directions, and that is what makes the write
+path possible: <code>push</code> parses a member's native tool files <em>back</em> into
+canonical form — agents, for example, are read from each tool's own
+format and merged into a single <code>AgentSpec</code> — rather than asking members
+to edit YAML by hand. Scoping is equally systematic: an asset under a
+<code>&lt;namespace&gt;/</code> directory is delivered only to members whose role or
+project declares it, namespace entries override same-named root entries,
+and the same key in two active namespaces is an error, not a
+coin flip.<sup id="fnref:5"><a class="footnote-ref" href="#fn:5">5</a></sup></p>
+<h2>The distribution loop: review on the way in, a hook on the way out</h2>
+<p><code>teamai push</code> turns local edits into a reviewed branch and pull request.
+Handlers stage the reverse-rendered changes into the team-repo clone;
+the branch is <code>teamai/push/&lt;username&gt;/&lt;timestamp&gt;</code>, the commit path
+skips local Git hooks, and PR creation goes through a provider layer —
+the <code>gh</code>, <code>gf</code>, and <code>cnb</code> CLIs, direct REST for GitLab and GitCode, and
+a generic Git provider that cannot create PRs at all.<sup id="fnref:6"><a class="footnote-ref" href="#fn:6">6</a></sup><sup id="fnref:7"><a class="footnote-ref" href="#fn:7">7</a></sup>
+Re-running against an existing PR's branch rebuilds it and force-pushes
+with <code>--force-with-lease</code>; if anything fails after files were copied,
+the clone is rolled back, so a failed push leaves no half-staged state.
+Nothing reaches teammates from <code>push</code> until a reviewer merges.</p>
+<p><code>teamai pull</code> is the delivery engine (~3,800 lines in <code>src/pull.ts</code>):
+refresh the clone, then deliver per scope — user scope and each project
+scope — with an unchanged-revision fast path. A <strong>delivery ledger</strong>
+records what TeamAI wrote and its hash; a delivered copy the member has
+since edited is <em>kept and named</em>, never silently overwritten — the
+member shares the edit with <code>push</code>, or deletes the copy to take the team
+version. Hooks and MCP state are reconciled on every pull, outside the
+fast path, so a broken local state self-heals even when nothing else
+changed.<sup id="fnref:8"><a class="footnote-ref" href="#fn:8">8</a></sup></p>
+<p>Delivery does not depend on members remembering any of this. On <code>init</code>,
+TeamAI installs its own built-in hooks into each tool, all pointing at
+one dispatcher; on SessionStart the dispatcher runs <code>pull({ silent:
+true })</code> in the background with a 120-second budget, so a session that
+starts after a merge simply starts with the new configuration. The same
+pass injects context the files cannot carry — team rules for tools
+without a rules surface, the <em>names</em> (never values) of team env variables
+and declared secrets in scope, recently-merged-MR hints. Git itself is
+hooked as well: post-checkout and post-merge hooks trigger delivery for
+a new worktree or a <code>git pull</code>.<sup id="fnref:9"><a class="footnote-ref" href="#fn:9">9</a></sup> The hook is the distribution channel.</p>
+<h2>"20+ tools", counted three ways</h2>
+<p>Three counts coexist in the source, and they are not interchangeable:</p>
+<ul>
+<li><strong>20</strong> — the product rows in the project's own README support matrix.</li>
+<li><strong>24</strong> — the keys in the default <code>toolPaths</code> map, reached by counting
+  internal and regional variants (codex-internal, claude-internal,
+  tclaude, tcodex) as separate targets.<sup id="fnref:10"><a class="footnote-ref" href="#fn:10">10</a></sup></li>
+<li><strong>38</strong> — the entries in <code>KNOWN_AGENTS</code>, a registry of skills
+  directories that includes tools TeamAI does not otherwise manage.<sup id="fnref:11"><a class="footnote-ref" href="#fn:11">11</a></sup></li>
+</ul>
+<p>Depth varies as much as the count. <strong>Codex</strong> is a full target — skills,
+agents, hooks, MCP — and TeamAI goes beyond file writing: it drives
+<code>codex app-server</code> over JSON-RPC to record the trust hashes of the hooks
+it installed (and to mark a project trusted, unless the member has
+explicitly marked it untrusted), so the hooks it writes are hooks Codex
+will actually run.<sup id="fnref:12"><a class="footnote-ref" href="#fn:12">12</a></sup> <strong>OpenCode</strong> is a full target via its own
+mechanisms: rules activated through a glob in <code>opencode.json</code>, and —
+since OpenCode has no hooks in its config model — an auto-loaded plugin
+file that bridges OpenCode events back to the dispatcher.<sup id="fnref:13"><a class="footnote-ref" href="#fn:13">13</a></sup>
+<strong>OpenClaw</strong> is partial: skills, a marked instructions block in the
+workspace <code>AGENTS.md</code> (user scope only), and a managed hook package; the
+default map has no agents or MCP paths for it, and the README matrix
+agrees.<sup id="fnref:14"><a class="footnote-ref" href="#fn:14">14</a></sup> <strong>Aider and Gemini CLI are not managed targets at this
+pin</strong>: each appears exactly once in production source, as an entry in
+the <code>KNOWN_AGENTS</code> skills-directory registry, and nowhere else — not in
+<code>toolPaths</code>, not in the agent-format tool list, not in the matrix.<sup id="fnref2:11"><a class="footnote-ref" href="#fn:11">11</a></sup>
+The accurate statement is the matrix itself: twenty products, uneven
+depth, a few tools receiving every resource type and some registry
+entries amounting to a skills path only.</p>
+<h2>The friction loop: a hard session is the one worth writing up</h2>
+<p>The improvement loop is a nudge, not an upload. At Stop time, TeamAI
+scores the session for <strong>friction</strong> from four signals: the user
+interrupted the agent, the user rejected a tool call, tools genuinely
+failed and had to be retried, and a <em>correction</em> — a new prompt within
+60 seconds of a Stop matching a correction keyword list. Interrupts,
+rejections, and corrections are worth 20 points each; tool errors score
+on a tier. A hint fires only when the score reaches 20 <strong>and</strong> the
+session made at least 15 tool calls — a hard gate, so one rejected
+command in a trivial session stays quiet — and at most once per
+session.<sup id="fnref:15"><a class="footnote-ref" href="#fn:15">15</a></sup></p>
+<p>The hint names the concrete signals ("you interrupted the AI twice, you
+rejected 1 tool call…") and suggests <code>/teamai share what this session
+taught me</code>. That loads a bundled skill under which the <em>agent</em> writes
+the learning document — required frontmatter, Context / Solution /
+Lessons / Related Skills sections — and <code>teamai contribute</code> publishes
+it: queued durably on the local machine, indexed for recall immediately,
+then committed directly to the <strong><code>teamai-learnings</code> orphan branch</strong>. No
+pull request. Learnings therefore trade the review gate for immediacy;
+the mitigations are that a learning lands as searchable reference
+material — it is not configuration and does not execute — and that
+recall carries a voting system, with reads and adoptions credited as
+upvotes and low-confidence learnings prunable by maintenance.<sup id="fnref:16"><a class="footnote-ref" href="#fn:16">16</a></sup>
+Recall itself is a local lexical index over learnings and codebase
+knowledge — tokenized, IDF-weighted, with title and tag boosts and a
+vote bonus. No embeddings, no external service, and it is <strong>off by
+default</strong> until the team enables it or a member opts in.<sup id="fnref:17"><a class="footnote-ref" href="#fn:17">17</a></sup></p>
+<h2>What leaves the machine</h2>
+<p>Apart from Git traffic to the team's own repo, the outbound surface is
+short, and its defaults deserve to be read precisely:</p>
+<ul>
+<li><strong>Usage reporting — on by default.</strong> A non-inline pull folds the local
+  event log into <code>stats/&lt;username&gt;.yaml</code> on the <code>teamai-reports</code> orphan
+  branch: skill invocation counts, intervention counts, prompt counts,
+  token totals, daily session buckets, recall votes. The <code>UserStats</code>
+  schema has no field for prompt text — the design is counts-only — and
+  either the team or the member can switch it off.<sup id="fnref:18"><a class="footnote-ref" href="#fn:18">18</a></sup></li>
+<li><strong>Self-update — on by default.</strong> A Stop hook checks the npm registry
+  (12-hour cache); the effective policy defaults to <code>auto</code>, under which
+  a newer version is installed globally <strong>without prompting</strong>. A team's
+  <code>autoUpdate: false</code> and a member's local policy can override — but
+  out of the box, the CLI replaces itself from the registry in the
+  background.<sup id="fnref:19"><a class="footnote-ref" href="#fn:19">19</a></sup></li>
+<li><strong>Webhooks — off by default.</strong> If the team enables them, session and
+  sync events are POSTed to team-configured endpoints, optionally
+  HMAC-SHA256-signed.<sup id="fnref:20"><a class="footnote-ref" href="#fn:20">20</a></sup></li>
+</ul>
+<p>There is no third-party telemetry endpoint in the code: no analytics or
+crash-reporting service is called. The destinations are the team's own
+repo, the configured webhooks, and the npm registry. The richer local
+log — tool names, timestamps, token totals, and a best-effort-redacted,
+truncated first prompt and last assistant output — stays on the machine;
+full transcripts move only through an explicit <code>teamai session push</code>
+command.<sup id="fnref:21"><a class="footnote-ref" href="#fn:21">21</a></sup></p>
+<h2>The trust composition: merged is applied</h2>
+<p>TeamAI's trust model is, in essence, <em>the team repo is trusted code</em>.
+Merging a PR is the act of trust; after that, delivery is automatic and
+several delivered things execute. A merged change can, at teammates'
+next session start:</p>
+<ol>
+<li><strong>Run shell commands as hooks.</strong> Team hooks carry a free-form shell
+   <code>command</code> per lifecycle event. <code>sharing.hooks.autoApply</code> defaults to
+   <strong>true</strong>: pull installs them without asking, printing the commands as
+   they are applied — a transparency log, not a confirmation. Restricting
+   commands to a team-scripts directory (<code>requireTeamScripts</code>) defaults
+   to <strong>false</strong>; a member-side kill switch (<code>TEAMAI_HOOKS_DISABLED</code>)
+   exists, as does a root hooks file that can re-time even TeamAI's own
+   built-in hooks.<sup id="fnref:22"><a class="footnote-ref" href="#fn:22">22</a></sup></li>
+<li><strong>Run team Node scripts around sync.</strong> <code>scripts.prePull</code> and
+   <code>scripts.postPull</code> run inside an ordinary pull — including the silent
+   SessionStart one — with the member's environment; <code>postDeploy</code> runs
+   at checkout preparation. The one hard check is containment: the path,
+   symlinks included, must stay inside the team repo. There is no
+   signature, sandbox, or per-script consent, and the 90-second postPull
+   "budget" bounds only how long pull <em>waits</em> — on expiry the script is
+   detached and left running.<sup id="fnref:23"><a class="footnote-ref" href="#fn:23">23</a></sup></li>
+<li><strong>Install MCP servers that tools will launch.</strong> A stdio server is a
+   <code>command</code> plus <code>args</code> — an executable. <code>sharing.mcp.autoApply</code>
+   defaults to <strong>true</strong>, and the <code>allowedCommands</code> / <code>allowedHosts</code>
+   allowlists default to <strong>empty, which the code treats as no
+   restriction</strong>.<sup id="fnref:24"><a class="footnote-ref" href="#fn:24">24</a></sup></li>
+<li><strong>Set environment variables in every shell</strong>, via a per-scope
+   <code>env.sh</code> the member's profile sources — data, not code, but data
+   that steers every tool the member runs.</li>
+<li><strong>Steer every session.</strong> Rules, instructions, skills, and agent
+   definitions are prompt-level influence by design; a skill is a whole
+   directory, scripts included, copied into each tool's skills folder.</li>
+<li><strong>Define workflows</strong> with shell <code>command</code> steps — an execution
+   surface of a lower order, since a workflow runs only when a member
+   (or an agent following a skill) starts one.</li>
+</ol>
+<p>The mitigations are real but differently shaped: the PR gate on the repo
+itself, the transparency print, member-side overrides for most features,
+and <code>teamai doctor</code> diagnostics. What the code does not offer is a
+per-change consent step at delivery time. By default, merged is applied.</p>
+<h2>Secrets: a careful design beside a plaintext channel</h2>
+<p>Two mechanisms sit side by side, and which one a team reaches for is a
+matter of author discipline.</p>
+<p><strong><code>env/env.yaml</code> is plaintext in the shared repo, by design.</strong> Its
+schema is <code>{key, value}</code> with <code>value</code> a plain string; the project's own
+design table lists the file as "values in plaintext," and values are
+masked only in CLI display. Resolved values are delivered to every
+member in scope and written as <code>export</code> lines into their <code>env.sh</code>. A
+shared token pasted into this file is, in effect, published to the team,
+full Git history included.<sup id="fnref:25"><a class="footnote-ref" href="#fn:25">25</a></sup></p>
+<p><strong>The secrets feature (<code>env/secrets.yaml</code>) is the careful path.</strong>
+Declarations carry only a key, a description, and a "where to get one"
+URL; a declaration that includes a <code>value:</code> — or any unknown key — is
+rejected, so a value cannot ride along accidentally. Each member
+supplies their own value at a prompt or from another env var, never as a
+command-line argument, so it stays out of shell history. Values live in
+a store keyed by the SHA-256 of the team repo's URL — a careful
+canonicalization, so a copied or hostile repo cannot claim another
+team's identity and receive its values — written atomically at mode
+<strong>0600</strong>. That is <strong>not encryption</strong>, and the design doc says so itself:
+anyone who can read the member's files can read the values.<sup id="fnref:26"><a class="footnote-ref" href="#fn:26">26</a></sup></p>
+<p>Two qualifications complete the picture. When an MCP config references
+<code>${GITHUB_TOKEN}</code>, pull writes the member's actual value, in plaintext,
+into each tool's MCP config file — compensated carefully: the file is
+tightened to 0600, and a resolved value is never written into a project
+config that Git tracks or fails to ignore (pull withholds it and advises
+untracking the file and rotating the token). And a resolved secret is
+not bound to a host: whoever controls <code>mcp.yaml</code> chooses the command or
+host that receives every member's token — a fact the project's own
+design doc states plainly.<sup id="fnref:27"><a class="footnote-ref" href="#fn:27">27</a></sup> The session and sharing paths, finally,
+lean on a best-effort regex redactor whose own header calls it
+"defense-in-depth, not a guarantee." The secrets feature is thoughtfully
+built; the exposure is the older, simpler channel beside it, which
+accepts any string as a value and cannot tell a shared endpoint URL from
+a shared credential.</p>
+<h2>What to take from it</h2>
+<p>A dotfiles repo with a sync script covers perhaps the first third of
+this. What goes beyond that pattern is the engineering in the middle: a
+canonical intermediate form with <strong>bidirectional</strong> rendering, so assets
+are authored once and still round-trip through twenty tools' native
+formats; <strong>reconciliation rather than copying</strong> — a delivery ledger that
+preserves member edits, hooks and MCP state that self-heal on every
+pull, namespace scoping with conflicts treated as errors; an
+<strong>orphan-branch data plane</strong> that separates configuration under review
+from knowledge and counts under trust; and a friction loop that treats
+<em>a session the human had to fight</em> as the session worth writing up, and
+says so to the agent at exactly the moment it can act on it.</p>
+<p>The trust reading follows from the same code. None of the defaults
+above is hidden, and the design consistently chooses team velocity with
+member-side escape hatches over delivery-time consent. That is a
+defensible posture for a team that reviews its configuration repo the
+way it reviews production code — because that is what a merged change
+to it becomes: code and configuration, on every laptop, at the next
+session start.</p>
+<hr />
+<h2>Endnotes</h2>
+<p><em>Read at a pinned commit: Tencent/teamai-cli @ 208b97b (MIT), cloned and
+read, never executed. Independent personal project. Views are my own.</em></p>
+<div class="footnote">
+<hr />
+<ol>
+<li id="fn:1">
+<p>The team-repo layout — canonical on-disk forms for every asset
+type:
+https://github.com/Tencent/teamai-cli/blob/208b97bb6218573b63d2445ac74f3a09999dd30d/docs/product-overview.md&#160;<a class="footnote-backref" href="#fnref:1" title="Jump back to footnote 1 in the text">&#8617;</a></p>
+</li>
+<li id="fn:2">
+<p><code>AgentSpec</code> — the canonical agent form, and <code>renderForTool</code>'s
+per-tool renderers (Markdown frontmatter, Codex TOML, Copilot
+<code>.agent.md</code>, Kiro JSON):
+https://github.com/Tencent/teamai-cli/blob/208b97bb6218573b63d2445ac74f3a09999dd30d/src/resources/agent-format.ts#L75
+and https://github.com/Tencent/teamai-cli/blob/208b97bb6218573b63d2445ac74f3a09999dd30d/src/resources/agent-format.ts#L1024&#160;<a class="footnote-backref" href="#fnref:2" title="Jump back to footnote 2 in the text">&#8617;</a></p>
+</li>
+<li id="fn:3">
+<p>MCP rendering — the eight target formats and the Codex TOML
+renderer:
+https://github.com/Tencent/teamai-cli/blob/208b97bb6218573b63d2445ac74f3a09999dd30d/src/resources/mcp-format.ts#L18
+and https://github.com/Tencent/teamai-cli/blob/208b97bb6218573b63d2445ac74f3a09999dd30d/src/resources/mcp-format.ts#L324&#160;<a class="footnote-backref" href="#fnref:3" title="Jump back to footnote 3 in the text">&#8617;</a></p>
+</li>
+<li id="fn:4">
+<p>Rules — canonical Markdown, the per-tool format modules in
+<code>src/resources/</code> (<code>cursor-mdc.ts</code>, <code>kiro-steering.ts</code>,
+<code>copilot-instructions.ts</code>, …), and inlining as a context block for
+tools with no rules surface:
+https://github.com/Tencent/teamai-cli/blob/208b97bb6218573b63d2445ac74f3a09999dd30d/src/resources/rules.ts#L1569&#160;<a class="footnote-backref" href="#fnref:4" title="Jump back to footnote 4 in the text">&#8617;</a></p>
+</li>
+<li id="fn:5">
+<p>Namespaces — entry resolution, override, and same-key conflict
+handling:
+https://github.com/Tencent/teamai-cli/blob/208b97bb6218573b63d2445ac74f3a09999dd30d/src/namespaced-entries.ts&#160;<a class="footnote-backref" href="#fnref:5" title="Jump back to footnote 5 in the text">&#8617;</a></p>
+</li>
+<li id="fn:6">
+<p><code>push</code> — PR creation with fallback, and the core staging flow
+with rollback on failure:
+https://github.com/Tencent/teamai-cli/blob/208b97bb6218573b63d2445ac74f3a09999dd30d/src/push.ts#L344
+and https://github.com/Tencent/teamai-cli/blob/208b97bb6218573b63d2445ac74f3a09999dd30d/src/push.ts#L1034&#160;<a class="footnote-backref" href="#fnref:6" title="Jump back to footnote 6 in the text">&#8617;</a></p>
+</li>
+<li id="fn:7">
+<p>Branch and commit mechanics — <code>pushRepoBranch</code> (with
+<code>--force-with-lease</code> on the reuse path), branch naming, and commits
+that skip local Git hooks:
+https://github.com/Tencent/teamai-cli/blob/208b97bb6218573b63d2445ac74f3a09999dd30d/src/utils/git.ts#L750
+and https://github.com/Tencent/teamai-cli/blob/208b97bb6218573b63d2445ac74f3a09999dd30d/src/utils/git.ts#L221&#160;<a class="footnote-backref" href="#fnref:7" title="Jump back to footnote 7 in the text">&#8617;</a></p>
+</li>
+<li id="fn:8">
+<p><code>pull</code> — per-scope delivery; hooks and MCP reconciled outside the
+fast path; the delivery ledger and its edited-copy rule:
+https://github.com/Tencent/teamai-cli/blob/208b97bb6218573b63d2445ac74f3a09999dd30d/src/pull.ts#L1242
+and https://github.com/Tencent/teamai-cli/blob/208b97bb6218573b63d2445ac74f3a09999dd30d/src/resources/delivered-copies.ts#L557&#160;<a class="footnote-backref" href="#fnref:8" title="Jump back to footnote 8 in the text">&#8617;</a></p>
+</li>
+<li id="fn:9">
+<p>Built-in hooks and the SessionStart silent pull — the canonical
+dispatch spec, and the background handler with its 120 s budget:
+https://github.com/Tencent/teamai-cli/blob/208b97bb6218573b63d2445ac74f3a09999dd30d/src/builtin-hooks.ts#L317
+and https://github.com/Tencent/teamai-cli/blob/208b97bb6218573b63d2445ac74f3a09999dd30d/src/hook-handlers.ts#L115&#160;<a class="footnote-backref" href="#fnref:9" title="Jump back to footnote 9 in the text">&#8617;</a></p>
+</li>
+<li id="fn:10">
+<p>The default <code>toolPaths</code> map — 24 keys including internal
+variants:
+https://github.com/Tencent/teamai-cli/blob/208b97bb6218573b63d2445ac74f3a09999dd30d/src/types.ts#L461&#160;<a class="footnote-backref" href="#fnref:10" title="Jump back to footnote 10 in the text">&#8617;</a></p>
+</li>
+<li id="fn:11">
+<p><code>KNOWN_AGENTS</code> — the 38-entry skills-directory registry; Aider
+and Gemini CLI appear only here, and the README matrix lists
+exactly 20 product rows:
+https://github.com/Tencent/teamai-cli/blob/208b97bb6218573b63d2445ac74f3a09999dd30d/src/known-agents.ts#L82
+and https://github.com/Tencent/teamai-cli/blob/208b97bb6218573b63d2445ac74f3a09999dd30d/README.md#L125&#160;<a class="footnote-backref" href="#fnref:11" title="Jump back to footnote 11 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:11" title="Jump back to footnote 11 in the text">&#8617;</a></p>
+</li>
+<li id="fn:12">
+<p>Codex hook trust — driving <code>codex app-server</code> to record trust
+hashes, respecting a member's explicit untrusted marking:
+https://github.com/Tencent/teamai-cli/blob/208b97bb6218573b63d2445ac74f3a09999dd30d/src/codex-trust.ts#L191
+and https://github.com/Tencent/teamai-cli/blob/208b97bb6218573b63d2445ac74f3a09999dd30d/src/codex-trust.ts#L259&#160;<a class="footnote-backref" href="#fnref:12" title="Jump back to footnote 12 in the text">&#8617;</a></p>
+</li>
+<li id="fn:13">
+<p>OpenCode — the auto-loaded hooks plugin that shells back to
+<code>teamai hook-dispatch</code>:
+https://github.com/Tencent/teamai-cli/blob/208b97bb6218573b63d2445ac74f3a09999dd30d/src/opencode-hooks.ts#L94
+and https://github.com/Tencent/teamai-cli/blob/208b97bb6218573b63d2445ac74f3a09999dd30d/src/opencode-hooks.ts#L390&#160;<a class="footnote-backref" href="#fnref:13" title="Jump back to footnote 13 in the text">&#8617;</a></p>
+</li>
+<li id="fn:14">
+<p>OpenClaw — the managed hook package (<code>teamai-status-report</code>)
+that loads only once <code>openclaw.json</code> enables it; no agents or MCP
+paths in the default map:
+https://github.com/Tencent/teamai-cli/blob/208b97bb6218573b63d2445ac74f3a09999dd30d/src/openclaw-hooks.ts#L63
+and https://github.com/Tencent/teamai-cli/blob/208b97bb6218573b63d2445ac74f3a09999dd30d/src/types.ts#L671&#160;<a class="footnote-backref" href="#fnref:14" title="Jump back to footnote 14 in the text">&#8617;</a></p>
+</li>
+<li id="fn:15">
+<p>Friction — the <code>SessionFriction</code> signals, the 15-tool-call hard
+gate, the score threshold and weights, and the hint construction:
+https://github.com/Tencent/teamai-cli/blob/208b97bb6218573b63d2445ac74f3a09999dd30d/src/types.ts#L2016
+and https://github.com/Tencent/teamai-cli/blob/208b97bb6218573b63d2445ac74f3a09999dd30d/src/contribute-check.ts#L461&#160;<a class="footnote-backref" href="#fnref:15" title="Jump back to footnote 15 in the text">&#8617;</a></p>
+</li>
+<li id="fn:16">
+<p>The share skill and the contribute path — local queue first,
+then one commit direct to the <code>teamai-learnings</code> orphan branch:
+https://github.com/Tencent/teamai-cli/blob/208b97bb6218573b63d2445ac74f3a09999dd30d/skill-data/share/SKILL.md
+and https://github.com/Tencent/teamai-cli/blob/208b97bb6218573b63d2445ac74f3a09999dd30d/src/utils/learnings-publish.ts#L516&#160;<a class="footnote-backref" href="#fnref:16" title="Jump back to footnote 16 in the text">&#8617;</a></p>
+</li>
+<li id="fn:17">
+<p>Recall — the local lexical index (IDF-weighted, title ×3 / tag
+×2 boosts, vote bonus); no embeddings, no external service:
+https://github.com/Tencent/teamai-cli/blob/208b97bb6218573b63d2445ac74f3a09999dd30d/src/utils/search-index.ts#L833&#160;<a class="footnote-backref" href="#fnref:17" title="Jump back to footnote 17 in the text">&#8617;</a></p>
+</li>
+<li id="fn:18">
+<p>Usage reporting — <code>reportUsageToTeam</code> folds local events into
+counts-only <code>UserStats</code> on the <code>teamai-reports</code> branch; the
+default-on check:
+https://github.com/Tencent/teamai-cli/blob/208b97bb6218573b63d2445ac74f3a09999dd30d/src/team-push.ts#L933
+and https://github.com/Tencent/teamai-cli/blob/208b97bb6218573b63d2445ac74f3a09999dd30d/src/types.ts#L309&#160;<a class="footnote-backref" href="#fnref:18" title="Jump back to footnote 18 in the text">&#8617;</a></p>
+</li>
+<li id="fn:19">
+<p>Self-update — the registry check, <code>doUpdate</code> under the <code>auto</code>
+policy, and the policy resolution order (local &gt; team &gt; default
+<code>auto</code>):
+https://github.com/Tencent/teamai-cli/blob/208b97bb6218573b63d2445ac74f3a09999dd30d/src/update.ts#L657
+and https://github.com/Tencent/teamai-cli/blob/208b97bb6218573b63d2445ac74f3a09999dd30d/src/update-policy.ts#L10&#160;<a class="footnote-backref" href="#fnref:19" title="Jump back to footnote 19 in the text">&#8617;</a></p>
+</li>
+<li id="fn:20">
+<p>Webhooks — event POSTs to team-configured endpoints, optional
+HMAC-SHA256 signature; disabled by default in the sharing schema:
+https://github.com/Tencent/teamai-cli/blob/208b97bb6218573b63d2445ac74f3a09999dd30d/src/webhook.ts#L50&#160;<a class="footnote-backref" href="#fnref:20" title="Jump back to footnote 20 in the text">&#8617;</a></p>
+</li>
+<li id="fn:21">
+<p>The local event log — its path, the redacted 200-char prompt
+summary and 500-char last output, and the redactor's own
+"defense-in-depth, not a guarantee" header:
+https://github.com/Tencent/teamai-cli/blob/208b97bb6218573b63d2445ac74f3a09999dd30d/src/dashboard-collector.ts#L1472
+and https://github.com/Tencent/teamai-cli/blob/208b97bb6218573b63d2445ac74f3a09999dd30d/src/utils/redact.ts&#160;<a class="footnote-backref" href="#fnref:21" title="Jump back to footnote 21 in the text">&#8617;</a></p>
+</li>
+<li id="fn:22">
+<p>Team hooks — the schema's free-form <code>command</code>, the sharing
+defaults (<code>autoApply</code> true, <code>requireTeamScripts</code> false), and the
+layered resolution gate with its transparency print and kill
+switch:
+https://github.com/Tencent/teamai-cli/blob/208b97bb6218573b63d2445ac74f3a09999dd30d/src/types.ts#L107
+and https://github.com/Tencent/teamai-cli/blob/208b97bb6218573b63d2445ac74f3a09999dd30d/src/resources/hooks.ts#L161&#160;<a class="footnote-backref" href="#fnref:22" title="Jump back to footnote 22 in the text">&#8617;</a></p>
+</li>
+<li id="fn:23">
+<p>Team scripts — declaration in team config, the containment-only
+path check, and the 90-second wait budget that detaches rather
+than kills:
+https://github.com/Tencent/teamai-cli/blob/208b97bb6218573b63d2445ac74f3a09999dd30d/src/team-scripts.ts#L198
+and https://github.com/Tencent/teamai-cli/blob/208b97bb6218573b63d2445ac74f3a09999dd30d/src/post-pull.ts#L49&#160;<a class="footnote-backref" href="#fnref:23" title="Jump back to footnote 23 in the text">&#8617;</a></p>
+</li>
+<li id="fn:24">
+<p>MCP sharing — <code>autoApply</code> default true; allowlists default
+empty and only restrict when populated:
+https://github.com/Tencent/teamai-cli/blob/208b97bb6218573b63d2445ac74f3a09999dd30d/src/types.ts#L155
+and https://github.com/Tencent/teamai-cli/blob/208b97bb6218573b63d2445ac74f3a09999dd30d/src/mcp-reconcile.ts#L244&#160;<a class="footnote-backref" href="#fnref:24" title="Jump back to footnote 24 in the text">&#8617;</a></p>
+</li>
+<li id="fn:25">
+<p>Env — the plaintext <code>{key, value}</code> schema, display-only
+masking, delivery into <code>env.sh</code>; the internal design table's
+"values in plaintext":
+https://github.com/Tencent/teamai-cli/blob/208b97bb6218573b63d2445ac74f3a09999dd30d/src/resources/env.ts#L34
+and https://github.com/Tencent/teamai-cli/blob/208b97bb6218573b63d2445ac74f3a09999dd30d/docs/designs/management-backend.md#L51&#160;<a class="footnote-backref" href="#fnref:25" title="Jump back to footnote 25 in the text">&#8617;</a></p>
+</li>
+<li id="fn:26">
+<p>Secrets — declarations with no value field (a <code>value:</code> key
+invalidates the declaration); the URL-hash-keyed 0600 store; the
+design doc's "not encryption":
+https://github.com/Tencent/teamai-cli/blob/208b97bb6218573b63d2445ac74f3a09999dd30d/src/resources/secrets.ts#L23
+and https://github.com/Tencent/teamai-cli/blob/208b97bb6218573b63d2445ac74f3a09999dd30d/src/secret-store.ts#L174&#160;<a class="footnote-backref" href="#fnref:26" title="Jump back to footnote 26 in the text">&#8617;</a></p>
+</li>
+<li id="fn:27">
+<p>Resolved secrets in MCP configs — plaintext delivery, 0600
+tightening, withholding from Git-tracked configs, and the
+not-bound-to-a-host statement:
+https://github.com/Tencent/teamai-cli/blob/208b97bb6218573b63d2445ac74f3a09999dd30d/docs/designs/team-secrets.md#L157&#160;<a class="footnote-backref" href="#fnref:27" title="Jump back to footnote 27 in the text">&#8617;</a></p>
+</li>
+</ol>
+</div>
+</div>
+</body>
+</html>
