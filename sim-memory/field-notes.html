@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Field Notes: The harness is not the memory — Self-Improvement Memory and the optimizer's notebook</title>
+<style>
+:root{color-scheme:dark}*{box-sizing:border-box}
+body{background:#161210;color:#ece1d3;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;line-height:1.7;margin:0}
+.wrap{max-width:760px;margin:0 auto;padding:48px 24px 80px}
+h1{color:#fff;font-size:1.9em;line-height:1.25}h2{color:#d08c4e;font-size:1.35em;margin:2.2em 0 .6em}
+a{color:#d08c4e;text-decoration:none}a:hover{text-decoration:underline}
+strong{color:#fff}code{background:#1f1a15;padding:2px 6px;border-radius:4px;font-size:.88em;color:#d08c4e}
+blockquote{background:#1f1a15;border-left:3px solid #d08c4e;margin:1.5em 0;padding:12px 20px}
+img{width:100%;border-radius:4px;border:1px solid #3a2f24}
+table{border-collapse:collapse;margin:1em 0}th,td{border:1px solid #3a2f24;padding:6px 12px;text-align:left}
+.footnote{font-size:.85em;color:#a89880;border-top:1px solid #3a2f24;margin-top:3em;padding-top:1em}
+.footnote hr{display:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>Field Notes: The harness is not the memory — Self-Improvement Memory and the optimizer's notebook</h1>
+<p><strong>Series framing.</strong> This is a Field Notes piece, not a numbered teardown.
+Every teardown in this series dissects a system that runs an agent. The
+subject here runs nothing the reader can install: it is a paper — Yu et al.,
+<em>Self-Improvement Memory Enables Continual Recursive Self-Improvement</em>
+(Google Cloud AI, Google DeepMind, Penn State) — and it releases no code.
+What it offers instead is the first controlled evidence on a question two
+earlier pieces in this series approached from opposite sides. The Darwin
+Gödel Machine teardown (#13) examined a harness that rewrites itself and
+keeps an archive of its variants, but no structured account of <em>why</em> its
+edits worked. The Hy Memory Field Notes examined memory as a write-path
+engineering problem <em>inside</em> a harness. This paper moves the memory one
+level up: not the agent's memory of its tasks, but the <strong>optimizer's memory
+of its own edits</strong> — and tests whether that memory, rather than the evolved
+harness itself, is the asset that transfers when the model or the benchmark
+changes. That is a Field Notes question, and this piece answers it from the
+paper's own evidence, graded as paper evidence throughout: nothing here
+was verified against source code, because there is none to verify against.</p>
+<blockquote>
+<p><strong>Pin:</strong> arXiv:2611.18856v1 [cs.LG], 13 Nov 2026, CC BY 4.0. Read in
+full, including appendices and limitations. Companion source: Yu, Liu,
+Long, Zhang &amp; Xue, <em>From Harness Optimization to Recursive
+Self-Improvement: A Survey of Language Model Agents</em>, author working
+revision of 14 Nov 2026 (not peer-reviewed) — the same group's survey,
+published a day later, whose evaluation criteria this piece uses as a
+second lens. The paper text identifies no public code or checkpoint
+release. All experimental numbers below are the authors' own.</p>
+</blockquote>
+<h2>The problem: an evolved harness does not explain itself</h2>
+<p>Harness optimization — an outer loop in which a proposer suggests edits to
+an agent's harness, an evaluator scores them, and a selector keeps the
+winners — is usually studied with the policy model and the benchmark held
+fixed. The paper names the setting where that stops being true <strong>Continual
+Recursive Self-Improvement (CRSI)</strong>: optimization <em>continues</em> after the
+benchmark changes (cross-dataset CRSI, policy fixed) or after the policy
+model changes (cross-model CRSI, benchmark fixed), starting from the
+previously evolved harness instead of from scratch.<sup id="fnref:1"><a class="footnote-ref" href="#fn:1">1</a></sup></p>
+<p>The motivating observation is that evolution's gains do not reliably
+survive the move, and the evolved artifact cannot say why. Source
+optimization raised held-out source scores by 2.75–6.41 points in all six
+cross-dataset settings — yet the source-evolved FewShotAll harness starts
+target optimization at 72.92, <em>below</em> the un-evolved seed's 75.72.<sup id="fnref:2"><a class="footnote-ref" href="#fn:2">2</a></sup> In
+the cross-model experiments, an Opus-evolved harness first run on Gemini
+scores below Gemini's own seed harness in every domain, by 0.60 to 5.48
+points; in the workspace domain it starts at 68.41 against the seed's
+73.89.<sup id="fnref:3"><a class="footnote-ref" href="#fn:3">3</a></sup> Continuing to optimize from that harness does not reliably fix
+it: harness-only continuation finishes <em>below a cold start</em> in three of
+the four cross-model domains.<sup id="fnref2:3"><a class="footnote-ref" href="#fn:3">3</a></sup> The paper's diagnosis is that the
+harness alone leaves three questions unanswered — why was an edit
+proposed, what was it expected to fix, and what happened when it was
+tested? Source optimization produces exactly this evidence. It just does
+not normally travel with the harness.<sup id="fnref2:1"><a class="footnote-ref" href="#fn:1">1</a></sup></p>
+<h2>The mechanism: a notebook keyed by problem, not by time</h2>
+<p>Self-Improvement Memory (SIM) is that evidence, structured. An entry is
+keyed by a <strong>root cause</strong> — a recurring harness problem, such as premature
+completion — and holds a sequence of attempts against it. Each attempt
+records the modification and its rationale, the <strong>predicted</strong> outcome
+(which tasks the edit is expected to fix, written down <em>before</em>
+evaluation) and the <strong>observed</strong> outcome, and provenance: domain,
+benchmark, policy model, and round.<sup id="fnref:4"><a class="footnote-ref" href="#fn:4">4</a></sup> Two properties of the record
+matter more than its schema:</p>
+<ul>
+<li><strong>Failures are kept.</strong> Each round, only the selected candidate is
+  recorded — including when the edit regresses or fails to fix the tasks
+  it predicted it would. Entries whose root-cause text matches are merged
+  without dropping their attempt histories, and an entry survives the
+  replacement of the very edit it describes.<sup id="fnref2:4"><a class="footnote-ref" href="#fn:4">4</a></sup><sup id="fnref:5"><a class="footnote-ref" href="#fn:5">5</a></sup></li>
+<li><strong>There is no retrieval.</strong> The proposer receives the complete SIM in
+  its system prompt every round, and the selector reads the same record
+  when screening candidates. Nothing is ranked, truncated, or forgotten
+  by a retriever; both LLM "harness engineers" judge each inherited edit
+  against the current failures and may retain, revise, replace, or remove
+  the modification while keeping its record.<sup id="fnref3:4"><a class="footnote-ref" href="#fn:4">4</a></sup><sup id="fnref:6"><a class="footnote-ref" href="#fn:6">6</a></sup></li>
+</ul>
+<p>The experiment then varies only what crosses the boundary. Four
+conditions start target optimization: <strong>Cold Start</strong> (seed harness, no
+memory), <strong>Harness Transfer</strong> (evolved harness, no memory),
+<strong>Problem-Only Memory</strong> (evolved harness plus the root causes alone), and
+<strong>Full SIM</strong> (evolved harness plus the complete record). Starting harness,
+target tasks, policy, round counts (10), and candidate budgets (5 per
+round) are matched across conditions.<sup id="fnref2:6"><a class="footnote-ref" href="#fn:6">6</a></sup></p>
+<h2>The evidence</h2>
+<p><strong>Cross-dataset</strong> (six transitions across coding, text classification,
+workspace, and engineering seeds): Full SIM finishes highest in all six,
+beating Harness Transfer by 2.43–4.35 points and Problem-Only Memory by
+0.20–6.06. The ablation is the interesting part: Problem-Only Memory is
+<em>unreliable</em>, ranging from 1.82 points below Harness Transfer to 2.40
+above it. The diagnosis alone is not the asset; the asset is the diagnosis
+with its attempts and outcomes attached.<sup id="fnref2:2"><a class="footnote-ref" href="#fn:2">2</a></sup></p>
+<p><strong>Cross-model</strong> (Opus 5.5 → Gemini 3.8 Flash, benchmark fixed): Full SIM
+finishes highest in all four domains, beating harness-only continuation by
+3.60–11.33 points. The workspace case is the headline: both conditions
+start at 68.41; Harness Transfer reaches 73.42, Full SIM reaches
+84.75.<sup id="fnref3:3"><a class="footnote-ref" href="#fn:3">3</a></sup> Across model <em>generations</em> (a Gemini 2.5 Flash → 3.5 Flash →
+3.8 Flash → 4 Argon chain on Terminal-Bench 2.1, carrying harness and SIM
+forward), continuation beats fresh per-generation optimization in two of
+three subsequent generations — and loses on the fourth, 94.8 to
+95.6.<sup id="fnref:7"><a class="footnote-ref" href="#fn:7">7</a></sup></p>
+<p><strong>The load-bearing result is the paired study.</strong> Ten independent
+Terminus-2 source runs, each continued on Terminal-Bench 4 with and
+without its SIM under matched budgets: SIM finishes higher in 9 of 10
+pairs, mean advantage <strong>+2.36 points</strong> (95% CI [1.05, 3.68]; paired
+t(9) = 4.06, p = 0.003). One pair favors no-SIM continuation, by
+0.61.<sup id="fnref:8"><a class="footnote-ref" href="#fn:8">8</a></sup> Everything else in the paper is, by the authors' own reporting
+convention, one complete run per condition — descriptive, not a variance
+estimate. The paired study is the piece of evidence that survives that
+caveat.</p>
+<p><strong>The mechanism shows up in the cases.</strong> Both coding conditions inherit
+the same completion gate from source optimization. With SIM, the proposer
+reads the gate's rationale and source outcomes, retains completion
+verification, and <em>extends</em> it with target-specific checks — feasibility
+versus optimality. Without SIM, the run tightens the inherited gate,
+twice repairs completion deadlocks of its own making, and misattributes
+the gate to its own first round. The requirement transferred; only the
+memory condition determined whether its implementation was revised or
+thrashed.<sup id="fnref2:5"><a class="footnote-ref" href="#fn:5">5</a></sup> Retention tells the same story from the other side: Full
+SIM loses 3 of 225 previously successful source rollouts during target
+optimization, against 6 for harness-only continuation.<sup id="fnref3:5"><a class="footnote-ref" href="#fn:5">5</a></sup></p>
+<h2>The second lens: the survey wrote the contract first</h2>
+<p>The companion survey — same group, revised one day after this paper
+appeared — never names SIM, but its appendix on persistent improvement
+evidence prescribes, almost clause for clause, the record SIM implements:
+a memory entry should connect "the initiating failure, attempted edit,
+positive and negative evaluation evidence, and the conditions under which
+reuse is warranted."<sup id="fnref:9"><a class="footnote-ref" href="#fn:9">9</a></sup> Its comparison table likewise demands the
+controls this paper mostly runs: retained versus reset improvement state
+at matched budgets, with initialization and subsequent improvement
+reported separately.<sup id="fnref:10"><a class="footnote-ref" href="#fn:10">10</a></sup> And its conclusion draws the distinction the
+whole result hangs on: improving an agent is not the same as improving
+how later agents are improved; a retained artifact earns its claim only
+when it demonstrably changes later decisions.<sup id="fnref:11"><a class="footnote-ref" href="#fn:11">11</a></sup> Read together, the two
+papers are a prescription and its first controlled test — published
+together, whether or not they were written that way.</p>
+<h2>Limits, on the record</h2>
+<ul>
+<li><strong>Paper evidence only.</strong> No code or checkpoints were released; the
+  proposer/selector prompts exist as appendix summaries, and no claim in
+  this piece could be checked against an implementation. That is a weaker
+  footing than any numbered teardown in this series, and the reason this
+  is a Field Note.</li>
+<li><strong>One run per condition outside coding</strong> — the authors state this
+  themselves: independent repetitions were affordable only in the coding
+  domain.<sup id="fnref:12"><a class="footnote-ref" href="#fn:12">12</a></sup> The cross-model headline (84.75) is a single run.</li>
+<li><strong>The engineers are models too.</strong> Proposer and selector are LLMs
+  (Gemini 3.8 Flash in the main comparisons); an ablation with Claude
+  Opus 5.5 in those roles produced <em>larger</em> SIM gains from both coding
+  seeds — so the size of the effect depends on who is doing the
+  remembering and revising.<sup id="fnref3:6"><a class="footnote-ref" href="#fn:6">6</a></sup></li>
+<li><strong>Whole-memory prompting does not scale by construction.</strong> Reading the
+  entire record every round is a deliberate design choice at this
+  history length; the paper does not test where it breaks.</li>
+<li><strong>No cost accounting across conditions.</strong> The procedure is evaluated
+  whole — inherited memory plus continued updating — and the paper
+  reports no token or runtime comparison between memory conditions, the
+  very joint reporting its companion survey recommends.<sup id="fnref2:10"><a class="footnote-ref" href="#fn:10">10</a></sup><sup id="fnref2:12"><a class="footnote-ref" href="#fn:12">12</a></sup></li>
+</ul>
+<h2>What this changes</h2>
+<p>Every harness in this series keeps some account of itself: transcripts,
+event logs, skill libraries, archives of variants. The consistent finding
+across the teardowns — stated as F2 in the survey paper this site
+accompanies — is that what a system <em>stores</em> is usually a transcript, and
+what it can <em>use</em> is knowledge distilled from one. SIM is that distinction
+applied to the one actor the teardowns never instrument: the engineer
+doing the editing. Its result, at the strength the paired study supports,
+is that when a harness must outlive its original model and benchmark, the
+transferable asset is not the evolved artifact. It is the notebook —
+problems, attempts, predictions, outcomes — that explains how the
+artifact came to be.</p>
+<hr />
+<h2>Endnotes</h2>
+<p><em>Read in full at the pinned version: Yu et al., arXiv:2611.18856v1
+[cs.LG], 13 Nov 2026 (CC BY 4.0); companion survey in the authors'
+working revision of 14 Nov 2026. No code or checkpoints were released;
+nothing was executed. Independent personal project. Views are my own.</em></p>
+<div class="footnote">
+<hr />
+<ol>
+<li id="fn:1">
+<p>Yu et al., arXiv:2611.18856v1, §1 and §3.1: CRSI definition; the
+three unanswered questions; contributions list.&#160;<a class="footnote-backref" href="#fnref:1" title="Jump back to footnote 1 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:1" title="Jump back to footnote 1 in the text">&#8617;</a></p>
+</li>
+<li id="fn:2">
+<p>Yu et al., §4.2 and Appendix E.1/E.2: cross-dataset margins;
+FewShotAll 72.92 vs seed 75.72; Full SIM 77.92 vs Harness Transfer
+74.12 vs Cold Start 75.92.&#160;<a class="footnote-backref" href="#fnref:2" title="Jump back to footnote 2 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:2" title="Jump back to footnote 2 in the text">&#8617;</a></p>
+</li>
+<li id="fn:3">
+<p>Yu et al., §4.3.1 and Figure 4: cross-model starting deficits
+0.60–5.48; workspace 68.41 → 84.75 (Full SIM) vs 73.42 (Harness
+Transfer); margins 3.60–11.33.&#160;<a class="footnote-backref" href="#fnref:3" title="Jump back to footnote 3 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:3" title="Jump back to footnote 3 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:3" title="Jump back to footnote 3 in the text">&#8617;</a></p>
+</li>
+<li id="fn:4">
+<p>Yu et al., §3.2 and Figure 2: SIM entry structure (Eq. 2);
+predictions recorded before evaluation; only the selected candidate
+recorded per round, regressions included; entry merging.&#160;<a class="footnote-backref" href="#fnref:4" title="Jump back to footnote 4 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:4" title="Jump back to footnote 4 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:4" title="Jump back to footnote 4 in the text">&#8617;</a></p>
+</li>
+<li id="fn:5">
+<p>Yu et al., §4.4 and Appendices F.3–F.6: the completion-gate case;
+diagnosis P3 accumulating target evidence; entry P8 surviving edit
+replacement; retention 3/225 vs 6/225 lost rollouts.&#160;<a class="footnote-backref" href="#fnref:5" title="Jump back to footnote 5 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:5" title="Jump back to footnote 5 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:5" title="Jump back to footnote 5 in the text">&#8617;</a></p>
+</li>
+<li id="fn:6">
+<p>Yu et al., §3.2–§3.3 and §4.1: full SIM in the proposer's system
+prompt, no retrieval or truncation; four transfer conditions; N = 10
+rounds, k = 5 candidates; proposer/selector models and the Opus 5.5
+engineer ablation (Appendix E.4.2, Table 7).&#160;<a class="footnote-backref" href="#fnref:6" title="Jump back to footnote 6 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:6" title="Jump back to footnote 6 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:6" title="Jump back to footnote 6 in the text">&#8617;</a></p>
+</li>
+<li id="fn:7">
+<p>Yu et al., §4.3.2, Table 1: generation chain on TB2.1; CRSI vs
+Fresh RSI +3.5 (3.5 Flash), +1.6 (3.8 Flash), −0.8 (4 Argon).&#160;<a class="footnote-backref" href="#fnref:7" title="Jump back to footnote 7 in the text">&#8617;</a></p>
+</li>
+<li id="fn:8">
+<p>Yu et al., §4.4, Table 3 and Figure 5: ten paired Terminus-2
+continuations; 9/10; mean +2.36, 95% CI [1.05, 3.68], p = 0.003;
+signed-rank p = 0.006; the −0.61 pair.&#160;<a class="footnote-backref" href="#fnref:8" title="Jump back to footnote 8 in the text">&#8617;</a></p>
+</li>
+<li id="fn:9">
+<p>Yu, Liu, Long, Zhang &amp; Xue, <em>From Harness Optimization to
+Recursive Self-Improvement</em> (working revision, 14 Nov 2026),
+Appendix K.7, "A Contract for Persistent Improvement Evidence."&#160;<a class="footnote-backref" href="#fnref:9" title="Jump back to footnote 9 in the text">&#8617;</a></p>
+</li>
+<li id="fn:10">
+<p>Companion survey, Table 1 ("Proposed comparisons for interpreting
+harness-improvement claims") and §5: retained vs reset state at
+matched budgets; retention and total cost reported together.&#160;<a class="footnote-backref" href="#fnref:10" title="Jump back to footnote 10 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:10" title="Jump back to footnote 10 in the text">&#8617;</a></p>
+</li>
+<li id="fn:11">
+<p>Companion survey, §6 (Conclusion): improving an agent vs improving
+how later agents are improved; evidence must connect the retained
+artifact to later decisions.&#160;<a class="footnote-backref" href="#fnref:11" title="Jump back to footnote 11 in the text">&#8617;</a></p>
+</li>
+<li id="fn:12">
+<p>Yu et al., Limitations: independent repetitions focused on coding;
+other domains one run per condition; SIM evaluated as a complete
+procedure; compatible harness interfaces assumed.&#160;<a class="footnote-backref" href="#fnref:12" title="Jump back to footnote 12 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:12" title="Jump back to footnote 12 in the text">&#8617;</a></p>
+</li>
+</ol>
+</div>
+</div>
+</body>
+</html>
