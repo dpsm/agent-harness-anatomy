@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-20 -30 1120 486" width="1600" height="694" font-family="system-ui, -apple-system, sans-serif">
+<defs>
+<marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 1 L 9 5 L 0 9 z" fill="#8a7a66"/></marker>
+</defs>
+<text x="-20" y="4" font-size="26" font-weight="700" fill="#ece1d3">TencentDB Agent Memory — a memory hub behind a protocol proxy</text>
+<text x="-20" y="30" font-size="15" fill="#a89880">TencentCloud/TencentDB-Agent-Memory @ 084bed4</text>
+<g>
+<path d="M 260 108.0 C 380.0 108.0, 300.0 108.0, 420 108.0" fill="none" stroke="#8a7a66" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="268" y="108" font-size="13" fill="#a89880">base URL -&gt; proxy</text>
+<path d="M 660 108.0 C 780.0 108.0, 700.0 108.0, 820 108.0" fill="none" stroke="#8a7a66" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="673" y="108" font-size="13" fill="#a89880">forwards model call</text>
+<path d="M 540.0 156 C 540.0 173.0, 540.0 173.0, 540.0 190" fill="none" stroke="#8a7a66" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="468" y="173" font-size="13" fill="#a89880">capture + recall via gateway</text>
+<path d="M 260 368.0 C 380.0 368.0, 300.0 238.0, 420 238.0" fill="none" stroke="#8a7a66" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="288" y="303" font-size="13" fill="#a89880">teams, review, bindings</text>
+<path d="M 540.0 286 C 540.0 303.0, 540.0 303.0, 540.0 320" fill="none" stroke="#8a7a66" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="558" y="303" font-size="13" fill="#a89880">registers asset metadata</text>
+<path d="M 660 228.0 C 780.0 228.0, 700.0 358.0, 820 358.0" fill="none" stroke="#8a7a66" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="685" y="325" font-size="13" fill="#a89880">L0-L3 + skills</text>
+<path d="M 660 368.0 C 780.0 368.0, 700.0 378.0, 820 378.0" fill="none" stroke="#8a7a66" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="668" y="373" font-size="13" fill="#a89880">wiki + code content</text>
+<path d="M 660 248.0 C 780.0 248.0, 700.0 238.0, 820 238.0" fill="none" stroke="#8a7a66" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="673" y="243" font-size="13" fill="#a89880">ACL-checked reads</text>
+</g><g>
+<rect x="20" y="60" width="240" height="96" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/><rect x="20" y="60" width="5" height="96" rx="2" fill="#d08c4e"/>
+<text x="64" y="88" font-size="15" font-weight="600" fill="#ece1d3">Agent harnesses</text><text x="64" y="108" font-size="12" fill="#a89880">Claude Code, Codex, Pi, ...</text>
+<text x="34" y="144" font-size="11" fill="#a89880">1 source link · verified</text>
+<rect x="20" y="320" width="240" height="96" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/><rect x="20" y="320" width="5" height="96" rx="2" fill="#d08c4e"/>
+<text x="64" y="348" font-size="15" font-weight="600" fill="#ece1d3">Memory Panel (Hub)</text><text x="64" y="368" font-size="12" fill="#a89880">MemoryPanel/ :8125</text>
+<text x="34" y="404" font-size="11" fill="#a89880">1 source link · verified</text>
+<rect x="420" y="60" width="240" height="96" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/><rect x="420" y="60" width="5" height="96" rx="2" fill="#d08c4e"/>
+<text x="464" y="88" font-size="15" font-weight="600" fill="#ece1d3">MemoryProxy</text><text x="464" y="108" font-size="12" fill="#a89880">MemoryProxy/ :8096</text>
+<text x="434" y="144" font-size="11" fill="#a89880">2 source links · verified</text>
+<rect x="420" y="190" width="240" height="96" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/><rect x="420" y="190" width="5" height="96" rx="2" fill="#d08c4e"/>
+<text x="464" y="218" font-size="15" font-weight="600" fill="#ece1d3">MemoryCore gateway</text><text x="464" y="238" font-size="12" fill="#a89880">MemoryCore/ :8420</text>
+<text x="434" y="274" font-size="11" fill="#a89880">2 source links · verified</text>
+<rect x="420" y="320" width="240" height="96" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/><rect x="420" y="320" width="5" height="96" rx="2" fill="#d08c4e"/>
+<text x="464" y="348" font-size="15" font-weight="600" fill="#ece1d3">MemoryKnowledge</text><text x="464" y="368" font-size="12" fill="#a89880">Wiki + CodeGraph engines</text>
+<text x="434" y="404" font-size="11" fill="#a89880">1 source link · verified</text>
+<rect x="820" y="60" width="240" height="96" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/><rect x="820" y="60" width="5" height="96" rx="2" fill="#d08c4e"/>
+<text x="864" y="88" font-size="15" font-weight="600" fill="#ece1d3">Upstream LLM</text><text x="864" y="108" font-size="12" fill="#a89880">operator-configured URL</text>
+<text x="834" y="144" font-size="11" fill="#a89880">1 source link · verified</text>
+<rect x="820" y="320" width="240" height="96" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/><rect x="820" y="320" width="5" height="96" rx="2" fill="#d08c4e"/>
+<text x="864" y="348" font-size="15" font-weight="600" fill="#ece1d3">Stores</text><text x="864" y="368" font-size="12" fill="#a89880">SQLite, Markdown, indexes</text>
+<text x="834" y="404" font-size="11" fill="#a89880">1 source link · verified</text>
+<rect x="820" y="190" width="240" height="96" rx="10" fill="#1f1a15" stroke="#3a2f26" stroke-width="1.5"/><rect x="820" y="190" width="5" height="96" rx="2" fill="#d08c4e"/>
+<text x="864" y="218" font-size="15" font-weight="600" fill="#ece1d3">Permissions + ACLs</text><text x="864" y="238" font-size="12" fill="#a89880">metadata/service/</text>
+<text x="834" y="274" font-size="11" fill="#a89880">2 source links · verified</text>
+</g>
+<g font-size="12" fill="#a89880">
+<rect x="770" y="421" width="12" height="12" rx="2" fill="#d08c4e"/><text x="787" y="432">verified</text>
+<rect x="875" y="421" width="12" height="12" rx="2" fill="#7c8aa0"/><text x="892" y="432">docs</text>
+<rect x="980" y="421" width="12" height="12" rx="2" fill="#8a7a66"/><text x="997" y="432">inferred</text>
+</g></svg>
