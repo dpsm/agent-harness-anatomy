@@ -54,10 +54,10 @@
                       color: #a89880; margin-top: 4px; }
   .byline { color: #a89880; font-size: 0.95rem; margin: 4px 0 20px; } .byline a { color: #d08c4e; }
 </style>
-<title>Agent Harness Anatomy #25: Beeline — the chat is the harness surface</title>
+<title>Agent Harness Anatomy #24: Beeline — the chat is the harness surface</title>
 <meta name="description" content="Beeline — the chat is the harness surface. A top-down teardown: a hosted server owns Rooms, durable agent commands, corner briefs and the merge gate, while the agent's own harness CLI, its keys and the git worktrees stay on the user's machine; repository work happens in corners — isolated worktrees with one branch and one brief — ending in a PR gated on live green checks, a head-bound yes, and no hold.">
 <meta name="author" content="David P. S. Marques">
-<meta property="og:title" content="Agent Harness Anatomy #25: Beeline — the chat is the harness surface">
+<meta property="og:title" content="Agent Harness Anatomy #24: Beeline — the chat is the harness surface">
 <meta property="og:description" content="Beeline — the chat is the harness surface. A top-down teardown: a hosted server owns Rooms, durable agent commands, corner briefs and the merge gate, while the agent's own harness CLI, its keys and the git worktrees stay on the user's machine; repository work happens in corners — isolated worktrees with one branch and one brief — ending in a PR gated on live green checks, a head-bound yes, and no hold.">
 <meta property="og:type" content="article">
 <meta property="og:url" content="https://dpsm.github.io/agent-harness-anatomy/beeline/">
@@ -65,7 +65,7 @@
 <body>
 <nav><a href="../index.html">← All teardowns</a><span class="sep">·</span><a href="#beeline">Beeline</a></nav>
 <main id="beeline">
-<h1>Agent Harness Anatomy #25: Beeline — the chat is the harness surface</h1>
+<h1>Agent Harness Anatomy #24: Beeline — the chat is the harness surface</h1>
 <p class="byline">by <a href="https://ca.linkedin.com/in/dpsmarques">David P. S. Marques</a></p>
 <blockquote><p><strong>Series:</strong> Agent Harness Anatomy — top-down dissections of real agent harnesses, grounded in verifiable source code. Every behavioral claim below carries a footnote to a pinned GitHub permalink; the full evidence lives in the endnotes.</p></blockquote>
 <h2>Version block</h2>
