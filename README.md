@@ -60,6 +60,7 @@ memory stacks, routers, judges — read with the same source-grounded method.
 | Field Note | Write-up | Substack |
 |------------|----------|----------|
 | Hy Memory 2.0 | [hy-memory/field-notes.md](hy-memory/field-notes.md) | forthcoming |
+| TeamAI CLI | [teamai/field-notes.md](teamai/field-notes.md) | forthcoming |
 
 ## What's here
 
