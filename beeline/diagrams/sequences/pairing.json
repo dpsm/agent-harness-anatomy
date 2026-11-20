@@ -1,0 +1,64 @@
+{
+ "title": "Pairing: npx usebeeline connect",
+ "subtitle": "The code redeems once; the provider key never leaves the machine",
+ "participants": [
+  "Person + app",
+  "Beeline server",
+  "connect CLI",
+  "Machine helper",
+  "Harness CLI"
+ ],
+ "messages": [
+  {
+   "from": 0,
+   "to": 2,
+   "label": "enter the app's pairing code"
+  },
+  {
+   "from": 2,
+   "to": 1,
+   "label": "POST /auth/agent/connect: code, harness, model"
+  },
+  {
+   "note": "span",
+   "span": [
+    0,
+    4
+   ],
+   "text": "The request carries no API key: wizard keys go only to ~/.config/beeline/providers.json (mode 0600)"
+  },
+  {
+   "from": 1,
+   "to": 2,
+   "label": "grant: agent + body keys, exchange token",
+   "dashed": true
+  },
+  {
+   "from": 2,
+   "to": 2,
+   "label": "verify the harness program is installed"
+  },
+  {
+   "from": 2,
+   "to": 3,
+   "label": "stage runtime; activate daemon transport"
+  },
+  {
+   "from": 3,
+   "to": 1,
+   "label": "live socket opens; work arrives only here"
+  },
+  {
+   "from": 1,
+   "to": 3,
+   "label": "ping every 30s; 75s of silence drops it",
+   "dashed": true
+  },
+  {
+   "from": 2,
+   "to": 0,
+   "label": "Your agent is Foxy the fox",
+   "dashed": true
+  }
+ ]
+}

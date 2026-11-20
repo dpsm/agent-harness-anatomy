@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1146" width="1600" font-family="system-ui, -apple-system, sans-serif">
+<defs><marker id="arrc" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 1 L 9 5 L 0 9 z" fill="#d08c4e"/></marker><marker id="arrr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 1 L 9 5 L 0 9 z" fill="#8a7a66"/></marker></defs>
+<rect x="0" y="0" width="1600" height="1146" fill="#f7f2e9"/>
+<text x="140.65934065934067" y="44" font-size="26" font-weight="700" fill="#000000">Two helpers, one branch</text>
+<text x="140.65934065934067" y="74" font-size="15" fill="#000000">Branch sync before every corner turn; the remote branch is the shared artifact</text>
+<line x1="360" y1="110" x2="360" y2="1041" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="176" y="82" width="369" height="56" rx="10" fill="#ffffff" stroke="#3a2f26" stroke-width="1.5"/>
+<text x="360" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#000000">Helper A</text>
+<line x1="800" y1="110" x2="800" y2="1041" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="615" y="82" width="369" height="56" rx="10" fill="#ffffff" stroke="#3a2f26" stroke-width="1.5"/>
+<text x="800" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#000000">GitHub branch</text>
+<line x1="1240" y1="110" x2="1240" y2="1041" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="1055" y="82" width="369" height="56" rx="10" fill="#ffffff" stroke="#3a2f26" stroke-width="1.5"/>
+<text x="1240" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#000000">Helper B</text>
+<line x1="360" y1="295" x2="790" y2="295" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="502" cy="281" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="502" y="286" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">1</text>
+<text x="520" y="286" font-size="14" fill="#000000">push fixup commits</text>
+<path d="M 1240 390 h 77 v 46 H 1250" fill="none" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="1278" cy="374" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="1278" y="379" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">2</text>
+<text x="1327" y="395" font-size="14" fill="#000000">turn starts on the same corner</text>
+<line x1="1240" y1="485" x2="810" y2="485" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="942" cy="471" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="942" y="476" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">3</text>
+<text x="960" y="476" font-size="14" fill="#000000">fetch origin/&lt;feature_branch&gt;</text>
+<line x1="800" y1="580" x2="1230" y2="580" stroke="#8a7a66" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrr)"/>
+<circle cx="942" cy="566" r="11" fill="#ffffff" stroke="#8a7a66" stroke-width="1.5"/>
+<text x="942" y="571" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">4</text>
+<text x="960" y="571" font-size="14" fill="#000000">remote head has moved</text>
+<path d="M 1240 675 h 77 v 46 H 1250" fill="none" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="1278" cy="659" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="1278" y="664" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">5</text>
+<text x="1327" y="680" font-size="14" fill="#000000">behind: fast-forward; diverged: rebase</text>
+<path d="M 1240 770 h 77 v 46 H 1250" fill="none" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="1278" cy="754" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="1278" y="759" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">6</text>
+<text x="1327" y="775" font-size="14" fill="#000000">rebase conflict: realign to remote head</text>
+<line x1="1240" y1="865" x2="810" y2="865" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="942" cy="851" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="942" y="856" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">7</text>
+<text x="960" y="856" font-size="14" fill="#000000">push the new work</text>
+<rect x="176" y="918" width="1248" height="44" rx="8" fill="#d08c4e" fill-opacity="0.13" stroke="#d08c4e" stroke-width="1"/>
+<text x="800" y="945" text-anchor="middle" font-size="14" fill="#000000">Realignment discards only this helper&#x27;s unpushed commits; the remote branch is never force-pushed</text>
+</svg>

@@ -1,0 +1,74 @@
+{
+ "title": "One request, from tag to pull request",
+ "subtitle": "A Room message becomes a corner: brief, worktree, branch, PR",
+ "participants": [
+  "Person",
+  "Beeline server",
+  "Body helper",
+  "Harness (ACP)",
+  "GitHub"
+ ],
+ "messages": [
+  {
+   "from": 0,
+   "to": 1,
+   "label": "@codex the status line wraps. fix it, open a PR"
+  },
+  {
+   "from": 1,
+   "to": 1,
+   "label": "routeHumanMessage -> agent_commands row"
+  },
+  {
+   "from": 1,
+   "to": 2,
+   "label": "order down the live socket"
+  },
+  {
+   "from": 2,
+   "to": 3,
+   "label": "session/prompt under bwrap (Room: read-only)"
+  },
+  {
+   "from": 3,
+   "to": 2,
+   "label": "open_corner"
+  },
+  {
+   "from": 2,
+   "to": 1,
+   "label": "createCorner with the brief"
+  },
+  {
+   "from": 1,
+   "to": 1,
+   "label": "brief authorized; opened -> implement"
+  },
+  {
+   "from": 2,
+   "to": 2,
+   "label": "worktree from bare cache; sync to branch"
+  },
+  {
+   "from": 2,
+   "to": 3,
+   "label": "corner turn: brief + writable worktree"
+  },
+  {
+   "from": 3,
+   "to": 4,
+   "label": "push branch; gh pr create"
+  },
+  {
+   "from": 4,
+   "to": 1,
+   "label": "webhook: PR opened, checks running"
+  },
+  {
+   "from": 1,
+   "to": 0,
+   "label": "corner card in the Room: PR + checks",
+   "dashed": true
+  }
+ ]
+}
