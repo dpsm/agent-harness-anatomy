@@ -315,7 +315,7 @@
   </div>
 
   <div class="article" id="kilo-code">
-    <h2>#26 &mdash; Kilo Code: one core, every surface a client</h2>
+    <h2>#25 &mdash; Kilo Code: one core, every surface a client</h2>
     <p>One agent implementation, met everywhere: the loop, the session store and the permission engine live in a single CLI core that runs as a headless server &mdash; <code>kilo serve</code> &mdash; and the VS Code extension, the JetBrains plugin, the TUI and <code>kilo run</code> are all clients of it, the extension spawning one shared backend for its sidebar, editor tabs and worktree-based Agent Manager alike. What earlier generations called a mode is now an agent &mdash; code, plan, debug, ask, orchestrator &mdash; and the load-bearing part of an agent is its permission ruleset: allow / ask / deny rules merged from defaults, the agent and your config, evaluated last-match-wins with <em>ask</em> as the default, <code>.env</code> reads carved out to ask, and one class of request &mdash; a sandbox escalation &mdash; that no automation front-end will answer for you, not the extension's Auto-Approve toggle and not the CLI's <code>--auto</code>. At this pin (v7.8.18) hosted cloud sessions arrive through the same server: a local session-host API lets editors discover, read and attach to a hosted session while the credentials stay inside the local server's cloud provider module, and an MCP SDK bump means remote servers that redirect cross-origin no longer connect.</p>
     <div class="links">
       <a class="primary" href="kilo-code/trace.html">Step through one task</a>
