@@ -336,7 +336,7 @@
 
 
   <div class="article" id="mini-swe-agent">
-    <h2>#28 &mdash; mini-SWE-agent: what remains when almost everything is removed</h2>
+    <h2>#27 &mdash; mini-SWE-agent: what remains when almost everything is removed</h2>
     <p>The deliberately minimal sibling of SWE-agent (#11) keeps almost nothing: a 190-line agent file whose loop is a message list, a model and an environment &mdash; query, execute, append &mdash; with exceptions carrying the exit messages. There is no tool set: one bash action, which at v2 arrives as a single native tool call (the v1 regex-extracted text format remains as a shipped variant), executed in a fresh subprocess every step, so <code>cd</code> and exports never persist, only files do. Submission is a marker line in stdout that the environment recognizes; limits are step, cost and wall-time checks made before each model call; and the saved trajectory is the same linear list the model saw &mdash; no compaction, no history processors, no approval gate in the default agent at all.</p>
     <div class="links">
       <a class="primary" href="mini-swe-agent/trace.html">Step through one task</a>

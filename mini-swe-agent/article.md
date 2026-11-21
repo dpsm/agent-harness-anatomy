@@ -1,4 +1,4 @@
-# Agent Harness Anatomy #28: mini-SWE-agent — what remains when almost everything is removed
+# Agent Harness Anatomy #27: mini-SWE-agent — what remains when almost everything is removed
 
 > **Series:** Agent Harness Anatomy — top-down dissections of real agent harnesses, grounded in verifiable source code. Every behavioral claim below carries a footnote to a pinned GitHub permalink; the full evidence lives in the endnotes.
 
