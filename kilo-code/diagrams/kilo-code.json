@@ -1,0 +1,355 @@
+{
+ "title": "Kilo Code - one core, every surface a client",
+ "repo": "https://github.com/Kilo-Org/kilocode",
+ "sha": "b81761530650f8ec7b071441f4f54d2514f1a244",
+ "nodes": [
+  {
+   "id": "vscode",
+   "step": 1,
+   "label": "VS Code extension",
+   "sub": "packages/kilo-vscode - kilo-code",
+   "x": 20,
+   "y": 60,
+   "w": 240,
+   "h": 96,
+   "grade": "verified",
+   "excerpt": "The editor surface: sidebar chat, editor tabs and settings. It bundles the CLI binary and talks to one shared kilo serve backend over HTTP + SSE.",
+   "links": [
+    {
+     "label": "extension.ts:90 - one shared KiloConnectionService",
+     "line": 90,
+     "url": "https://github.com/Kilo-Org/kilocode/blob/b81761530650f8ec7b071441f4f54d2514f1a244/packages/kilo-vscode/src/extension.ts#L90"
+    }
+   ]
+  },
+  {
+   "id": "cli",
+   "step": 1,
+   "label": "CLI + TUI",
+   "sub": "packages/opencode - kilo run",
+   "x": 20,
+   "y": 190,
+   "w": 240,
+   "h": 96,
+   "grade": "verified",
+   "excerpt": "The terminal surfaces: the interactive TUI and kilo run, the headless one-shot runner with --auto and --dangerously-skip-permissions.",
+   "links": [
+    {
+     "label": "run.ts:258 - --auto auto-approve option",
+     "line": 258,
+     "url": "https://github.com/Kilo-Org/kilocode/blob/b81761530650f8ec7b071441f4f54d2514f1a244/packages/opencode/src/cli/cmd/run.ts#L258"
+    }
+   ]
+  },
+  {
+   "id": "jetbrains",
+   "step": 1,
+   "label": "JetBrains plugin",
+   "sub": "packages/kilo-jetbrains",
+   "x": 20,
+   "y": 320,
+   "w": 240,
+   "h": 96,
+   "grade": "verified",
+   "excerpt": "A third client of the same server: the IDE plugin speaks to kilo serve through the SDK rather than hosting a loop of its own.",
+   "links": [
+    {
+     "label": "AGENTS.md - products table: all products are clients of the CLI",
+     "line": 1,
+     "url": "https://github.com/Kilo-Org/kilocode/blob/b81761530650f8ec7b071441f4f54d2514f1a244/AGENTS.md#L1"
+    }
+   ]
+  },
+  {
+   "id": "agentmgr",
+   "step": 2,
+   "label": "Agent Manager",
+   "sub": "agent-manager - worktrees",
+   "x": 20,
+   "y": 450,
+   "w": 240,
+   "h": 96,
+   "grade": "verified",
+   "excerpt": "The extension's multi-session panel: parallel sessions, each in its own git worktree, all sharing the one backend with a directory context.",
+   "links": [
+    {
+     "label": "WorktreeManager.ts:131 - WorktreeManager",
+     "line": 131,
+     "url": "https://github.com/Kilo-Org/kilocode/blob/b81761530650f8ec7b071441f4f54d2514f1a244/packages/kilo-vscode/src/agent-manager/WorktreeManager.ts#L131"
+    }
+   ]
+  },
+  {
+   "id": "server",
+   "step": 2,
+   "label": "kilo serve",
+   "sub": "server/server.ts - HTTP + SSE",
+   "x": 470,
+   "y": 60,
+   "w": 240,
+   "h": 96,
+   "grade": "verified",
+   "excerpt": "The headless server every client connects to: sessions, events and the local API - including the session-host routes for hosted cloud sessions.",
+   "links": [
+    {
+     "label": "serve.ts:7 - the serve command",
+     "line": 7,
+     "url": "https://github.com/Kilo-Org/kilocode/blob/b81761530650f8ec7b071441f4f54d2514f1a244/packages/opencode/src/cli/cmd/serve.ts#L7"
+    },
+    {
+     "label": "session-host.ts:28 - /kilocode/session-host root",
+     "line": 28,
+     "url": "https://github.com/Kilo-Org/kilocode/blob/b81761530650f8ec7b071441f4f54d2514f1a244/packages/opencode/src/kilocode/server/httpapi/groups/session-host.ts#L28"
+    }
+   ]
+  },
+  {
+   "id": "loop",
+   "step": 3,
+   "label": "Session loop",
+   "sub": "session/prompt.ts",
+   "x": 470,
+   "y": 190,
+   "w": 240,
+   "h": 96,
+   "grade": "verified",
+   "excerpt": "SessionPrompt's retained loop: while(true), one streamed provider response per step, tool calls executed, results appended, until a step asks for no more tools.",
+   "links": [
+    {
+     "label": "prompt.ts:1555 - while (true): the retained loop",
+     "line": 1555,
+     "url": "https://github.com/Kilo-Org/kilocode/blob/b81761530650f8ec7b071441f4f54d2514f1a244/packages/opencode/src/session/prompt.ts#L1555"
+    },
+    {
+     "label": "prompt.ts:1707 - maxSteps = agent.steps ?? Infinity",
+     "line": 1707,
+     "url": "https://github.com/Kilo-Org/kilocode/blob/b81761530650f8ec7b071441f4f54d2514f1a244/packages/opencode/src/session/prompt.ts#L1707"
+    }
+   ]
+  },
+  {
+   "id": "agents",
+   "step": 4,
+   "label": "Agents (modes)",
+   "sub": "agent.ts - kilocode/agent",
+   "x": 470,
+   "y": 320,
+   "w": 240,
+   "h": 96,
+   "grade": "verified",
+   "excerpt": "What a mode is at this pin: an agent - prompt, model, steps and its own permission ruleset. Kilo renames build to code and adds debug, ask and orchestrator.",
+   "links": [
+    {
+     "label": "index.ts:485 - patchAgents",
+     "line": 485,
+     "url": "https://github.com/Kilo-Org/kilocode/blob/b81761530650f8ec7b071441f4f54d2514f1a244/packages/opencode/src/kilocode/agent/index.ts#L485"
+    },
+    {
+     "label": "agent.ts:185 - the plan agent denies edits",
+     "line": 185,
+     "url": "https://github.com/Kilo-Org/kilocode/blob/b81761530650f8ec7b071441f4f54d2514f1a244/packages/opencode/src/agent/agent.ts#L185"
+    }
+   ]
+  },
+  {
+   "id": "perms",
+   "step": 5,
+   "label": "Permission engine",
+   "sub": "permission/index.ts",
+   "x": 470,
+   "y": 450,
+   "w": 240,
+   "h": 96,
+   "grade": "verified",
+   "excerpt": "Rulesets of allow / ask / deny matched by wildcard, last match wins, unmatched means ask. Saved always-rules and Kilo hardeners sit on top.",
+   "links": [
+    {
+     "label": "index.ts:102 - evaluate: last matching rule wins",
+     "line": 102,
+     "url": "https://github.com/Kilo-Org/kilocode/blob/b81761530650f8ec7b071441f4f54d2514f1a244/packages/opencode/src/permission/index.ts#L102"
+    },
+    {
+     "label": "index.ts:115 - resolve: saved rules + hardeners",
+     "line": 115,
+     "url": "https://github.com/Kilo-Org/kilocode/blob/b81761530650f8ec7b071441f4f54d2514f1a244/packages/opencode/src/permission/index.ts#L115"
+    }
+   ]
+  },
+  {
+   "id": "providers",
+   "step": 7,
+   "label": "Providers + gateway",
+   "sub": "provider.ts - kilo-gateway",
+   "x": 920,
+   "y": 60,
+   "w": 240,
+   "h": 96,
+   "grade": "verified",
+   "excerpt": "A catalog-driven provider layer (models.dev) plus the Kilo Gateway for Kilo-account routing: chat, models, embeddings, autocomplete, transcription.",
+   "links": [
+    {
+     "label": "provider.ts - the provider layer",
+     "line": 1,
+     "url": "https://github.com/Kilo-Org/kilocode/blob/b81761530650f8ec7b071441f4f54d2514f1a244/packages/opencode/src/provider/provider.ts#L1"
+    },
+    {
+     "label": "types.ts:88 - default gateway base URL",
+     "line": 88,
+     "url": "https://github.com/Kilo-Org/kilocode/blob/b81761530650f8ec7b071441f4f54d2514f1a244/packages/kilo-gateway/src/types.ts#L88"
+    }
+   ]
+  },
+  {
+   "id": "tools",
+   "step": 6,
+   "label": "Tools, MCP, sandbox",
+   "sub": "tool/ - mcp/ - kilo-sandbox",
+   "x": 920,
+   "y": 190,
+   "w": 240,
+   "h": 96,
+   "grade": "verified",
+   "excerpt": "Built-in tools, config-declared MCP servers (SDK 1.32.1) and Marketplace installs; shell runs under the bubblewrap sandbox backend when enabled.",
+   "links": [
+    {
+     "label": "package.json:109 - MCP SDK 1.32.1",
+     "line": 109,
+     "url": "https://github.com/Kilo-Org/kilocode/blob/b81761530650f8ec7b071441f4f54d2514f1a244/packages/opencode/package.json#L109"
+    },
+    {
+     "label": "bubblewrap.ts:354 - the bubblewrap backend",
+     "line": 354,
+     "url": "https://github.com/Kilo-Org/kilocode/blob/b81761530650f8ec7b071441f4f54d2514f1a244/packages/kilo-sandbox/src/bubblewrap.ts#L354"
+    }
+   ]
+  },
+  {
+   "id": "cloud",
+   "step": 8,
+   "label": "Hosted cloud sessions",
+   "sub": "session-hosting - kilo-cloud",
+   "x": 920,
+   "y": 320,
+   "w": 240,
+   "h": 96,
+   "grade": "verified",
+   "excerpt": "New in 7.8.18: hosted sessions exposed through the local API. The kilo-cloud provider holds the credentials; editors discover, read and attach without handling them.",
+   "links": [
+    {
+     "label": "kilo-cloud.ts:33 - PROVIDER = kilo-cloud",
+     "line": 33,
+     "url": "https://github.com/Kilo-Org/kilocode/blob/b81761530650f8ec7b071441f4f54d2514f1a244/packages/opencode/src/kilocode/session-hosting/kilo-cloud.ts#L33"
+    },
+    {
+     "label": "kilo-cloud.ts:50 - provider(): the credential boundary",
+     "line": 50,
+     "url": "https://github.com/Kilo-Org/kilocode/blob/b81761530650f8ec7b071441f4f54d2514f1a244/packages/opencode/src/kilocode/session-hosting/kilo-cloud.ts#L50"
+    }
+   ]
+  },
+  {
+   "id": "memory",
+   "step": 8,
+   "label": "Memory + snapshots",
+   "sub": "kilo-memory - compaction",
+   "x": 920,
+   "y": 450,
+   "w": 240,
+   "h": 96,
+   "grade": "verified",
+   "excerpt": "Per-step shadow-git snapshots make messages revert points; compaction summarizes overflow; project memory and the recall tool carry context across sessions.",
+   "links": [
+    {
+     "label": "overflow.ts:9 - COMPACTION_BUFFER = 20_000",
+     "line": 9,
+     "url": "https://github.com/Kilo-Org/kilocode/blob/b81761530650f8ec7b071441f4f54d2514f1a244/packages/opencode/src/session/overflow.ts#L9"
+    },
+    {
+     "label": "recall.ts - the kilo_local_recall tool",
+     "line": 1,
+     "url": "https://github.com/Kilo-Org/kilocode/blob/b81761530650f8ec7b071441f4f54d2514f1a244/packages/opencode/src/tool/recall.ts#L1"
+    }
+   ]
+  }
+ ],
+ "edges": [
+  {
+   "from": "vscode",
+   "to": "server",
+   "label": "spawns kilo serve",
+   "label_dx": -30
+  },
+  {
+   "from": "cli",
+   "to": "server",
+   "label": "same server, headless"
+  },
+  {
+   "from": "jetbrains",
+   "to": "server",
+   "label": "connects via the SDK"
+  },
+  {
+   "from": "agentmgr",
+   "to": "server",
+   "label": "worktree sessions by directory"
+  },
+  {
+   "from": "server",
+   "to": "loop",
+   "label": "prompt -> session loop"
+  },
+  {
+   "from": "loop",
+   "to": "agents",
+   "label": "session runs as one agent"
+  },
+  {
+   "from": "agents",
+   "to": "perms",
+   "label": "the agent's own ruleset"
+  },
+  {
+   "from": "loop",
+   "to": "perms",
+   "label": "ask first",
+   "side": "right",
+   "label_dx": 130
+  },
+  {
+   "from": "loop",
+   "to": "tools",
+   "label": "executes tool calls",
+   "label_dx": -40
+  },
+  {
+   "from": "perms",
+   "to": "tools",
+   "label": "allow / ask / deny verdict"
+  },
+  {
+   "from": "loop",
+   "to": "providers",
+   "label": "streamed model call",
+   "label_dx": -90,
+   "label_dy": -24
+  },
+  {
+   "from": "server",
+   "to": "cloud",
+   "label": "local API: session-host routes"
+  },
+  {
+   "from": "cloud",
+   "to": "providers",
+   "label": "hosted run, Kilo credentials",
+   "label_dx": -170
+  },
+  {
+   "from": "loop",
+   "to": "memory",
+   "label": "snapshots + memory",
+   "label_dx": -30
+  }
+ ]
+}

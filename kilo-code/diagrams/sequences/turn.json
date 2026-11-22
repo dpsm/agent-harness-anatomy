@@ -1,0 +1,80 @@
+{
+ "title": "One turn in the extension",
+ "subtitle": "One prompt, one shared server, steps until the model stops calling tools",
+ "participants": [
+  "Person",
+  "VS Code extension",
+  "kilo serve",
+  "Session loop",
+  "Model provider"
+ ],
+ "messages": [
+  {
+   "from": 0,
+   "to": 1,
+   "label": "type a prompt in the sidebar"
+  },
+  {
+   "from": 1,
+   "to": 2,
+   "label": "prompt over HTTP (shared backend)"
+  },
+  {
+   "from": 2,
+   "to": 3,
+   "label": "SessionPrompt.loop(session)"
+  },
+  {
+   "from": 3,
+   "to": 3,
+   "label": "assemble: system, rules, history"
+  },
+  {
+   "from": 3,
+   "to": 4,
+   "label": "stream one model call"
+  },
+  {
+   "from": 4,
+   "to": 3,
+   "label": "parts + tool calls",
+   "dashed": true
+  },
+  {
+   "from": 3,
+   "to": 3,
+   "label": "snapshot the worktree for this step"
+  },
+  {
+   "note": "span",
+   "span": [
+    0,
+    4
+   ],
+   "text": "The loop repeats while steps produce tool calls; there is no built-in step cap"
+  },
+  {
+   "from": 3,
+   "to": 4,
+   "label": "next step with the tool results"
+  },
+  {
+   "from": 4,
+   "to": 3,
+   "label": "text only: no tool calls",
+   "dashed": true
+  },
+  {
+   "from": 3,
+   "to": 2,
+   "label": "run finished",
+   "dashed": true
+  },
+  {
+   "from": 2,
+   "to": 1,
+   "label": "SSE events render the transcript",
+   "dashed": true
+  }
+ ]
+}

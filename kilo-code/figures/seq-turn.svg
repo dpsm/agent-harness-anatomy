@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 985" width="1600" font-family="system-ui, -apple-system, sans-serif">
+<defs><marker id="arrc" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 1 L 9 5 L 0 9 z" fill="#d08c4e"/></marker><marker id="arrr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 1 L 9 5 L 0 9 z" fill="#8a7a66"/></marker></defs>
+<rect x="0" y="0" width="1600" height="985" fill="#f7f2e9"/>
+<text x="90.78014184397163" y="44" font-size="26" font-weight="700" fill="#000000">One turn in the extension</text>
+<text x="90.78014184397163" y="74" font-size="15" fill="#000000">One prompt, one shared server, steps until the model stops calling tools</text>
+<line x1="233" y1="110" x2="233" y2="917" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="113" y="82" width="238" height="56" rx="10" fill="#ffffff" stroke="#3a2f26" stroke-width="1.5"/>
+<text x="233" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#000000">Person</text>
+<line x1="516" y1="110" x2="516" y2="917" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="397" y="82" width="238" height="56" rx="10" fill="#ffffff" stroke="#3a2f26" stroke-width="1.5"/>
+<text x="516" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#000000">VS Code extension</text>
+<line x1="800" y1="110" x2="800" y2="917" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="681" y="82" width="238" height="56" rx="10" fill="#ffffff" stroke="#3a2f26" stroke-width="1.5"/>
+<text x="800" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#000000">kilo serve</text>
+<line x1="1084" y1="110" x2="1084" y2="917" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="965" y="82" width="238" height="56" rx="10" fill="#ffffff" stroke="#3a2f26" stroke-width="1.5"/>
+<text x="1084" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#000000">Session loop</text>
+<line x1="1367" y1="110" x2="1367" y2="917" stroke="#3a2f26" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="1248" y="82" width="238" height="56" rx="10" fill="#ffffff" stroke="#3a2f26" stroke-width="1.5"/>
+<text x="1367" y="116" text-anchor="middle" font-size="16" font-weight="600" fill="#000000">Model provider</text>
+<line x1="233" y1="191" x2="506" y2="191" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="296" cy="177" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="296" y="182" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">1</text>
+<text x="314" y="182" font-size="14" fill="#000000">type a prompt in the sidebar</text>
+<line x1="516" y1="252" x2="790" y2="252" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="580" cy="238" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="580" y="243" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">2</text>
+<text x="598" y="243" font-size="14" fill="#000000">prompt over HTTP (shared backend)</text>
+<line x1="800" y1="313" x2="1074" y2="313" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="864" cy="299" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="864" y="304" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">3</text>
+<text x="882" y="304" font-size="14" fill="#000000">SessionPrompt.loop(session)</text>
+<path d="M 1084 374 h 50 v 30 H 1094" fill="none" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="1109" cy="358" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="1109" y="363" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">4</text>
+<text x="1144" y="379" font-size="14" fill="#000000">assemble: system, rules, history</text>
+<line x1="1084" y1="436" x2="1357" y2="436" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="1148" cy="422" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="1148" y="427" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">5</text>
+<text x="1166" y="427" font-size="14" fill="#000000">stream one model call</text>
+<line x1="1367" y1="497" x2="1094" y2="497" stroke="#8a7a66" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrr)"/>
+<circle cx="1148" cy="483" r="11" fill="#ffffff" stroke="#8a7a66" stroke-width="1.5"/>
+<text x="1148" y="488" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">6</text>
+<text x="1166" y="488" font-size="14" fill="#000000">parts + tool calls</text>
+<path d="M 1084 558 h 50 v 30 H 1094" fill="none" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="1109" cy="542" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="1109" y="547" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">7</text>
+<text x="1144" y="563" font-size="14" fill="#000000">snapshot the worktree for this step</text>
+<rect x="113" y="592" width="1373" height="44" rx="8" fill="#d08c4e" fill-opacity="0.13" stroke="#d08c4e" stroke-width="1"/>
+<text x="800" y="619" text-anchor="middle" font-size="14" fill="#000000">The loop repeats while steps produce tool calls; there is no built-in step cap</text>
+<line x1="1084" y1="692" x2="1357" y2="692" stroke="#d08c4e" stroke-width="2" marker-end="url(#arrc)"/>
+<circle cx="1148" cy="678" r="11" fill="#ffffff" stroke="#d08c4e" stroke-width="1.5"/>
+<text x="1148" y="683" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">8</text>
+<text x="1166" y="683" font-size="14" fill="#000000">next step with the tool results</text>
+<line x1="1367" y1="753" x2="1094" y2="753" stroke="#8a7a66" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrr)"/>
+<circle cx="1148" cy="739" r="11" fill="#ffffff" stroke="#8a7a66" stroke-width="1.5"/>
+<text x="1148" y="744" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">9</text>
+<text x="1166" y="744" font-size="14" fill="#000000">text only: no tool calls</text>
+<line x1="1084" y1="815" x2="810" y2="815" stroke="#8a7a66" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrr)"/>
+<circle cx="864" cy="801" r="11" fill="#ffffff" stroke="#8a7a66" stroke-width="1.5"/>
+<text x="864" y="806" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">10</text>
+<text x="882" y="806" font-size="14" fill="#000000">run finished</text>
+<line x1="800" y1="876" x2="526" y2="876" stroke="#8a7a66" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrr)"/>
+<circle cx="580" cy="862" r="11" fill="#ffffff" stroke="#8a7a66" stroke-width="1.5"/>
+<text x="580" y="867" text-anchor="middle" font-size="12" font-weight="700" fill="#000000">11</text>
+<text x="598" y="867" font-size="14" fill="#000000">SSE events render the transcript</text>
+</svg>
