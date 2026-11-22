@@ -39,12 +39,8 @@ By **David P. S. Marques** — [LinkedIn](https://ca.linkedin.com/in/dpsmarques)
 | 21 | ZCode (3.16.2 @ 3c5b227) | [zcode/article.md](zcode/article.md) | [Read on Substack](https://agentharnessanatomy.substack.com/p/zcode-the-goal-outlives-the-turn) |
 | 22 | Everruns (v0.49.0) | [everruns/article.md](everruns/article.md) | [Read on Substack](https://agentharnessanatomy.substack.com/p/everruns-the-session-survives-its) |
 | 23 | MIKE (v0.1.0) | [mike/article.md](mike/article.md) | [Read on Substack](https://agentharnessanatomy.substack.com/p/mike-the-board-is-the-control-plane) |
-<<<<<<< HEAD
 | 24 | Beeline (v0.1.110) | [beeline/article.md](beeline/article.md) | [Read on Substack](https://agentharnessanatomy.substack.com/p/beeline-the-chat-is-the-harness-surface) |
-=======
-| 24 | Beeline (v0.1.110) | [beeline/article.md](beeline/article.md) | forthcoming |
 | 25 | Kilo Code (v7.8.18) | [kilo-code/article.md](kilo-code/article.md) | forthcoming |
->>>>>>> 5c6a461 (Add Kilo Code teardown #26: one core, every surface a client)
 
 ## Embedded Harness Anatomy
 
