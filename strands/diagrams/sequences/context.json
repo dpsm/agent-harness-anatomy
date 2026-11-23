@@ -1,0 +1,62 @@
+{
+ "title": "Context: the auto preset at work",
+ "subtitle": "Truncate, offload, summarize - the loop's longevity machinery",
+ "participants": [
+  "Event loop",
+  "Context manager",
+  "Offload stash",
+  "Memory store",
+  "Model"
+ ],
+ "messages": [
+  {
+   "from": 0,
+   "to": 1,
+   "label": "tool result arrives: 4,000 tokens"
+  },
+  {
+   "from": 1,
+   "to": 2,
+   "label": "offload the full result to the stash"
+  },
+  {
+   "from": 1,
+   "to": 0,
+   "label": "context keeps a 750-token preview + reference",
+   "dashed": true
+  },
+  {
+   "from": 0,
+   "to": 4,
+   "label": "model reads it back with retrieve_context when needed"
+  },
+  {
+   "from": 0,
+   "to": 1,
+   "label": "window passes 85% utilization"
+  },
+  {
+   "from": 1,
+   "to": 4,
+   "label": "summarize older history (4 newest messages kept)"
+  },
+  {
+   "note": "span",
+   "span": [
+    0,
+    4
+   ],
+   "text": "Overflow still possible? An emergency truncation strategy always runs last"
+  },
+  {
+   "from": 3,
+   "to": 0,
+   "label": "before a user turn: memory searched, top matches injected"
+  },
+  {
+   "from": 3,
+   "to": 3,
+   "label": "every few turns: extractor distills new facts (async, small model)"
+  }
+ ]
+}

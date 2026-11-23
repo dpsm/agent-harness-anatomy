@@ -3,7 +3,7 @@
 # Agent Harness Anatomy
 
 Rigorous, source-grounded architecture teardowns of AI agent harnesses —
-25 teardowns and counting, from pi and aider to Beeline and Kilo Code.
+26 teardowns and counting, from pi and aider to Kilo Code and Strands.
 Every behavioral claim is pinned to verifiable source code; no product-review prose.
 
 Companion repo to the Substack series.
@@ -41,6 +41,7 @@ By **David P. S. Marques** — [LinkedIn](https://ca.linkedin.com/in/dpsmarques)
 | 23 | MIKE (v0.1.0) | [mike/article.md](mike/article.md) | [Read on Substack](https://agentharnessanatomy.substack.com/p/mike-the-board-is-the-control-plane) |
 | 24 | Beeline (v0.1.110) | [beeline/article.md](beeline/article.md) | [Read on Substack](https://agentharnessanatomy.substack.com/p/beeline-the-chat-is-the-harness-surface) |
 | 25 | Kilo Code (v7.8.18) | [kilo-code/article.md](kilo-code/article.md) | forthcoming |
+| 26 | Strands harness (harness-python/v0.3.2) | [strands/article.md](strands/article.md) | forthcoming |
 
 ## Embedded Harness Anatomy
 

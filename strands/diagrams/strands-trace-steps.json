@@ -1,0 +1,173 @@
+{
+ "title": "One task, end to end: the slowest test",
+ "repo": "https://github.com/strands-agents/harness-sdk",
+ "sha": "0abec0bca2ce86d3a3d2147b0dfffbc008654ae6",
+ "note": "The README's own quickstart task, traced through the factory, the SDK event loop, the ungated tool executor and the auto context manager.",
+ "example_input": "Find the slowest test in this repo and explain why it's slow",
+ "steps": [
+  {
+   "step": 1,
+   "node": "factory",
+   "code": "agent.py:238",
+   "title": "One call builds the agent",
+   "narrative": "The caller runs create_harness() with no arguments. The factory starts resolving the defaults table: the Bedrock Opus 5 model, effort auto, the auto context manager, caching auto, sessions, skills and memory on - and interventions off.",
+   "representation": "create_harness()\n  model: bedrock/global.anthropic.claude-opus-5\n  interventions: None -> [] (no gate)",
+   "modules": [
+    {
+     "file": "harness-py/src/strands_harness/agent.py:238",
+     "label": "agent.py:238 - def create_harness(",
+     "line": 238,
+     "url": "https://github.com/strands-agents/harness-sdk/blob/0abec0bca2ce86d3a3d2147b0dfffbc008654ae6/harness-py/src/strands_harness/agent.py#L238"
+    },
+    {
+     "file": "harness-py/src/strands_harness/defaults.py:5",
+     "label": "defaults.py:5 - DEFAULT_MODEL",
+     "line": 5,
+     "url": "https://github.com/strands-agents/harness-sdk/blob/0abec0bca2ce86d3a3d2147b0dfffbc008654ae6/harness-py/src/strands_harness/defaults.py#L5"
+    }
+   ]
+  },
+  {
+   "step": 2,
+   "node": "agent",
+   "code": "agent.py:526",
+   "title": "A plain strands.Agent comes back",
+   "narrative": "The factory builds the eight built-in tools, the contract system prompt, the snapshot session manager and the file memory manager, checks tool names for collisions across every source, and constructs a regular strands.Agent. There is no wrapper to learn: the caller holds the SDK's own object.",
+   "representation": "agent = Agent(model, tools=[8 built-ins + yours],\n  plugins=[todos, environment], session_manager,\n  memory_manager, interventions=[])",
+   "modules": [
+    {
+     "file": "harness-py/src/strands_harness/agent.py:526",
+     "label": "agent.py:526 - agent = Agent(",
+     "line": 526,
+     "url": "https://github.com/strands-agents/harness-sdk/blob/0abec0bca2ce86d3a3d2147b0dfffbc008654ae6/harness-py/src/strands_harness/agent.py#L526"
+    },
+    {
+     "file": "harness-py/src/strands_harness/agent.py:79",
+     "label": "agent.py:79 - _builtin_tools: the eight built-ins",
+     "line": 79,
+     "url": "https://github.com/strands-agents/harness-sdk/blob/0abec0bca2ce86d3a3d2147b0dfffbc008654ae6/harness-py/src/strands_harness/agent.py#L79"
+    }
+   ]
+  },
+  {
+   "step": 3,
+   "node": "loop",
+   "code": "event_loop.py:190",
+   "title": "The first cycle streams a model call",
+   "narrative": "The caller invokes the agent with the task. Before the first model call, memory is searched and the environment plugin injects platform, date, working directory and the project's AGENTS.md. The event loop checks the invocation's limits - none were set - and streams one model call.",
+   "representation": "event_loop_cycle:\n  limits? none set -> proceed\n  stream(model) -> tool_use: read, shell",
+   "modules": [
+    {
+     "file": "strands-py/src/strands/event_loop/event_loop.py:190",
+     "label": "event_loop.py:190 - event_loop_cycle",
+     "line": 190,
+     "url": "https://github.com/strands-agents/harness-sdk/blob/0abec0bca2ce86d3a3d2147b0dfffbc008654ae6/strands-py/src/strands/event_loop/event_loop.py#L190"
+    },
+    {
+     "file": "harness-py/src/strands_harness/plugins/environment.py:43",
+     "label": "environment.py:43 - EnvironmentContext plugin",
+     "line": 43,
+     "url": "https://github.com/strands-agents/harness-sdk/blob/0abec0bca2ce86d3a3d2147b0dfffbc008654ae6/harness-py/src/strands_harness/plugins/environment.py#L43"
+    }
+   ]
+  },
+  {
+   "step": 4,
+   "node": "model",
+   "code": "models.py:311",
+   "title": "The model answers with tool calls",
+   "narrative": "The resolved model is Bedrock's global.anthropic.claude-opus-5, built by the harness's provider table with its reasoning effort mapped from 'auto' to the provider's recommended level and prompt caching configured. It replies with tool_use: a read and a shell command.",
+   "representation": "BedrockModel(global.anthropic.claude-opus-5)\n  effort auto -> high, cache points set\n  reply: tool_use [read, shell]",
+   "modules": [
+    {
+     "file": "harness-py/src/strands_harness/models.py:311",
+     "label": "models.py:311 - _PROVIDERS table",
+     "line": 311,
+     "url": "https://github.com/strands-agents/harness-sdk/blob/0abec0bca2ce86d3a3d2147b0dfffbc008654ae6/harness-py/src/strands_harness/models.py#L311"
+    }
+   ]
+  },
+  {
+   "step": 5,
+   "node": "tools",
+   "code": "file_tools.py:78",
+   "title": "Tools execute - ungated, on the host",
+   "narrative": "The executor runs both calls. No intervention handler exists to approve them, and both route through the agent's sandbox - which, with nothing configured, is the host environment itself. The read returns numbered lines; the shell command runs directly on the caller's machine.",
+   "representation": "read(path) -> numbered lines (via sandbox)\nshell(cmd) -> runs on host: NotASandboxLocalEnvironment",
+   "modules": [
+    {
+     "file": "harness-py/src/strands_harness/tools/file_tools.py:78",
+     "label": "file_tools.py:78 - make_read",
+     "line": 78,
+     "url": "https://github.com/strands-agents/harness-sdk/blob/0abec0bca2ce86d3a3d2147b0dfffbc008654ae6/harness-py/src/strands_harness/tools/file_tools.py#L78"
+    },
+    {
+     "file": "strands-py/src/strands/agent/agent.py:391",
+     "label": "agent.py:391 - default sandbox is the host",
+     "line": 391,
+     "url": "https://github.com/strands-agents/harness-sdk/blob/0abec0bca2ce86d3a3d2147b0dfffbc008654ae6/strands-py/src/strands/agent/agent.py#L391"
+    }
+   ]
+  },
+  {
+   "step": 6,
+   "node": "context",
+   "code": "context_manager.py:31",
+   "title": "A large result is offloaded, not carried",
+   "narrative": "The shell output is large - over the auto preset's 1,500-token threshold. The context manager offloads the full result to the stash and leaves a 750-token preview with a reference in the conversation, so the next cycle stays lean and the model can still read the whole thing back with retrieve_context.",
+   "representation": "tool result 4,000 tokens\n  -> stash: full text offloaded\n  -> context: 750-token preview + reference",
+   "modules": [
+    {
+     "file": "strands-py/src/strands/_context_manager/context_manager.py:31",
+     "label": "context_manager.py:31 - _AUTO_TRUNCATE_THRESHOLD = 1_500",
+     "line": 31,
+     "url": "https://github.com/strands-agents/harness-sdk/blob/0abec0bca2ce86d3a3d2147b0dfffbc008654ae6/strands-py/src/strands/_context_manager/context_manager.py#L31"
+    }
+   ]
+  },
+  {
+   "step": 7,
+   "node": "loop",
+   "code": "event_loop.py:428",
+   "title": "The loop recurses, then the model finishes",
+   "narrative": "With the tool results appended, the loop recurses into its next cycle: another streamed model call, now with the evidence in context. This time the model answers with text and no tool calls - end_turn - and the loop stops. Nothing counted the cycles; the model's decision to stop is the terminator.",
+   "representation": "recurse_event_loop -> stream(model)\n  reply: text, no tool_use -> end_turn\n  stop. (no cap was ever checked against a limit)",
+   "modules": [
+    {
+     "file": "strands-py/src/strands/event_loop/event_loop.py:428",
+     "label": "event_loop.py:428 - recurse_event_loop",
+     "line": 428,
+     "url": "https://github.com/strands-agents/harness-sdk/blob/0abec0bca2ce86d3a3d2147b0dfffbc008654ae6/strands-py/src/strands/event_loop/event_loop.py#L428"
+    },
+    {
+     "file": "strands-py/src/strands/types/agent.py:150",
+     "label": "types/agent.py:150 - Limits: opt-in per invocation",
+     "line": 150,
+     "url": "https://github.com/strands-agents/harness-sdk/blob/0abec0bca2ce86d3a3d2147b0dfffbc008654ae6/strands-py/src/strands/types/agent.py#L150"
+    }
+   ]
+  },
+  {
+   "step": 8,
+   "node": "state",
+   "code": "agent.py:475",
+   "title": "The session snapshot is the residue",
+   "narrative": "The conversation is snapshotted under ./.agent/sessions beneath a fresh random id, and memory extraction will distill durable facts in the background over the next turns. A future run continues this conversation only if the caller saved the id and passes it back - persistence is on, resumption is manual.",
+   "representation": "./.agent/sessions/<random-id>/ snapshot saved\n./.agent/memory/ <- facts distilled async\nnext run: session={'id': ...} or start fresh",
+   "modules": [
+    {
+     "file": "harness-py/src/strands_harness/agent.py:475",
+     "label": "agent.py:475 - SnapshotSessionManager(save_latest_on='message')",
+     "line": 475,
+     "url": "https://github.com/strands-agents/harness-sdk/blob/0abec0bca2ce86d3a3d2147b0dfffbc008654ae6/harness-py/src/strands_harness/agent.py#L475"
+    },
+    {
+     "file": "harness-py/src/strands_harness/memory.py:38",
+     "label": "memory.py:38 - resolve_memory",
+     "line": 38,
+     "url": "https://github.com/strands-agents/harness-sdk/blob/0abec0bca2ce86d3a3d2147b0dfffbc008654ae6/harness-py/src/strands_harness/memory.py#L38"
+    }
+   ]
+  }
+ ]
+}
