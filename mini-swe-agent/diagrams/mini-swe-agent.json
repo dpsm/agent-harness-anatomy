@@ -1,0 +1,280 @@
+{
+ "title": "mini-SWE-agent - a list, a loop, and bash",
+ "repo": "https://github.com/SWE-agent/mini-swe-agent",
+ "sha": "a83fcae82d2a08f0ee0c688f9d137b3566c097f8",
+ "nodes": [
+  {
+   "id": "caller",
+   "step": 1,
+   "label": "Caller / mini CLI",
+   "sub": "run/mini.py - hello_world.py",
+   "x": 20,
+   "y": 60,
+   "w": 240,
+   "h": 96,
+   "grade": "verified",
+   "excerpt": "The entry points: the mini CLI (interactive agent, local env) or a few lines of Python building DefaultAgent(model, env, **config) directly.",
+   "links": [
+    {
+     "label": "mini.py:24 - DEFAULT_CONFIG_FILE = mini.yaml",
+     "line": 24,
+     "url": "https://github.com/SWE-agent/mini-swe-agent/blob/a83fcae82d2a08f0ee0c688f9d137b3566c097f8/src/minisweagent/run/mini.py#L24"
+    },
+    {
+     "label": "hello_world.py - DefaultAgent(LitellmModel, LocalEnvironment)",
+     "line": 1,
+     "url": "https://github.com/SWE-agent/mini-swe-agent/blob/a83fcae82d2a08f0ee0c688f9d137b3566c097f8/src/minisweagent/run/hello_world.py#L1"
+    }
+   ]
+  },
+  {
+   "id": "agent",
+   "step": 2,
+   "label": "DefaultAgent",
+   "sub": "agents/default.py - the whole loop",
+   "x": 370,
+   "y": 60,
+   "w": 240,
+   "h": 96,
+   "grade": "verified",
+   "excerpt": "The agent: a message list, a model, an environment, cost and call counters. run() seeds two messages, then step() = execute_actions(query()) until an exit message lands.",
+   "links": [
+    {
+     "label": "default.py:88 - def run(",
+     "line": 88,
+     "url": "https://github.com/SWE-agent/mini-swe-agent/blob/a83fcae82d2a08f0ee0c688f9d137b3566c097f8/src/minisweagent/agents/default.py#L88"
+    },
+    {
+     "label": "default.py:126 - step() = execute_actions(query())",
+     "line": 126,
+     "url": "https://github.com/SWE-agent/mini-swe-agent/blob/a83fcae82d2a08f0ee0c688f9d137b3566c097f8/src/minisweagent/agents/default.py#L126"
+    }
+   ]
+  },
+  {
+   "id": "model",
+   "step": 3,
+   "label": "Model layer",
+   "sub": "litellm_model.py - litellm by default",
+   "x": 370,
+   "y": 190,
+   "w": 240,
+   "h": 96,
+   "grade": "verified",
+   "excerpt": "One litellm completion per query, with the single BASH_TOOL, tenacity retry (10 attempts, 4-60s backoff, abort list) and litellm cost accounting. Caller supplies the model name.",
+   "links": [
+    {
+     "label": "litellm_model.py:69 - tools=[BASH_TOOL]",
+     "line": 69,
+     "url": "https://github.com/SWE-agent/mini-swe-agent/blob/a83fcae82d2a08f0ee0c688f9d137b3566c097f8/src/minisweagent/models/litellm_model.py#L69"
+    },
+    {
+     "label": "retry.py:21 - stop_after_attempt(10)",
+     "line": 21,
+     "url": "https://github.com/SWE-agent/mini-swe-agent/blob/a83fcae82d2a08f0ee0c688f9d137b3566c097f8/src/minisweagent/models/utils/retry.py#L21"
+    }
+   ]
+  },
+  {
+   "id": "interactive",
+   "step": 2,
+   "label": "InteractiveAgent",
+   "sub": "agents/interactive.py - CLI default",
+   "x": 20,
+   "y": 190,
+   "w": 240,
+   "h": 96,
+   "grade": "verified",
+   "excerpt": "The CLI's agent subclass: confirm / human / yolo modes, a regex whitelist, submission confirmation, and a prompt to raise limits when they are hit on a terminal.",
+   "links": [
+    {
+     "label": "interactive.py:25 - mode = confirm (default)",
+     "line": 25,
+     "url": "https://github.com/SWE-agent/mini-swe-agent/blob/a83fcae82d2a08f0ee0c688f9d137b3566c097f8/src/minisweagent/agents/interactive.py#L25"
+    }
+   ]
+  },
+  {
+   "id": "parser",
+   "step": 4,
+   "label": "Action parsing",
+   "sub": "toolcall (default) or regex text",
+   "x": 370,
+   "y": 320,
+   "w": 240,
+   "h": 96,
+   "grade": "verified",
+   "excerpt": "Tool-call path: validates the bash calls (none / unknown / bad args = FormatError). Text variant: regex extracts exactly one mswea_bash_command block, else FormatError.",
+   "links": [
+    {
+     "label": "actions_toolcall.py:30 - parse_toolcall_actions",
+     "line": 30,
+     "url": "https://github.com/SWE-agent/mini-swe-agent/blob/a83fcae82d2a08f0ee0c688f9d137b3566c097f8/src/minisweagent/models/utils/actions_toolcall.py#L30"
+    },
+    {
+     "label": "actions_text.py:24 - re.findall + exactly one",
+     "line": 24,
+     "url": "https://github.com/SWE-agent/mini-swe-agent/blob/a83fcae82d2a08f0ee0c688f9d137b3566c097f8/src/minisweagent/models/utils/actions_text.py#L24"
+    }
+   ]
+  },
+  {
+   "id": "env",
+   "step": 5,
+   "label": "Environment",
+   "sub": "local - docker - singularity - extras",
+   "x": 370,
+   "y": 450,
+   "w": 240,
+   "h": 96,
+   "grade": "verified",
+   "excerpt": "execute(action) -> output / returncode / exception_info, in a fresh shell per action (subprocess locally, docker exec in a container); cd and exports never persist, files do. Submission marker checked here.",
+   "links": [
+    {
+     "label": "local.py:24 - LocalEnvironment.execute",
+     "line": 24,
+     "url": "https://github.com/SWE-agent/mini-swe-agent/blob/a83fcae82d2a08f0ee0c688f9d137b3566c097f8/src/minisweagent/environments/local.py#L24"
+    },
+    {
+     "label": "docker.py:101 - DockerEnvironment.execute",
+     "line": 101,
+     "url": "https://github.com/SWE-agent/mini-swe-agent/blob/a83fcae82d2a08f0ee0c688f9d137b3566c097f8/src/minisweagent/environments/docker.py#L101"
+    },
+    {
+     "label": "local.py:45 - _check_finished: submission marker",
+     "line": 45,
+     "url": "https://github.com/SWE-agent/mini-swe-agent/blob/a83fcae82d2a08f0ee0c688f9d137b3566c097f8/src/minisweagent/environments/local.py#L45"
+    }
+   ]
+  },
+  {
+   "id": "config",
+   "step": 1,
+   "label": "Config (YAML)",
+   "sub": "templates + limits + class names",
+   "x": 20,
+   "y": 320,
+   "w": 240,
+   "h": 96,
+   "grade": "verified",
+   "excerpt": "Jinja templates for system, instance, observation and format-error messages, plus step/cost/wall-time limits and model/env class names, recursively merged.",
+   "links": [
+    {
+     "label": "mini.yaml:101 - step_limit: 0, cost_limit: 3.",
+     "line": 101,
+     "url": "https://github.com/SWE-agent/mini-swe-agent/blob/a83fcae82d2a08f0ee0c688f9d137b3566c097f8/src/minisweagent/config/mini.yaml#L101"
+    },
+    {
+     "label": "swebench.yaml:112 - step_limit: 250",
+     "line": 112,
+     "url": "https://github.com/SWE-agent/mini-swe-agent/blob/a83fcae82d2a08f0ee0c688f9d137b3566c097f8/src/minisweagent/config/benchmarks/swebench.yaml#L112"
+    }
+   ]
+  },
+  {
+   "id": "traj",
+   "step": 8,
+   "label": "Trajectory file",
+   "sub": "mini-swe-agent-1.1 JSON",
+   "x": 720,
+   "y": 60,
+   "w": 240,
+   "h": 96,
+   "grade": "verified",
+   "excerpt": "serialize(): info (cost, calls, configs, exit status, submission) plus the full message list. save() runs in a finally after every step, so the file survives a crash.",
+   "links": [
+    {
+     "label": "default.py:159 - def serialize(",
+     "line": 159,
+     "url": "https://github.com/SWE-agent/mini-swe-agent/blob/a83fcae82d2a08f0ee0c688f9d137b3566c097f8/src/minisweagent/agents/default.py#L159"
+    },
+    {
+     "label": "default.py:182 - def save(",
+     "line": 182,
+     "url": "https://github.com/SWE-agent/mini-swe-agent/blob/a83fcae82d2a08f0ee0c688f9d137b3566c097f8/src/minisweagent/agents/default.py#L182"
+    }
+   ]
+  },
+  {
+   "id": "obs",
+   "step": 7,
+   "label": "Observations",
+   "sub": "observation_template - 10k elision",
+   "x": 370,
+   "y": 580,
+   "w": 240,
+   "h": 96,
+   "grade": "verified",
+   "excerpt": "Outputs rendered through the model's observation template: returncode + output; at 10,000 chars the middle is elided (first and last 5,000 kept). Tool-role or user-role messages.",
+   "links": [
+    {
+     "label": "litellm_model.py:40 - observation_template",
+     "line": 40,
+     "url": "https://github.com/SWE-agent/mini-swe-agent/blob/a83fcae82d2a08f0ee0c688f9d137b3566c097f8/src/minisweagent/models/litellm_model.py#L40"
+    },
+    {
+     "label": "default.yaml:119 - output length < 10000 rule",
+     "line": 119,
+     "url": "https://github.com/SWE-agent/mini-swe-agent/blob/a83fcae82d2a08f0ee0c688f9d137b3566c097f8/src/minisweagent/config/default.yaml#L119"
+    }
+   ]
+  }
+ ],
+ "edges": [
+  {
+   "from": "caller",
+   "to": "agent",
+   "label": "builds the agent",
+   "label_dx": -55
+  },
+  {
+   "from": "agent",
+   "to": "traj",
+   "label": "save() each step",
+   "label_dx": -55,
+   "label_dy": -16
+  },
+  {
+   "from": "interactive",
+   "to": "agent",
+   "label": "subclass: confirm modes",
+   "label_dy": 16
+  },
+  {
+   "from": "agent",
+   "to": "model",
+   "label": "query(messages)"
+  },
+  {
+   "from": "config",
+   "to": "model",
+   "label": "the templates",
+   "label_dx": -55
+  },
+  {
+   "from": "model",
+   "to": "parser",
+   "label": "response -> actions"
+  },
+  {
+   "from": "parser",
+   "to": "env",
+   "label": "env.execute(action)"
+  },
+  {
+   "from": "env",
+   "to": "obs",
+   "label": "outputs to render"
+  },
+  {
+   "from": "obs",
+   "to": "agent",
+   "label": "observations appended"
+  },
+  {
+   "from": "parser",
+   "to": "agent",
+   "label": "actions in message extra"
+  }
+ ]
+}

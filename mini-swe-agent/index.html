@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body {
+    background: #161210; color: #ece1d3;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    line-height: 1.7; padding: 48px 24px; margin: 0;
+  }
+  main { max-width: 760px; margin: 0 auto; }
+  a { color: #d08c4e; }
+  h1 { font-size: 1.9rem; letter-spacing: -0.02em; line-height: 1.25; margin-bottom: 16px; }
+  h2 { font-size: 1.4rem; margin: 40px 0 12px; padding-top: 8px; border-top: 1px solid #2c231b; }
+  h3 { font-size: 1.1rem; margin: 28px 0 8px; }
+  p, li { margin-bottom: 12px; }
+  blockquote {
+    border-left: 3px solid #d08c4e; padding: 4px 16px; margin: 20px 0;
+    color: #a89880; background: #1f1a15; border-radius: 0 8px 8px 0;
+  }
+  blockquote p { margin-bottom: 6px; }
+  code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.88em; background: #1f1a15; padding: 2px 6px; border-radius: 6px;
+  }
+  pre { background: #1f1a15; border: 1px solid #3a2f26; border-radius: 8px;
+        padding: 16px; overflow-x: auto; }
+  pre code { background: none; padding: 0; }
+  img { max-width: 100%; height: auto; border: 1px solid #3a2f26;
+        border-radius: 12px; margin: 20px 0; background: #1f1a15; }
+  table { border-collapse: collapse; width: 100%; margin: 20px 0; font-size: 0.92rem;
+          display: block; overflow-x: auto; }
+  th, td { border: 1px solid #3a2f26; padding: 10px 12px; text-align: left;
+           vertical-align: top; }
+  th { background: #1f1a15; }
+  ul, ol { padding-left: 24px; }
+  hr { border: none; border-top: 1px solid #2c231b; margin: 32px 0; }
+  .footnote { font-size: 0.88rem; color: #a89880; }
+  .footnote hr { margin: 40px 0 16px; }
+  sup a { text-decoration: none; }
+  .topnav { max-width: 760px; margin: 0 auto 32px; font-size: 0.9rem; }
+  .topnav a { color: #a89880; text-decoration: none; }
+  .topnav a:hover { color: #ece1d3; }
+  .diagram-cta {
+    display: block; text-align: center; margin: 28px 0; padding: 16px;
+    background: #1f1a15; border: 1px solid #3a2f26; border-radius: 12px;
+    color: #ece1d3; text-decoration: none; font-weight: 600;
+  }
+  .diagram-cta:hover { border-color: #d08c4e; }
+  .diagram-cta span { display: block; font-weight: 400; font-size: 0.88rem;
+                      color: #a89880; margin-top: 4px; }
+  .byline { color: #a89880; font-size: 0.95rem; margin: 4px 0 20px; } .byline a { color: #d08c4e; }
+</style>
+<title>Agent Harness Anatomy #27: mini-SWE-agent — what remains when almost everything is removed</title>
+<meta name="description" content="mini-SWE-agent — what remains when almost everything is removed. A top-down teardown of the minimal SWE-agent sibling at v2.4.6: a 190-line agent loop over a linear message list, one bash action (a single native tool call by default at v2, the regex text format kept as a variant), fresh-subprocess environments that detect submission from a stdout marker, and limits and format errors handled as exceptions that carry messages.">
+<meta name="author" content="David P. S. Marques">
+<meta property="og:title" content="Agent Harness Anatomy #27: mini-SWE-agent — what remains when almost everything is removed">
+<meta property="og:description" content="mini-SWE-agent — what remains when almost everything is removed. A top-down teardown of the minimal SWE-agent sibling at v2.4.6: a 190-line agent loop over a linear message list, one bash action (a single native tool call by default at v2, the regex text format kept as a variant), fresh-subprocess environments that detect submission from a stdout marker, and limits and format errors handled as exceptions that carry messages.">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://dpsm.github.io/agent-harness-anatomy/mini-swe-agent/">
+</head>
+<body>
+<nav><a href="../index.html">← All teardowns</a><span class="sep">·</span><a href="#mini-swe-agent">mini-SWE-agent</a></nav>
+<main id="mini-swe-agent">
+<h1>Agent Harness Anatomy #27: mini-SWE-agent — what remains when almost everything is removed</h1>
+<p class="byline">by <a href="https://ca.linkedin.com/in/dpsmarques">David P. S. Marques</a></p>
+<blockquote>
+<p><strong>Series:</strong> Agent Harness Anatomy — top-down dissections of real agent harnesses, grounded in verifiable source code. Every behavioral claim below carries a footnote to a pinned GitHub permalink; the full evidence lives in the endnotes.</p>
+</blockquote>
+<h2 id="version-block">Version block</h2>
+<ul>
+<li><strong>Repo:</strong> <a href="https://github.com/SWE-agent/mini-swe-agent">SWE-agent/mini-swe-agent</a></li>
+<li><strong>Pinned:</strong> tag <code>v2.4.6</code>, commit <code>a83fcae82d2a08f0ee0c688f9d137b3566c097f8</code> (2026-07-22) — the newest release tag.</li>
+<li><strong>Language:</strong> Python — the core agent class is one 190-line file, <code>src/minisweagent/agents/default.py</code>.</li>
+<li><strong>License:</strong> MIT<sup id="fnref-1"><a href="#fn-1">[1]</a></sup></li>
+<li><strong>Claim under test:</strong> "Just some 100 lines of python for the agent class"<sup id="fnref-2"><a href="#fn-2">[2]</a></sup> — a complete coding agent with no tools other than bash<sup id="fnref-3"><a href="#fn-3">[3]</a></sup> and a completely linear history,<sup id="fnref-4"><a href="#fn-4">[4]</a></sup> built by the team behind SWE-agent (#11) as the deliberate minimal counterpart to it. The line count is the project's own phrasing (the pinned agent file is 190 lines including docstrings, the config class and trajectory serialization); the mechanisms below are verified from the code, and the comparison to #11 is the point of this teardown.</li>
+</ul>
+<p>Two framing notes. First, this teardown was read-only: the source was cloned and read, never built or executed. Second, a version note that changes one well-known fact about this harness: the regex-extracted, plain-text action format that mini-SWE-agent v1 was known for is <strong>no longer the default</strong> at this pin. Since v2, the default model class uses the providers' native tool-calling interface — with exactly one tool. The text format survives as a shipped variant. Both are described below, pinned, because the contrast between them is itself a finding: the minimal agent kept its shape and quietly changed its wire format.</p>
+<figure><img src="figures/mini-swe-agent.svg" alt="mini-SWE-agent architecture"></figure>
+<a class="diagram-cta" href="../diagrams/template.html?data=../mini-swe-agent/diagrams/mini-swe-agent.json">
+    Explore the interactive architecture diagram
+    <span>9 nodes, 10 edges — pan, zoom, and follow every subsystem link</span>
+</a>
+<h2 id="the-mental-model">The mental model</h2>
+<p>Hold three ideas, and the whole system follows.</p>
+<p><strong>The agent is a list and a loop.</strong> <code>DefaultAgent</code> holds a <code>messages</code> list, a model object, an environment object, a cost counter and a call counter. That is the complete state. A run appends a system message and a task message, then repeats one step — query the model, execute what it asked for, append the results — until an exit message appears at the end of the list.<sup id="fnref-5"><a href="#fn-5">[5]</a></sup> There is no second data structure for history to hide in: the trajectory the run saves is the same list the model was shown.<sup id="fnref-4"><a href="#fn-4">[4]</a></sup></p>
+<p><strong>Bash is the only tool.</strong> Where SWE-agent (#11) built a designed agent-computer interface — YAML-defined tools with their own schemas, a file viewer, an editor — mini-SWE-agent defines a single action shape, a dict with one string: <code>{"command": ...}</code>. Reading files, editing files, searching, running tests: all of it is the model's job, expressed as shell commands. The harness's position, stated in its README, is that capable models no longer need the special interface.<sup id="fnref-3"><a href="#fn-3">[3]</a></sup></p>
+<p><strong>Control flow is exceptions.</strong> Every way a run can pause or end — submission, a limit, a format error, a user interruption — is an exception class carrying the messages to append. The loop in <code>run()</code> is mostly a <code>try</code>/<code>except</code> that translates those exceptions into messages and checks whether the last one says <code>exit</code>.<sup id="fnref-6"><a href="#fn-6">[6]</a></sup></p>
+<h2 id="the-core-loop">The core loop</h2>
+<p><code>run(task)</code> renders two Jinja templates — <code>system_template</code> and <code>instance_template</code>, both required fields of <code>AgentConfig</code>, rendered with <code>StrictUndefined</code> so a missing variable is an error, not a blank — and appends them as the system and user messages. It then loops <code>step()</code> until the final message has role <code>exit</code>, and returns that message's <code>extra</code> dict: <code>exit_status</code> and <code>submission</code>.<sup id="fnref-5"><a href="#fn-5">[5]</a></sup><sup id="fnref-7"><a href="#fn-7">[7]</a></sup></p>
+<p><code>step()</code> is two lines: <code>return self.execute_actions(self.query())</code>.<sup id="fnref-8"><a href="#fn-8">[8]</a></sup> <code>query()</code> checks the limits first, increments the call counter, sends the full message list to the model, adds the returned cost to the running total, and appends the model's message.<sup id="fnref-9"><a href="#fn-9">[9]</a></sup> <code>execute_actions()</code> runs each action in the message through the environment, in order, and appends the formatted observations.<sup id="fnref-10"><a href="#fn-10">[10]</a></sup></p>
+<p>The <code>except</code> structure around <code>step()</code> does real work. A <code>FormatError</code> appends the error messages the model layer prepared and lets the loop continue — with a counter for consecutive errors that ends the run as <code>RepeatedFormatError</code> (default cap: 3) if the model keeps missing the format. An <code>InterruptAgentFlow</code> (the base class for submission and limit exits) appends its messages, and since those include the <code>exit</code> message, the loop breaks. Any other exception is recorded as an <code>exit</code> message with its traceback and re-raised. A <code>finally</code> block saves the trajectory after <strong>every</strong> step, clean or not.<sup id="fnref-5"><a href="#fn-5">[5]</a></sup><sup id="fnref-6"><a href="#fn-6">[6]</a></sup></p>
+<h2 id="one-turn-end-to-end">One turn, end to end</h2>
+<ol>
+<li><code>run()</code> has appended the rendered system and instance templates. The instance template in the shipped configs states the task, a recommended workflow (reproduce, edit, verify, submit), and the execution rules — including the warning that directory and environment changes are not persistent.</li>
+<li><code>query()</code> checks step, cost and wall-time limits, then calls the model with the entire message list.<sup id="fnref-9"><a href="#fn-9">[9]</a></sup></li>
+<li>The model layer (litellm by default) makes the API call — with retries handled inside it — parses the response into actions, attaches the call's cost, and raises <code>FormatError</code> instead if the response does not parse.<sup id="fnref-11"><a href="#fn-11">[11]</a></sup><sup id="fnref-12"><a href="#fn-12">[12]</a></sup> Model selection itself is minimal: <code>get_model</code> defaults to the litellm class, and there is no built-in default model name — the caller supplies one via config, flag or environment variable, or resolution raises.<sup id="fnref-13"><a href="#fn-13">[13]</a></sup></li>
+<li>The agent appends the model's message and hands each action to the environment.</li>
+<li>The environment runs the command in a fresh subprocess and returns <code>output</code>, <code>returncode</code> and <code>exception_info</code> — or raises <code>Submitted</code> if the output is the submission marker.<sup id="fnref-14"><a href="#fn-14">[14]</a></sup><sup id="fnref-15"><a href="#fn-15">[15]</a></sup></li>
+<li>The model layer renders the outputs through the observation template and the agent appends them as the next messages.</li>
+<li>The trajectory is saved. The loop repeats from step 2, or ends if an exit message landed.</li>
+</ol>
+<figure><img src="figures/seq-turn.svg" alt="One turn"></figure>
+<h2 id="actions-one-tool-two-parsers">Actions: one tool, two parsers</h2>
+<p>An action reaches the agent as <code>message["extra"]["actions"]</code>, a list of <code>{"command": str}</code> dicts. Two parsers can produce it, and which one runs is a property of the model class, not the agent.</p>
+<p><strong>The v2 default: a single native tool call.</strong> <code>LitellmModel._query</code> passes <code>tools=[BASH_TOOL]</code> to litellm — one function tool named <code>bash</code>, described as "Execute a bash command", with a single required string parameter, <code>command</code>.<sup id="fnref-11"><a href="#fn-11">[11]</a></sup><sup id="fnref-16"><a href="#fn-16">[16]</a></sup> <code>parse_toolcall_actions</code> validates each returned call: no tool calls at all, an unknown tool name, unparseable JSON arguments, or a missing <code>command</code> each raise <code>FormatError</code> with guidance rendered from the config's <code>format_error_template</code>.<sup id="fnref-17"><a href="#fn-17">[17]</a></sup> Multiple calls in one response are allowed and execute in order; the SWE-bench config enables parallel tool calls explicitly.</p>
+<p><strong>The text variant: the v1 design, still shipped.</strong> <code>LitellmTextbasedModel</code> keeps the same litellm call but parses the reply's text with the regex <code>```mswea_bash_command\s*\n(.*?)\n```</code> .<sup id="fnref-18"><a href="#fn-18">[18]</a></sup> <code>parse_regex_actions</code> requires <strong>exactly one</strong> match: zero matches or two both raise <code>FormatError</code> — the failure mode is a rendered message telling the model it must provide exactly one action in triple backticks, and the run's format-error counter starts counting.<sup id="fnref-19"><a href="#fn-19">[19]</a></sup> The source file for this path is explicit about its status: it "was the method used for mini-swe-agent v1.0 and the original SWE-agent", and as of v2 the project recommends tool calls instead.<sup id="fnref-20"><a href="#fn-20">[20]</a></sup> The plain-text path remains fully supported — a <code>litellm_textbased</code> model class, a dedicated <code>mini_textbased.yaml</code> config, and the <code>default.yaml</code> config (used by the <code>hello_world.py</code> example) whose templates are written in the text format.</p>
+<p>The honest summary for the series record: "no tool-calling API" was the v1 headline and remains an available configuration, but at v2.4.6 the default wiring uses tool calling — reduced to its minimum, one tool with one string argument. What did not change is the part that matters more: there is still no tool <em>set</em>, no per-tool interface, and nothing between the model's command string and the shell.</p>
+<h2 id="the-environment-a-fresh-shell-every-time">The environment: a fresh shell every time</h2>
+<p>The <code>Environment</code> side is a protocol with one essential method, <code>execute(action) -&gt; {output, returncode, exception_info}</code>.<sup id="fnref-21"><a href="#fn-21">[21]</a></sup> The local implementation runs each command via <code>subprocess.Popen(..., shell=True)</code> with the configured working directory and environment, a 30-second default timeout, and — on timeout — a kill of the whole process group so no children are orphaned.<sup id="fnref-14"><a href="#fn-14">[14]</a></sup> Each action is a <strong>new</strong> shell: a <code>cd</code> or an <code>export</code> in one step has no effect on the next, a fact the shipped templates state to the model directly, along with the workaround (prefix <code>cd /path &amp;&amp; ...</code>, or persist values in files). Only the filesystem carries state between steps.</p>
+<p>The Docker environment keeps the same semantics behind a container boundary: one long-lived container is started up front, and each action is a separate <code>docker exec</code> into it with <code>bash -lc</code>, so the shell is fresh but the container's filesystem persists.<sup id="fnref-22"><a href="#fn-22">[22]</a></sup> The environment is selected by name from a small mapping — local, docker, singularity, and extras for SWE-ReX (Docker and Modal), bubblewrap and contree — which is the harness's whole sandboxing story: swap the class, keep the agent.<sup id="fnref-21"><a href="#fn-21">[21]</a></sup></p>
+<p><strong>Done detection lives here, not in the agent.</strong> Both the local and Docker environments check every result: if the first line of the output is exactly <code>COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT</code> and the return code is 0, they raise <code>Submitted</code>, and everything after that first line becomes the submission.<sup id="fnref-15"><a href="#fn-15">[15]</a></sup> The templates therefore tell the model to finish by echoing that marker — alone, in the text configs; in the SWE-bench config, combined with <code>cat patch.txt</code> so the patch itself is the submission. Submission is not a tool, a flag, or a special message type in the agent. It is a string in stdout that the environment recognizes.</p>
+<figure><img src="figures/seq-env.svg" alt="An environment run"></figure>
+<h2 id="limits-and-format-errors">Limits and format errors</h2>
+<p><code>AgentConfig</code> carries four bounds: <code>step_limit</code> (default 0, meaning unlimited), <code>cost_limit</code> (default $3.00), <code>wall_time_limit_seconds</code> (default 0, unlimited), and <code>max_consecutive_format_errors</code> (default 3).<sup id="fnref-7"><a href="#fn-7">[7]</a></sup> The first three are checked at the top of <code>query()</code>, <strong>before</strong> the model is called: exceeding the step or cost limit raises <code>LimitsExceeded</code>, exceeding the wall time raises <code>TimeExceeded</code> (a subclass), and each carries a ready-made <code>exit</code> message, so a limited run ends as data in the trajectory rather than as a crash.<sup id="fnref-9"><a href="#fn-9">[9]</a></sup><sup id="fnref-23"><a href="#fn-23">[23]</a></sup></p>
+<p>Shipped configs tune the defaults per use: the <code>mini</code> CLI's config keeps the $3 cost limit and no step limit; <code>default.yaml</code> disables both (0 and 0); the SWE-bench config sets a 250-step limit and the $3 cost limit.<sup id="fnref-24"><a href="#fn-24">[24]</a></sup><sup id="fnref-25"><a href="#fn-25">[25]</a></sup> Format errors have their own bound, described above: three in a row end the run as <code>RepeatedFormatError</code>, and any clean step resets the counter.<sup id="fnref-5"><a href="#fn-5">[5]</a></sup></p>
+<figure><img src="figures/seq-format.svg" alt="A format-error retry"></figure>
+<figure><img src="figures/seq-limit.svg" alt="A limit hit"></figure>
+<p>Inside the model layer, API failures are a separate concern from format failures: litellm calls are wrapped in a tenacity retry — up to 10 attempts, exponential backoff between 4 and 60 seconds — with a list of abort exceptions (authentication, not found, permission denied, context-window exceeded, unsupported parameters) that are never retried.<sup id="fnref-12"><a href="#fn-12">[12]</a></sup></p>
+<h2 id="observations">Observations</h2>
+<p>Outputs come back to the model through the model layer's <code>observation_template</code>. The built-in default renders <code>&lt;returncode&gt;</code> and <code>&lt;output&gt;</code> blocks, preceded by an <code>&lt;exception&gt;</code> block when the environment reported one.<sup id="fnref-26"><a href="#fn-26">[26]</a></sup> The shipped configs use a fuller template with a size rule: output under 10,000 characters is shown whole; at or above it, the middle is elided — the first 5,000 and last 5,000 characters are kept, with an <code>&lt;elided_chars&gt;</code> count and a warning suggesting narrower commands.<sup id="fnref-27"><a href="#fn-27">[27]</a></sup> In the tool-call configuration the rendered text becomes a <code>role: "tool"</code> message carrying the call's <code>tool_call_id</code>; in the text configuration it is a plain user message. Either way, the internal <code>extra</code> fields (raw output, return code, timestamp) are stored in the trajectory but stripped before the messages are sent to the API.</p>
+<h2 id="memory-the-trajectory-is-the-history">Memory: the trajectory is the history</h2>
+<p>There is no memory subsystem to inventory. No compaction, no summarization, no history processors, no cross-run store: the message list grows by appends only, and the context the model sees is the whole of it.<sup id="fnref-4"><a href="#fn-4">[4]</a></sup></p>
+<p>What the harness does keep is the trajectory file. <code>serialize()</code> emits the full message list plus an <code>info</code> block — instance cost, API call count, the agent/model/environment configs, the exit status and the submission — under the format name <code>mini-swe-agent-1.1</code>, and <code>save()</code> writes it as JSON to the configured output path.<sup id="fnref-28"><a href="#fn-28">[28]</a></sup> Because <code>run()</code> saves in a <code>finally</code> after every step, the file on disk is current even when a run dies mid-step.<sup id="fnref-5"><a href="#fn-5">[5]</a></sup> For the <code>mini</code> CLI the default output is a <code>last_mini_run.traj.json</code> in the user's config directory.<sup id="fnref-29"><a href="#fn-29">[29]</a></sup></p>
+<h2 id="approvals-none-in-the-agent-one-mode-in-the-cli">Approvals: none in the agent, one mode in the CLI</h2>
+<p><code>DefaultAgent</code> has no approval step: a parsed action executes. The interactive subclass used by the <code>mini</code> CLI is where confirmation lives. <code>InteractiveAgent</code> adds a <code>mode</code> setting — <code>human</code> (the user types the commands), <code>confirm</code> (the default: each model-issued command waits for an Enter at a prompt, unless it matches a <code>whitelist_actions</code> regex), and <code>yolo</code> (no confirmation) — switchable mid-run with slash commands, plus an optional confirmation before accepting a submission, at which point the user can instead hand the agent a new task.<sup id="fnref-30"><a href="#fn-30">[30]</a></sup> It also catches <code>LimitsExceeded</code> and, when a real terminal is attached, offers to raise the limits and continue; unattended, the exception simply ends the run.<sup id="fnref-30"><a href="#fn-30">[30]</a></sup></p>
+<a class="diagram-cta" href="trace.html">
+    Play the 8-step trace
+    <span>A single bug-fix task traced through the two-message seed, the limit-checked query, the one-tool model call and the fresh-subprocess environment</span>
+</a>
+<h2 id="subsystem-inventory">Subsystem inventory</h2>
+<p>The brevity of this table is the finding.</p>
+<table>
+<thead>
+<tr>
+<th>Subsystem</th>
+<th>Where</th>
+<th>What it is</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Agent loop</td>
+<td><code>agents/default.py</code></td>
+<td><code>DefaultAgent</code>: run/step/query/execute_actions over a message list (190-line file)</td>
+</tr>
+<tr>
+<td>Interactive agent</td>
+<td><code>agents/interactive.py</code></td>
+<td><code>DefaultAgent</code> + confirm/human/yolo modes, limit prompts, user task injection</td>
+</tr>
+<tr>
+<td>Model layer</td>
+<td><code>models/litellm_model.py</code> (+ variants)</td>
+<td>litellm completion, one bash tool, cost accounting, retry; OpenRouter/Portkey/Requesty and Responses-API variants in-tree</td>
+</tr>
+<tr>
+<td>Action parsing</td>
+<td><code>models/utils/actions_toolcall.py</code>, <code>actions_text.py</code></td>
+<td>Tool-call validation, or the regex text parser (exactly one block)</td>
+</tr>
+<tr>
+<td>Environments</td>
+<td><code>environments/local.py</code>, <code>docker.py</code>, <code>singularity.py</code>, <code>extra/</code></td>
+<td>Fresh-subprocess execution; submission detection; seven named classes</td>
+</tr>
+<tr>
+<td>Exceptions</td>
+<td><code>exceptions.py</code></td>
+<td><code>InterruptAgentFlow</code> family: Submitted, LimitsExceeded, TimeExceeded, FormatError, UserInterruption</td>
+</tr>
+<tr>
+<td>Configuration</td>
+<td><code>config/*.yaml</code></td>
+<td>Jinja templates + limits + class names, recursively merged; resolved by <code>run/mini.py</code> and the benchmark runners</td>
+</tr>
+<tr>
+<td>Trajectory</td>
+<td><code>agents/default.py</code> (<code>serialize</code>/<code>save</code>)</td>
+<td>The message list as JSON, <code>mini-swe-agent-1.1</code> format, saved every step</td>
+</tr>
+</tbody>
+</table>
+<h2 id="extension-points">Extension points</h2>
+<p>Subclassing is the extension API: the docstrings on <code>query()</code> and its neighbours say "Override to add hooks" — there is no hook registry, no plugin loader, and no event bus in the agent package. The model and environment are Python <code>Protocol</code>s (structural duck typing) declared in the package root, so a new model or environment is any object with the right methods, named in config by class path or shortcut.<sup id="fnref-21"><a href="#fn-21">[21]</a></sup> The other extension surface is configuration itself: every template (system, instance, observation, format error) and every limit is a YAML value that callers override, and configs merge recursively — the <code>mini</code> CLI builds its effective config from the chosen YAML files plus command-line key-value pairs.</p>
+<h2 id="tradeoffs-and-what-was-deleted-relative-to-swe-agent">Tradeoffs, and what was deleted relative to SWE-agent</h2>
+<p>The project's own guidance draws the line plainly: choose SWE-agent "if you want to experiment with different sets of tools, each with their own interface" or "with different history processors" — the two things mini-SWE-agent does not have.<sup id="fnref-31"><a href="#fn-31">[31]</a></sup> Verified against this tree, the deletions are: the ACI tool bundles (no file viewer, no editor tool, no search tool — the model uses <code>cat</code>, <code>sed</code> and <code>grep</code> like anyone at a terminal), history processors of every kind, the reviewer and trajectory-replay machinery of #11, and any per-tool configuration. What remains in exchange is a loop a reader can hold in one view, an action space with exactly one member, and an environment seam where sandboxing is a class swap.</p>
+<p>The costs are the mirror image. A fresh shell per action means the model re-establishes its context constantly (<code>cd</code> prefixes, re-sourced files) and pays for it in tokens. A linear, never-compacted history means long runs grow the prompt until the model's window or the cost limit ends them. Observations are truncated by characters, not understood. And with the default agent there is no approval gate at all: the safety story is the environment you choose (a container, a sandbox) and the limits you set, not a checkpoint in the loop. These are stated as tradeoffs, not oversights — the design position is that the model, given bash and a clear template, supplies the rest.</p>
+<h2 id="vendor-claims-flagged-not-code-verified">Vendor claims (flagged, not code-verified)</h2>
+<ul>
+<li>The README reports scores of "&gt;74% on the SWE-bench verified benchmark" and lists adoption by named organizations.<sup id="fnref-32"><a href="#fn-32">[32]</a></sup> These are the project's claims about benchmark runs with specific models; this teardown verifies the mechanisms (the SWE-bench runner and config are in-tree, with the 250-step / $3 limits above) and does not reproduce the evaluations.</li>
+<li>The "~100 lines" figure for the agent class is the project's phrasing; the pinned file is 190 lines in full, of which the loop, config and serialization are the bulk.<sup id="fnref-2"><a href="#fn-2">[2]</a></sup></li>
+</ul>
+<h2 id="comparison-matrix-row">Comparison matrix row</h2>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Dimension</th>
+<th>mini-SWE-agent (v2.4.6)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>Agent loop</td>
+<td>One synchronous loop in <code>DefaultAgent.run</code>: <code>step()</code> = <code>execute_actions(query())</code>, appends only, ends when an <code>exit</code> message lands; control flow via exceptions (Submitted / LimitsExceeded / FormatError); limits checked before each model call</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Tool system</td>
+<td>None as a set: a single bash action (<code>{"command": str}</code>); at v2 the default parser reads one native <code>bash</code> tool call, the shipped text variant regex-extracts exactly one fenced block; no per-tool schemas beyond that, no ACI</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Model providers</td>
+<td>litellm by default (any litellm model name; caller must supply one — no built-in default); OpenRouter, Portkey, Requesty and Responses-API model classes in-tree; tenacity retry (10 attempts, 4–60s backoff, abort list); cost via litellm's calculator</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Prompt construction</td>
+<td>Two Jinja templates (system + instance) rendered once at run start with StrictUndefined; observation and format-error templates render per step; shipped templates carry the workflow, the non-persistence warning and the submission marker instruction</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Memory/session</td>
+<td>None: a strictly linear message list, appended only, never compacted; the saved trajectory (<code>mini-swe-agent-1.1</code> JSON: info + messages) is the same list, rewritten after every step</td>
+</tr>
+<tr>
+<td>6</td>
+<td>Reasoning/planning</td>
+<td>The model's reasoning text in its replies; no planner, no todo structure, no sub-agents; the instance template's recommended workflow (reproduce → edit → verify → submit) is the only scaffold</td>
+</tr>
+<tr>
+<td>7</td>
+<td>Extensibility</td>
+<td>Subclassing (<code>query</code>/<code>step</code>/<code>execute_actions</code> overrides — "override to add hooks"); Model/Environment as duck-typed Protocols selected by name in config; every template and limit is YAML-overridable with recursive config merging; no plugin API, hooks registry, MCP or skills</td>
+</tr>
+<tr>
+<td>8</td>
+<td>Interfaces</td>
+<td>Python library (<code>DefaultAgent(model, env, **config)</code>) plus the <code>mini</code> CLI (interactive agent, confirm/human/yolo modes), benchmark runners (SWE-bench, ProgramBench) and a trajectory inspector; no server, no TUI framework beyond terminal prompts</td>
+</tr>
+<tr>
+<td>9</td>
+<td>Failure handling</td>
+<td>FormatError appends corrective guidance and continues (3 consecutive = RepeatedFormatError exit); uncaught exceptions recorded as an exit message with traceback, then re-raised; trajectory saved in a <code>finally</code> after every step; API errors retried with backoff except an abort list</td>
+</tr>
+<tr>
+<td>10</td>
+<td>Security model</td>
+<td>No approvals in <code>DefaultAgent</code> — every parsed action runs; the CLI's InteractiveAgent adds confirm mode with regex whitelists (yolo turns it off); isolation is the environment choice (local host by default; Docker/Singularity/bubblewrap/SWE-ReX classes available); bounds are the step/cost/wall-time limits</td>
+</tr>
+</tbody>
+</table>
+<div class="footnote">
+<hr>
+<ol>
+<li id="fn-1"><p><a href="https://github.com/SWE-agent/mini-swe-agent/blob/a83fcae82d2a08f0ee0c688f9d137b3566c097f8/LICENSE.md#L1"><code>LICENSE.md#L1</code></a> — "MIT License — Copyright (c) 2025 Kilian A. Lieret and Carlos E. Jimenez", the full MIT text in the repo root. <a class="footnote-backref" href="#fnref-1" title="Jump back to footnote 1 in the text">↩</a></p></li>
+<li id="fn-2"><p><a href="https://github.com/SWE-agent/mini-swe-agent/blob/a83fcae82d2a08f0ee0c688f9d137b3566c097f8/README.md#L26"><code>README.md#L26</code></a> — "Minimal: Just some 100 lines of python for the agent class (and a bit more for the environment, model, and run script) — no fancy dependencies!" At the pin, <code>src/minisweagent/agents/default.py</code> is 190 lines total (measured on the pinned checkout). <a class="footnote-backref" href="#fnref-2" title="Jump back to footnote 2 in the text">↩</a></p></li>
+<li id="fn-3"><p><a href="https://github.com/SWE-agent/mini-swe-agent/blob/a83fcae82d2a08f0ee0c688f9d137b3566c097f8/README.md#L42"><code>README.md#L42</code></a> — "Does not have any tools other than bash — it doesn't even need to use the tool-calling interface of the LMs. This means that you can run it with literally any model." (Repeated at <code>README.md#L71</code>.) The v2 default wiring qualifies the second sentence — see the "Actions: one tool, two parsers" section and its endnotes. <a class="footnote-backref" href="#fnref-3" title="Jump back to footnote 3 in the text">↩</a></p></li>
+<li id="fn-4"><p><a href="https://github.com/SWE-agent/mini-swe-agent/blob/a83fcae82d2a08f0ee0c688f9d137b3566c097f8/README.md#L45"><code>README.md#L45</code></a> — "Has a completely linear history — every step of the agent just appends to the messages and that's it. So there's no difference between the trajectory and the messages that you pass on to the LM." <a class="footnote-backref" href="#fnref-4" title="Jump back to footnote 4 in the text">↩</a></p></li>
+<li id="fn-5"><p><a href="https://github.com/SWE-agent/mini-swe-agent/blob/a83fcae82d2a08f0ee0c688f9d137b3566c097f8/src/minisweagent/agents/default.py#L88"><code>src/minisweagent/agents/default.py#L88</code></a> — <code>run()</code>: seeds the two template messages, loops <code>step()</code> with the FormatError / InterruptAgentFlow handlers, saves in <code>finally</code> (L120–121), and breaks when the last message's role is <code>exit</code>, returning its <code>extra</code>. <a class="footnote-backref" href="#fnref-5" title="Jump back to footnote 5 in the text">↩</a></p></li>
+<li id="fn-6"><p><a href="https://github.com/SWE-agent/mini-swe-agent/blob/a83fcae82d2a08f0ee0c688f9d137b3566c097f8/src/minisweagent/exceptions.py#L1"><code>src/minisweagent/exceptions.py#L1</code></a> — <code>InterruptAgentFlow(Exception)</code>: "Raised to interrupt the agent flow and add messages", carrying <code>self.messages</code>; subclasses <code>Submitted</code> (L9), <code>LimitsExceeded</code> (L13), <code>TimeExceeded</code> (L17), <code>UserInterruption</code> (L21), <code>FormatError</code> (L25). <a class="footnote-backref" href="#fnref-6" title="Jump back to footnote 6 in the text">↩</a></p></li>
+<li id="fn-7"><p><a href="https://github.com/SWE-agent/mini-swe-agent/blob/a83fcae82d2a08f0ee0c688f9d137b3566c097f8/src/minisweagent/agents/default.py#L19"><code>src/minisweagent/agents/default.py#L19</code></a> — <code>AgentConfig</code>: <code>system_template</code> and <code>instance_template</code> (required), <code>step_limit: int = 0</code>, <code>cost_limit: float = 3.0</code>, <code>wall_time_limit_seconds: int = 0</code>, <code>max_consecutive_format_errors: int = 3</code>, <code>output_path</code>. <a class="footnote-backref" href="#fnref-7" title="Jump back to footnote 7 in the text">↩</a></p></li>
+<li id="fn-8"><p><a href="https://github.com/SWE-agent/mini-swe-agent/blob/a83fcae82d2a08f0ee0c688f9d137b3566c097f8/src/minisweagent/agents/default.py#L126"><code>src/minisweagent/agents/default.py#L126</code></a> — <code>step()</code>: "Query the LM, execute actions." — <code>return self.execute_actions(self.query())</code>. <a class="footnote-backref" href="#fnref-8" title="Jump back to footnote 8 in the text">↩</a></p></li>
+<li id="fn-9"><p><a href="https://github.com/SWE-agent/mini-swe-agent/blob/a83fcae82d2a08f0ee0c688f9d137b3566c097f8/src/minisweagent/agents/default.py#L130"><code>src/minisweagent/agents/default.py#L130</code></a> — <code>query()</code>: limit checks raise <code>LimitsExceeded</code> / <code>TimeExceeded</code> before the call; then <code>n_calls += 1</code>, <code>model.query(self.messages)</code>, cost accumulated from the message's <code>extra</code>. <a class="footnote-backref" href="#fnref-9" title="Jump back to footnote 9 in the text">↩</a></p></li>
+<li id="fn-10"><p><a href="https://github.com/SWE-agent/mini-swe-agent/blob/a83fcae82d2a08f0ee0c688f9d137b3566c097f8/src/minisweagent/agents/default.py#L154"><code>src/minisweagent/agents/default.py#L154</code></a> — <code>execute_actions()</code>: <code>outputs = [self.env.execute(action) for action in message.get("extra", {}).get("actions", [])]</code>, then appends <code>model.format_observation_messages(...)</code>. <a class="footnote-backref" href="#fnref-10" title="Jump back to footnote 10 in the text">↩</a></p></li>
+<li id="fn-11"><p><a href="https://github.com/SWE-agent/mini-swe-agent/blob/a83fcae82d2a08f0ee0c688f9d137b3566c097f8/src/minisweagent/models/litellm_model.py#L69"><code>src/minisweagent/models/litellm_model.py#L69</code></a> — <code>LitellmModel._query</code>: <code>litellm.completion(model=..., messages=messages, tools=[BASH_TOOL], ...)</code>; <code>query()</code> at L81 wraps it in the retry loop, calculates cost, and <code>_parse_actions</code> at L128 reads the tool calls. <a class="footnote-backref" href="#fnref-11" title="Jump back to footnote 11 in the text">↩</a></p></li>
+<li id="fn-12"><p><a href="https://github.com/SWE-agent/mini-swe-agent/blob/a83fcae82d2a08f0ee0c688f9d137b3566c097f8/src/minisweagent/models/utils/retry.py#L21"><code>src/minisweagent/models/utils/retry.py#L21</code></a> — tenacity <code>Retrying(stop=stop_after_attempt(MSWEA_MODEL_RETRY_STOP_AFTER_ATTEMPT, default 10), wait=wait_exponential(multiplier=1, min=4, max=60), retry=retry_if_not_exception_type(abort_exceptions))</code>; the abort list is <code>LitellmModel.abort_exceptions</code> in <code>litellm_model.py</code> (L53–60). <a class="footnote-backref" href="#fnref-12" title="Jump back to footnote 12 in the text">↩</a></p></li>
+<li id="fn-13"><p><a href="https://github.com/SWE-agent/mini-swe-agent/blob/a83fcae82d2a08f0ee0c688f9d137b3566c097f8/src/minisweagent/models/__init__.py#L110"><code>src/minisweagent/models/__init__.py#L110</code></a> — <code>get_model_class</code>: "# Default to LitellmModel"; and <code>get_model_name</code> (L65) raises <code>ValueError("No default model set...")</code> at L75 when no name comes from the argument, config, or <code>MSWEA_MODEL_NAME</code>. The class mapping (L91–102) names <code>litellm</code>, <code>litellm_textbased</code>, <code>litellm_response</code>, <code>openrouter</code>, <code>openrouter_textbased</code>, <code>openrouter_response</code>, <code>portkey</code>, <code>portkey_response</code>, <code>requesty</code>, <code>deterministic</code>. <a class="footnote-backref" href="#fnref-13" title="Jump back to footnote 13 in the text">↩</a></p></li>
+<li id="fn-14"><p><a href="https://github.com/SWE-agent/mini-swe-agent/blob/a83fcae82d2a08f0ee0c688f9d137b3566c097f8/src/minisweagent/environments/local.py#L72"><code>src/minisweagent/environments/local.py#L72</code></a> — <code>_run()</code>: <code>subprocess.Popen(command, shell=True, text=True, cwd=cwd, env=env, ..., start_new_session=True)</code>; on <code>TimeoutExpired</code> it kills the process group (<code>killpg</code>, L89). <code>LocalEnvironment.execute</code> (L24) uses <code>timeout: int = 30</code> from <code>LocalEnvironmentConfig</code> (L17) and <code>os.environ | self.config.env</code>. <a class="footnote-backref" href="#fnref-14" title="Jump back to footnote 14 in the text">↩</a></p></li>
+<li id="fn-15"><p><a href="https://github.com/SWE-agent/mini-swe-agent/blob/a83fcae82d2a08f0ee0c688f9d137b3566c097f8/src/minisweagent/environments/local.py#L45"><code>src/minisweagent/environments/local.py#L45</code></a> — <code>_check_finished</code>: if the first output line is <code>COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT</code> and returncode is 0, raise <code>Submitted</code> with the remaining lines as the submission; the identical check is in <code>environments/docker.py#L140</code>. <a class="footnote-backref" href="#fnref-15" title="Jump back to footnote 15 in the text">↩</a></p></li>
+<li id="fn-16"><p><a href="https://github.com/SWE-agent/mini-swe-agent/blob/a83fcae82d2a08f0ee0c688f9d137b3566c097f8/src/minisweagent/models/utils/actions_toolcall.py#L11"><code>src/minisweagent/models/utils/actions_toolcall.py#L11</code></a> — <code>BASH_TOOL</code>: a function tool named <code>bash</code>, "Execute a bash command", parameters = one required string <code>command</code>. <a class="footnote-backref" href="#fnref-16" title="Jump back to footnote 16 in the text">↩</a></p></li>
+<li id="fn-17"><p><a href="https://github.com/SWE-agent/mini-swe-agent/blob/a83fcae82d2a08f0ee0c688f9d137b3566c097f8/src/minisweagent/models/utils/actions_toolcall.py#L30"><code>src/minisweagent/models/utils/actions_toolcall.py#L30</code></a> — <code>parse_toolcall_actions</code>: raises <code>FormatError</code> when there are no tool calls ("No tool calls found in the response. Every response MUST include at least one tool call.", L45), on an unknown tool name, bad JSON arguments, or a missing <code>command</code>. <a class="footnote-backref" href="#fnref-17" title="Jump back to footnote 17 in the text">↩</a></p></li>
+<li id="fn-18"><p><a href="https://github.com/SWE-agent/mini-swe-agent/blob/a83fcae82d2a08f0ee0c688f9d137b3566c097f8/src/minisweagent/models/litellm_textbased_model.py#L8"><code>src/minisweagent/models/litellm_textbased_model.py#L8</code></a> — <code>LitellmTextbasedModelConfig.action_regex = r"```mswea_bash_command\s*\n(.*?)\n```"</code>, with <code>format_error_template</code> "Please always provide EXACTLY ONE action in triple backticks, found {{actions|length}} actions." <a class="footnote-backref" href="#fnref-18" title="Jump back to footnote 18 in the text">↩</a></p></li>
+<li id="fn-19"><p><a href="https://github.com/SWE-agent/mini-swe-agent/blob/a83fcae82d2a08f0ee0c688f9d137b3566c097f8/src/minisweagent/models/utils/actions_text.py#L24"><code>src/minisweagent/models/utils/actions_text.py#L24</code></a> — <code>actions = [a.strip() for a in re.findall(action_regex, content, re.DOTALL)]</code>; L25: <code>if len(actions) != 1: raise FormatError(...)</code> ("Expected exactly 1 action, found {len}"). <a class="footnote-backref" href="#fnref-19" title="Jump back to footnote 19 in the text">↩</a></p></li>
+<li id="fn-20"><p><a href="https://github.com/SWE-agent/mini-swe-agent/blob/a83fcae82d2a08f0ee0c688f9d137b3566c097f8/src/minisweagent/models/utils/actions_text.py#L1"><code>src/minisweagent/models/utils/actions_text.py#L1</code></a> — module docstring: "Parse actions &amp; format observations without toolcalls. This was the method used for mini-swe-agent v1.0 and the original SWE-agent. As of mini-swe-agent v2.0, we strongly recommend to use toolcalls instead." <a class="footnote-backref" href="#fnref-20" title="Jump back to footnote 20 in the text">↩</a></p></li>
+<li id="fn-21"><p><a href="https://github.com/SWE-agent/mini-swe-agent/blob/a83fcae82d2a08f0ee0c688f9d137b3566c097f8/src/minisweagent/environments/__init__.py#L8"><code>src/minisweagent/environments/__init__.py#L8</code></a> — <code>_ENVIRONMENT_MAPPING</code>: docker, singularity, local, swerex_docker, swerex_modal, bubblewrap, contree. The <code>Model</code> / <code>Environment</code> / <code>Agent</code> protocols themselves are declared in <code>src/minisweagent/__init__.py</code> ("By the magic of protocols &amp; duck typing, you can pretty much ignore them"). <a class="footnote-backref" href="#fnref-21" title="Jump back to footnote 21 in the text">↩</a></p></li>
+<li id="fn-22"><p><a href="https://github.com/SWE-agent/mini-swe-agent/blob/a83fcae82d2a08f0ee0c688f9d137b3566c097f8/src/minisweagent/environments/docker.py#L101"><code>src/minisweagent/environments/docker.py#L101</code></a> — <code>DockerEnvironment.execute</code>: builds <code>docker exec -w &lt;cwd&gt; [-e ...] &lt;container_id&gt; bash -lc &lt;command&gt;</code> (interpreter default at L38, exec assembly at L113) against the container started once in <code>_start_container</code>; default timeout 30s. <a class="footnote-backref" href="#fnref-22" title="Jump back to footnote 22 in the text">↩</a></p></li>
+<li id="fn-23"><p><a href="https://github.com/SWE-agent/mini-swe-agent/blob/a83fcae82d2a08f0ee0c688f9d137b3566c097f8/src/minisweagent/exceptions.py#L13"><code>src/minisweagent/exceptions.py#L13</code></a> — <code>LimitsExceeded(InterruptAgentFlow)</code>: "Raised when the agent has exceeded its cost or step limit"; <code>TimeExceeded(LimitsExceeded)</code> at L17. <a class="footnote-backref" href="#fnref-23" title="Jump back to footnote 23 in the text">↩</a></p></li>
+<li id="fn-24"><p><a href="https://github.com/SWE-agent/mini-swe-agent/blob/a83fcae82d2a08f0ee0c688f9d137b3566c097f8/src/minisweagent/config/mini.yaml#L101"><code>src/minisweagent/config/mini.yaml#L101</code></a> — the <code>mini</code> CLI config: <code>step_limit: 0</code>, <code>cost_limit: 3.</code>, <code>mode: confirm</code> (L103). <code>config/default.yaml</code> sets <code>step_limit: 0</code> and <code>cost_limit: 0.</code> (both unlimited). <a class="footnote-backref" href="#fnref-24" title="Jump back to footnote 24 in the text">↩</a></p></li>
+<li id="fn-25"><p><a href="https://github.com/SWE-agent/mini-swe-agent/blob/a83fcae82d2a08f0ee0c688f9d137b3566c097f8/src/minisweagent/config/benchmarks/swebench.yaml#L112"><code>src/minisweagent/config/benchmarks/swebench.yaml#L112</code></a> — the SWE-bench config: <code>step_limit: 250</code>, <code>cost_limit: 3.</code>, Docker environment with <code>cwd: "/testbed"</code>, model <code>anthropic/claude-sonnet-4-5-20250929</code> with <code>parallel_tool_calls: true</code>. <a class="footnote-backref" href="#fnref-25" title="Jump back to footnote 25 in the text">↩</a></p></li>
+<li id="fn-26"><p><a href="https://github.com/SWE-agent/mini-swe-agent/blob/a83fcae82d2a08f0ee0c688f9d137b3566c097f8/src/minisweagent/models/litellm_model.py#L40"><code>src/minisweagent/models/litellm_model.py#L40</code></a> — the default <code>observation_template</code>: optional <code>&lt;exception&gt;{{output.exception_info}}&lt;/exception&gt;</code>, then <code>&lt;returncode&gt;{{output.returncode}}&lt;/returncode&gt;</code> and <code>&lt;output&gt;\n{{output.output}}&lt;/output&gt;</code>. <a class="footnote-backref" href="#fnref-26" title="Jump back to footnote 26 in the text">↩</a></p></li>
+<li id="fn-27"><p><a href="https://github.com/SWE-agent/mini-swe-agent/blob/a83fcae82d2a08f0ee0c688f9d137b3566c097f8/src/minisweagent/config/default.yaml#L119"><code>src/minisweagent/config/default.yaml#L119</code></a> — the shipped observation template: <code>{% if output.output | length &lt; 10000 %}</code> full output, else head <code>output.output[:5000]</code> (L133), <code>&lt;elided_chars&gt;</code> count, and tail <code>output.output[-5000:]</code>; the same template ships in <code>config/benchmarks/swebench.yaml</code> (L136). <a class="footnote-backref" href="#fnref-27" title="Jump back to footnote 27 in the text">↩</a></p></li>
+<li id="fn-28"><p><a href="https://github.com/SWE-agent/mini-swe-agent/blob/a83fcae82d2a08f0ee0c688f9d137b3566c097f8/src/minisweagent/agents/default.py#L159"><code>src/minisweagent/agents/default.py#L159</code></a> — <code>serialize()</code>: <code>info.model_stats</code> (instance_cost, api_calls), config, <code>mini_version</code>, exit_status, submission, the full <code>messages</code> list, and <code>"trajectory_format": "mini-swe-agent-1.1"</code> (L178); <code>save()</code> at L182 writes it as JSON. <a class="footnote-backref" href="#fnref-28" title="Jump back to footnote 28 in the text">↩</a></p></li>
+<li id="fn-29"><p><a href="https://github.com/SWE-agent/mini-swe-agent/blob/a83fcae82d2a08f0ee0c688f9d137b3566c097f8/src/minisweagent/run/mini.py#L24"><code>src/minisweagent/run/mini.py#L24</code></a> — the <code>mini</code> CLI: <code>DEFAULT_CONFIG_FILE</code> is the builtin <code>mini.yaml</code> (overridable via <code>MSWEA_MINI_CONFIG_PATH</code>), <code>DEFAULT_OUTPUT_FILE = global_config_dir / "last_mini_run.traj.json"</code>; the agent is built with <code>default_type="interactive"</code> and the environment with <code>default_type="local"</code>. <a class="footnote-backref" href="#fnref-29" title="Jump back to footnote 29 in the text">↩</a></p></li>
+<li id="fn-30"><p><a href="https://github.com/SWE-agent/mini-swe-agent/blob/a83fcae82d2a08f0ee0c688f9d137b3566c097f8/src/minisweagent/agents/interactive.py#L25"><code>src/minisweagent/agents/interactive.py#L25</code></a> — <code>InteractiveAgentConfig.mode: Literal["human", "confirm", "yolo"] = "confirm"</code>, <code>whitelist_actions: list[str] = []</code> (L27, regex-matched at L163), <code>confirm_exit: bool = True</code>; <code>query()</code> catches <code>LimitsExceeded</code> and prompts for new limits only when stdin is a terminal. <a class="footnote-backref" href="#fnref-30" title="Jump back to footnote 30 in the text">↩</a></p></li>
+<li id="fn-31"><p><a href="https://github.com/SWE-agent/mini-swe-agent/blob/a83fcae82d2a08f0ee0c688f9d137b3566c097f8/README.md#L95"><code>README.md#L95</code></a> — "Should I use SWE-agent or mini-SWE-agent? … You should use swe-agent if — You want to experiment with different sets of tools, each with their own interface — You want to experiment with different history processors." <a class="footnote-backref" href="#fnref-31" title="Jump back to footnote 31 in the text">↩</a></p></li>
+<li id="fn-32"><p><a href="https://github.com/SWE-agent/mini-swe-agent/blob/a83fcae82d2a08f0ee0c688f9d137b3566c097f8/README.md#L28"><code>README.md#L28</code></a> — "Performant: Scores &gt;74% on the SWE-bench verified benchmark; starts much faster than Claude Code" — a project claim about benchmark runs; the adoption list is at <code>README.md#L25</code>. Not reproduced or verified by this teardown. <a class="footnote-backref" href="#fnref-32" title="Jump back to footnote 32 in the text">↩</a></p></li>
+</ol>
+</div>
+</main>
+</body>
+</html>
