@@ -247,6 +247,7 @@
       <a class="secondary" href="dgm/">Read the article</a>
     </div>
   </div>
+
   <div class="article" id="autohand">
     <h2>#14 &mdash; Autohand Code CLI: the harness that rewrites its own skills</h2>
     <p>A terminal coding agent whose headline claim is that it evolves: it
@@ -303,6 +304,7 @@
       <a class="secondary" href="grok-build/">Read the article</a>
     </div>
   </div>
+
   <div class="article" id="harness2">
     <h2>#18 &mdash; Harness²: the harness is the thing being optimized</h2>
     <p>Google Research's recursive harness optimizer: there is no agent loop in the package &mdash; instead a budgeted search (Propose&ndash;Probe&ndash;Compose) edits the harness of a borrowed executor, OpenCode by default or Codex. The k base rollouts become evidence files; two one-sided proposer sessions &mdash; one may only fix procedure, the other may only add practitioner knowledge &mdash; edit the component tree; a validator that encodes how the substrates silently fail gates every edit; and blind selection over exactly the finals adopts one &mdash; it cannot abstain, because the base is not in the pool. The adopted tree is stored whole in a per-domain experience library for the next task. The method is score-blind by construction (its <code>RunView</code> type has no score field, and the judge is never imported), while the executor side runs with network access unrestricted &mdash; a split the docs disclose plainly, including a validation run where a rollout downloaded its own rubric.</p>
@@ -311,53 +313,6 @@
       <a class="secondary" href="diagrams/template.html?data=../harness2/diagrams/harness2.json">Interactive diagram</a>
       <a class="secondary" href="harness2/">Read the article</a>
 
-    </div>
-  </div>
-
-  <div class="article" id="kilo-code">
-    <h2>#25 &mdash; Kilo Code: one core, every surface a client</h2>
-    <p>One agent implementation, met everywhere: the loop, the session store and the permission engine live in a single CLI core that runs as a headless server &mdash; <code>kilo serve</code> &mdash; and the VS Code extension, the JetBrains plugin, the TUI and <code>kilo run</code> are all clients of it, the extension spawning one shared backend for its sidebar, editor tabs and worktree-based Agent Manager alike. What earlier generations called a mode is now an agent &mdash; code, plan, debug, ask, orchestrator &mdash; and the load-bearing part of an agent is its permission ruleset: allow / ask / deny rules merged from defaults, the agent and your config, evaluated last-match-wins with <em>ask</em> as the default, <code>.env</code> reads carved out to ask, and one class of request &mdash; a sandbox escalation &mdash; that no automation front-end will answer for you, not the extension's Auto-Approve toggle and not the CLI's <code>--auto</code>. At this pin (v7.8.18) hosted cloud sessions arrive through the same server: a local session-host API lets editors discover, read and attach to a hosted session while the credentials stay inside the local server's cloud provider module, and an MCP SDK bump means remote servers that redirect cross-origin no longer connect.</p>
-    <div class="links">
-      <a class="primary" href="kilo-code/trace.html">Step through one task</a>
-      <a href="diagrams/template.html?data=../kilo-code/diagrams/kilo-code.json">Interactive diagram</a>
-      <a href="kilo-code/">Read the article</a>
-    </div>
-  </div>
-
-  <div class="article" id="strands">
-    <h2>#26 &mdash; Strands harness: the agent one call builds</h2>
-    <p>AWS&rsquo;s harness SDK is a library, not an application: <code>create_harness()</code> resolves a 39-line defaults table &mdash; a Bedrock Opus 5 model, eight built-in tools (shell, files, web fetch, a Monty-sandboxed programmatic caller, a <code>subagent</code> tool that rebuilds the factory itself), two plugins, the &ldquo;auto&rdquo; context manager (tool results truncated at 1,500 tokens, summarization at 85%), snapshot sessions and markdown memory under <code>./.agent</code> &mdash; and constructs a plain <code>strands.Agent</code> on the SDK&rsquo;s recursive event loop. What the one call does <em>not</em> build is just as precise: no turn or token cap (limits are per-invocation and opt-in), no approval gate (<code>interventions</code> defaults to <code>None</code>, an empty handler list), and no sandbox isolation (the default sandbox is the host itself) &mdash; each is one argument away, and none is in the box.</p>
-    <div class="links">
-      <a class="primary" href="strands/trace.html">Step through one task</a>
-      <a href="diagrams/template.html?data=../strands/diagrams/strands.json">Interactive diagram</a>
-      <a href="strands/">Read the article</a>
-    </div>
-  </div>
-
-
-  <div class="article" id="mini-swe-agent">
-    <h2>#27 &mdash; mini-SWE-agent: what remains when almost everything is removed</h2>
-    <p>The deliberately minimal sibling of SWE-agent (#11) keeps almost nothing: a 190-line agent file whose loop is a message list, a model and an environment &mdash; query, execute, append &mdash; with exceptions carrying the exit messages. There is no tool set: one bash action, which at v2 arrives as a single native tool call (the v1 regex-extracted text format remains as a shipped variant), executed in a fresh subprocess every step, so <code>cd</code> and exports never persist, only files do. Submission is a marker line in stdout that the environment recognizes; limits are step, cost and wall-time checks made before each model call; and the saved trajectory is the same linear list the model saw &mdash; no compaction, no history processors, no approval gate in the default agent at all.</p>
-    <div class="links">
-      <a class="primary" href="mini-swe-agent/trace.html">Step through one task</a>
-      <a href="diagrams/template.html?data=../mini-swe-agent/diagrams/mini-swe-agent.json">Interactive diagram</a>
-      <a href="mini-swe-agent/">Read the article</a>
-    </div>
-  </div>
-
-  <div class="contribute">
-    <h2>Found a mistake?</h2>
-    <p>These teardowns live or die on their grounding: every behavioral claim
-    is pinned to a release tag and commit SHA, with a line-level permalink
-
-  <div class="article">
-    <h2>Embedded Harness Anatomy &mdash; the milliwatts season</h2>
-    <p>A companion series: top-down dissections of agent harnesses that run on
-    milliwatts. Same discipline, adapted for event-driven systems under
-    physical constraints. E1 tears down Espressif's ESP-Claw &mdash; the agent
-    loop that waits for an invitation.</p>
-    <div class="links">
-      <a class="primary" href="embedded/">Enter the embedded series</a>
     </div>
   </div>
 
@@ -390,6 +345,7 @@
       <a href="zcode/">Read the article</a>
     </div>
   </div>
+
   <div class="article" id="everruns">
     <h2>#22 &mdash; Everruns: the session survives its workers</h2>
     <p>A durable-execution harness engine in Rust: every message, model response, tool call and state transition is journaled to an append-only PostgreSQL event log, and a session runs as a leased actor &mdash; a worker claims it, runs the whole turn from the log, and renews a ten-second lease while it works. Kill the worker mid-turn and the lease expires, the fence rises, and the next worker folds the same log and continues: recorded results stand, calls that were cut off rerun only when their tool declares that safe, and a turn waiting on a person's approval holds no worker at all. Sessions have no wall-clock ceiling, 2,000+-tool MCP catalogs are searched and revealed within a fixed schema budget, and one agent is callable from code through a stable Agent API whose keys reach nothing else.</p>
@@ -399,6 +355,7 @@
       <a href="everruns/">Read the article</a>
     </div>
   </div>
+
   <div class="article" id="mike">
     <h2>#23 &mdash; MIKE: the board is the control plane</h2>
     <p>A self-hosted kanban harness in Go: a task is a card, and moving the card is the control surface &mdash; drag it into In Progress and the executor starts, drag it out and the run stops. Every tool call the model makes crosses a stdio bridge into a per-task gVisor sandbox built by rootless Podman: the task's git worktree mounted read-write, its <code>.git</code> pointer file pinned read-only over it because host git would execute the configuration it names, and the project's <code>.git</code> read-only beside it. There are no per-tool approval prompts; the gates are the workflow's own &mdash; a question parks the card in Review, a merge waits for the card's auto flags or a person's commit-and-done click, and only staged changes are ever committed. Extensions are isolated by kind (opaque-origin iframes, their own gVisor sandboxes, wazero adapters, or pure data), auth is passkey pairing with codes that authorize a registration and never a session, and the PWA client keeps the board usable offline behind an IndexedDB mirror and a write queue.</p>
@@ -419,6 +376,95 @@
     </div>
   </div>
 
+  <div class="article" id="kilo-code">
+    <h2>#25 &mdash; Kilo Code: one core, every surface a client</h2>
+    <p>One agent implementation, met everywhere: the loop, the session store and the permission engine live in a single CLI core that runs as a headless server &mdash; <code>kilo serve</code> &mdash; and the VS Code extension, the JetBrains plugin, the TUI and <code>kilo run</code> are all clients of it, the extension spawning one shared backend for its sidebar, editor tabs and worktree-based Agent Manager alike. What earlier generations called a mode is now an agent &mdash; code, plan, debug, ask, orchestrator &mdash; and the load-bearing part of an agent is its permission ruleset: allow / ask / deny rules merged from defaults, the agent and your config, evaluated last-match-wins with <em>ask</em> as the default, <code>.env</code> reads carved out to ask, and one class of request &mdash; a sandbox escalation &mdash; that no automation front-end will answer for you, not the extension's Auto-Approve toggle and not the CLI's <code>--auto</code>. At this pin (v7.8.18) hosted cloud sessions arrive through the same server: a local session-host API lets editors discover, read and attach to a hosted session while the credentials stay inside the local server's cloud provider module, and an MCP SDK bump means remote servers that redirect cross-origin no longer connect.</p>
+    <div class="links">
+      <a class="primary" href="kilo-code/trace.html">Step through one task</a>
+      <a href="diagrams/template.html?data=../kilo-code/diagrams/kilo-code.json">Interactive diagram</a>
+      <a href="kilo-code/">Read the article</a>
+    </div>
+  </div>
+
+  <div class="article" id="strands">
+    <h2>#26 &mdash; Strands harness: the agent one call builds</h2>
+    <p>AWS&rsquo;s harness SDK is a library, not an application: <code>create_harness()</code> resolves a 39-line defaults table &mdash; a Bedrock Opus 5 model, eight built-in tools (shell, files, web fetch, a Monty-sandboxed programmatic caller, a <code>subagent</code> tool that rebuilds the factory itself), two plugins, the &ldquo;auto&rdquo; context manager (tool results truncated at 1,500 tokens, summarization at 85%), snapshot sessions and markdown memory under <code>./.agent</code> &mdash; and constructs a plain <code>strands.Agent</code> on the SDK&rsquo;s recursive event loop. What the one call does <em>not</em> build is just as precise: no turn or token cap (limits are per-invocation and opt-in), no approval gate (<code>interventions</code> defaults to <code>None</code>, an empty handler list), and no sandbox isolation (the default sandbox is the host itself) &mdash; each is one argument away, and none is in the box.</p>
+    <div class="links">
+      <a class="primary" href="strands/trace.html">Step through one task</a>
+      <a href="diagrams/template.html?data=../strands/diagrams/strands.json">Interactive diagram</a>
+      <a href="strands/">Read the article</a>
+    </div>
+  </div>
+
+  <div class="article" id="mini-swe-agent">
+    <h2>#27 &mdash; mini-SWE-agent: what remains when almost everything is removed</h2>
+    <p>The deliberately minimal sibling of SWE-agent (#11) keeps almost nothing: a 190-line agent file whose loop is a message list, a model and an environment &mdash; query, execute, append &mdash; with exceptions carrying the exit messages. There is no tool set: one bash action, which at v2 arrives as a single native tool call (the v1 regex-extracted text format remains as a shipped variant), executed in a fresh subprocess every step, so <code>cd</code> and exports never persist, only files do. Submission is a marker line in stdout that the environment recognizes; limits are step, cost and wall-time checks made before each model call; and the saved trajectory is the same linear list the model saw &mdash; no compaction, no history processors, no approval gate in the default agent at all.</p>
+    <div class="links">
+      <a class="primary" href="mini-swe-agent/trace.html">Step through one task</a>
+      <a href="diagrams/template.html?data=../mini-swe-agent/diagrams/mini-swe-agent.json">Interactive diagram</a>
+      <a href="mini-swe-agent/">Read the article</a>
+    </div>
+  </div>
+
+  <div class="article">
+    <h2>Field Notes &mdash; shorter pieces between teardowns</h2>
+    <p>Not every system worth dissecting runs an agent loop. Field Notes are
+    shorter, single-sitting pieces on the layers around the loop &mdash; memory
+    stacks, team tooling, routing layers, and the research literature &mdash;
+    held to the same pinned-source standard as the numbered teardowns.</p>
+  </div>
+
+  <div class="article" id="hy-memory">
+    <h2>Field Notes &mdash; Hy Memory: the memory is not the harness</h2>
+    <p>A memory stack, not a harness: a dedicated writer model, a Python framework and a local hub that negotiate one shared memory across ten coding tools &mdash; a complete, source-readable answer to where memory should live relative to the loop.</p>
+    <div class="links">
+      <a class="primary" href="hy-memory/field-notes.html">Read the note</a>
+    </div>
+  </div>
+
+  <div class="article" id="teamai">
+    <h2>Field Notes &mdash; TeamAI: the layer above the harness</h2>
+    <p>A team layer, not a harness: one Git repository holding a team&rsquo;s shared skills, rules, hooks, MCP servers and settings, plus a CLI that renders them into the on-disk formats of the agent tools the team already uses and keeps every machine reconciled.</p>
+    <div class="links">
+      <a class="primary" href="teamai/field-notes.html">Read the note</a>
+    </div>
+  </div>
+
+  <div class="article" id="tencentdb-agent-memory">
+    <h2>Field Notes &mdash; TencentDB Agent Memory: memory by proxy</h2>
+    <p>A team memory hub: a protocol proxy that captures conversations from any agent pointed at it, a background pipeline that distils them into layered memory, and a governed asset library &mdash; chat memory, versioned Skills, an LLM-Wiki and a CodeGraph &mdash; shared under explicit rules.</p>
+    <div class="links">
+      <a class="primary" href="tencentdb-agent-memory/field-notes.html">Read the note</a>
+    </div>
+  </div>
+
+  <div class="article" id="vllm-semantic-router">
+    <h2>Field Notes &mdash; vLLM Semantic Router: the judge that generates nothing</h2>
+    <p>A decision layer that sits in front of harnesses and chooses among configured backends &mdash; paired with the official plugin that wires the router&rsquo;s decision models into a harness that does run a loop. The harness keeps the loop; the Router chooses.</p>
+    <div class="links">
+      <a class="primary" href="vllm-semantic-router/field-notes.html">Read the note</a>
+    </div>
+  </div>
+
+  <div class="article" id="sim-memory">
+    <h2>Field Notes &mdash; Self-Improvement Memory: the harness is not the memory</h2>
+    <p>A paper, not a product: the first controlled evidence that a structured memory of <em>why</em> harness edits worked &mdash; root causes, attempts, predicted versus observed outcomes &mdash; lets an optimizer keep improving after the benchmark or the model changes.</p>
+    <div class="links">
+      <a class="primary" href="sim-memory/field-notes.html">Read the note</a>
+    </div>
+  </div>
+
+  <div class="article">
+    <h2>Embedded Harness Anatomy &mdash; the milliwatts season</h2>
+    <p>A companion series: top-down dissections of agent harnesses that run on
+    milliwatts. Same discipline, adapted for event-driven systems under
+    physical constraints. E1 tears down Espressif's ESP-Claw &mdash; the agent
+    loop that waits for an invitation.</p>
+    <div class="links">
+      <a class="primary" href="embedded/">Enter the embedded series</a>
+    </div>
+  </div>
+
 <div class="contribute">
     <h2>Found a mistake?</h2>
     <p>These teardowns live or die on their grounding: every behavioral claim
@@ -429,7 +475,6 @@
     <a href="https://github.com/dpsm/agent-harness-anatomy/pulls">pull requests</a>.
     A correction with a permalink beats a correction with an opinion.</p>
   </div>
-
   <footer>
     Companion to the Substack series ·
     <a href="comparison-matrix.html">Comparison matrix</a> ·
