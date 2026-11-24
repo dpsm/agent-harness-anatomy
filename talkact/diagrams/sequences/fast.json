@@ -1,0 +1,16 @@
+{
+ "title": "The fast loop: one streaming call per trigger",
+ "subtitle": "No tool calls on the voice path — spoken text first, directives after",
+ "participants": ["Caller (sim)", "Runner", "Fast agent", "SharedState", "Speech clock"],
+ "messages": [
+  {"from": 0, "to": 1, "label": "utterance (opening turn: state the task)"},
+  {"from": 1, "to": 2, "label": "respond(trigger: 'user just spoke')"},
+  {"from": 2, "to": 3, "label": "read digest + action log + transcript tail"},
+  {"from": 3, "to": 2, "label": "context block (assembled fresh, no extra call)", "dashed": true},
+  {"from": 2, "to": 1, "label": "streamed text: spoken lines first, then @slow: / @end_call", "dashed": true},
+  {"from": 1, "to": 3, "label": "put parsed @slow: relays on fast_to_slow"},
+  {"from": 1, "to": 4, "label": "speak the reply"},
+  {"from": 4, "to": 1, "label": "simulated at 2.8 words/s (cap 12 s) — the slow agent's working time", "dashed": true},
+  {"note": "span", "span": [0, 4], "text": "First token of the stream is the voice latency. Nothing precedes it: no tool round trip, no wait on the slow loop."}
+ ]
+}

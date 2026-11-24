@@ -1,0 +1,14 @@
+{
+ "title": "After the call: finishing without a caller",
+ "subtitle": "Hangup is a designed path — the slow agent completes with what it has",
+ "participants": ["Caller", "Runner", "Slow agent", "SharedState"],
+ "messages": [
+  {"from": 0, "to": 1, "label": "goodbye + [HANGUP] (or the fast agent's @end_call)"},
+  {"from": 1, "to": 3, "label": "call_ended = True"},
+  {"from": 1, "to": 2, "label": "slow task keeps running: 240 s post-call grace"},
+  {"from": 2, "to": 3, "label": "reads the hangup note on its next step: finish with what you have — no more ask_user"},
+  {"from": 2, "to": 2, "self": true, "label": "works on; force-stopped 12 steps after hangup"},
+  {"from": 2, "to": 3, "label": "task_done(result) — the outcome lands in the episode record"},
+  {"note": "span", "span": [0, 3], "text": "The fast tier's parting promise — 'it will be completed right after the call' — is backed by this path, not by hope."}
+ ]
+}

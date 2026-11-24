@@ -406,6 +406,16 @@
     </div>
   </div>
 
+  <div class="article" id="talkact">
+    <h2>#28 &mdash; TalkAct: two timescales, one bridge contract</h2>
+    <p>A dual-model agent from 19PINE-AI that splits a phone call across two clocks: a small fast model holds the conversation in streaming plain text &mdash; no tool calls &mdash; while a slow computer-use agent drives a Playwright browser on multi-second steps. The tiers share almost nothing: one state object whose centre is a <strong>digest</strong>, a short state summary the slow model must attach to every tool call, so the fast tier always has something true and current to say. A bidirectional text channel (<code>@slow:</code> relays down, <code>ask_user</code>/<code>tell_user</code> up) and a hard rule &mdash; the fast tier may not claim the task is done until the slow tier's <code>task_done</code> says so &mdash; complete the contract, and the same contract is re-implemented over browser-use to show it is a property of the bridge, not of either loop. Ships with VoiceComputerBench: four hermetic web tasks scored by environment state, with condition flags that ablate each piece of the bridge.</p>
+    <div class="links">
+      <a class="primary" href="talkact/trace.html">Follow one call end to end</a>
+      <a href="diagrams/template.html?data=../talkact/diagrams/talkact.json">Interactive diagram</a>
+      <a href="talkact/">Read the article</a>
+    </div>
+  </div>
+
   <div class="article">
     <h2>Field Notes &mdash; shorter pieces between teardowns</h2>
     <p>Not every system worth dissecting runs an agent loop. Field Notes are

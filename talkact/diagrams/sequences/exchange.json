@@ -1,0 +1,19 @@
+{
+ "title": "One exchange across the bridge",
+ "subtitle": "A question asked, answered and applied — while the slow agent keeps working",
+ "participants": ["Caller", "Fast agent", "SharedState", "Slow agent", "Browser"],
+ "messages": [
+  {"from": 3, "to": 2, "label": "ask_user('Which day do you want to fly?') -> slow_to_fast"},
+  {"from": 1, "to": 0, "label": "voices the question naturally (runner drains max 3 per turn)"},
+  {"from": 0, "to": 1, "label": "'Friday morning, ideally before ten.'"},
+  {"from": 1, "to": 2, "label": "@slow: prefers Friday, before 10am -> fast_to_slow"},
+  {"note": "span", "span": [0, 4], "text": "Meanwhile the slow agent kept working on everything that did not depend on the answer."},
+  {"from": 3, "to": 2, "label": "next observation drains the queue: the answer rides in as a [PHONE CHANNEL] note"},
+  {"from": 3, "to": 4, "label": "select Friday + morning filter (with a fresh state_summary)"},
+  {"from": 4, "to": 3, "label": "results page: three Friday-morning flights", "dashed": true},
+  {"from": 3, "to": 2, "label": "state_summary lists the options -> digest"},
+  {"from": 0, "to": 1, "label": "'What are my options?'"},
+  {"from": 1, "to": 0, "label": "answers from the digest alone — no call into the slow loop"},
+  {"note": "span", "span": [0, 4], "text": "The fast agent may not say 'booked': the digest does not say so. Completion claims are gated on the slow agent's state, not on the conversation."}
+ ]
+}

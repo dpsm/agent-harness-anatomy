@@ -1,0 +1,310 @@
+{
+ "edges": [
+  {
+   "from": "caller",
+   "label": "utterance = trigger",
+   "to": "fast"
+  },
+  {
+   "from": "fast",
+   "label": "spoken reply, streamed",
+   "to": "caller",
+   "label_dx": -36
+  },
+  {
+   "from": "voice",
+   "label": "recognized text only (audio mode)",
+   "to": "fast",
+   "label_dy": 23,
+   "label_dx": -34
+  },
+  {
+   "from": "fast",
+   "label": "reply text -> TTS first audio",
+   "to": "voice",
+   "label_dy": 30
+  },
+  {
+   "from": "fast",
+   "label": "@slow: relay lines",
+   "to": "bridge",
+   "label_dy": -16,
+   "label_dx": -20
+  },
+  {
+   "from": "bridge",
+   "label": "digest + actions + transcript in prompt",
+   "to": "fast",
+   "label_dy": 18,
+   "label_dx": -205
+  },
+  {
+   "from": "runner",
+   "label": "creates SharedState",
+   "to": "bridge",
+   "label_dx": -110
+  },
+  {
+   "from": "runner",
+   "label": "conducts each turn",
+   "to": "fast"
+  },
+  {
+   "from": "slow",
+   "label": "state_summary (required) -> digest",
+   "to": "bridge",
+   "label_dy": -18,
+   "label_dx": -175
+  },
+  {
+   "from": "slow",
+   "label": "ask_user / tell_user -> queue",
+   "to": "bridge",
+   "label_dy": 20,
+   "label_dx": -150
+  },
+  {
+   "from": "bridge",
+   "label": "[PHONE CHANNEL] notes",
+   "to": "slow",
+   "label_dx": -10
+  },
+  {
+   "from": "slow",
+   "label": "click / type / select / navigate",
+   "to": "browser"
+  },
+  {
+   "from": "browser",
+   "label": "observation: elements, text, screenshot",
+   "to": "slow"
+  },
+  {
+   "from": "browser",
+   "label": "the page under test",
+   "to": "env"
+  },
+  {
+   "from": "env",
+   "label": "ground truth via /api/state",
+   "to": "record",
+   "label_dx": -135
+  },
+  {
+   "from": "bridge",
+   "label": "dump() -> episode JSON",
+   "to": "record"
+  }
+ ],
+ "nodes": [
+  {
+   "excerpt": "An LLM role-plays the caller from a hidden profile: reveals one or two fields per turn, asks its probe questions, ends with [HANGUP].",
+   "grade": "verified",
+   "h": 96,
+   "id": "caller",
+   "label": "Caller (simulated)",
+   "links": [
+    {
+     "label": "simuser.py:13 — caller rules: reveal little, stay in character",
+     "line": 13,
+     "url": "https://github.com/19PINE-AI/TalkAct/blob/7d70007f72d45ddfc1a14e8e229b6d444e4919a2/src/cuv/simuser.py#L13"
+    },
+    {
+     "label": "simuser.py:38 — backend pick: Gemini 3.5 Flash, else Claude Sonnet 5",
+     "line": 38,
+     "url": "https://github.com/19PINE-AI/TalkAct/blob/7d70007f72d45ddfc1a14e8e229b6d444e4919a2/src/cuv/simuser.py#L38"
+    }
+   ],
+   "step": 1,
+   "sub": "simuser.py · hidden profile + probes",
+   "w": 280,
+   "x": 20,
+   "y": 60
+  },
+  {
+   "excerpt": "One episode: reset env, launch the slow agent as a task, conduct the call, score against ground truth. Conditions are constructor flags and prompt overrides.",
+   "grade": "verified",
+   "h": 96,
+   "id": "runner",
+   "label": "Episode runner + bench",
+   "links": [
+    {
+     "label": "runner.py:56 — conditions mapped to agent flags (duplex, blind, noask, strawman...)",
+     "line": 56,
+     "url": "https://github.com/19PINE-AI/TalkAct/blob/7d70007f72d45ddfc1a14e8e229b6d444e4919a2/src/cuv/runner.py#L56"
+    },
+    {
+     "label": "runner.py:175 — the duplex conversation loop",
+     "line": 175,
+     "url": "https://github.com/19PINE-AI/TalkAct/blob/7d70007f72d45ddfc1a14e8e229b6d444e4919a2/src/cuv/runner.py#L175"
+    }
+   ],
+   "step": 1,
+   "sub": "runner.py · bench/ · conditions x tasks",
+   "w": 280,
+   "x": 560,
+   "y": 60
+  },
+  {
+   "excerpt": "tool_choice = any: every step must call a tool, and every tool schema requires a state_summary — the digest rides the action itself. Max 60 steps.",
+   "grade": "verified",
+   "h": 96,
+   "id": "slow",
+   "label": "Slow agent (computer tier)",
+   "links": [
+    {
+     "label": "slow_agent.py:47 — _tool() injects the required state_summary into every schema",
+     "line": 47,
+     "url": "https://github.com/19PINE-AI/TalkAct/blob/7d70007f72d45ddfc1a14e8e229b6d444e4919a2/src/cuv/slow_agent.py#L47"
+    },
+    {
+     "label": "slow_agent.py:246 — tool_choice any, max_tokens 2048",
+     "line": 246,
+     "url": "https://github.com/19PINE-AI/TalkAct/blob/7d70007f72d45ddfc1a14e8e229b6d444e4919a2/src/cuv/slow_agent.py#L246"
+    }
+   ],
+   "step": 3,
+   "sub": "slow_agent.py · Anthropic tool use",
+   "w": 280,
+   "x": 1100,
+   "y": 60
+  },
+  {
+   "excerpt": "Plain streaming text: spoken lines first, then @slow: relay lines, then @end_call. One call per trigger; first token is the voice latency.",
+   "grade": "verified",
+   "h": 96,
+   "id": "fast",
+   "label": "Fast agent (voice tier)",
+   "links": [
+    {
+     "label": "fast_agent.py:1 — the plain-text protocol (no tool-call round trips)",
+     "line": 1,
+     "url": "https://github.com/19PINE-AI/TalkAct/blob/7d70007f72d45ddfc1a14e8e229b6d444e4919a2/src/cuv/fast_agent.py#L1"
+    },
+    {
+     "label": "fast_agent.py:31 — CRITICAL: never claim done unless the state says so",
+     "line": 31,
+     "url": "https://github.com/19PINE-AI/TalkAct/blob/7d70007f72d45ddfc1a14e8e229b6d444e4919a2/src/cuv/fast_agent.py#L31"
+    }
+   ],
+   "step": 2,
+   "sub": "fast_agent.py · streaming text, no tool calls",
+   "w": 280,
+   "x": 20,
+   "y": 190
+  },
+  {
+   "excerpt": "One dataclass: digest, action log (last 12), transcript, two asyncio queues, an interrupt event, slow_done / slow_result flags, and the event log.",
+   "grade": "verified",
+   "h": 96,
+   "id": "bridge",
+   "label": "SharedState blackboard",
+   "links": [
+    {
+     "label": "shared.py:25 — SharedState, the blackboard dataclass",
+     "line": 25,
+     "url": "https://github.com/19PINE-AI/TalkAct/blob/7d70007f72d45ddfc1a14e8e229b6d444e4919a2/src/cuv/shared.py#L25"
+    },
+    {
+     "label": "shared.py:33 — the digest field and its not-started placeholder",
+     "line": 33,
+     "url": "https://github.com/19PINE-AI/TalkAct/blob/7d70007f72d45ddfc1a14e8e229b6d444e4919a2/src/cuv/shared.py#L33"
+    }
+   ],
+   "step": 2,
+   "sub": "shared.py · the bridge contract",
+   "w": 280,
+   "x": 560,
+   "y": 190
+  },
+  {
+   "excerpt": "Injected JS stamps data-cuv-id on every visible interactive element; actions address elements by index. Observation caps body text at 3,000 chars, screenshot is JPEG q60.",
+   "grade": "verified",
+   "h": 96,
+   "id": "browser",
+   "label": "Playwright browser",
+   "links": [
+    {
+     "label": "browser.py:6 — EXTRACT_JS: the indexed element extraction",
+     "line": 6,
+     "url": "https://github.com/19PINE-AI/TalkAct/blob/7d70007f72d45ddfc1a14e8e229b6d444e4919a2/src/cuv/browser.py#L6"
+    },
+    {
+     "label": "browser.py:66 — observe(): elements + text + screenshot",
+     "line": 66,
+     "url": "https://github.com/19PINE-AI/TalkAct/blob/7d70007f72d45ddfc1a14e8e229b6d444e4919a2/src/cuv/browser.py#L66"
+    }
+   ],
+   "step": 4,
+   "sub": "browser.py · Chromium, indexed DOM",
+   "w": 280,
+   "x": 1100,
+   "y": 190
+  },
+  {
+   "excerpt": "Evaluation cascade: simulated speech -> Silero VAD (400 ms endpoint) -> faster-whisper large-v3-turbo -> only recognized text reaches the fast agent; replies via Kokoro-82M.",
+   "grade": "verified",
+   "h": 96,
+   "id": "voice",
+   "label": "Voice cascade (audio mode)",
+   "links": [
+    {
+     "label": "voice/pipeline.py:24 — AudioLoop, the cascaded measurement loop",
+     "line": 24,
+     "url": "https://github.com/19PINE-AI/TalkAct/blob/7d70007f72d45ddfc1a14e8e229b6d444e4919a2/src/cuv/voice/pipeline.py#L24"
+    },
+    {
+     "label": "voice/pipeline.py:36 — user_to_text: synth -> VAD -> ASR",
+     "line": 36,
+     "url": "https://github.com/19PINE-AI/TalkAct/blob/7d70007f72d45ddfc1a14e8e229b6d444e4919a2/src/cuv/voice/pipeline.py#L36"
+    }
+   ],
+   "step": 1,
+   "sub": "voice/ · VAD -> ASR -> TTS",
+   "w": 280,
+   "x": 20,
+   "y": 320
+  },
+  {
+   "excerpt": "Per episode: transcript, final digest, full event log, token usage, and the environment's ground-truth state. Success is checked against env state; probe answers are LLM-judged.",
+   "grade": "verified",
+   "h": 96,
+   "id": "record",
+   "label": "Episode record + scoring",
+   "links": [
+    {
+     "label": "runner.py:158 — the episode record assembly",
+     "line": 158,
+     "url": "https://github.com/19PINE-AI/TalkAct/blob/7d70007f72d45ddfc1a14e8e229b6d444e4919a2/src/cuv/runner.py#L158"
+    }
+   ],
+   "step": 5,
+   "sub": "results/episodes/*.json · checkers + LLM judge",
+   "w": 280,
+   "x": 560,
+   "y": 320
+  },
+  {
+   "excerpt": "Four self-hosted sites — forms, booking, webmail, meeting. The information needed to finish lives only in the caller's hidden profile, so the system must converse to succeed.",
+   "grade": "verified",
+   "h": 96,
+   "id": "env",
+   "label": "Hermetic task sites",
+   "links": [
+    {
+     "label": "envs/app.py:57 — the forms task site",
+     "line": 57,
+     "url": "https://github.com/19PINE-AI/TalkAct/blob/7d70007f72d45ddfc1a14e8e229b6d444e4919a2/envs/app.py#L57"
+    }
+   ],
+   "step": 4,
+   "sub": "envs/app.py · Flask, localhost:8321",
+   "w": 280,
+   "x": 1100,
+   "y": 320
+  }
+ ],
+ "repo": "https://github.com/19PINE-AI/TalkAct",
+ "sha": "7d70007f72d45ddfc1a14e8e229b6d444e4919a2",
+ "title": "TalkAct — two timescales, one bridge contract"
+}
