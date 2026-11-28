@@ -1,0 +1,187 @@
+{
+  "title": "µLM (Swen) — commit-and-continue, as shipped in the demo",
+  "repo": "https://github.com/Sensente/micro_language_model_swen_project",
+  "sha": "545e7e2d33588baea1a11e201858e24b4c3395b4",
+  "nodes": [
+    {
+      "id": "ui",
+      "step": 1,
+      "label": "Browser UI",
+      "sub": "demo/frontend/index.html",
+      "x": 20,
+      "y": 60,
+      "w": 240,
+      "h": 96,
+      "grade": "verified",
+      "links": [
+        {
+          "label": "index.html:145-152",
+          "url": "https://github.com/Sensente/micro_language_model_swen_project/blob/545e7e2d33588baea1a11e201858e24b4c3395b4/demo/frontend/index.html#L145-L152"
+        }
+      ],
+      "excerpt": "} else if (event === 'local_prefix') {"
+    },
+    {
+      "id": "backend",
+      "step": 2,
+      "label": "FastAPI backend",
+      "sub": "demo/backend/app.py",
+      "x": 20,
+      "y": 190,
+      "w": 240,
+      "h": 96,
+      "grade": "verified",
+      "links": [
+        {
+          "label": "app.py:293-316",
+          "url": "https://github.com/Sensente/micro_language_model_swen_project/blob/545e7e2d33588baea1a11e201858e24b4c3395b4/demo/backend/app.py#L293-L316"
+        }
+      ],
+      "excerpt": "async def chat_stream(req: ChatRequest):"
+    },
+    {
+      "id": "loop",
+      "step": 3,
+      "label": "µLM decode loop",
+      "sub": "Swen-28M · generate_local_prefix",
+      "x": 20,
+      "y": 320,
+      "w": 240,
+      "h": 96,
+      "grade": "verified",
+      "links": [
+        {
+          "label": "app.py:168-218",
+          "url": "https://github.com/Sensente/micro_language_model_swen_project/blob/545e7e2d33588baea1a11e201858e24b4c3395b4/demo/backend/app.py#L168-L218"
+        },
+        {
+          "label": "model_swen.py:5-20",
+          "url": "https://github.com/Sensente/micro_language_model_swen_project/blob/545e7e2d33588baea1a11e201858e24b4c3395b4/demo/model/model_swen.py#L5-L20"
+        }
+      ],
+      "excerpt": "for step in range(CONFIG.local_max_new_tokens):"
+    },
+    {
+      "id": "gate",
+      "step": 4,
+      "label": "Word counter + trim",
+      "sub": "app.py count_words",
+      "x": 20,
+      "y": 450,
+      "w": 240,
+      "h": 96,
+      "grade": "verified",
+      "links": [
+        {
+          "label": "app.py:100-102, 195-215",
+          "url": "https://github.com/Sensente/micro_language_model_swen_project/blob/545e7e2d33588baea1a11e201858e24b4c3395b4/demo/backend/app.py#L195-L215"
+        }
+      ],
+      "excerpt": "# Trim to exact first N words for UI and cloud continuation seed."
+    },
+    {
+      "id": "prompts",
+      "step": 5,
+      "label": "Continuator prompts",
+      "sub": "app.py system + user prompt",
+      "x": 430,
+      "y": 190,
+      "w": 240,
+      "h": 96,
+      "grade": "verified",
+      "links": [
+        {
+          "label": "app.py:46-49, 262-268",
+          "url": "https://github.com/Sensente/micro_language_model_swen_project/blob/545e7e2d33588baea1a11e201858e24b4c3395b4/demo/backend/app.py#L46-L49"
+        }
+      ],
+      "excerpt": "Continue the assistant reply naturally from the provided prefix. Do not repeat the prefix."
+    },
+    {
+      "id": "cloud",
+      "step": 6,
+      "label": "GPT-4o continuation",
+      "sub": "OpenAI Responses API, streaming",
+      "x": 430,
+      "y": 320,
+      "w": 240,
+      "h": 96,
+      "grade": "verified",
+      "links": [
+        {
+          "label": "app.py:241-249",
+          "url": "https://github.com/Sensente/micro_language_model_swen_project/blob/545e7e2d33588baea1a11e201858e24b4c3395b4/demo/backend/app.py#L241-L249"
+        }
+      ],
+      "excerpt": "return client.responses.create("
+    },
+    {
+      "id": "recovery",
+      "step": 7,
+      "label": "Recovery prompt",
+      "sub": "config only · demo/.env.example",
+      "x": 430,
+      "y": 450,
+      "w": 240,
+      "h": 96,
+      "grade": "docs",
+      "links": [
+        {
+          "label": ".env.example CLOUD_SYSTEM_PROMPT",
+          "url": "https://github.com/Sensente/micro_language_model_swen_project/blob/545e7e2d33588baea1a11e201858e24b4c3395b4/demo/.env.example"
+        }
+      ],
+      "excerpt": "use a human self-repair pivot: start with one short bridging sentence of no more than 12 words"
+    }
+  ],
+  "edges": [
+    {
+      "from": "ui",
+      "to": "backend",
+      "label": "POST /api/chat/stream"
+    },
+    {
+      "from": "backend",
+      "to": "ui",
+      "label": "SSE: meta, local_prefix, deltas",
+      "label_dy": 24
+    },
+    {
+      "from": "backend",
+      "to": "loop",
+      "label": "runs local generation first"
+    },
+    {
+      "from": "loop",
+      "to": "gate",
+      "label": "decoded text, every token"
+    },
+    {
+      "from": "gate",
+      "to": "backend",
+      "label": "trimmed prefix (8 words)",
+      "side": "right"
+    },
+    {
+      "from": "backend",
+      "to": "prompts",
+      "label": "prefix + question"
+    },
+    {
+      "from": "prompts",
+      "to": "cloud",
+      "label": "continue only, do not repeat"
+    },
+    {
+      "from": "cloud",
+      "to": "backend",
+      "label": "proxied delta stream"
+    },
+    {
+      "from": "recovery",
+      "to": "prompts",
+      "label": "opt-in system prompt",
+      "label_dx": -150
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "title": "One question through the demo: commit, display, continue",
+  "subtitle": "The prefix reaches the user before the cloud request exists; nothing verifies it on the way",
+  "participants": ["User", "Browser UI", "FastAPI backend", "Swen-28M (local)", "GPT-4o (cloud)"],
+  "messages": [
+    { "from": 0, "to": 1, "label": "question" },
+    { "from": 1, "to": 2, "label": "POST /api/chat/stream" },
+    { "from": 2, "to": 3, "label": "generate_local_prefix(question)" },
+    { "from": 3, "to": 3, "label": "sample token, decode, count words — until 8 words or EOS (cap 48)", "self": true },
+    { "from": 3, "to": 2, "label": "raw generation", "dashed": true },
+    { "note": "backend trims the generation to exactly the first 8 words", "span": [2, 3], "text": "trim to 8 words — the model's own continuation is discarded" },
+    { "from": 2, "to": 1, "label": "SSE local_prefix: the 8 words", "dashed": true },
+    { "from": 1, "to": 0, "label": "prefix rendered — answer has begun", "dashed": true },
+    { "from": 2, "to": 4, "label": "responses.create: prefix 'already shown', write ONLY the continuation" },
+    { "from": 4, "to": 2, "label": "streamed deltas", "dashed": true },
+    { "from": 2, "to": 1, "label": "SSE cloud_delta events", "dashed": true },
+    { "from": 1, "to": 0, "label": "continuation appended after the prefix", "dashed": true },
+    { "from": 2, "to": 1, "label": "SSE done: cloud latency", "dashed": true }
+  ]
+}

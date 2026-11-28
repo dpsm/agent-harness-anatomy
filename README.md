@@ -69,6 +69,7 @@ memory stacks, routers, judges — read with the same source-grounded method.
 | TencentDB Agent Memory | [tencentdb-agent-memory/field-notes.md](tencentdb-agent-memory/field-notes.md) | forthcoming |
 | vLLM Semantic Router | [vllm-semantic-router/field-notes.md](vllm-semantic-router/field-notes.md) | forthcoming |
 | Self-Improvement Memory | [sim-memory/field-notes.md](sim-memory/field-notes.md) | forthcoming |
+| µLM (Micro Language Models) | [ulm/field-notes.md](ulm/field-notes.md) + companion teardown [ulm/article.md](ulm/article.md) | forthcoming |
 
 ## What's here
 

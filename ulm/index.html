@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body {
+    background: #161210; color: #ece1d3;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    line-height: 1.7; padding: 48px 24px; margin: 0;
+  }
+  main { max-width: 760px; margin: 0 auto; }
+  a { color: #d08c4e; }
+  h1 { font-size: 1.9rem; letter-spacing: -0.02em; line-height: 1.25; margin-bottom: 16px; }
+  h2 { font-size: 1.4rem; margin: 40px 0 12px; padding-top: 8px; border-top: 1px solid #2c231b; }
+  h3 { font-size: 1.1rem; margin: 28px 0 8px; }
+  p, li { margin-bottom: 12px; }
+  blockquote {
+    border-left: 3px solid #d08c4e; padding: 4px 16px; margin: 20px 0;
+    color: #a89880; background: #1f1a15; border-radius: 0 8px 8px 0;
+  }
+  blockquote p { margin-bottom: 6px; }
+  code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.88em; background: #1f1a15; padding: 2px 6px; border-radius: 6px;
+  }
+  pre { background: #1f1a15; border: 1px solid #3a2f26; border-radius: 8px;
+        padding: 16px; overflow-x: auto; }
+  pre code { background: none; padding: 0; }
+  img { max-width: 100%; height: auto; border: 1px solid #3a2f26;
+        border-radius: 12px; margin: 20px 0; background: #1f1a15; }
+  table { border-collapse: collapse; width: 100%; margin: 20px 0; font-size: 0.92rem;
+          display: block; overflow-x: auto; }
+  th, td { border: 1px solid #3a2f26; padding: 10px 12px; text-align: left;
+           vertical-align: top; }
+  th { background: #1f1a15; }
+  ul, ol { padding-left: 24px; }
+  hr { border: none; border-top: 1px solid #2c231b; margin: 32px 0; }
+  .footnote { font-size: 0.88rem; color: #a89880; }
+  .footnote hr { margin: 40px 0 16px; }
+  sup a { text-decoration: none; }
+  .topnav { max-width: 760px; margin: 0 auto 32px; font-size: 0.9rem; }
+  .topnav a { color: #a89880; text-decoration: none; }
+  .topnav a:hover { color: #ece1d3; }
+  .diagram-cta {
+    display: block; text-align: center; margin: 28px 0; padding: 16px;
+    background: #1f1a15; border: 1px solid #3a2f26; border-radius: 12px;
+    color: #ece1d3; text-decoration: none; font-weight: 600;
+  }
+  .diagram-cta:hover { border-color: #d08c4e; }
+  .diagram-cta span { display: block; font-weight: 400; font-size: 0.88rem;
+                      color: #a89880; margin-top: 4px; }
+  .byline { color: #a89880; font-size: 0.95rem; margin: 4px 0 20px; } .byline a { color: #d08c4e; }
+</style>
+<title>µLM: eight words, then faith — Agent Harness Anatomy</title>
+<meta name="description" content="Teardown of the demo repository for “Micro Language Models Enable Instant Responses” (EMNLP 2026): a 28M-parameter model speaks the first eight words of every answer on-device, unverified, and a cloud model continues the sentence — the whole framework in 883 lines, pinned at commit 545e7e2.">
+<meta name="author" content="David P. S. Marques">
+<meta property="og:title" content="µLM: eight words, then faith — Agent Harness Anatomy">
+<meta property="og:description" content="Teardown of the demo repository for “Micro Language Models Enable Instant Responses” (EMNLP 2026): a 28M-parameter model speaks the first eight words of every answer on-device, unverified, and a cloud model continues the sentence — the whole framework in 883 lines, pinned at commit 545e7e2.">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://dpsm.github.io/agent-harness-anatomy/ulm/">
+</head>
+<body>
+<main>
+<nav class="topnav"><a href="../#ulm">&larr; Agent Harness Anatomy</a></nav>
+<h1 id="µlm-eight-words-then-faith">µLM: eight words, then faith</h1>
+<p class="byline">by <a href="https://ca.linkedin.com/in/dpsmarques">David P. S. Marques</a></p>
+<p><em>Teardown of the demo repository for &quot;Micro Language Models Enable Instant Responses&quot; (Cheng et al., EMNLP 2026), pinned at commit <code>545e7e2</code>. The paper's framework is the subject; the repository is its only executable form. Claims about the code are pinned to files at that commit; claims about results are the authors', from the paper.</em></p>
+<hr>
+<p>Most systems in this series spend their complexity budget after the model speaks: tools, sandboxes, memory, judges. This one spends it <em>before</em> — on the question of who gets to say the first eight words.</p>
+<p>The setup, from the paper: a micro language model (µLM) of 8.8–29.5 million parameters runs on a device that cannot sustain even a 100M-parameter model — a watch, a pair of glasses. It generates the first four to eight words of the response immediately. A cloud model then continues the answer from that prefix, mid-sentence if necessary. The repository under review is the official demo: a 366-line model definition, a 316-line FastAPI backend, a 168-line web page, and the 28M checkpoint. Eight hundred eighty-three lines of code carry the whole framework, which makes it the smallest system this series has opened — and one of the most instructive, because almost everything that matters in it is a decision about ordering.</p>
+<p><img alt="µLM (Swen) architecture — commit-and-continue, as shipped in the demo" src="figures/ulm@2x.png" /></p>
+<p><a class="diagram-cta" href="../diagrams/template.html?data=../ulm/diagrams/ulm.json">Explore the interactive architecture diagram<span>7 nodes, 9 edges — pan, zoom, and follow every source link</span></a></p>
+<h2 id="the-model-a-llama-in-miniature-written-out-longhand">The model: a Llama in miniature, written out longhand</h2>
+<p><code>model_swen.py</code> implements the µLM from scratch as a Hugging Face <code>PreTrainedModel</code>: a decoder-only Transformer with a 512-wide hidden state, 8 layers, 8 attention heads sharing 2 key-value heads (grouped-query attention), a 1408-wide SwiGLU feed-forward, RMSNorm, and rotary position embeddings with a theta of 1e6 and an optional YaRN scaling path that the demo configuration leaves off.<sup id="fnref:1"><a class="footnote-ref" href="#fn:1">1</a></sup> The vocabulary is 12,288 BPE tokens — a tokenizer trained on the pretraining corpus itself, sized to keep the embedding table from eating the parameter budget, which at this scale it otherwise would: embeddings are over a fifth of a 28M model at this width.<sup id="fnref:2"><a class="footnote-ref" href="#fn:2">2</a></sup></p>
+<p>Nothing here is exotic, and that is the point the paper makes with its ablations: at 8–30M parameters the architecture is a commodity, and what survives the shrink is decided by the data. The µLMs are pretrained from scratch on 1.485B tokens of cleaned chat dialogue and fine-tuned on a further 323.4M, all of it conversational — the model is trained to be an <em>opener of replies</em>, not a general reasoner.<sup id="fnref:3"><a class="footnote-ref" href="#fn:3">3</a></sup> The demo's loader reflects the scale honestly: strict state-dict loading, weight tying applied by hand after the load inside a try/except, and a warm-up forward pass on the word &quot;hello&quot; so the first real request doesn't pay it.<sup id="fnref:4"><a class="footnote-ref" href="#fn:4">4</a></sup></p>
+<h2 id="the-loop-fifty-tokens-of-budget-eight-words-of-commitment">The loop: fifty tokens of budget, eight words of commitment</h2>
+<p>The backend's local generation is a hand-rolled decode loop — no <code>generate()</code>, no KV-cache plumbing visible at this level, just the model called token by token with temperature 0.5 and top-p 0.9 sampling.<sup id="fnref:5"><a class="footnote-ref" href="#fn:5">5</a></sup> After <em>every</em> token, the loop decodes the entire sequence so far and counts words, where a word is whatever survives a whitespace split.<sup id="fnref:6"><a class="footnote-ref" href="#fn:6">6</a></sup> The loop stops when the count reaches the configured prefix length — eight words by default — or when the model emits its end token, with a hard cap of 48 new tokens. The word check runs before the end-token check, so a token that both completes the eighth word and ends the sequence is counted as a word first.<sup id="fnref:7"><a class="footnote-ref" href="#fn:7">7</a></sup></p>
+<p>Then comes the detail the paper does not mention: the generated text is <strong>trimmed to exactly the first eight words</strong> before it is used for anything.<sup id="fnref:8"><a class="footnote-ref" href="#fn:8">8</a></sup> The loop's stopping rule is approximate — a single token can carry the count from seven words to nine — so the prefix the user sees, and the prefix the cloud model is seeded with, is a post-hoc cut of a longer generation. The untrimmed text is not discarded: it travels to the browser in a metadata event, where the demo page receives it and does nothing with it. The model's own continuation of its opener exists, is transmitted, and is ignored — the cloud model will write a different one.</p>
+<h2 id="the-handoff-display-first-ask-later">The handoff: display first, ask later</h2>
+<p>The ordering of the streaming endpoint is the framework in one function. The request handler runs the local generation to completion, then opens a server-sent-events stream. The stream's first content event is the prefix itself; only after emitting it does the backend construct and start the cloud request.<sup id="fnref:9"><a class="footnote-ref" href="#fn:9">9</a></sup> The browser renders the prefix the moment that event arrives and appends the cloud's deltas after it, so what the user reads is the stitched text in the order the paper prescribes: local words instantly, cloud words whenever they come.<sup id="fnref:10"><a class="footnote-ref" href="#fn:10">10</a></sup></p>
+<p>Two consequences fall out of that ordering, both visible in the code. First, there is no verification path. Nothing scores, filters, or even inspects the prefix between generation and display — the word counter is the only gate, and it gates on length, not content. The paper is upfront that this is the design (the prefix is committed without cloud verification, which is what makes the first token independent of the network), and the code is faithful to it: the commitment really is unconditional.<sup id="fnref:11"><a class="footnote-ref" href="#fn:11">11</a></sup> Second, the failure mode is inherited from the same ordering: if the OpenAI key is missing, the prefix has already been emitted when the stream yields its error event. The user is left holding eight words and an apology — the one seam the framework cannot stitch.</p>
+<p>The cloud side of the contract is two prompts. The user message frames the situation with unusual honesty: it labels the prefix as &quot;already shown to the user&quot; and instructs the model to write <em>only</em> the continuation, not to repeat the prefix, and to start &quot;naturally from the next token onward.&quot; The system prompt says the same thing in the model's ear: continue naturally, do not repeat, keep the tone coherent. The call itself is the OpenAI Responses API in streaming mode, GPT-4o by default, capped at 256 output tokens.<sup id="fnref:12"><a class="footnote-ref" href="#fn:12">12</a></sup> The paper's §3.2.1 describes this handoff as instruction following — suppressing the continuator's trained defaults to restate, comment, or open afresh — and the demo's prompts are that description, verbatim in miniature.</p>
+<p><img alt="One question through the demo: commit, display, continue" src="figures/seq-handoff.svg" /></p>
+<h2 id="the-second-prompt-recovery-lives-in-a-config-file">The second prompt: recovery lives in a config file</h2>
+<p>The paper defines three error-recovery modes for when the opener goes wrong: Explicit correction (a single sentence prefixed &quot;Correction:&quot;, then the full answer), Natural recovery (an unflagged bridging sentence of at most twelve words, then the answer), and Humor-aware recovery (a witty pivot that treats the error as a creative detour).<sup id="fnref:13"><a class="footnote-ref" href="#fn:13">13</a></sup> None of the three is implemented as code. But one of them <em>is in the repository</em> — in the example environment file, as an alternative system prompt the operator can switch on.</p>
+<p>That prompt is the Natural recovery instruction set, nearly clause for clause: the output will be concatenated immediately after the opener; if the opener is a fragment, add the minimum tokens to finish the sentence; if its direction is &quot;dubious or unhelpful,&quot; use a &quot;human self-repair pivot&quot; — one bridging sentence of at most twelve words, a light playful aside permitted (the humor-aware fold-in), and a banned list of blunt-negation words the model must not use: &quot;wrong,&quot; &quot;incorrect,&quot; &quot;misunderstanding,&quot; &quot;does not support,&quot; &quot;not possible.&quot; Then the correct answer, in two to five bullets, with at most one clarifying question.<sup id="fnref:14"><a class="footnote-ref" href="#fn:14">14</a></sup></p>
+<p>It is a genuinely interesting artifact. The framework's most distinctive mechanism — the recovery behaviour its user study is about — ships as configuration, off by default, in a file most readers of the repository will never open, while the code default remains the plain continuation prompt. Which framework you get depends on which file you read. Explicit correction, the paper's stated default mode, appears nowhere in the repository at all.</p>
+<h2 id="what-is-not-here">What is not here</h2>
+<p>The absences are as systematic as the presences. There is no training code, though the paper's central empirical claim is about training at this scale. There is no evaluation code: no Handoff Correction Rate computation, no judge prompts, none of the four boundary metrics the paper evaluates with. There is no embedded code: the Orange Pi latency numbers (45 ms to first token, four words in 55 ms) come from a deployment that is not in the repository. And there is no conversation: each request rebuilds its history from a single user message, the backend keeps no session state, and the paper's own suggestion that multi-turn context &quot;be managed by the cloud LLM&quot; is implemented on neither side — the cloud call, too, sees exactly one question and one prefix.<sup id="fnref:15"><a class="footnote-ref" href="#fn:15">15</a></sup></p>
+<p>The continuator gap deserves its own line. The paper's headline preference study and its main results table are built on open continuators — Qwen3-235B-A22B for the recovery study, with Qwen3-30B and Qwen2.5-72B also evaluated. The demo can only call OpenAI; GPT-4o is one of the paper's evaluated continuators, so the demo is not unfaithful, but the system as shipped runs the one configuration in which the continuator is a closed API and the opener is the only local part.<sup id="fnref:16"><a class="footnote-ref" href="#fn:16">16</a></sup></p>
+<h2 id="verdict">Verdict</h2>
+<p>As a demo, this is well-built: the model is real, the loop is legible, the streaming order does exactly what the paper promises, and the whole thing can be read in one sitting — a virtue this series does not take for granted. As the framework's executable form, it is a partial print: the handoff mechanics are all here and exactly as simple as claimed, while the recovery system — the part the paper's user study actually measures — exists only as a prompt in an example config, and everything quantitative lives in the paper alone.</p>
+<p>That split is itself the finding worth keeping. The µLM framework is a contract between two models, and contracts in this series keep turning out to be made of different materials in different systems: TalkAct's is a data structure enforced by a tool schema; this one is two prompt strings and an ordering guarantee in a streaming endpoint. Both work. But only one of them can be <em>checked</em> — and the distance between the paper's three recovery modes and the repository's one config file is the distance between a contract described and a contract shipped.</p>
+<hr>
+<hr>
+<section class="footnote">
+<ol class="footnotes-list">
+<li id="fn:1"><p><a href="https://github.com/Sensente/micro_language_model_swen_project/blob/545e7e2d33588baea1a11e201858e24b4c3395b4/demo/model/model_swen.py#L5"><code>demo/model/model_swen.py#L5</code></a> — <code>SwenConfig</code> defaults: hidden 512, 8 layers, 8 heads, 2 KV heads (L19), vocab 12,288 (L20), intermediate 1408, RoPE theta 1e6, YaRN scaling available but gated on <code>inference_rope_scaling</code>; <code>SwenForCausalLM</code> at L322. <a class="footnote-backref" href="#fnref:1">&#8617;</a></p>
+</li>
+<li id="fn:2"><p>Embedding share computed from the config at the pin: 12,288 × 512 ≈ 6.3M parameters in the (tied) embedding table of a ~28M model. <a class="footnote-backref" href="#fnref:2">&#8617;</a></p>
+</li>
+<li id="fn:3"><p>Paper, §3.1 and Appendix A — pretraining corpus from UltraChat, MOSS, and Instruction_merge_set, English-only, cleaned; 1.485B non-padding tokens; BPE tokenizer trained on the corpus at vocab 12,288; SFT set 323.4M tokens. Training code is not in the repository. <a class="footnote-backref" href="#fnref:3">&#8617;</a></p>
+</li>
+<li id="fn:4"><p><a href="https://github.com/Sensente/micro_language_model_swen_project/blob/545e7e2d33588baea1a11e201858e24b4c3395b4/demo/backend/app.py#L110"><code>demo/backend/app.py#L110</code></a> — <code>load_model_and_tokenizer</code>: strict <code>load_state_dict</code>, manual tying at L143 (<code>lm_head.weight = embed_tokens.weight</code>, in try/except), warm-up forward pass before the state is marked loaded. <a class="footnote-backref" href="#fnref:4">&#8617;</a></p>
+</li>
+<li id="fn:5"><p><a href="https://github.com/Sensente/micro_language_model_swen_project/blob/545e7e2d33588baea1a11e201858e24b4c3395b4/demo/backend/app.py#L168"><code>demo/backend/app.py#L168</code></a> — <code>generate_local_prefix</code>: per-token loop over the model, temperature/top-p from <code>DemoConfig</code> (defaults 0.5 / 0.9), cap <code>local_max_new_tokens</code> = 48. <a class="footnote-backref" href="#fnref:5">&#8617;</a></p>
+</li>
+<li id="fn:6"><p><a href="https://github.com/Sensente/micro_language_model_swen_project/blob/545e7e2d33588baea1a11e201858e24b4c3395b4/demo/backend/app.py#L100"><code>demo/backend/app.py#L100</code></a> — <code>count_words</code>: whitespace split; the comment notes CJK blocks count as non-whitespace segments. <a class="footnote-backref" href="#fnref:6">&#8617;</a></p>
+</li>
+<li id="fn:7"><p><a href="https://github.com/Sensente/micro_language_model_swen_project/blob/545e7e2d33588baea1a11e201858e24b4c3395b4/demo/backend/app.py#L195"><code>demo/backend/app.py#L195</code></a> — word-count break checked before the EOS break at L197; <code>prefix_words</code> default 8 from <code>SWEN_PREFIX_WORDS</code> (L43). <a class="footnote-backref" href="#fnref:7">&#8617;</a></p>
+</li>
+<li id="fn:8"><p><a href="https://github.com/Sensente/micro_language_model_swen_project/blob/545e7e2d33588baea1a11e201858e24b4c3395b4/demo/backend/app.py#L210"><code>demo/backend/app.py#L210</code></a> — &quot;Trim to exact first N words for UI and cloud continuation seed&quot;; the untrimmed text returns as <code>raw_local_text</code> (L215) and is sent in the stream's <code>meta</code> event (L308). <a class="footnote-backref" href="#fnref:8">&#8617;</a></p>
+</li>
+<li id="fn:9"><p><a href="https://github.com/Sensente/micro_language_model_swen_project/blob/545e7e2d33588baea1a11e201858e24b4c3395b4/demo/backend/app.py#L225"><code>demo/backend/app.py#L225</code></a> — <code>stream_cloud_continuation</code> yields the <code>local_prefix</code> SSE event (L231) before building the cloud request; the handler at L293 runs local generation first (<code>asyncio.to_thread</code>, L299). With no API key configured, the same function yields an <code>error</code> event after the prefix. <a class="footnote-backref" href="#fnref:9">&#8617;</a></p>
+</li>
+<li id="fn:10"><p><a href="https://github.com/Sensente/micro_language_model_swen_project/blob/545e7e2d33588baea1a11e201858e24b4c3395b4/demo/frontend/index.html#L145"><code>demo/frontend/index.html#L145</code></a> — the page renders on <code>local_prefix</code> and appends on <code>cloud_delta</code> (L147), parsing the SSE stream manually from a <code>fetch</code> reader. <a class="footnote-backref" href="#fnref:10">&#8617;</a></p>
+</li>
+<li id="fn:11"><p>Paper, §1 and §3.2 — the prefix is committed without cloud verification; the paper contrasts this with speculative decoding, where drafted tokens are validated by the large model before use. <a class="footnote-backref" href="#fnref:11">&#8617;</a></p>
+</li>
+<li id="fn:12"><p><a href="https://github.com/Sensente/micro_language_model_swen_project/blob/545e7e2d33588baea1a11e201858e24b4c3395b4/demo/backend/app.py#L241"><code>demo/backend/app.py#L241</code></a> — <code>client.responses.create</code>, streaming; default model <code>gpt-4o</code> and 256 max output tokens from <code>DemoConfig</code>; system prompt default at L46. <a class="footnote-backref" href="#fnref:12">&#8617;</a></p>
+</li>
+<li id="fn:13"><p>Paper, §3.2.2 and Figure 3 — the three recovery modes; full instruction sets in §M.2; Explicit correction is described as the default mode. <a class="footnote-backref" href="#fnref:13">&#8617;</a></p>
+</li>
+<li id="fn:14"><p><a href="https://github.com/Sensente/micro_language_model_swen_project/blob/545e7e2d33588baea1a11e201858e24b4c3395b4/demo/.env.example"><code>demo/.env.example</code></a> — the shipped <code>CLOUD_SYSTEM_PROMPT</code> value: concatenation contract, minimum-token fragment completion, ≤12-word self-repair pivot with playful aside, banned blunt-negation words, 2–5 bullet answer, at most one clarifying question. The code default at <code>app.py#L46</code> is the shorter plain-continuation prompt. <a class="footnote-backref" href="#fnref:14">&#8617;</a></p>
+</li>
+<li id="fn:15"><p><a href="https://github.com/Sensente/micro_language_model_swen_project/blob/545e7e2d33588baea1a11e201858e24b4c3395b4/demo/backend/app.py#L173"><code>demo/backend/app.py#L173</code></a> — history is a single user message per request; paper, Limitations — single-turn formulation, with multi-turn context suggested as the cloud model's responsibility. <a class="footnote-backref" href="#fnref:15">&#8617;</a></p>
+</li>
+<li id="fn:16"><p>Paper, §4.2, Table 1 and Figures 5–6 — continuators evaluated: Qwen3-30B-A3B, Qwen2.5-72B, Qwen3-235B-A22B, GPT-4o; the preference study (15 participants) pairs µLM-28M with Qwen3-235B-A22B. Demo cloud access is OpenAI-only (<code>DemoConfig.openai_model</code>, default <code>gpt-4o</code>). <a class="footnote-backref" href="#fnref:16">&#8617;</a></p>
+</li>
+</ol>
+</section>
+</main>
+</body>
+</html>
